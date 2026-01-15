@@ -1,20 +1,66 @@
-// src/features/editor/EditorPage.tsx
 import React from "react";
 import { createInitialScene } from "../../core/model/scene";
-import { SvgStage } from "../../renderer/svg/SvgStage";
+import type { Scene } from "../../core/model/entities";
+import { SvgStage, type BBox } from "../../renderer/svg/SvgStage";
 
-type BBox = { x: number; y: number; width: number; height: number };
+type PointId = string;
+
+function distanceBetween(a: { x: number; y: number }, b: { x: number; y: number }) {
+  // sqrt(dx*dx + dy*dy) [web:210]
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
 
 export function EditorPage() {
-  const [scene] = React.useState(() => createInitialScene());
-  const [selectedId, setSelectedId] = React.useState<string | null>("n1");
+  const [scene] = React.useState<Scene>(() => createInitialScene());
+
+  // Selección “normal” (para propiedades/bbox)
+  const [selectedPointId, setSelectedPointId] = React.useState<PointId | null>("p1");
   const [bbox, setBbox] = React.useState<BBox | null>(null);
+
+  // Regla (medición entre dos puntos)
+  const [rulerA, setRulerA] = React.useState<PointId | null>(null);
+  const [rulerB, setRulerB] = React.useState<PointId | null>(null);
+
+  const pointsById = React.useMemo(() => {
+    const m = new Map<string, { x: number; y: number }>();
+    for (const p of scene.points) m.set(p.id, { x: p.x, y: p.y });
+    return m;
+  }, [scene.points]);
+
+  const rulerDistance = React.useMemo(() => {
+    if (!rulerA || !rulerB) return null;
+    const a = pointsById.get(rulerA);
+    const b = pointsById.get(rulerB);
+    if (!a || !b) return null;
+    return distanceBetween(a, b);
+  }, [rulerA, rulerB, pointsById]);
+
+  function handleSelectPoint(id: string | null) {
+    setSelectedPointId(id);
+
+    // UX simple de “regla”: primer click => A, segundo click distinto => B, tercero reinicia.
+    if (!id) return;
+
+    if (!rulerA) {
+      setRulerA(id);
+      setRulerB(null);
+      return;
+    }
+    if (rulerA && !rulerB) {
+      if (id === rulerA) return;
+      setRulerB(id);
+      return;
+    }
+    // Si ya hay A y B, reiniciar con nuevo A
+    setRulerA(id);
+    setRulerB(null);
+  }
 
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "1fr 320px",
+        gridTemplateColumns: "1fr 340px",
         height: "100vh",
         background: "#ffffff",
       }}
@@ -22,14 +68,13 @@ export function EditorPage() {
       <div style={{ position: "relative" }}>
         <SvgStage
           scene={scene}
-          selectedId={selectedId}
+          selectedPointId={selectedPointId}
           measuredBBox={bbox}
-          onSelect={setSelectedId}
+          onSelectPoint={handleSelectPoint}
           onMeasuredBBox={setBbox}
         />
 
-
-        {/* HUD */}
+        {/* HUD superior */}
         <div
           style={{
             position: "absolute",
@@ -43,16 +88,16 @@ export function EditorPage() {
             fontSize: 12,
             borderRadius: 10,
             boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-            minWidth: 220,
+            minWidth: 260,
           }}
         >
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>Selección</div>
+          <div style={{ fontWeight: 800, marginBottom: 6 }}>Selección</div>
           <div style={{ display: "grid", gridTemplateColumns: "70px 1fr", rowGap: 4 }}>
-            <div style={{ color: "#374151" }}>ID</div>
-            <div style={{ fontWeight: 600 }}>{selectedId ?? "—"}</div>
+            <div style={{ color: "#374151" }}>Punto</div>
+            <div style={{ fontWeight: 700 }}>{selectedPointId ?? "—"}</div>
 
             <div style={{ color: "#374151" }}>BBox</div>
-            <div>
+            <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
               {bbox
                 ? `x=${bbox.x.toFixed(2)} y=${bbox.y.toFixed(2)} w=${bbox.width.toFixed(
                     2
@@ -73,34 +118,50 @@ export function EditorPage() {
           color: "#111827",
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 800, margin: "6px 0 12px" }}>
-          Propiedades
+        <div style={{ fontSize: 14, fontWeight: 900, margin: "6px 0 12px" }}>
+          Propiedades y medición
         </div>
 
-        <div
-          style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 12,
-            padding: 12,
-          }}
-        >
-          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
-            Medidas (bbox del elemento SVG)
+        <Card title="Punto seleccionado">
+          <Row label="ID" value={selectedPointId ?? "—"} />
+          <Row label="BBox W" value={bbox ? bbox.width.toFixed(2) : "—"} />
+          <Row label="BBox H" value={bbox ? bbox.height.toFixed(2) : "—"} />
+        </Card>
+
+        <div style={{ height: 12 }} />
+
+        <Card title="Regla (2 clicks)">
+          <Row label="A" value={rulerA ?? "—"} />
+          <Row label="B" value={rulerB ?? "—"} />
+          <Row
+            label="Dist."
+            value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"}
+          />
+          <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
+            Click 1 = A, Click 2 = B, Click 3 reinicia.
           </div>
-
-          <Row label="ID" value={selectedId ?? "—"} />
-          <Row label="X" value={bbox ? bbox.x.toFixed(2) : "—"} />
-          <Row label="Y" value={bbox ? bbox.y.toFixed(2) : "—"} />
-          <Row label="Ancho" value={bbox ? bbox.width.toFixed(2) : "—"} />
-          <Row label="Alto" value={bbox ? bbox.height.toFixed(2) : "—"} />
-        </div>
+        </Card>
 
         <div style={{ marginTop: 12, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
-          Tip: estas medidas vienen de <code>getBBox()</code>, que devuelve el rectángulo mínimo
-          del elemento en el espacio SVG. [web:20]
+          Distancia calculada con <code>Math.hypot</code> (euclidiana). [web:210]
         </div>
       </aside>
+    </div>
+  );
+}
+
+function Card(props: { title: string; children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e5e7eb",
+        borderRadius: 12,
+        padding: 12,
+      }}
+    >
+      <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>{props.title}</div>
+      {props.children}
     </div>
   );
 }
@@ -110,7 +171,7 @@ function Row(props: { label: string; value: React.ReactNode }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "80px 1fr",
+        gridTemplateColumns: "90px 1fr",
         padding: "6px 0",
         borderTop: "1px solid #f3f4f6",
         alignItems: "center",
@@ -118,9 +179,7 @@ function Row(props: { label: string; value: React.ReactNode }) {
       }}
     >
       <div style={{ color: "#374151" }}>{props.label}</div>
-      <div style={{ fontWeight: 600, color: "#111827", textAlign: "right" }}>
-        {props.value}
-      </div>
+      <div style={{ fontWeight: 700, color: "#111827", textAlign: "right" }}>{props.value}</div>
     </div>
   );
 }

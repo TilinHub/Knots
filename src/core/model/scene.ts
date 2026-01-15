@@ -2,9 +2,15 @@ import type { Scene } from "./entities";
 
 export function createInitialScene(): Scene {
   return {
-    entities: [
-      { id: "n1", kind: "node", x: 0, y: 0, r: 25, label: "N1" },
-      { id: "n2", kind: "node", x: 120, y: 40, r: 18, label: "N2" },
+    radius: 60,
+    points: [
+      { id: "p1", kind: "point", x: 0, y: -60 },
+      { id: "p2", kind: "point", x: 0, y: 20 },
+      { id: "p3", kind: "point", x: -90, y: 80 },
+      { id: "p4", kind: "point", x: 90, y: 80 },
+    ],
+    primitives: [
+      // por ahora vacío; después agregamos Segment/Arc para trefoil
     ],
   };
 }
