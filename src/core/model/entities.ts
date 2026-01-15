@@ -17,8 +17,7 @@ export type Segment = {
 export type Arc = {
   id: Id;
   kind: "arc";
-  // Centro en coordenadas mundo (puedes cambiar a Point id si quieres)
-  c: { x: number; y: number };
+  c: { x: number; y: number }; // centro (x,y)
   startAngle: number; // radianes
   endAngle: number; // radianes
   sweep: "ccw" | "cw";
@@ -27,7 +26,7 @@ export type Arc = {
 export type Primitive = Segment | Arc;
 
 export type Scene = {
-  radius: number; // radio global fijo para arcos
+  radius: number; // radio global fijo (para arcos)
   points: Point[];
   primitives: Primitive[];
 };

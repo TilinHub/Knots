@@ -6,18 +6,15 @@ import { SvgStage, type BBox } from "../../renderer/svg/SvgStage";
 type PointId = string;
 
 function distanceBetween(a: { x: number; y: number }, b: { x: number; y: number }) {
-  // sqrt(dx*dx + dy*dy) [web:210]
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
 export function EditorPage() {
   const [scene] = React.useState<Scene>(() => createInitialScene());
 
-  // Selección “normal” (para propiedades/bbox)
   const [selectedPointId, setSelectedPointId] = React.useState<PointId | null>("p1");
   const [bbox, setBbox] = React.useState<BBox | null>(null);
 
-  // Regla (medición entre dos puntos)
   const [rulerA, setRulerA] = React.useState<PointId | null>(null);
   const [rulerB, setRulerB] = React.useState<PointId | null>(null);
 
@@ -37,8 +34,6 @@ export function EditorPage() {
 
   function handleSelectPoint(id: string | null) {
     setSelectedPointId(id);
-
-    // UX simple de “regla”: primer click => A, segundo click distinto => B, tercero reinicia.
     if (!id) return;
 
     if (!rulerA) {
@@ -51,20 +46,12 @@ export function EditorPage() {
       setRulerB(id);
       return;
     }
-    // Si ya hay A y B, reiniciar con nuevo A
     setRulerA(id);
     setRulerB(null);
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 340px",
-        height: "100vh",
-        background: "#ffffff",
-      }}
-    >
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", height: "100vh" }}>
       <div style={{ position: "relative" }}>
         <SvgStage
           scene={scene}
@@ -74,7 +61,6 @@ export function EditorPage() {
           onMeasuredBBox={setBbox}
         />
 
-        {/* HUD superior */}
         <div
           style={{
             position: "absolute",
@@ -95,7 +81,6 @@ export function EditorPage() {
           <div style={{ display: "grid", gridTemplateColumns: "70px 1fr", rowGap: 4 }}>
             <div style={{ color: "#374151" }}>Punto</div>
             <div style={{ fontWeight: 700 }}>{selectedPointId ?? "—"}</div>
-
             <div style={{ color: "#374151" }}>BBox</div>
             <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
               {bbox
@@ -108,7 +93,6 @@ export function EditorPage() {
         </div>
       </div>
 
-      {/* Panel lateral */}
       <aside
         style={{
           borderLeft: "1px solid #e5e7eb",
@@ -133,18 +117,11 @@ export function EditorPage() {
         <Card title="Regla (2 clicks)">
           <Row label="A" value={rulerA ?? "—"} />
           <Row label="B" value={rulerB ?? "—"} />
-          <Row
-            label="Dist."
-            value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"}
-          />
-          <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
+          <Row label="Dist." value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"} />
+          <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280" }}>
             Click 1 = A, Click 2 = B, Click 3 reinicia.
           </div>
         </Card>
-
-        <div style={{ marginTop: 12, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
-          Distancia calculada con <code>Math.hypot</code> (euclidiana). [web:210]
-        </div>
       </aside>
     </div>
   );
@@ -179,7 +156,7 @@ function Row(props: { label: string; value: React.ReactNode }) {
       }}
     >
       <div style={{ color: "#374151" }}>{props.label}</div>
-      <div style={{ fontWeight: 700, color: "#111827", textAlign: "right" }}>{props.value}</div>
+      <div style={{ fontWeight: 700, textAlign: "right" }}>{props.value}</div>
     </div>
   );
 }

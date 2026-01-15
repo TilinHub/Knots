@@ -10,7 +10,10 @@ export function createInitialScene(): Scene {
       { id: "p4", kind: "point", x: 90, y: 80 },
     ],
     primitives: [
-      // por ahora vacío; después agregamos Segment/Arc para trefoil
+      { id: "s1", kind: "segment", a: "p1", b: "p2" },
+      { id: "s2", kind: "segment", a: "p2", b: "p3" },
+      { id: "s3", kind: "segment", a: "p2", b: "p4" },
+      { id: "s4", kind: "segment", a: "p3", b: "p4" },
     ],
   };
 }
