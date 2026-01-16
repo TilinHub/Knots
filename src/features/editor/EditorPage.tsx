@@ -106,21 +106,22 @@ export function EditorPage() {
   const hull = React.useMemo(() => computeDiskHull(disks), [disks]);
 
   const perimeter = React.useMemo(() => {
-    let total = 0;
+  let total = 0;
 
-    for (const seg of hull.segments) {
-      if (seg.type === "tangent") {
-        total += Math.hypot(seg.to.x - seg.from.x, seg.to.y - seg.from.y);
-      } else {
-        let diff = seg.endAngle - seg.startAngle;
-        if (diff < 0) diff += 2 * Math.PI;
-        total += seg.disk.r * diff;
-      }
+  for (const seg of hull.segments) {
+    if (seg.type === "tangent") {
+      total += Math.hypot(seg.to.x - seg.from.x, seg.to.y - seg.from.y);
+    } else {
+      let diff = seg.endAngle - seg.startAngle;
+      if (diff < 0) diff += 2 * Math.PI;
+      total += seg.disk.r * diff;
     }
+  }
 
-    const nodeSize = Math.max(scene.radius, 1e-9);
-    return total / nodeSize;
-  }, [hull.segments, scene.radius]);
+  // Perímetro REAL de la envolvente (sin normalizar)
+  return total;
+}, [hull.segments]);
+
 
   const metrics = React.useMemo(() => {
     return {
