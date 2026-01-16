@@ -59,7 +59,6 @@ export function SvgStage(props: {
   onToggleSegment: (a: string, b: string) => void;
 
   showHull?: boolean;
-  onHullStats?: (s: { disks: number; tangents: number; arcs: number }) => void;
 }) {
   const {
     scene,
@@ -74,7 +73,6 @@ export function SvgStage(props: {
     onPickLinkA,
     onToggleSegment,
     showHull = true,
-    onHullStats,
   } = props;
 
   const svgRef = React.useRef<SVGSVGElement | null>(null);
@@ -87,7 +85,6 @@ export function SvgStage(props: {
       onMeasuredBBox(null);
       return;
     }
-    // bbox mínimo del elemento en espacio SVG. [web:20]
     const b = selectedCircleRef.current.getBBox();
     onMeasuredBBox({ x: b.x, y: b.y, width: b.width, height: b.height });
   }, [selectedPointId, scene, onMeasuredBBox]);
@@ -105,10 +102,6 @@ export function SvgStage(props: {
 
   const hull = React.useMemo(() => computeDiskHull(disks), [disks]);
 
-  React.useEffect(() => {
-    onHullStats?.(hull.stats);
-  }, [hull.stats, onHullStats]);
-
   // Drag
   const dragRef = React.useRef<{ id: string; dx: number; dy: number; pointerId: number } | null>(null);
 
@@ -123,8 +116,6 @@ export function SvgStage(props: {
 
     const pos = clientToSvgPoint(e, svg, viewBox);
     dragRef.current = { id: p.id, dx: p.x - pos.x, dy: p.y - pos.y, pointerId: e.pointerId };
-
-    // Mantener eventos durante drag. [web:272]
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
@@ -213,7 +204,7 @@ export function SvgStage(props: {
     >
       <Grid />
 
-      {/* Hull como un solo path continuo */}
+      {/* Hull como path continuo */}
       {showHull && hull.svgPathD && (
         <path
           d={hull.svgPathD}
@@ -238,8 +229,7 @@ export function SvgStage(props: {
         })}
       </g>
 
-      {/* Preview */}p1
-      
+      {/* Preview */}
       {mode === "link" && linkAPoint && cursor && (
         <line
           x1={linkAPoint.x}
@@ -276,13 +266,13 @@ export function SvgStage(props: {
                 ref={selected ? selectedCircleRef : undefined}
                 cx={p.x}
                 cy={p.y}
-                r={11}
+                r={scene.radius}
                 fill={COLORS.nodeFill}
                 stroke={isLinkA ? COLORS.edgePreview : selected ? COLORS.selected : COLORS.nodeStroke}
                 strokeWidth={3}
               />
               <text
-                x={p.x + 16}
+                x={p.x + scene.radius + 6}
                 y={p.y + 5}
                 fill={COLORS.nodeText}
                 fontSize={13}

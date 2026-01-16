@@ -2,6 +2,7 @@ import React from "react";
 import { createInitialScene } from "../../core/model/scene";
 import type { Scene, Point, Primitive, Segment } from "../../core/model/entities";
 import { SvgStage, type BBox, type ToolMode } from "../../renderer/svg/SvgStage";
+import { resolveOverlapsSingleMove } from "../../core/geometry/resolveOverlaps";
 
 function distanceBetween(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y);
@@ -126,11 +127,16 @@ export function EditorPage() {
     setSelectedPointId(id);
   }
 
+  // ✅ Anti-overlap: el punto movido se “empuja” fuera de otros discos usando scene.radius como radio.
   function movePoint(id: string, pt: { x: number; y: number }) {
-    commit({
-      ...scene,
-      points: scene.points.map((p) => (p.id === id ? { ...p, x: pt.x, y: pt.y } : p)),
+    const tentative = scene.points.map((p) => (p.id === id ? { ...p, x: pt.x, y: pt.y } : p));
+    const fixed = resolveOverlapsSingleMove({
+      movedId: id,
+      points: tentative,
+      radius: scene.radius,
     });
+
+    commit({ ...scene, points: fixed });
   }
 
   function deletePoint(id: string) {
@@ -190,16 +196,40 @@ export function EditorPage() {
           borderBottom: "1px solid var(--border)",
         }}
       >
-        <ToolButton active={mode === "move"} onClick={() => { setMode("move"); setLinkA(null); }}>
+        <ToolButton
+          active={mode === "move"}
+          onClick={() => {
+            setMode("move");
+            setLinkA(null);
+          }}
+        >
           Mover
         </ToolButton>
-        <ToolButton active={mode === "add"} onClick={() => { setMode("add"); setLinkA(null); }}>
+        <ToolButton
+          active={mode === "add"}
+          onClick={() => {
+            setMode("add");
+            setLinkA(null);
+          }}
+        >
           Agregar
         </ToolButton>
-        <ToolButton active={mode === "link"} onClick={() => { setMode("link"); setLinkA(null); }}>
+        <ToolButton
+          active={mode === "link"}
+          onClick={() => {
+            setMode("link");
+            setLinkA(null);
+          }}
+        >
           Enlazar
         </ToolButton>
-        <ToolButton active={mode === "delete"} onClick={() => { setMode("delete"); setLinkA(null); }}>
+        <ToolButton
+          active={mode === "delete"}
+          onClick={() => {
+            setMode("delete");
+            setLinkA(null);
+          }}
+        >
           Borrar
         </ToolButton>
 

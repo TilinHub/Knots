@@ -2,7 +2,7 @@ import type { Scene } from "./entities";
 
 export function createInitialScene(): Scene {
   return {
-    radius: 60,
+    radius: 10,
     points: [
       { id: "p1", kind: "point", x: 0, y: -60 },
       { id: "p2", kind: "point", x: 0, y: 20 },
