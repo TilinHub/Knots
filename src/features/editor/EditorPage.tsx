@@ -3,6 +3,8 @@ import { createInitialScene } from "../../core/model/scene";
 import type { Scene, Point, Primitive, Segment } from "../../core/model/entities";
 import { SvgStage, type BBox, type ToolMode } from "../../renderer/svg/SvgStage";
 import { resolveOverlapsSingleMove } from "../../core/geometry/resolveOverlaps";
+import { NavBar } from "../../ui/NavBar";
+import { MetricsBar } from "../../ui/MetricsBar";
 
 function distanceBetween(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(b.x - a.x, b.y - a.y);
@@ -20,8 +22,11 @@ function segmentKey(a: string, b: string) {
   return a < b ? `${a}__${b}` : `${b}__${a}`;
 }
 
+function countSegments(primitives: Primitive[]) {
+  return primitives.filter((p) => p.kind === "segment").length;
+}
+
 export function EditorPage() {
-  // Undo/Redo history: past/present/future [web:293]
   const [past, setPast] = React.useState<Scene[]>([]);
   const [present, setPresent] = React.useState<Scene>(() => createInitialScene());
   const [future, setFuture] = React.useState<Scene[]>([]);
@@ -30,7 +35,6 @@ export function EditorPage() {
   const [mode, setMode] = React.useState<ToolMode>("move");
   const [selectedPointId, setSelectedPointId] = React.useState<string | null>("p1");
   const [bbox, setBbox] = React.useState<BBox | null>(null);
-
   const [linkA, setLinkA] = React.useState<string | null>(null);
 
   const [rulerA, setRulerA] = React.useState<string | null>(null);
@@ -53,7 +57,7 @@ export function EditorPage() {
   function commit(next: Scene) {
     setPast((p) => [...p, present]);
     setPresent(next);
-    setFuture([]); // acción nueva => borra futuro [web:293]
+    setFuture([]);
   }
 
   function undo() {
@@ -104,7 +108,6 @@ export function EditorPage() {
   function handleSelectPoint(id: string | null) {
     setSelectedPointId(id);
 
-    // Regla simple
     if (!id) return;
     if (!rulerA) {
       setRulerA(id);
@@ -127,7 +130,6 @@ export function EditorPage() {
     setSelectedPointId(id);
   }
 
-  // ✅ Anti-overlap: el punto movido se “empuja” fuera de otros discos usando scene.radius como radio.
   function movePoint(id: string, pt: { x: number; y: number }) {
     const tentative = scene.points.map((p) => (p.id === id ? { ...p, x: pt.x, y: pt.y } : p));
     const fixed = resolveOverlapsSingleMove({
@@ -135,7 +137,6 @@ export function EditorPage() {
       points: tentative,
       radius: scene.radius,
     });
-
     commit({ ...scene, points: fixed });
   }
 
@@ -171,129 +172,151 @@ export function EditorPage() {
     commit({ ...scene, primitives: [...scene.primitives, seg] });
   }
 
+  // Métricas (perímetro/tangentes/arcos quedan placeholder por ahora)
+  const metrics = React.useMemo(() => {
+    return {
+      perimeter: null as number | null,
+      disks: scene.points.length,
+      tangents: null as number | null,
+      arcs: null as number | null,
+      segments: countSegments(scene.primitives),
+    };
+  }, [scene.points.length, scene.primitives]);
+
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "grid",
-        gridTemplateRows: "44px 1fr",
-        gridTemplateColumns: "1fr 360px",
-        gridTemplateAreas: `
-          "toolbar toolbar"
-          "stage   sidebar"
-        `,
-      }}
-    >
-      {/* Toolbar */}
+    <div style={{ height: "100%", display: "grid", gridTemplateRows: "56px 1fr auto" }}>
+      <NavBar
+        title="Contact Graph Visualizer"
+        subtitle="Editor · Research UI"
+        right={
+          <div style={{ display: "flex", gap: 10 }}>
+            <Pill active={mode === "move"} onClick={() => { setMode("move"); setLinkA(null); }}>Move</Pill>
+            <Pill active={mode === "add"} onClick={() => { setMode("add"); setLinkA(null); }}>Add</Pill>
+            <Pill active={mode === "link"} onClick={() => { setMode("link"); setLinkA(null); }}>Link</Pill>
+            <Pill active={mode === "delete"} onClick={() => { setMode("delete"); setLinkA(null); }}>Delete</Pill>
+
+            <div style={{ width: 1, background: "rgba(0,0,0,0.10)", margin: "0 4px" }} />
+
+            <Pill disabled={past.length === 0} onClick={undo}>Undo</Pill>
+            <Pill disabled={future.length === 0} onClick={redo}>Redo</Pill>
+          </div>
+        }
+      />
+
       <div
         style={{
-          gridArea: "toolbar",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "6px 10px",
-          background: "rgba(255,255,255,0.96)",
-          borderBottom: "1px solid var(--border)",
+          display: "grid",
+          gridTemplateColumns: "1fr 380px",
+          minHeight: 0,
         }}
       >
-        <ToolButton
-          active={mode === "move"}
-          onClick={() => {
-            setMode("move");
-            setLinkA(null);
-          }}
-        >
-          Mover
-        </ToolButton>
-        <ToolButton
-          active={mode === "add"}
-          onClick={() => {
-            setMode("add");
-            setLinkA(null);
-          }}
-        >
-          Agregar
-        </ToolButton>
-        <ToolButton
-          active={mode === "link"}
-          onClick={() => {
-            setMode("link");
-            setLinkA(null);
-          }}
-        >
-          Enlazar
-        </ToolButton>
-        <ToolButton
-          active={mode === "delete"}
-          onClick={() => {
-            setMode("delete");
-            setLinkA(null);
-          }}
-        >
-          Borrar
-        </ToolButton>
+        {/* Stage */}
+        <div style={{ minWidth: 0, minHeight: 0 }}>
+          <SvgStage
+            scene={scene}
+            mode={mode}
+            selectedPointId={selectedPointId}
+            onSelectPoint={handleSelectPoint}
+            onMeasuredBBox={setBbox}
+            onAddPoint={addPoint}
+            onMovePoint={movePoint}
+            onDeletePoint={deletePoint}
+            linkA={linkA}
+            onPickLinkA={setLinkA}
+            onToggleSegment={toggleSegment}
+          />
+        </div>
 
-        <div style={{ flex: 1 }} />
+        {/* Sidebar */}
+        <aside
+          style={{
+            borderLeft: "1px solid rgba(0,0,0,0.08)",
+            background: "rgba(255,255,255,0.72)",
+            backdropFilter: "saturate(180%) blur(18px)",
+            padding: 16,
+            overflow: "auto",
+            minWidth: 0,
+          }}
+        >
+          <SectionTitle>Properties & Measurement</SectionTitle>
 
-        <ToolButton disabled={past.length === 0} onClick={undo} title="Ctrl+Z">
-          Undo
-        </ToolButton>
-        <ToolButton disabled={future.length === 0} onClick={redo} title="Ctrl+Y">
-          Redo
-        </ToolButton>
+          <Card title="Tool">
+            <Row label="Mode" value={mode} />
+            <Row label="Link A" value={linkA ?? "—"} />
+            <Row label="Radius" value={scene.radius} />
+          </Card>
+
+          <Spacer />
+
+          <Card title="Selected">
+            <Row label="ID" value={selectedPointId ?? "—"} />
+            <Row label="BBox W" value={bbox ? bbox.width.toFixed(2) : "—"} />
+            <Row label="BBox H" value={bbox ? bbox.height.toFixed(2) : "—"} />
+          </Card>
+
+          <Spacer />
+
+          <Card title="Ruler (2 clicks)">
+            <Row label="A" value={rulerA ?? "—"} />
+            <Row label="B" value={rulerB ?? "—"} />
+            <Row label="Center dist." value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"} />
+          </Card>
+
+          <Spacer />
+
+          <Card title="Hull (preview)">
+            <Row label="Perimeter" value={metrics.perimeter === null ? "—" : metrics.perimeter.toFixed(8)} />
+            <Row label="Disks" value={metrics.disks} />
+            <Row label="Tangents" value={metrics.tangents ?? "—"} />
+            <Row label="Arcs" value={metrics.arcs ?? "—"} />
+            <Row label="Segments" value={metrics.segments} />
+          </Card>
+        </aside>
       </div>
 
-      {/* Stage */}
-      <div style={{ gridArea: "stage", minWidth: 0, minHeight: 0 }}>
-        <SvgStage
-          scene={scene}
-          mode={mode}
-          selectedPointId={selectedPointId}
-          onSelectPoint={handleSelectPoint}
-          onMeasuredBBox={setBbox}
-          onAddPoint={addPoint}
-          onMovePoint={movePoint}
-          onDeletePoint={deletePoint}
-          linkA={linkA}
-          onPickLinkA={setLinkA}
-          onToggleSegment={toggleSegment}
-        />
-      </div>
+      <MetricsBar
+        perimeter={metrics.perimeter}
+        disks={metrics.disks}
+        tangents={metrics.tangents}
+        arcs={metrics.arcs}
+        segments={metrics.segments}
+      />
+    </div>
+  );
+}
 
-      {/* Sidebar */}
-      <aside
-        style={{
-          gridArea: "sidebar",
-          borderLeft: "1px solid var(--border)",
-          background: "var(--panel)",
-          padding: 14,
-          overflow: "auto",
-          minWidth: 0,
-        }}
-      >
-        <h3 style={{ margin: "6px 0 12px", fontSize: 14 }}>Propiedades y medición</h3>
+function Pill(props: {
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      disabled={props.disabled}
+      onClick={props.onClick}
+      style={{
+        height: 34,
+        padding: "0 12px",
+        borderRadius: 999,
+        border: "1px solid rgba(0,0,0,0.10)",
+        background: props.active ? "#111827" : "rgba(255,255,255,0.85)",
+        color: props.active ? "#ffffff" : "#111827",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: props.disabled ? "not-allowed" : "pointer",
+        opacity: props.disabled ? 0.5 : 1,
+      }}
+    >
+      {props.children}
+    </button>
+  );
+}
 
-        <Card title="Herramienta">
-          <Row label="Modo" value={mode} />
-          <Row label="Link A" value={linkA ?? "—"} />
-        </Card>
-
-        <Spacer />
-
-        <Card title="Punto seleccionado">
-          <Row label="ID" value={selectedPointId ?? "—"} />
-          <Row label="BBox W" value={bbox ? bbox.width.toFixed(2) : "—"} />
-          <Row label="BBox H" value={bbox ? bbox.height.toFixed(2) : "—"} />
-        </Card>
-
-        <Spacer />
-
-        <Card title="Regla (2 clicks)">
-          <Row label="A" value={rulerA ?? "—"} />
-          <Row label="B" value={rulerB ?? "—"} />
-          <Row label="Dist." value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"} />
-        </Card>
-      </aside>
+function SectionTitle(props: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: 12, letterSpacing: "0.02em", color: "rgba(17,24,39,0.55)", marginBottom: 10 }}>
+      {props.children}
     </div>
   );
 }
@@ -302,45 +325,17 @@ function Spacer() {
   return <div style={{ height: 12 }} />;
 }
 
-function ToolButton(props: {
-  active?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  title?: string;
-}) {
-  return (
-    <button
-      title={props.title}
-      disabled={props.disabled}
-      onClick={props.onClick}
-      style={{
-        height: 32,
-        padding: "0 10px",
-        borderRadius: 10,
-        border: "1px solid var(--border)",
-        background: props.active ? "#111827" : "#ffffff",
-        color: props.active ? "#ffffff" : "#111827",
-        fontWeight: 700,
-        cursor: props.disabled ? "not-allowed" : "pointer",
-      }}
-    >
-      {props.children}
-    </button>
-  );
-}
-
 function Card(props: { title: string; children: React.ReactNode }) {
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid var(--border)",
-        borderRadius: 12,
-        padding: 12,
+        background: "rgba(255,255,255,0.9)",
+        border: "1px solid rgba(0,0,0,0.08)",
+        borderRadius: 16,
+        padding: 14,
       }}
     >
-      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>{props.title}</div>
+      <div style={{ fontSize: 12, color: "rgba(17,24,39,0.55)", marginBottom: 10 }}>{props.title}</div>
       {props.children}
     </div>
   );
@@ -351,15 +346,15 @@ function Row(props: { label: string; value: React.ReactNode }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "90px 1fr",
-        padding: "6px 0",
-        borderTop: "1px solid #f3f4f6",
+        gridTemplateColumns: "120px 1fr",
+        padding: "7px 0",
+        borderTop: "1px solid rgba(0,0,0,0.06)",
         alignItems: "center",
         fontSize: 13,
       }}
     >
-      <div style={{ color: "#374151" }}>{props.label}</div>
-      <div style={{ fontWeight: 700, textAlign: "right" }}>{props.value}</div>
+      <div style={{ color: "rgba(17,24,39,0.70)" }}>{props.label}</div>
+      <div style={{ fontWeight: 700, textAlign: "right", color: "#111827" }}>{props.value}</div>
     </div>
   );
 }
