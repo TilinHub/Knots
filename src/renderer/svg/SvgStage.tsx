@@ -1,5 +1,6 @@
 import React from "react";
 import type { Scene, Point, Primitive } from "../../core/model/entities";
+import { computeDiskHull } from "../../core/geometry/diskHull";
 
 export type BBox = { x: number; y: number; width: number; height: number };
 export type ToolMode = "move" | "add" | "delete" | "link";
@@ -13,6 +14,9 @@ const COLORS = {
   edge: "#111827",
   edgePreview: "#2563eb",
 
+  hull: "#a855f7",
+  hullStrokeWidth: 10,
+
   nodeStroke: "#111827",
   nodeFill: "#ffffff",
   nodeText: "#111827",
@@ -24,7 +28,6 @@ function parseViewBox(vb: string) {
   return { minX, minY, width, height };
 }
 
-// DOM(px) -> SVG(user units) usando viewBox.
 function clientToSvgPoint(
   e: { clientX: number; clientY: number },
   svg: SVGSVGElement,
@@ -51,10 +54,12 @@ export function SvgStage(props: {
   onMovePoint: (id: string, pt: { x: number; y: number }) => void;
   onDeletePoint: (id: string) => void;
 
-  // Link tool
   linkA: string | null;
   onPickLinkA: (id: string | null) => void;
   onToggleSegment: (a: string, b: string) => void;
+
+  showHull?: boolean;
+  onHullStats?: (s: { disks: number; tangents: number; arcs: number }) => void;
 }) {
   const {
     scene,
@@ -68,6 +73,8 @@ export function SvgStage(props: {
     linkA,
     onPickLinkA,
     onToggleSegment,
+    showHull = true,
+    onHullStats,
   } = props;
 
   const svgRef = React.useRef<SVGSVGElement | null>(null);
@@ -80,7 +87,7 @@ export function SvgStage(props: {
       onMeasuredBBox(null);
       return;
     }
-    // getBBox() devuelve el bbox mínimo (x/y/width/height) en espacio SVG. [web:20]
+    // bbox mínimo del elemento en espacio SVG. [web:20]
     const b = selectedCircleRef.current.getBBox();
     onMeasuredBBox({ x: b.x, y: b.y, width: b.width, height: b.height });
   }, [selectedPointId, scene, onMeasuredBBox]);
@@ -91,13 +98,19 @@ export function SvgStage(props: {
     return m;
   }, [scene.points]);
 
-  // Drag state
-  const dragRef = React.useRef<{
-    id: string;
-    dx: number;
-    dy: number;
-    pointerId: number;
-  } | null>(null);
+  const disks = React.useMemo(
+    () => scene.points.map((p) => ({ id: p.id, x: p.x, y: p.y, r: scene.radius })),
+    [scene.points, scene.radius]
+  );
+
+  const hull = React.useMemo(() => computeDiskHull(disks), [disks]);
+
+  React.useEffect(() => {
+    onHullStats?.(hull.stats);
+  }, [hull.stats, onHullStats]);
+
+  // Drag
+  const dragRef = React.useRef<{ id: string; dx: number; dy: number; pointerId: number } | null>(null);
 
   function beginDrag(e: React.PointerEvent<SVGGElement>, p: Point) {
     if (mode !== "move") return;
@@ -111,7 +124,7 @@ export function SvgStage(props: {
     const pos = clientToSvgPoint(e, svg, viewBox);
     dragRef.current = { id: p.id, dx: p.x - pos.x, dy: p.y - pos.y, pointerId: e.pointerId };
 
-    // Captura para seguir recibiendo move/up aunque el puntero salga del elemento. [web:272]
+    // Mantener eventos durante drag. [web:272]
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
@@ -127,7 +140,6 @@ export function SvgStage(props: {
   function endDrag(e: React.PointerEvent<SVGGElement>) {
     if (!dragRef.current) return;
     dragRef.current = null;
-
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
@@ -172,11 +184,9 @@ export function SvgStage(props: {
       onSelectPoint(p.id);
       return;
     }
-
-    // mode move => drag se inicia en beginDrag (también selecciona)
   }
 
-  // Preview Link A -> cursor
+  // Preview link
   const [cursor, setCursor] = React.useState<{ x: number; y: number } | null>(null);
   React.useEffect(() => {
     if (mode !== "link" || !linkA) {
@@ -203,7 +213,21 @@ export function SvgStage(props: {
     >
       <Grid />
 
-      {/* Segmentos */}
+      {/* Hull como un solo path continuo */}
+      {showHull && hull.svgPathD && (
+        <path
+          d={hull.svgPathD}
+          fill="none"
+          stroke={COLORS.hull}
+          strokeWidth={COLORS.hullStrokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity={0.9}
+          pointerEvents="none"
+        />
+      )}
+
+      {/* Segmentos del grafo */}
       <g stroke={COLORS.edge} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
         {scene.primitives.map((pr: Primitive) => {
           if (pr.kind !== "segment") return null;
@@ -214,7 +238,8 @@ export function SvgStage(props: {
         })}
       </g>
 
-      {/* Preview enlace */}
+      {/* Preview */}p1
+      
       {mode === "link" && linkAPoint && cursor && (
         <line
           x1={linkAPoint.x}

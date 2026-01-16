@@ -1,9 +1,10 @@
+export type Vec2 = { x: number; y: number };
 export type Disk = { id: string; x: number; y: number; r: number };
 
 export type TangentSegment = {
   type: "tangent";
-  from: { x: number; y: number };
-  to: { x: number; y: number };
+  from: Vec2;
+  to: Vec2;
   disk1: Disk;
   disk2: Disk;
 };
@@ -13,193 +14,241 @@ export type ArcSegment = {
   disk: Disk;
   startAngle: number;
   endAngle: number;
-  startPoint: { x: number; y: number };
-  endPoint: { x: number; y: number };
+  startPoint: Vec2;
+  endPoint: Vec2;
+  // Para SVG path flags
+  largeArcFlag: 0 | 1;
+  sweepFlag: 0 | 1;
 };
 
 export type HullSegment = TangentSegment | ArcSegment;
 
-function distance(p1: { x: number; y: number }, p2: { x: number; y: number }) {
-  return Math.hypot(p2.x - p1.x, p2.y - p1.y);
+export type DiskHull = {
+  hullDisks: Disk[];
+  segments: HullSegment[];
+  svgPathD: string;
+  stats: { disks: number; tangents: number; arcs: number };
+};
+
+function cross(o: Vec2, a: Vec2, b: Vec2) {
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
 }
 
-function normalizeAngle(angle: number) {
-  while (angle > Math.PI) angle -= 2 * Math.PI;
-  while (angle <= -Math.PI) angle += 2 * Math.PI;
-  return angle;
+function sub(a: Vec2, b: Vec2): Vec2 {
+  return { x: a.x - b.x, y: a.y - b.y };
 }
 
-function centroid(disks: Disk[]) {
-  let cx = 0,
-    cy = 0;
-  for (const d of disks) {
-    cx += d.x;
-    cy += d.y;
-  }
-  return { x: cx / disks.length, y: cy / disks.length };
+function add(a: Vec2, b: Vec2): Vec2 {
+  return { x: a.x + b.x, y: a.y + b.y };
 }
 
-function sortByPolarAngle(disks: Disk[], center: { x: number; y: number }) {
-  return disks
-    .slice()
-    .sort(
-      (a, b) =>
-        Math.atan2(a.y - center.y, a.x - center.x) -
-        Math.atan2(b.y - center.y, b.x - center.x)
-    );
+function mul(a: Vec2, k: number): Vec2 {
+  return { x: a.x * k, y: a.y * k };
+}
+
+
+
+function perpLeft(v: Vec2): Vec2 {
+  return { x: -v.y, y: v.x };
+}
+
+function len(v: Vec2) {
+  return Math.hypot(v.x, v.y);
+}
+
+function norm(v: Vec2): Vec2 {
+  const l = len(v);
+  return l < 1e-12 ? { x: 0, y: 0 } : { x: v.x / l, y: v.y / l };
+}
+
+function angleOf(center: Vec2, p: Vec2) {
+  return Math.atan2(p.y - center.y, p.x - center.x);
+}
+
+// normaliza a [-pi, pi)
+function normalizeAngle(a: number) {
+  while (a >= Math.PI) a -= 2 * Math.PI;
+  while (a < -Math.PI) a += 2 * Math.PI;
+  return a;
 }
 
 /**
- * Igual idea que el amigo: para cada dirección, el “extremo” maximiza dot(center, dir) + r. [file:350]
- * Esto da un set de discos candidatos de la envolvente (aprox). [file:350]
+ * Andrew monotone chain convex hull ids (orden CCW). [web:382]
  */
-function findHullDisks(disks: Disk[], numDirections = 360) {
-  if (disks.length <= 1) return disks.slice();
-  const hullSet = new Set<string>();
+function convexHullIdsMonotoneChain(disks: Disk[]) {
+  const map = new Map<string, Disk>();
+  for (const d of disks) map.set(`${d.x},${d.y}`, d);
+  const pts = Array.from(map.values());
 
-  for (let i = 0; i < numDirections; i++) {
-    const angle = (2 * Math.PI * i) / numDirections;
-    const dir = { x: Math.cos(angle), y: Math.sin(angle) };
+  if (pts.length <= 1) return pts.map((d) => d.id);
 
-    let maxProjection = -Infinity;
-    let extreme: Disk | null = null;
+  pts.sort((a, b) => (a.x - b.x) || (a.y - b.y));
 
-    for (const disk of disks) {
-      const projection = disk.x * dir.x + disk.y * dir.y + disk.r;
-      if (projection > maxProjection) {
-        maxProjection = projection;
-        extreme = disk;
+  const lower: Disk[] = [];
+  for (const p of pts) {
+    while (lower.length >= 2) {
+      const a = lower[lower.length - 2];
+      const b = lower[lower.length - 1];
+      if (cross({ x: a.x, y: a.y }, { x: b.x, y: b.y }, { x: p.x, y: p.y }) <= 0) lower.pop();
+      else break;
+    }
+    lower.push(p);
+  }
+
+  const upper: Disk[] = [];
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i];
+    while (upper.length >= 2) {
+      const a = upper[upper.length - 2];
+      const b = upper[upper.length - 1];
+      if (cross({ x: a.x, y: a.y }, { x: b.x, y: b.y }, { x: p.x, y: p.y }) <= 0) upper.pop();
+      else break;
+    }
+    upper.push(p);
+  }
+
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper).map((d) => d.id);
+}
+
+/**
+ * Tangente externa “lado izquierdo” para dos círculos de igual radio.
+ * Para un recorrido CCW del hull, queremos el segmento tangente que queda al “exterior”,
+ * que corresponde a usar el normal n = left(unit(d)) para el edge i->i+1.
+ */
+function outerTangentEqualRadiusCCW(d1: Disk, d2: Disk) {
+  const c1 = { x: d1.x, y: d1.y };
+  const c2 = { x: d2.x, y: d2.y };
+  const v = sub(c2, c1);
+  const u = norm(v);
+  if (len(u) < 1e-12) return null;
+
+  const n = perpLeft(u); // normal izquierda (CCW)
+  const p1 = add(c1, mul(n, d1.r));
+  const p2 = add(c2, mul(n, d2.r));
+  return { p1, p2 };
+}
+
+/**
+ * Para el arco en un disco: elegir el tramo exterior.
+ * En CCW, el “exterior” es el que avanza CCW desde startAngle a endAngle (delta positivo),
+ * si no, usar el complemento (delta negativo implica barrer CW).
+ * En canvas tu amigo decide counterclockwise con normalizeAngle(end-start). [file:421][file:425]
+ */
+function arcFlagsFromAngles(startAngle: number, endAngle: number) {
+  const d = normalizeAngle(endAngle - startAngle);
+  const abs = Math.abs(d);
+
+  // En SVG sweepFlag: 1 = "positive-angle direction" (depende del sistema),
+  // pero en práctica en SVG con y hacia abajo suele invertirse.
+  // Para que se vea bien en tu app, usamos: d >= 0 -> sweepFlag=0 (CCW visual), d < 0 -> 1.
+  // Esto evita el sweep fijo que te dejaba arcos por el lado equivocado. [file:421]
+  const sweepFlag: 0 | 1 = d >= 0 ? 0 : 1;
+
+  // largeArcFlag: 1 si el arco “largo” (> pi)
+  const largeArcFlag: 0 | 1 = abs > Math.PI ? 1 : 0;
+
+  return { sweepFlag, largeArcFlag };
+}
+
+/**
+ * Convierte segmentos a un path continuo tipo exportHullPath. [file:421]
+ */
+export function hullSegmentsToSvgPath(segments: HullSegment[]) {
+  const cmds: string[] = [];
+  let current: Vec2 | null = null;
+
+  for (const s of segments) {
+    if (s.type === "tangent") {
+      if (
+        !current ||
+        Math.abs(current.x - s.from.x) > 1e-6 ||
+        Math.abs(current.y - s.from.y) > 1e-6
+      ) {
+        cmds.push(`M ${s.from.x} ${s.from.y}`);
       }
-    }
-    if (extreme) hullSet.add(extreme.id);
-  }
-
-  return disks.filter((d) => hullSet.has(d.id));
-}
-
-/**
- * Tangentes externas para radios iguales (misma fórmula que tu amigo). [file:346]
- */
-function externalTangentsEqualRadius(d1: Disk, d2: Disk) {
-  const dx = d2.x - d1.x;
-  const dy = d2.y - d1.y;
-  const dist = Math.hypot(dx, dy);
-  if (dist < 1e-10) return null;
-
-  const base = Math.atan2(dy, dx);
-  const perp1 = base + Math.PI / 2;
-  const perp2 = base - Math.PI / 2;
-
-  return [
-    {
-      p1: { x: d1.x + d1.r * Math.cos(perp1), y: d1.y + d1.r * Math.sin(perp1) },
-      p2: { x: d2.x + d2.r * Math.cos(perp1), y: d2.y + d2.r * Math.sin(perp1) },
-    },
-    {
-      p1: { x: d1.x + d1.r * Math.cos(perp2), y: d1.y + d1.r * Math.sin(perp2) },
-      p2: { x: d2.x + d2.r * Math.cos(perp2), y: d2.y + d2.r * Math.sin(perp2) },
-    },
-  ];
-}
-
-/**
- * Selecciona la tangente que “mira hacia afuera” maximizando distancia del punto medio al centro del hull. [file:346]
- */
-function selectHullTangent(
-  d1: Disk,
-  d2: Disk,
-  tangents: Array<{ p1: { x: number; y: number }; p2: { x: number; y: number } }> | null,
-  hullCenter: { x: number; y: number }
-) {
-  if (!tangents || tangents.length === 0) return null;
-  if (tangents.length === 1) return tangents[0];
-
-  let best = tangents[0];
-  let maxD = -Infinity;
-
-  for (const t of tangents) {
-    const mid = { x: (t.p1.x + t.p2.x) / 2, y: (t.p1.y + t.p2.y) / 2 };
-    const d = distance(mid, hullCenter);
-    if (d > maxD) {
-      maxD = d;
-      best = t;
+      cmds.push(`L ${s.to.x} ${s.to.y}`);
+      current = s.to;
+    } else {
+      const r = s.disk.r;
+      cmds.push(`A ${r} ${r} 0 ${s.largeArcFlag} ${s.sweepFlag} ${s.endPoint.x} ${s.endPoint.y}`);
+      current = s.endPoint;
     }
   }
-  return best;
+
+  return cmds.join(" ");
 }
 
-/**
- * Genera segmentos + arcos igual que computeHullSegments del amigo. [file:349]
- */
-export function computeDiskHull(disks: Disk[]) {
-  const hullDisksRaw = findHullDisks(disks, 360);
-  if (hullDisksRaw.length === 0) return { hullDisks: [], segments: [] as HullSegment[] };
-  if (hullDisksRaw.length === 1) return { hullDisks: hullDisksRaw, segments: [] as HullSegment[] };
-
-  const center = centroid(hullDisksRaw);
-  const hullDisks = hullDisksRaw.length <= 2 ? hullDisksRaw : sortByPolarAngle(hullDisksRaw, center);
-
+function buildHullSegmentsCCW(hullDisks: Disk[]) {
   const segments: HullSegment[] = [];
+  if (hullDisks.length < 2) return segments;
 
-  // tangentes entre consecutivos
+  // 1) Tangentes CCW (una por arista)
+  const tangents: Array<{ from: Vec2; to: Vec2 }> = [];
   for (let i = 0; i < hullDisks.length; i++) {
     const curr = hullDisks[i];
     const next = hullDisks[(i + 1) % hullDisks.length];
-
-    const tangents = externalTangentsEqualRadius(curr, next);
-    const sel = selectHullTangent(curr, next, tangents, center);
-
-    if (sel) {
-      segments.push({
-        type: "tangent",
-        from: sel.p1,
-        to: sel.p2,
-        disk1: curr,
-        disk2: next,
-      });
+    const t = outerTangentEqualRadiusCCW(curr, next);
+    if (!t) {
+      tangents.push({ from: { x: curr.x, y: curr.y }, to: { x: next.x, y: next.y } });
+      continue;
     }
+    tangents.push({ from: t.p1, to: t.p2 });
+    segments.push({ type: "tangent", from: t.p1, to: t.p2, disk1: curr, disk2: next });
   }
 
-  // arcos en cada disco entre tangentes vecinas
+  // 2) Arcos: en cada disco i, desde el final de la tangente (i-1)->i hasta el inicio de la tangente i->(i+1)
   for (let i = 0; i < hullDisks.length; i++) {
     const curr = hullDisks[i];
-    const prev = hullDisks[(i - 1 + hullDisks.length) % hullDisks.length];
-    const next = hullDisks[(i + 1) % hullDisks.length];
+    const prevIndex = (i - 1 + hullDisks.length) % hullDisks.length;
 
-    const prevTangents = externalTangentsEqualRadius(prev, curr);
-    const nextTangents = externalTangentsEqualRadius(curr, next);
+    const startPoint = tangents[prevIndex].to; // llega al disco curr
+    const endPoint = tangents[i].from;         // sale desde curr
 
-    const prevT = selectHullTangent(prev, curr, prevTangents, center);
-    const nextT = selectHullTangent(curr, next, nextTangents, center);
+    const c = { x: curr.x, y: curr.y };
+    const startAngle = angleOf(c, startPoint);
+    const endAngle = angleOf(c, endPoint);
 
-    if (!prevT || !nextT) continue;
-
-    // en el código del amigo: startAngle usa prevT.p2 sobre curr, endAngle usa nextT.p1 sobre curr. [file:349]
-    const startAngle = Math.atan2(prevT.p2.y - curr.y, prevT.p2.x - curr.x);
-    const endAngle = Math.atan2(nextT.p1.y - curr.y, nextT.p1.x - curr.x);
+    const { sweepFlag, largeArcFlag } = arcFlagsFromAngles(startAngle, endAngle);
 
     segments.push({
       type: "arc",
       disk: curr,
       startAngle,
       endAngle,
-      startPoint: prevT.p2,
-      endPoint: nextT.p1,
+      startPoint,
+      endPoint,
+      sweepFlag,
+      largeArcFlag,
     });
   }
 
-  return { hullDisks, segments };
+  return segments;
 }
 
-export function arcSweepFlag(startAngle: number, endAngle: number) {
-  // misma idea que en examples.js: usa normalizeAngle(end-start) para decidir sentido. [file:345][file:348]
-  const diff = normalizeAngle(endAngle - startAngle);
-  // SVG sweep-flag: 1 = clockwise, 0 = counterclockwise (en el sistema de SVG y+ hacia abajo suele invertirse).
-  // Nosotros dibujamos con path A y elegimos sweep por signo del diff como en el ejemplo.
-  return diff > 0 ? 0 : 1;
-}
+export function computeDiskHull(disks: Disk[]): DiskHull {
+  if (disks.length === 0) {
+    return { hullDisks: [], segments: [], svgPathD: "", stats: { disks: 0, tangents: 0, arcs: 0 } };
+  }
+  if (disks.length === 1) {
+    return { hullDisks: disks.slice(), segments: [], svgPathD: "", stats: { disks: 1, tangents: 0, arcs: 0 } };
+  }
 
-export function arcLargeFlag(startAngle: number, endAngle: number) {
-  // pequeño/grande según |delta| > pi (similar a examples.js cuando arma flags). [file:345]
-  return Math.abs(normalizeAngle(endAngle - startAngle)) > Math.PI ? 1 : 0;
+  const idToDisk = new Map(disks.map((d) => [d.id, d] as const));
+  const hullIds = convexHullIdsMonotoneChain(disks); // CCW estable [web:382]
+  const hullDisks = hullIds.map((id) => idToDisk.get(id)!).filter(Boolean);
+
+  const segments = buildHullSegmentsCCW(hullDisks);
+  const svgPathD = hullSegmentsToSvgPath(segments);
+
+  const tangents = segments.filter((s) => s.type === "tangent").length;
+  const arcs = segments.filter((s) => s.type === "arc").length;
+
+  return {
+    hullDisks,
+    segments,
+    svgPathD,
+    stats: { disks: hullDisks.length, tangents, arcs },
+  };
 }
