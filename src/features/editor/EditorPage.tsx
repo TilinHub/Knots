@@ -1,8 +1,16 @@
 import React from "react";
+
 import { createInitialScene } from "../../core/model/scene";
 import type { Scene, Point, Primitive, Segment } from "../../core/model/entities";
+
 import { SvgStage, type BBox, type ToolMode } from "../../renderer/svg/SvgStage";
 import { resolveOverlapsSingleMove } from "../../core/geometry/resolveOverlaps";
+import { computeDiskHull } from "../../core/geometry/diskHull";
+
+import loadAllGraphs, { type GraphSet } from "../../io/loadAllGraphs";
+import type { Graph } from "../../io/parseGraph6";
+import { graphToContactScene } from "../../core/geometry/contactLayout";
+
 import { NavBar } from "../../ui/NavBar";
 import { MetricsBar } from "../../ui/MetricsBar";
 
@@ -30,15 +38,50 @@ export function EditorPage() {
   const [past, setPast] = React.useState<Scene[]>([]);
   const [present, setPresent] = React.useState<Scene>(() => createInitialScene());
   const [future, setFuture] = React.useState<Scene[]>([]);
+
   const scene = present;
 
   const [mode, setMode] = React.useState<ToolMode>("move");
   const [selectedPointId, setSelectedPointId] = React.useState<string | null>("p1");
   const [bbox, setBbox] = React.useState<BBox | null>(null);
+
   const [linkA, setLinkA] = React.useState<string | null>(null);
 
   const [rulerA, setRulerA] = React.useState<string | null>(null);
   const [rulerB, setRulerB] = React.useState<string | null>(null);
+
+  // --- Preload graphs UI state ---
+  const [graphSets, setGraphSets] = React.useState<GraphSet[]>([]);
+  const [graphSetIdx, setGraphSetIdx] = React.useState(0);
+  const [graphIdx, setGraphIdx] = React.useState(0);
+  const [graphLoading, setGraphLoading] = React.useState(false);
+  const [graphError, setGraphError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let alive = true;
+    setGraphLoading(true);
+    setGraphError(null);
+
+    loadAllGraphs()
+      .then((sets) => {
+        if (!alive) return;
+        setGraphSets(sets);
+        setGraphSetIdx(0);
+        setGraphIdx(0);
+      })
+      .catch((e) => {
+        if (!alive) return;
+        setGraphError(String(e?.message ?? e));
+      })
+      .finally(() => {
+        if (!alive) return;
+        setGraphLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const pointsById = React.useMemo(() => {
     const m = new Map<string, { x: number; y: number }>();
@@ -53,6 +96,41 @@ export function EditorPage() {
     if (!a || !b) return null;
     return distanceBetween(a, b);
   }, [rulerA, rulerB, pointsById]);
+
+  // --- Hull + perimeter (como tu amigo) ---
+  const disks = React.useMemo(
+    () => scene.points.map((p) => ({ id: p.id, x: p.x, y: p.y, r: scene.radius })),
+    [scene.points, scene.radius]
+  );
+
+  const hull = React.useMemo(() => computeDiskHull(disks), [disks]);
+
+  const perimeter = React.useMemo(() => {
+    let total = 0;
+
+    for (const seg of hull.segments) {
+      if (seg.type === "tangent") {
+        total += Math.hypot(seg.to.x - seg.from.x, seg.to.y - seg.from.y);
+      } else {
+        let diff = seg.endAngle - seg.startAngle;
+        if (diff < 0) diff += 2 * Math.PI;
+        total += seg.disk.r * diff;
+      }
+    }
+
+    const nodeSize = Math.max(scene.radius, 1e-9);
+    return total / nodeSize;
+  }, [hull.segments, scene.radius]);
+
+  const metrics = React.useMemo(() => {
+    return {
+      perimeter,
+      disks: scene.points.length,
+      tangents: hull.stats.tangents,
+      arcs: hull.stats.arcs,
+      segments: countSegments(scene.primitives),
+    };
+  }, [perimeter, scene.points.length, scene.primitives, hull.stats.tangents, hull.stats.arcs]);
 
   function commit(next: Scene) {
     setPast((p) => [...p, present]);
@@ -89,6 +167,7 @@ export function EditorPage() {
         undo();
         return;
       }
+
       if (ctrl && e.key.toLowerCase() === "y") {
         e.preventDefault();
         redo();
@@ -103,22 +182,25 @@ export function EditorPage() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPointId, present]);
 
   function handleSelectPoint(id: string | null) {
     setSelectedPointId(id);
-
     if (!id) return;
+
     if (!rulerA) {
       setRulerA(id);
       setRulerB(null);
       return;
     }
+
     if (rulerA && !rulerB) {
       if (id === rulerA) return;
       setRulerB(id);
       return;
     }
+
     setRulerA(id);
     setRulerB(null);
   }
@@ -157,7 +239,6 @@ export function EditorPage() {
 
   function toggleSegment(a: string, b: string) {
     const key = segmentKey(a, b);
-
     const existing = scene.primitives.find(
       (pr) => pr.kind === "segment" && segmentKey(pr.a, pr.b) === key
     ) as Segment | undefined;
@@ -172,45 +253,79 @@ export function EditorPage() {
     commit({ ...scene, primitives: [...scene.primitives, seg] });
   }
 
-  // Métricas (perímetro/tangentes/arcos quedan placeholder por ahora)
-  const metrics = React.useMemo(() => {
-    return {
-      perimeter: null as number | null,
-      disks: scene.points.length,
-      tangents: null as number | null,
-      arcs: null as number | null,
-      segments: countSegments(scene.primitives),
-    };
-  }, [scene.points.length, scene.primitives]);
+  function loadSelectedGraph() {
+    const set = graphSets[graphSetIdx];
+    if (!set) return;
+
+    const g: Graph | undefined = set.graphs[graphIdx];
+    if (!g) return;
+
+    const next = graphToContactScene(g, scene.radius, { iterations: 1500 });
+    commit(next);
+
+    setSelectedPointId("p1");
+    setLinkA(null);
+    setRulerA(null);
+    setRulerB(null);
+  }
 
   return (
     <div style={{ height: "100%", display: "grid", gridTemplateRows: "56px 1fr auto" }}>
       <NavBar
         title="Contact Graph Visualizer"
-        subtitle="Editor · Research UI"
+        subtitle="Editor + Research UI"
         right={
           <div style={{ display: "flex", gap: 10 }}>
-            <Pill active={mode === "move"} onClick={() => { setMode("move"); setLinkA(null); }}>Move</Pill>
-            <Pill active={mode === "add"} onClick={() => { setMode("add"); setLinkA(null); }}>Add</Pill>
-            <Pill active={mode === "link"} onClick={() => { setMode("link"); setLinkA(null); }}>Link</Pill>
-            <Pill active={mode === "delete"} onClick={() => { setMode("delete"); setLinkA(null); }}>Delete</Pill>
+            <Pill
+              active={mode === "move"}
+              onClick={() => {
+                setMode("move");
+                setLinkA(null);
+              }}
+            >
+              Move
+            </Pill>
+            <Pill
+              active={mode === "add"}
+              onClick={() => {
+                setMode("add");
+                setLinkA(null);
+              }}
+            >
+              Add
+            </Pill>
+            <Pill
+              active={mode === "link"}
+              onClick={() => {
+                setMode("link");
+                setLinkA(null);
+              }}
+            >
+              Link
+            </Pill>
+            <Pill
+              active={mode === "delete"}
+              onClick={() => {
+                setMode("delete");
+                setLinkA(null);
+              }}
+            >
+              Delete
+            </Pill>
 
             <div style={{ width: 1, background: "rgba(0,0,0,0.10)", margin: "0 4px" }} />
 
-            <Pill disabled={past.length === 0} onClick={undo}>Undo</Pill>
-            <Pill disabled={future.length === 0} onClick={redo}>Redo</Pill>
+            <Pill disabled={past.length === 0} onClick={undo}>
+              Undo
+            </Pill>
+            <Pill disabled={future.length === 0} onClick={redo}>
+              Redo
+            </Pill>
           </div>
         }
       />
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 380px",
-          minHeight: 0,
-        }}
-      >
-        {/* Stage */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", minHeight: 0 }}>
         <div style={{ minWidth: 0, minHeight: 0 }}>
           <SvgStage
             scene={scene}
@@ -224,10 +339,11 @@ export function EditorPage() {
             linkA={linkA}
             onPickLinkA={setLinkA}
             onToggleSegment={toggleSegment}
+            showHull={false}
+            showGrid={false}
           />
         </div>
 
-        {/* Sidebar */}
         <aside
           style={{
             borderLeft: "1px solid rgba(0,0,0,0.08)",
@@ -238,12 +354,70 @@ export function EditorPage() {
             minWidth: 0,
           }}
         >
-          <SectionTitle>Properties & Measurement</SectionTitle>
+          <SectionTitle>Properties / Measurement</SectionTitle>
 
           <Card title="Tool">
             <Row label="Mode" value={mode} />
             <Row label="Link A" value={linkA ?? "—"} />
             <Row label="Radius" value={scene.radius} />
+          </Card>
+
+          <Spacer />
+
+          <Card title="Preload graph">
+            <Row
+              label="Status"
+              value={graphLoading ? "Loading..." : graphError ? `Error: ${graphError}` : "Ready"}
+            />
+            <Row
+              label="Set"
+              value={
+                <select
+                  value={graphSetIdx}
+                  onChange={(e) => {
+                    setGraphSetIdx(Number(e.target.value));
+                    setGraphIdx(0);
+                  }}
+                  disabled={!graphSets.length}
+                >
+                  {graphSets.map((s, i) => (
+                    <option key={`${s.label}-${i}`} value={i}>
+                      {s.label} ({s.graphs.length})
+                    </option>
+                  ))}
+                </select>
+              }
+            />
+            <Row
+              label="Index"
+              value={
+                <input
+                  type="number"
+                  value={graphIdx}
+                  min={0}
+                  onChange={(e) => setGraphIdx(Number(e.target.value))}
+                  style={{ width: 120 }}
+                  disabled={!graphSets.length}
+                />
+              }
+            />
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
+              <button
+                onClick={loadSelectedGraph}
+                disabled={!graphSets.length || graphLoading}
+                style={{
+                  height: 34,
+                  padding: "0 12px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(0,0,0,0.10)",
+                  background: "rgba(255,255,255,0.85)",
+                  cursor: !graphSets.length || graphLoading ? "not-allowed" : "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Load
+              </button>
+            </div>
           </Card>
 
           <Spacer />
@@ -259,16 +433,19 @@ export function EditorPage() {
           <Card title="Ruler (2 clicks)">
             <Row label="A" value={rulerA ?? "—"} />
             <Row label="B" value={rulerB ?? "—"} />
-            <Row label="Center dist." value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"} />
+            <Row
+              label="Center dist."
+              value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"}
+            />
           </Card>
 
           <Spacer />
 
-          <Card title="Hull (preview)">
-            <Row label="Perimeter" value={metrics.perimeter === null ? "—" : metrics.perimeter.toFixed(8)} />
+          <Card title="Hull stats (hidden)">
+            <Row label="Perimeter" value={metrics.perimeter.toFixed(8)} />
             <Row label="Disks" value={metrics.disks} />
-            <Row label="Tangents" value={metrics.tangents ?? "—"} />
-            <Row label="Arcs" value={metrics.arcs ?? "—"} />
+            <Row label="Tangents" value={metrics.tangents} />
+            <Row label="Arcs" value={metrics.arcs} />
             <Row label="Segments" value={metrics.segments} />
           </Card>
         </aside>
@@ -315,7 +492,14 @@ function Pill(props: {
 
 function SectionTitle(props: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 12, letterSpacing: "0.02em", color: "rgba(17,24,39,0.55)", marginBottom: 10 }}>
+    <div
+      style={{
+        fontSize: 12,
+        letterSpacing: "0.02em",
+        color: "rgba(17,24,39,0.55)",
+        marginBottom: 10,
+      }}
+    >
       {props.children}
     </div>
   );
@@ -335,7 +519,9 @@ function Card(props: { title: string; children: React.ReactNode }) {
         padding: 14,
       }}
     >
-      <div style={{ fontSize: 12, color: "rgba(17,24,39,0.55)", marginBottom: 10 }}>{props.title}</div>
+      <div style={{ fontSize: 12, color: "rgba(17,24,39,0.55)", marginBottom: 10 }}>
+        {props.title}
+      </div>
       {props.children}
     </div>
   );
