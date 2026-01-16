@@ -1,6 +1,6 @@
 import React from "react";
 import { createInitialScene } from "../../core/model/scene";
-import type { Scene } from "../../core/model/entities";
+import type { Scene, Primitive, Point } from "../../core/model/entities";
 import { SvgStage, type BBox } from "../../renderer/svg/SvgStage";
 
 type PointId = string;
@@ -9,12 +9,21 @@ function distanceBetween(a: { x: number; y: number }, b: { x: number; y: number 
   return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
+function nextPointId(scene: Scene) {
+  const nums = scene.points
+    .map((p) => Number(p.id.replace(/^p/, "")))
+    .filter((n) => Number.isFinite(n));
+  const max = nums.length ? Math.max(...nums) : 0;
+  return `p${max + 1}`;
+}
+
 export function EditorPage() {
-  const [scene] = React.useState<Scene>(() => createInitialScene());
+  const [scene, setScene] = React.useState<Scene>(() => createInitialScene());
 
   const [selectedPointId, setSelectedPointId] = React.useState<PointId | null>("p1");
   const [bbox, setBbox] = React.useState<BBox | null>(null);
 
+  // Regla
   const [rulerA, setRulerA] = React.useState<PointId | null>(null);
   const [rulerB, setRulerB] = React.useState<PointId | null>(null);
 
@@ -36,6 +45,7 @@ export function EditorPage() {
     setSelectedPointId(id);
     if (!id) return;
 
+    // Regla: A, luego B, luego reinicia
     if (!rulerA) {
       setRulerA(id);
       setRulerB(null);
@@ -50,15 +60,62 @@ export function EditorPage() {
     setRulerB(null);
   }
 
+  function handleCreatePoint(pt: { x: number; y: number }) {
+    setScene((prev) => {
+      const id = nextPointId(prev);
+      const newPoint: Point = { id, kind: "point", x: pt.x, y: pt.y };
+      return { ...prev, points: [...prev.points, newPoint] };
+    });
+    setSelectedPointId(null); // opcional
+  }
+
+  function handleMovePoint(id: string, pt: { x: number; y: number }) {
+    setScene((prev) => ({
+      ...prev,
+      points: prev.points.map((p) => (p.id === id ? { ...p, x: pt.x, y: pt.y } : p)),
+    }));
+  }
+
+  function deletePoint(id: string) {
+    setScene((prev) => {
+      const points = prev.points.filter((p) => p.id !== id);
+
+      const primitives: Primitive[] = prev.primitives.filter((pr) => {
+        if (pr.kind === "segment") return pr.a !== id && pr.b !== id;
+        return true; // por ahora no borramos arcos (cuando existan, también habrá que filtrarlos)
+      });
+
+      return { ...prev, points, primitives };
+    });
+
+    setSelectedPointId((cur) => (cur === id ? null : cur));
+    setRulerA((cur) => (cur === id ? null : cur));
+    setRulerB((cur) => (cur === id ? null : cur));
+  }
+
+  // Delete/Backspace para eliminar seleccionado
+  React.useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!selectedPointId) return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        deletePoint(selectedPointId);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedPointId]);
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", height: "100vh" }}>
       <div style={{ position: "relative" }}>
         <SvgStage
           scene={scene}
           selectedPointId={selectedPointId}
-          measuredBBox={bbox}
           onSelectPoint={handleSelectPoint}
           onMeasuredBBox={setBbox}
+          onCreatePoint={handleCreatePoint}
+          onMovePoint={handleMovePoint}
         />
 
         <div
@@ -74,21 +131,16 @@ export function EditorPage() {
             fontSize: 12,
             borderRadius: 10,
             boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-            minWidth: 260,
+            minWidth: 280,
           }}
         >
-          <div style={{ fontWeight: 800, marginBottom: 6 }}>Selección</div>
-          <div style={{ display: "grid", gridTemplateColumns: "70px 1fr", rowGap: 4 }}>
-            <div style={{ color: "#374151" }}>Punto</div>
-            <div style={{ fontWeight: 700 }}>{selectedPointId ?? "—"}</div>
-            <div style={{ color: "#374151" }}>BBox</div>
-            <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-              {bbox
-                ? `x=${bbox.x.toFixed(2)} y=${bbox.y.toFixed(2)} w=${bbox.width.toFixed(
-                    2
-                  )} h=${bbox.height.toFixed(2)}`
-                : "—"}
-            </div>
+          <div style={{ fontWeight: 900, marginBottom: 6 }}>Controles</div>
+          <div style={{ color: "#374151", lineHeight: 1.5 }}>
+            Doble click en el fondo: agrega punto.
+            <br />
+            Arrastra un punto: muévelo.
+            <br />
+            Delete/Backspace: elimina punto seleccionado.
           </div>
         </div>
       </div>
@@ -110,6 +162,9 @@ export function EditorPage() {
           <Row label="ID" value={selectedPointId ?? "—"} />
           <Row label="BBox W" value={bbox ? bbox.width.toFixed(2) : "—"} />
           <Row label="BBox H" value={bbox ? bbox.height.toFixed(2) : "—"} />
+          <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280" }}>
+            Borrar: tecla Delete/Backspace.
+          </div>
         </Card>
 
         <div style={{ height: 12 }} />
@@ -118,9 +173,6 @@ export function EditorPage() {
           <Row label="A" value={rulerA ?? "—"} />
           <Row label="B" value={rulerB ?? "—"} />
           <Row label="Dist." value={rulerDistance !== null ? rulerDistance.toFixed(2) : "—"} />
-          <div style={{ marginTop: 10, fontSize: 12, color: "#6b7280" }}>
-            Click 1 = A, Click 2 = B, Click 3 reinicia.
-          </div>
         </Card>
       </aside>
     </div>

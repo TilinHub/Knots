@@ -10,35 +10,51 @@ const COLORS = {
   axis: "#6b7280",
 
   edge: "#111827",
-  edgeSelected: "#2563eb",
-
   nodeStroke: "#111827",
   nodeFill: "#ffffff",
   nodeText: "#111827",
   selected: "#2563eb",
 };
 
+function parseViewBox(vb: string) {
+  const [minX, minY, width, height] = vb.split(/\s+/).map(Number);
+  return { minX, minY, width, height };
+}
+
+// Convierte coordenadas del mouse (px) a coordenadas del SVG usando viewBox.
+function clientToSvgPoint(e: { clientX: number; clientY: number }, svg: SVGSVGElement, viewBox: string) {
+  const rect = svg.getBoundingClientRect();
+  const vb = parseViewBox(viewBox);
+  const px = (e.clientX - rect.left) / rect.width;
+  const py = (e.clientY - rect.top) / rect.height;
+  return { x: vb.minX + px * vb.width, y: vb.minY + py * vb.height };
+}
+
 export function SvgStage(props: {
   scene: Scene;
   selectedPointId: string | null;
-  measuredBBox: BBox | null; // se mantiene para el panel, pero ya no se dibuja overlay
   onSelectPoint: (id: string | null) => void;
   onMeasuredBBox: (bbox: BBox | null) => void;
+
+  onCreatePoint: (pt: { x: number; y: number }) => void;
+  onMovePoint: (id: string, pt: { x: number; y: number }) => void;
 }) {
-  const { scene, selectedPointId, onSelectPoint, onMeasuredBBox } = props;
+  const { scene, selectedPointId, onSelectPoint, onMeasuredBBox, onCreatePoint, onMovePoint } = props;
+
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
   const selectedCircleRef = React.useRef<SVGCircleElement | null>(null);
 
+  const viewBox = "-250 -180 500 360";
+
+  // bbox para panel (usa getBBox) [web:20]
   React.useLayoutEffect(() => {
     if (!selectedPointId || !selectedCircleRef.current) {
       onMeasuredBBox(null);
       return;
     }
-    // bbox mínimo del círculo en espacio SVG [web:20]
-    const b = selectedCircleRef.current.getBBox();
+    const b = selectedCircleRef.current.getBBox(); // x/y/width/height [web:20]
     onMeasuredBBox({ x: b.x, y: b.y, width: b.width, height: b.height });
   }, [selectedPointId, scene, onMeasuredBBox]);
-
-  const viewBox = "-250 -180 500 360";
 
   const pointsById = React.useMemo(() => {
     const m = new Map<string, Point>();
@@ -46,32 +62,80 @@ export function SvgStage(props: {
     return m;
   }, [scene.points]);
 
+  // Drag state (en refs para evitar rerenders)
+  const dragRef = React.useRef<{
+    id: string;
+    dx: number;
+    dy: number;
+    pointerId: number;
+  } | null>(null);
+
+  function beginDrag(e: React.PointerEvent, p: Point) {
+    e.stopPropagation();
+    onSelectPoint(p.id);
+
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const pos = clientToSvgPoint(e, svg, viewBox);
+    dragRef.current = {
+      id: p.id,
+      dx: p.x - pos.x,
+      dy: p.y - pos.y,
+      pointerId: e.pointerId,
+    };
+
+    // Captura el puntero para seguir recibiendo move/up durante el drag [web:272]
+    (e.currentTarget as SVGGElement).setPointerCapture(e.pointerId);
+  }
+
+  function moveDrag(e: React.PointerEvent) {
+    const drag = dragRef.current;
+    const svg = svgRef.current;
+    if (!drag || !svg) return;
+
+    const pos = clientToSvgPoint(e, svg, viewBox);
+    onMovePoint(drag.id, { x: pos.x + drag.dx, y: pos.y + drag.dy });
+  }
+
+  function endDrag(e: React.PointerEvent) {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+
+    // liberar captura (si existe)
+    try {
+      (e.currentTarget as SVGGElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  }
+
   return (
     <svg
+      ref={svgRef}
       style={{ width: "100%", height: "100%", background: COLORS.bg }}
       viewBox={viewBox}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) onSelectPoint(null);
       }}
+      onDoubleClick={(e) => {
+        const svg = svgRef.current;
+        if (!svg) return;
+        const pt = clientToSvgPoint(e, svg, viewBox);
+        onCreatePoint(pt);
+      }}
     >
       <Grid />
 
-      {/* Líneas del grafo (Segment) */}
-      <g
-        stroke={COLORS.edge}
-        strokeWidth={4}
-        strokeLinecap="round"  // extremos redondeados [web:251]
-        strokeLinejoin="round"
-        opacity={0.9}
-      >
+      {/* Segmentos */}
+      <g stroke={COLORS.edge} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
         {scene.primitives.map((pr: Primitive) => {
           if (pr.kind !== "segment") return null;
-
           const a = pointsById.get(pr.a);
           const b = pointsById.get(pr.b);
           if (!a || !b) return null;
-
-          return <line key={pr.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />; // [web:260]
+          return <line key={pr.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
         })}
       </g>
 
@@ -84,11 +148,11 @@ export function SvgStage(props: {
           return (
             <g
               key={p.id}
-              style={{ cursor: "pointer" }}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                onSelectPoint(p.id);
-              }}
+              style={{ cursor: "grab" }}
+              onPointerDown={(e) => beginDrag(e, p)}
+              onPointerMove={moveDrag}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
             >
               <circle
                 ref={selected ? selectedCircleRef : undefined}
@@ -112,8 +176,6 @@ export function SvgStage(props: {
           );
         })}
       </g>
-
-      {/* Nota: se quitó el rectángulo punteado de selección a propósito */}
     </svg>
   );
 }
@@ -128,14 +190,10 @@ function Grid() {
   const major = 50;
 
   const vLines: Array<{ x: number; major: boolean }> = [];
-  for (let x = Math.ceil(minX / minor) * minor; x <= maxX; x += minor) {
-    vLines.push({ x, major: x % major === 0 });
-  }
+  for (let x = Math.ceil(minX / minor) * minor; x <= maxX; x += minor) vLines.push({ x, major: x % major === 0 });
 
   const hLines: Array<{ y: number; major: boolean }> = [];
-  for (let y = Math.ceil(minY / minor) * minor; y <= maxY; y += minor) {
-    hLines.push({ y, major: y % major === 0 });
-  }
+  for (let y = Math.ceil(minY / minor) * minor; y <= maxY; y += minor) hLines.push({ y, major: y % major === 0 });
 
   return (
     <g shapeRendering="crispEdges">
