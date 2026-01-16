@@ -2,6 +2,7 @@ import React from "react";
 import type { Scene, Point, Primitive } from "../../core/model/entities";
 
 export type BBox = { x: number; y: number; width: number; height: number };
+export type ToolMode = "move" | "add" | "delete" | "link";
 
 const COLORS = {
   bg: "#ffffff",
@@ -10,6 +11,8 @@ const COLORS = {
   axis: "#6b7280",
 
   edge: "#111827",
+  edgePreview: "#2563eb",
+
   nodeStroke: "#111827",
   nodeFill: "#ffffff",
   nodeText: "#111827",
@@ -21,8 +24,12 @@ function parseViewBox(vb: string) {
   return { minX, minY, width, height };
 }
 
-// Convierte coordenadas del mouse (px) a coordenadas del SVG usando viewBox.
-function clientToSvgPoint(e: { clientX: number; clientY: number }, svg: SVGSVGElement, viewBox: string) {
+// DOM(px) -> SVG(user units) usando viewBox.
+function clientToSvgPoint(
+  e: { clientX: number; clientY: number },
+  svg: SVGSVGElement,
+  viewBox: string
+) {
   const rect = svg.getBoundingClientRect();
   const vb = parseViewBox(viewBox);
   const px = (e.clientX - rect.left) / rect.width;
@@ -32,27 +39,49 @@ function clientToSvgPoint(e: { clientX: number; clientY: number }, svg: SVGSVGEl
 
 export function SvgStage(props: {
   scene: Scene;
+
+  mode: ToolMode;
+
   selectedPointId: string | null;
   onSelectPoint: (id: string | null) => void;
+
   onMeasuredBBox: (bbox: BBox | null) => void;
 
-  onCreatePoint: (pt: { x: number; y: number }) => void;
+  onAddPoint: (pt: { x: number; y: number }) => void;
   onMovePoint: (id: string, pt: { x: number; y: number }) => void;
+  onDeletePoint: (id: string) => void;
+
+  // Link tool
+  linkA: string | null;
+  onPickLinkA: (id: string | null) => void;
+  onToggleSegment: (a: string, b: string) => void;
 }) {
-  const { scene, selectedPointId, onSelectPoint, onMeasuredBBox, onCreatePoint, onMovePoint } = props;
+  const {
+    scene,
+    mode,
+    selectedPointId,
+    onSelectPoint,
+    onMeasuredBBox,
+    onAddPoint,
+    onMovePoint,
+    onDeletePoint,
+    linkA,
+    onPickLinkA,
+    onToggleSegment,
+  } = props;
 
   const svgRef = React.useRef<SVGSVGElement | null>(null);
   const selectedCircleRef = React.useRef<SVGCircleElement | null>(null);
 
   const viewBox = "-250 -180 500 360";
 
-  // bbox para panel (usa getBBox) [web:20]
   React.useLayoutEffect(() => {
     if (!selectedPointId || !selectedCircleRef.current) {
       onMeasuredBBox(null);
       return;
     }
-    const b = selectedCircleRef.current.getBBox(); // x/y/width/height [web:20]
+    // getBBox() devuelve el bbox mínimo (x/y/width/height) en espacio SVG. [web:20]
+    const b = selectedCircleRef.current.getBBox();
     onMeasuredBBox({ x: b.x, y: b.y, width: b.width, height: b.height });
   }, [selectedPointId, scene, onMeasuredBBox]);
 
@@ -62,7 +91,7 @@ export function SvgStage(props: {
     return m;
   }, [scene.points]);
 
-  // Drag state (en refs para evitar rerenders)
+  // Drag state
   const dragRef = React.useRef<{
     id: string;
     dx: number;
@@ -70,7 +99,9 @@ export function SvgStage(props: {
     pointerId: number;
   } | null>(null);
 
-  function beginDrag(e: React.PointerEvent, p: Point) {
+  function beginDrag(e: React.PointerEvent<SVGGElement>, p: Point) {
+    if (mode !== "move") return;
+
     e.stopPropagation();
     onSelectPoint(p.id);
 
@@ -78,18 +109,13 @@ export function SvgStage(props: {
     if (!svg) return;
 
     const pos = clientToSvgPoint(e, svg, viewBox);
-    dragRef.current = {
-      id: p.id,
-      dx: p.x - pos.x,
-      dy: p.y - pos.y,
-      pointerId: e.pointerId,
-    };
+    dragRef.current = { id: p.id, dx: p.x - pos.x, dy: p.y - pos.y, pointerId: e.pointerId };
 
-    // Captura el puntero para seguir recibiendo move/up durante el drag [web:272]
-    (e.currentTarget as SVGGElement).setPointerCapture(e.pointerId);
+    // Captura para seguir recibiendo move/up aunque el puntero salga del elemento. [web:272]
+    e.currentTarget.setPointerCapture(e.pointerId);
   }
 
-  function moveDrag(e: React.PointerEvent) {
+  function moveDrag(e: React.PointerEvent<SVGGElement>) {
     const drag = dragRef.current;
     const svg = svgRef.current;
     if (!drag || !svg) return;
@@ -98,33 +124,82 @@ export function SvgStage(props: {
     onMovePoint(drag.id, { x: pos.x + drag.dx, y: pos.y + drag.dy });
   }
 
-  function endDrag(e: React.PointerEvent) {
-    const drag = dragRef.current;
-    if (!drag) return;
+  function endDrag(e: React.PointerEvent<SVGGElement>) {
+    if (!dragRef.current) return;
     dragRef.current = null;
 
-    // liberar captura (si existe)
     try {
-      (e.currentTarget as SVGGElement).releasePointerCapture(e.pointerId);
+      e.currentTarget.releasePointerCapture(e.pointerId);
     } catch {
       // ignore
     }
   }
+
+  function onBackgroundPointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    if (e.target !== e.currentTarget) return;
+
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    if (mode === "add") {
+      const pt = clientToSvgPoint(e, svg, viewBox);
+      onAddPoint(pt);
+      return;
+    }
+
+    onSelectPoint(null);
+    onPickLinkA(null);
+  }
+
+  function onPointPointerDown(e: React.PointerEvent<SVGGElement>, p: Point) {
+    e.stopPropagation();
+
+    if (mode === "delete") {
+      onDeletePoint(p.id);
+      return;
+    }
+
+    if (mode === "link") {
+      if (!linkA) {
+        onPickLinkA(p.id);
+        onSelectPoint(p.id);
+        return;
+      }
+      if (linkA === p.id) return;
+
+      onToggleSegment(linkA, p.id);
+      onPickLinkA(null);
+      onSelectPoint(p.id);
+      return;
+    }
+
+    // mode move => drag se inicia en beginDrag (también selecciona)
+  }
+
+  // Preview Link A -> cursor
+  const [cursor, setCursor] = React.useState<{ x: number; y: number } | null>(null);
+  React.useEffect(() => {
+    if (mode !== "link" || !linkA) {
+      setCursor(null);
+      return;
+    }
+    function onMove(ev: MouseEvent) {
+      const svg = svgRef.current;
+      if (!svg) return;
+      setCursor(clientToSvgPoint(ev, svg, viewBox));
+    }
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [mode, linkA]);
+
+  const linkAPoint = linkA ? pointsById.get(linkA) ?? null : null;
 
   return (
     <svg
       ref={svgRef}
       style={{ width: "100%", height: "100%", background: COLORS.bg }}
       viewBox={viewBox}
-      onPointerDown={(e) => {
-        if (e.target === e.currentTarget) onSelectPoint(null);
-      }}
-      onDoubleClick={(e) => {
-        const svg = svgRef.current;
-        if (!svg) return;
-        const pt = clientToSvgPoint(e, svg, viewBox);
-        onCreatePoint(pt);
-      }}
+      onPointerDown={onBackgroundPointerDown}
     >
       <Grid />
 
@@ -139,17 +214,35 @@ export function SvgStage(props: {
         })}
       </g>
 
+      {/* Preview enlace */}
+      {mode === "link" && linkAPoint && cursor && (
+        <line
+          x1={linkAPoint.x}
+          y1={linkAPoint.y}
+          x2={cursor.x}
+          y2={cursor.y}
+          stroke={COLORS.edgePreview}
+          strokeWidth={2}
+          strokeDasharray="6 4"
+          strokeLinecap="round"
+          pointerEvents="none"
+        />
+      )}
+
       {/* Puntos */}
       <g>
         {scene.points.map((p: Point) => {
           const selected = p.id === selectedPointId;
-          const stroke = selected ? COLORS.selected : COLORS.nodeStroke;
+          const isLinkA = mode === "link" && linkA === p.id;
 
           return (
             <g
               key={p.id}
-              style={{ cursor: "grab" }}
-              onPointerDown={(e) => beginDrag(e, p)}
+              style={{ cursor: mode === "move" ? "grab" : "pointer" }}
+              onPointerDown={(e) => {
+                onPointPointerDown(e, p);
+                beginDrag(e, p);
+              }}
               onPointerMove={moveDrag}
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
@@ -160,7 +253,7 @@ export function SvgStage(props: {
                 cy={p.y}
                 r={11}
                 fill={COLORS.nodeFill}
-                stroke={stroke}
+                stroke={isLinkA ? COLORS.edgePreview : selected ? COLORS.selected : COLORS.nodeStroke}
                 strokeWidth={3}
               />
               <text
