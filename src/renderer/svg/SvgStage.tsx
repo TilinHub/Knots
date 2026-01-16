@@ -7,34 +7,39 @@ export type ToolMode = "move" | "add" | "delete" | "link";
 
 const COLORS = {
   bg: "#ffffff",
-  gridMajor: "#9ca3af",
-  gridMinor: "#e5e7eb",
-  axis: "#6b7280",
 
-  edge: "#111827",
-  edgePreview: "#2563eb",
+  // dashed graph edges (thin)
+  edge: "rgba(91, 143, 189, 0.75)",
+  edgePreview: "rgba(91, 143, 189, 1)",
 
+  // hull (unchanged)
   hull: "#a855f7",
   hullStrokeWidth: 10,
 
-  nodeStroke: "#111827",
-  nodeFill: "#ffffff",
+  // nodes: solid purple (no transparency) + darker purple thin stroke
+  nodeFill: "#A78BFA",          // solid purple
+  nodeStroke: "#4C1D95",        // dark purple
+  selectedNodeStroke: "#2E1065", // even darker purple
+
   nodeText: "#111827",
-  selected: "#2563eb",
 };
 
-function parseViewBox(vb: string) {
-  const [minX, minY, width, height] = vb.split(/\s+/).map(Number);
-  return { minX, minY, width, height };
+type ViewBox = { minX: number; minY: number; width: number; height: number };
+
+function clamp(x: number, a: number, b: number) {
+  return Math.max(a, Math.min(b, x));
+}
+
+function viewBoxToString(vb: ViewBox) {
+  return `${vb.minX} ${vb.minY} ${vb.width} ${vb.height}`;
 }
 
 function clientToSvgPoint(
   e: { clientX: number; clientY: number },
   svg: SVGSVGElement,
-  viewBox: string
+  vb: ViewBox
 ) {
   const rect = svg.getBoundingClientRect();
-  const vb = parseViewBox(viewBox);
   const px = (e.clientX - rect.left) / rect.width;
   const py = (e.clientY - rect.top) / rect.height;
   return { x: vb.minX + px * vb.width, y: vb.minY + py * vb.height };
@@ -59,6 +64,7 @@ export function SvgStage(props: {
   onToggleSegment: (a: string, b: string) => void;
 
   showHull?: boolean;
+  showGrid?: boolean;
 }) {
   const {
     scene,
@@ -73,12 +79,13 @@ export function SvgStage(props: {
     onPickLinkA,
     onToggleSegment,
     showHull = true,
+    showGrid = false,
   } = props;
 
   const svgRef = React.useRef<SVGSVGElement | null>(null);
   const selectedCircleRef = React.useRef<SVGCircleElement | null>(null);
 
-  const viewBox = "-250 -180 500 360";
+  const [vb, setVb] = React.useState<ViewBox>({ minX: -250, minY: -180, width: 500, height: 360 });
 
   React.useLayoutEffect(() => {
     if (!selectedPointId || !selectedCircleRef.current) {
@@ -99,14 +106,90 @@ export function SvgStage(props: {
     () => scene.points.map((p) => ({ id: p.id, x: p.x, y: p.y, r: scene.radius })),
     [scene.points, scene.radius]
   );
-
   const hull = React.useMemo(() => computeDiskHull(disks), [disks]);
 
-  // Drag
+  // Zoom (wheel) centered at cursor
+  function onWheel(e: React.WheelEvent<SVGSVGElement>) {
+    e.preventDefault();
+
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const zoomFactor = Math.exp(e.deltaY * 0.0015);
+    const nextW = clamp(vb.width * zoomFactor, 80, 6000);
+    const nextH = clamp(vb.height * zoomFactor, 80, 6000);
+
+    const p = clientToSvgPoint(e, svg, vb);
+    const rx = (p.x - vb.minX) / vb.width;
+    const ry = (p.y - vb.minY) / vb.height;
+
+    const nextMinX = p.x - rx * nextW;
+    const nextMinY = p.y - ry * nextH;
+
+    setVb({ minX: nextMinX, minY: nextMinY, width: nextW, height: nextH });
+  }
+
+  // Pan (Space + drag)
+  const [spaceDown, setSpaceDown] = React.useState(false);
+  React.useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.code === "Space") setSpaceDown(true);
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.code === "Space") setSpaceDown(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
+
+  const panRef = React.useRef<{ pointerId: number; start: { x: number; y: number }; vb0: ViewBox } | null>(null);
+
+  function beginPan(e: React.PointerEvent<SVGSVGElement>) {
+    if (!spaceDown) return;
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const start = { x: e.clientX, y: e.clientY };
+    panRef.current = { pointerId: e.pointerId, start, vb0: vb };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function movePan(e: React.PointerEvent<SVGSVGElement>) {
+    const pan = panRef.current;
+    const svg = svgRef.current;
+    if (!pan || !svg) return;
+
+    const rect = svg.getBoundingClientRect();
+    const dxPx = e.clientX - pan.start.x;
+    const dyPx = e.clientY - pan.start.y;
+
+    const dx = (dxPx / rect.width) * pan.vb0.width;
+    const dy = (dyPx / rect.height) * pan.vb0.height;
+
+    setVb({ ...pan.vb0, minX: pan.vb0.minX - dx, minY: pan.vb0.minY - dy });
+  }
+
+  function endPan(e: React.PointerEvent<SVGSVGElement>) {
+    const pan = panRef.current;
+    if (!pan) return;
+    panRef.current = null;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Node drag (mode move)
   const dragRef = React.useRef<{ id: string; dx: number; dy: number; pointerId: number } | null>(null);
 
   function beginDrag(e: React.PointerEvent<SVGGElement>, p: Point) {
     if (mode !== "move") return;
+    if (spaceDown) return;
 
     e.stopPropagation();
     onSelectPoint(p.id);
@@ -114,7 +197,7 @@ export function SvgStage(props: {
     const svg = svgRef.current;
     if (!svg) return;
 
-    const pos = clientToSvgPoint(e, svg, viewBox);
+    const pos = clientToSvgPoint(e, svg, vb);
     dragRef.current = { id: p.id, dx: p.x - pos.x, dy: p.y - pos.y, pointerId: e.pointerId };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
@@ -124,7 +207,7 @@ export function SvgStage(props: {
     const svg = svgRef.current;
     if (!drag || !svg) return;
 
-    const pos = clientToSvgPoint(e, svg, viewBox);
+    const pos = clientToSvgPoint(e, svg, vb);
     onMovePoint(drag.id, { x: pos.x + drag.dx, y: pos.y + drag.dy });
   }
 
@@ -139,13 +222,18 @@ export function SvgStage(props: {
   }
 
   function onBackgroundPointerDown(e: React.PointerEvent<SVGSVGElement>) {
+    if (spaceDown) {
+      beginPan(e);
+      return;
+    }
+
     if (e.target !== e.currentTarget) return;
 
     const svg = svgRef.current;
     if (!svg) return;
 
     if (mode === "add") {
-      const pt = clientToSvgPoint(e, svg, viewBox);
+      const pt = clientToSvgPoint(e, svg, vb);
       onAddPoint(pt);
       return;
     }
@@ -187,24 +275,34 @@ export function SvgStage(props: {
     function onMove(ev: MouseEvent) {
       const svg = svgRef.current;
       if (!svg) return;
-      setCursor(clientToSvgPoint(ev, svg, viewBox));
+      setCursor(clientToSvgPoint(ev, svg, vb));
     }
     window.addEventListener("mousemove", onMove);
     return () => window.removeEventListener("mousemove", onMove);
-  }, [mode, linkA]);
+  }, [mode, linkA, vb]);
 
   const linkAPoint = linkA ? pointsById.get(linkA) ?? null : null;
 
   return (
     <svg
       ref={svgRef}
-      style={{ width: "100%", height: "100%", background: COLORS.bg }}
-      viewBox={viewBox}
+      style={{ width: "100%", height: "100%", background: COLORS.bg, touchAction: "none" }}
+      viewBox={viewBoxToString(vb)}
+      onWheel={onWheel}
       onPointerDown={onBackgroundPointerDown}
+      onPointerMove={(e) => {
+        if (panRef.current) movePan(e);
+      }}
+      onPointerUp={(e) => {
+        if (panRef.current) endPan(e);
+      }}
+      onPointerCancel={(e) => {
+        if (panRef.current) endPan(e);
+      }}
     >
-      <Grid />
+      {showGrid ? null : null}
 
-      {/* Hull como path continuo */}
+      {/* Hull */}
       {showHull && hull.svgPathD && (
         <path
           d={hull.svgPathD}
@@ -218,8 +316,15 @@ export function SvgStage(props: {
         />
       )}
 
-      {/* Segmentos del grafo */}
-      <g stroke={COLORS.edge} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" opacity={0.9}>
+      {/* Graph segments (thin + dashed) */}
+      <g
+        stroke={COLORS.edge}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray="6 7"
+        opacity={0.95}
+      >
         {scene.primitives.map((pr: Primitive) => {
           if (pr.kind !== "segment") return null;
           const a = pointsById.get(pr.a);
@@ -229,7 +334,7 @@ export function SvgStage(props: {
         })}
       </g>
 
-      {/* Preview */}
+      {/* Link preview (thin + dashed) */}
       {mode === "link" && linkAPoint && cursor && (
         <line
           x1={linkAPoint.x}
@@ -237,23 +342,29 @@ export function SvgStage(props: {
           x2={cursor.x}
           y2={cursor.y}
           stroke={COLORS.edgePreview}
-          strokeWidth={2}
-          strokeDasharray="6 4"
+          strokeWidth={1.2}
+          strokeDasharray="5 7"
           strokeLinecap="round"
           pointerEvents="none"
         />
       )}
 
-      {/* Puntos */}
+      {/* Nodes */}
       <g>
         {scene.points.map((p: Point) => {
           const selected = p.id === selectedPointId;
           const isLinkA = mode === "link" && linkA === p.id;
 
+          const stroke = isLinkA
+            ? COLORS.edgePreview
+            : selected
+              ? COLORS.selectedNodeStroke
+              : COLORS.nodeStroke;
+
           return (
             <g
               key={p.id}
-              style={{ cursor: mode === "move" ? "grab" : "pointer" }}
+              style={{ cursor: spaceDown ? "grab" : mode === "move" ? "grab" : "pointer" }}
               onPointerDown={(e) => {
                 onPointPointerDown(e, p);
                 beginDrag(e, p);
@@ -268,8 +379,8 @@ export function SvgStage(props: {
                 cy={p.y}
                 r={scene.radius}
                 fill={COLORS.nodeFill}
-                stroke={isLinkA ? COLORS.edgePreview : selected ? COLORS.selected : COLORS.nodeStroke}
-                strokeWidth={3}
+                stroke={stroke}
+                strokeWidth={1}
               />
               <text
                 x={p.x + scene.radius + 6}
@@ -285,48 +396,5 @@ export function SvgStage(props: {
         })}
       </g>
     </svg>
-  );
-}
-
-function Grid() {
-  const minX = -250;
-  const maxX = 250;
-  const minY = -180;
-  const maxY = 180;
-
-  const minor = 10;
-  const major = 50;
-
-  const vLines: Array<{ x: number; major: boolean }> = [];
-  for (let x = Math.ceil(minX / minor) * minor; x <= maxX; x += minor) vLines.push({ x, major: x % major === 0 });
-
-  const hLines: Array<{ y: number; major: boolean }> = [];
-  for (let y = Math.ceil(minY / minor) * minor; y <= maxY; y += minor) hLines.push({ y, major: y % major === 0 });
-
-  return (
-    <g shapeRendering="crispEdges">
-      <g stroke={COLORS.gridMinor} strokeWidth={1}>
-        {vLines.filter((l) => !l.major).map((l) => (
-          <line key={`vmin${l.x}`} x1={l.x} y1={minY} x2={l.x} y2={maxY} />
-        ))}
-        {hLines.filter((l) => !l.major).map((l) => (
-          <line key={`hmin${l.y}`} x1={minX} y1={l.y} x2={maxX} y2={l.y} />
-        ))}
-      </g>
-
-      <g stroke={COLORS.gridMajor} strokeWidth={1}>
-        {vLines.filter((l) => l.major).map((l) => (
-          <line key={`vmaj${l.x}`} x1={l.x} y1={minY} x2={l.x} y2={maxY} />
-        ))}
-        {hLines.filter((l) => l.major).map((l) => (
-          <line key={`hmaj${l.y}`} x1={minX} y1={l.y} x2={maxX} y2={l.y} />
-        ))}
-      </g>
-
-      <g stroke={COLORS.axis} strokeWidth={1.5}>
-        <line x1={minX} y1={0} x2={maxX} y2={0} />
-        <line x1={0} y1={minY} x2={0} y2={maxY} />
-      </g>
-    </g>
   );
 }
