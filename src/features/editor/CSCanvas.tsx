@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CSBlock } from '../../core/types/cs';
+import { findAllCrossings } from '../../core/geometry/intersections';
 
 interface CSCanvasProps {
   blocks: CSBlock[];
@@ -14,6 +15,9 @@ interface CSCanvasProps {
 export function CSCanvas({ blocks, width = 800, height = 600 }: CSCanvasProps) {
   const centerX = width / 2;
   const centerY = height / 2;
+
+  // Detectar cruces
+  const crossings = React.useMemo(() => findAllCrossings(blocks), [blocks]);
 
   // Convertir coordenadas cartesianas a SVG (invertir Y)
   function toSVG(x: number, y: number): [number, number] {
@@ -126,6 +130,29 @@ export function CSCanvas({ blocks, width = 800, height = 600 }: CSCanvasProps) {
         return null;
       })}
 
+      {/* Renderizar puntos de cruce */}
+      {crossings.map((cross) => {
+        const [cx, cy] = toSVG(cross.position.x, cross.position.y);
+        return (
+          <g key={cross.id}>
+            {/* Círculo rojo con borde blanco */}
+            <circle
+              cx={cx}
+              cy={cy}
+              r="7"
+              fill="var(--canvas-cross)"
+              stroke="white"
+              strokeWidth="2"
+            />
+            {/* Etiqueta con info del cruce */}
+            <title>
+              Cruce: {cross.block1} ⨯ {cross.block2}
+              {`\n(${cross.position.x.toFixed(2)}, ${cross.position.y.toFixed(2)})`}
+            </title>
+          </g>
+        );
+      })}
+
       {/* Etiqueta de origen (0,0) */}
       <text
         x={centerX + 8}
@@ -136,6 +163,20 @@ export function CSCanvas({ blocks, width = 800, height = 600 }: CSCanvasProps) {
       >
         (0,0)
       </text>
+
+      {/* Contador de cruces (esquina superior izquierda) */}
+      {crossings.length > 0 && (
+        <text
+          x="16"
+          y="24"
+          fontSize="12"
+          fill="var(--canvas-cross)"
+          fontFamily="var(--ff-mono)"
+          fontWeight="600"
+        >
+          ⨯ {crossings.length} cruce{crossings.length !== 1 ? 's' : ''}
+        </text>
+      )}
     </svg>
   );
 }
