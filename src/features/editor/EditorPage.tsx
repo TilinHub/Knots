@@ -4,6 +4,7 @@ import { CoordInput } from '../../ui/CoordInput';
 import { Button } from '../../ui/Button';
 import { Block } from '../../ui/Block';
 import { CSCanvas } from './CSCanvas';
+import { validateContinuity } from '../../core/validation/continuity';
 
 /**
  * Página principal del editor de diagramas CS
@@ -13,9 +14,10 @@ export function EditorPage() {
   const [blocks, setBlocks] = React.useState<CSBlock[]>([]);
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const [showValidation, setShowValidation] = React.useState(false);
 
-  // Estado de validación (dummy por ahora)
-  const isValid = blocks.length > 0;
+  // Validación automática
+  const validation = React.useMemo(() => validateContinuity(blocks), [blocks]);
 
   function addSegment() {
     const id = `s${blocks.length + 1}`;
@@ -54,6 +56,19 @@ export function EditorPage() {
     );
   }
 
+  // Determinar color y texto del estado
+  const statusColor = blocks.length === 0 
+    ? 'var(--text-tertiary)'
+    : validation.valid 
+      ? 'var(--accent-valid)'
+      : 'var(--accent-error)';
+
+  const statusText = blocks.length === 0
+    ? 'sin bloques'
+    : validation.valid
+      ? 'cs válido'
+      : `${validation.errors.length} error${validation.errors.length !== 1 ? 'es' : ''}`;
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* HEADER */}
@@ -89,14 +104,28 @@ export function EditorPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-          <div
+          <button
+            onClick={() => blocks.length > 0 && setShowValidation(true)}
+            disabled={blocks.length === 0}
             style={{
               fontSize: 'var(--fs-caption)',
-              color: isValid ? 'var(--accent-valid)' : 'var(--text-tertiary)',
+              color: statusColor,
               fontWeight: 'var(--fw-medium)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              background: 'none',
+              border: 'none',
+              cursor: blocks.length > 0 ? 'pointer' : 'default',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              if (blocks.length > 0) e.currentTarget.style.background = 'var(--bg-tertiary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none';
             }}
           >
             <span
@@ -104,11 +133,11 @@ export function EditorPage() {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: isValid ? 'var(--accent-valid)' : 'var(--text-tertiary)',
+                background: statusColor,
               }}
             />
-            {isValid ? 'cs válido' : 'sin bloques'}
-          </div>
+            {statusText}
+          </button>
 
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -323,14 +352,130 @@ export function EditorPage() {
                 + Añadir Arco
               </Button>
             </div>
-
-            {/* Botón validar (dummy) */}
-            <div style={{ marginTop: 'auto', paddingTop: 'var(--space-md)' }}>
-              <Button onClick={() => alert('Validación no implementada aún')}>Validar Continuidad</Button>
-            </div>
           </aside>
         )}
       </div>
+
+      {/* MODAL DE VALIDACIÓN */}
+      {showValidation && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowValidation(false)}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: 'var(--space-lg)',
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                fontSize: 'var(--fs-header)',
+                fontWeight: 'var(--fw-semibold)',
+                marginBottom: 'var(--space-md)',
+              }}
+            >
+              Validación de Continuidad
+            </h3>
+
+            {validation.errors.length > 0 && (
+              <div style={{ marginBottom: 'var(--space-md)' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--accent-error)',
+                    textTransform: 'uppercase',
+                    marginBottom: 'var(--space-xs)',
+                  }}
+                >
+                  Errores
+                </div>
+                {validation.errors.map((err, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      fontSize: 'var(--fs-body)',
+                      color: 'var(--text-primary)',
+                      padding: 'var(--space-sm)',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: '6px',
+                      marginBottom: 'var(--space-xs)',
+                      fontFamily: 'var(--ff-mono)',
+                    }}
+                  >
+                    {err}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {validation.warnings.length > 0 && (
+              <div style={{ marginBottom: 'var(--space-md)' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    marginBottom: 'var(--space-xs)',
+                  }}
+                >
+                  Advertencias
+                </div>
+                {validation.warnings.map((warn, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      fontSize: 'var(--fs-body)',
+                      color: 'var(--text-secondary)',
+                      padding: 'var(--space-sm)',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: '6px',
+                      marginBottom: 'var(--space-xs)',
+                      fontFamily: 'var(--ff-mono)',
+                    }}
+                  >
+                    {warn}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {validation.valid && validation.errors.length === 0 && (
+              <div
+                style={{
+                  fontSize: 'var(--fs-body)',
+                  color: 'var(--accent-valid)',
+                  textAlign: 'center',
+                  padding: 'var(--space-lg)',
+                }}
+              >
+                ✓ Diagrama CS válido
+              </div>
+            )}
+
+            <Button onClick={() => setShowValidation(false)}>Cerrar</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
