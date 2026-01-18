@@ -1,8 +1,9 @@
 import React from 'react';
-import type { CSBlock, CSSegment, CSArc, CSDiagram } from '../../core/types/cs';
+import type { CSBlock, CSSegment, CSArc } from '../../core/types/cs';
 import { CoordInput } from '../../ui/CoordInput';
 import { Button } from '../../ui/Button';
 import { Block } from '../../ui/Block';
+import { CSCanvas } from './CSCanvas';
 
 /**
  * Página principal del editor de diagramas CS
@@ -132,52 +133,11 @@ export function EditorPage() {
         <div
           style={{
             flex: 1,
-            background: 'var(--canvas-bg)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
+            minHeight: 0,
+            minWidth: 0,
           }}
         >
-          <div
-            style={{
-              fontSize: 'var(--fs-body)',
-              color: 'var(--text-tertiary)',
-              fontFamily: 'var(--ff-mono)',
-            }}
-          >
-            [Canvas geométrico - próximo paso]
-          </div>
-
-          {/* Grid sutil de fondo (opcional) */}
-          <svg
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              pointerEvents: 'none',
-              opacity: 0.3,
-            }}
-          >
-            <defs>
-              <pattern
-                id="grid"
-                width="20"
-                height="20"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M 20 0 L 0 0 0 20"
-                  fill="none"
-                  stroke="var(--canvas-grid)"
-                  strokeWidth="0.5"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
+          <CSCanvas blocks={blocks} />
         </div>
 
         {/* SIDEBAR */}
