@@ -2,7 +2,6 @@ import React from 'react';
 import type { CSBlock, CSSegment, CSArc } from '../../core/types/cs';
 import { CoordInput } from '../../ui/CoordInput';
 import { Button } from '../../ui/Button';
-import { Block } from '../../ui/Block';
 import { CSCanvas } from './CSCanvas';
 import { validateContinuity } from '../../core/validation/continuity';
 
@@ -15,9 +14,14 @@ export function EditorPage() {
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [showValidation, setShowValidation] = React.useState(false);
+  const [showGrid, setShowGrid] = React.useState(true);
+  const [gridSpacing, setGridSpacing] = React.useState(20);
 
   // Validación automática
   const validation = React.useMemo(() => validateContinuity(blocks), [blocks]);
+
+  // Obtener bloque seleccionado
+  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
   function addSegment() {
     const id = `s${blocks.length + 1}`;
@@ -166,24 +170,33 @@ export function EditorPage() {
             minWidth: 0,
           }}
         >
-          <CSCanvas blocks={blocks} />
+          <CSCanvas 
+            blocks={blocks} 
+            selectedBlockId={selectedBlockId}
+            onSelectBlock={setSelectedBlockId}
+            showGrid={showGrid}
+            gridSpacing={gridSpacing}
+          />
         </div>
 
         {/* SIDEBAR */}
         {sidebarOpen && (
           <aside
             style={{
-              width: '280px',
+              width: '300px',
               borderLeft: '1px solid var(--border)',
               background: 'var(--bg-secondary)',
-              padding: 'var(--space-md)',
-              overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: 'var(--space-md)',
             }}
           >
-            <div>
+            {/* CONTROLES DE VISTA */}
+            <div
+              style={{
+                padding: 'var(--space-md)',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
               <h2
                 style={{
                   fontSize: 'var(--fs-caption)',
@@ -194,76 +207,249 @@ export function EditorPage() {
                   marginBottom: 'var(--space-sm)',
                 }}
               >
-                Bloques CS
+                Vista
               </h2>
 
-              {/* Lista de bloques */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                {blocks.length === 0 && (
-                  <div
+              {/* Toggle grilla */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+                <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Grilla</span>
+                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={showGrid}
+                    onChange={(e) => setShowGrid(e.target.checked)}
+                    style={{ marginRight: '6px' }}
+                  />
+                  <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                    {showGrid ? 'Visible' : 'Oculta'}
+                  </span>
+                </label>
+              </div>
+
+              {/* Espaciado de grilla */}
+              {showGrid && (
+                <div>
+                  <label
                     style={{
                       fontSize: 'var(--fs-caption)',
-                      color: 'var(--text-tertiary)',
-                      textAlign: 'center',
-                      padding: 'var(--space-md)',
+                      color: 'var(--text-secondary)',
+                      display: 'block',
+                      marginBottom: '4px',
                     }}
                   >
-                    Sin bloques. Crea un segmento o arco.
-                  </div>
-                )}
+                    Espaciado: {gridSpacing}px
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="50"
+                    step="5"
+                    value={gridSpacing}
+                    onChange={(e) => setGridSpacing(Number(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              )}
+            </div>
 
-                {blocks.map((block) => (
-                  <Block
-                    key={block.id}
-                    title={`${block.id} · ${block.kind === 'segment' ? 'Segmento' : 'Arco'}`}
-                    active={selectedBlockId === block.id}
-                    onDelete={() => deleteBlock(block.id)}
-                  >
-                    {block.kind === 'segment' ? (
-                      <>
-                        <CoordInput
-                          label="P₁"
-                          x={block.p1.x}
-                          y={block.p1.y}
-                          onChange={(x, y) =>
-                            updateBlock(block.id, { p1: { x, y } } as Partial<CSSegment>)
+            {/* LISTA DE BLOQUES */}
+            <div
+              style={{
+                padding: 'var(--space-md)',
+                borderBottom: '1px solid var(--border)',
+                flex: 1,
+                overflowY: 'auto',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+                <h2
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Bloques ({blocks.length})
+                </h2>
+              </div>
+
+              {blocks.length === 0 ? (
+                <div
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    color: 'var(--text-tertiary)',
+                    textAlign: 'center',
+                    padding: 'var(--space-lg)',
+                  }}
+                >
+                  Sin bloques aún
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {blocks.map((block) => (
+                    <div
+                      key={block.id}
+                      onClick={() => setSelectedBlockId(block.id)}
+                      style={{
+                        padding: 'var(--space-sm)',
+                        background: selectedBlockId === block.id ? 'var(--bg-primary)' : 'transparent',
+                        border: `1px solid ${selectedBlockId === block.id ? 'var(--border)' : 'transparent'}`,
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedBlockId !== block.id) {
+                          e.currentTarget.style.background = 'var(--bg-tertiary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedBlockId !== block.id) {
+                          e.currentTarget.style.background = 'transparent';
+                        }
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-medium)', color: 'var(--text-primary)' }}>
+                          {block.id}
+                        </div>
+                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                          {block.kind === 'segment' ? 'Segmento' : 'Arco'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteBlock(block.id);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-tertiary)',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          fontSize: '14px',
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Botones añadir */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-md)' }}>
+                <Button onClick={addSegment}>+ Segmento</Button>
+                <Button onClick={addArc} variant="secondary">
+                  + Arco
+                </Button>
+              </div>
+            </div>
+
+            {/* PANEL DE PROPIEDADES DINÁMICO */}
+            {selectedBlock && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  background: 'var(--bg-primary)',
+                }}
+              >
+                <div style={{ marginBottom: 'var(--space-sm)' }}>
+                  <h3 style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-primary)' }}>
+                    {selectedBlock.id}
+                  </h3>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                    {selectedBlock.kind === 'segment' ? 'Segmento' : 'Arco'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                  {selectedBlock.kind === 'segment' ? (
+                    <>
+                      <CoordInput
+                        label="P₁"
+                        x={selectedBlock.p1.x}
+                        y={selectedBlock.p1.y}
+                        onChange={(x, y) =>
+                          updateBlock(selectedBlock.id, { p1: { x, y } } as Partial<CSSegment>)
+                        }
+                      />
+                      <CoordInput
+                        label="P₂"
+                        x={selectedBlock.p2.x}
+                        y={selectedBlock.p2.y}
+                        onChange={(x, y) =>
+                          updateBlock(selectedBlock.id, { p2: { x, y } } as Partial<CSSegment>)
+                        }
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <CoordInput
+                        label="Centro"
+                        x={selectedBlock.center.x}
+                        y={selectedBlock.center.y}
+                        onChange={(x, y) =>
+                          updateBlock(selectedBlock.id, { center: { x, y } } as Partial<CSArc>)
+                        }
+                      />
+                      <div>
+                        <label
+                          style={{
+                            fontSize: 'var(--fs-caption)',
+                            color: 'var(--text-secondary)',
+                            fontWeight: 'var(--fw-medium)',
+                            textTransform: 'uppercase',
+                            display: 'block',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          Radio
+                        </label>
+                        <input
+                          type="number"
+                          value={selectedBlock.radius}
+                          onChange={(e) =>
+                            updateBlock(selectedBlock.id, { radius: Number(e.target.value) } as Partial<CSArc>)
                           }
+                          step="0.1"
+                          style={{
+                            width: '100%',
+                            height: '32px',
+                            padding: '0 8px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            fontFamily: 'var(--ff-mono)',
+                          }}
                         />
-                        <CoordInput
-                          label="P₂"
-                          x={block.p2.x}
-                          y={block.p2.y}
-                          onChange={(x, y) =>
-                            updateBlock(block.id, { p2: { x, y } } as Partial<CSSegment>)
-                          }
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <CoordInput
-                          label="Centro"
-                          x={block.center.x}
-                          y={block.center.y}
-                          onChange={(x, y) =>
-                            updateBlock(block.id, { center: { x, y } } as Partial<CSArc>)
-                          }
-                        />
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                        <div style={{ flex: 1 }}>
                           <label
                             style={{
                               fontSize: 'var(--fs-caption)',
                               color: 'var(--text-secondary)',
                               fontWeight: 'var(--fw-medium)',
                               textTransform: 'uppercase',
+                              display: 'block',
+                              marginBottom: '4px',
                             }}
                           >
-                            Radio
+                            θ₁
                           </label>
                           <input
                             type="number"
-                            value={block.radius}
+                            value={selectedBlock.startAngle}
                             onChange={(e) =>
-                              updateBlock(block.id, { radius: Number(e.target.value) } as Partial<CSArc>)
+                              updateBlock(selectedBlock.id, {
+                                startAngle: Number(e.target.value),
+                              } as Partial<CSArc>)
                             }
                             step="0.1"
                             style={{
@@ -273,85 +459,62 @@ export function EditorPage() {
                               border: '1px solid var(--border)',
                               borderRadius: '6px',
                               fontFamily: 'var(--ff-mono)',
+                              fontSize: '13px',
                             }}
                           />
                         </div>
-                        <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                          <div style={{ flex: 1 }}>
-                            <label
-                              style={{
-                                fontSize: 'var(--fs-caption)',
-                                color: 'var(--text-secondary)',
-                                fontWeight: 'var(--fw-medium)',
-                                textTransform: 'uppercase',
-                              }}
-                            >
-                              θ₁
-                            </label>
-                            <input
-                              type="number"
-                              value={block.startAngle}
-                              onChange={(e) =>
-                                updateBlock(block.id, {
-                                  startAngle: Number(e.target.value),
-                                } as Partial<CSArc>)
-                              }
-                              step="0.1"
-                              style={{
-                                width: '100%',
-                                height: '32px',
-                                padding: '0 8px',
-                                border: '1px solid var(--border)',
-                                borderRadius: '6px',
-                                fontFamily: 'var(--ff-mono)',
-                              }}
-                            />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <label
-                              style={{
-                                fontSize: 'var(--fs-caption)',
-                                color: 'var(--text-secondary)',
-                                fontWeight: 'var(--fw-medium)',
-                                textTransform: 'uppercase',
-                              }}
-                            >
-                              θ₂
-                            </label>
-                            <input
-                              type="number"
-                              value={block.endAngle}
-                              onChange={(e) =>
-                                updateBlock(block.id, {
-                                  endAngle: Number(e.target.value),
-                                } as Partial<CSArc>)
-                              }
-                              step="0.1"
-                              style={{
-                                width: '100%',
-                                height: '32px',
-                                padding: '0 8px',
-                                border: '1px solid var(--border)',
-                                borderRadius: '6px',
-                                fontFamily: 'var(--ff-mono)',
-                              }}
-                            />
-                          </div>
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              fontSize: 'var(--fs-caption)',
+                              color: 'var(--text-secondary)',
+                              fontWeight: 'var(--fw-medium)',
+                              textTransform: 'uppercase',
+                              display: 'block',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            θ₂
+                          </label>
+                          <input
+                            type="number"
+                            value={selectedBlock.endAngle}
+                            onChange={(e) =>
+                              updateBlock(selectedBlock.id, {
+                                endAngle: Number(e.target.value),
+                              } as Partial<CSArc>)
+                            }
+                            step="0.1"
+                            style={{
+                              width: '100%',
+                              height: '32px',
+                              padding: '0 8px',
+                              border: '1px solid var(--border)',
+                              borderRadius: '6px',
+                              fontFamily: 'var(--ff-mono)',
+                              fontSize: '13px',
+                            }}
+                          />
                         </div>
-                      </>
-                    )}
-                  </Block>
-                ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Botones añadir */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-              <Button onClick={addSegment}>+ Añadir Segmento</Button>
-              <Button onClick={addArc} variant="secondary">
-                + Añadir Arco
-              </Button>
-            </div>
+            {!selectedBlock && blocks.length > 0 && (
+              <div
+                style={{
+                  padding: 'var(--space-lg)',
+                  textAlign: 'center',
+                  color: 'var(--text-tertiary)',
+                  fontSize: 'var(--fs-caption)',
+                }}
+              >
+                Selecciona un bloque para editar
+              </div>
+            )}
           </aside>
         )}
       </div>
