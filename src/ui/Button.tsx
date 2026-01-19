@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface ButtonProps {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   onClick?: () => void;
   variant?: 'primary' | 'secondary';
@@ -16,7 +16,9 @@ export function Button({
   onClick, 
   variant = 'primary', 
   disabled = false,
-  type = 'button'
+  type = 'button',
+  style: externalStyle,
+  ...rest
 }: ButtonProps) {
   return (
     <button
@@ -28,7 +30,9 @@ export function Button({
         ...(variant === 'primary' ? primaryStyle : secondaryStyle),
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
+        ...externalStyle,
       }}
+      {...rest}
     >
       {children}
     </button>
