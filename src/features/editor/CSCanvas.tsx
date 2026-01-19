@@ -13,12 +13,14 @@ interface CSCanvasProps {
   height?: number;
 }
 
-type DragState = {
+type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end';
+
+interface DragState {
   blockId: string;
-  pointType: 'p1' | 'p2' | 'center' | 'start' | 'end';
+  pointType: PointType;
   startX: number;
   startY: number;
-} | null;
+}
 
 /**
  * Canvas SVG para renderizar diagramas CS
@@ -35,7 +37,7 @@ export function CSCanvas({
   height = 600 
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
-  const [dragState, setDragState] = React.useState<DragState>(null);
+  const [dragState, setDragState] = React.useState<DragState | null>(null);
   
   const centerX = width / 2;
   const centerY = height / 2;
@@ -67,9 +69,9 @@ export function CSCanvas({
     return fromSVG(svgX, svgY);
   }
 
-  function handleMouseDown(blockId: string, pointType: DragState['pointType'], e: React.MouseEvent) {
+  function handleMouseDown(blockId: string, pointType: PointType, e: React.MouseEvent) {
     e.stopPropagation();
-    const pos = getMousePosition(e as any);
+    const pos = getMousePosition(e as React.MouseEvent<SVGSVGElement>);
     if (!pos) return;
     
     setDragState({
