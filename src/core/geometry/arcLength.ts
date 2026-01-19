@@ -1,4 +1,5 @@
 import type { CSBlock, CSSegment, CSArc } from '../types/cs';
+import { findContinuousChains } from '../validation/continuity';
 
 /**
  * Calcula la longitud de un segmento
@@ -54,7 +55,12 @@ export interface LengthInfo {
 }
 
 export function getCurveLengthInfo(blocks: CSBlock[]): LengthInfo {
-  const blockLengths = blocks.map(block => ({
+  // Encontrar la cadena continua más larga
+  const chains = findContinuousChains(blocks);
+  const mainChain = chains.length > 0 ? chains[0] : [];
+
+  // Calcular longitudes solo de la cadena principal
+  const blockLengths = mainChain.map(block => ({
     id: block.id,
     kind: block.kind,
     length: blockLength(block),
