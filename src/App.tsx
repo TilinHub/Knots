@@ -2,12 +2,25 @@ import { useState } from 'react';
 import { EditorPage } from "./features/editor/EditorPage";
 import { KnotGallery } from "./features/gallery/KnotGallery";
 
-export default function App() {
-  const [showGallery, setShowGallery] = useState(true);
+// Tipo para el nudo seleccionado
+export interface SelectedKnot {
+  id: number;
+  name: string;
+  nodes: number[];
+  edges: [number, number][];
+}
 
-  if (showGallery) {
-    return <KnotGallery onSelectKnot={() => setShowGallery(false)} />;
+export default function App() {
+  const [selectedKnot, setSelectedKnot] = useState<SelectedKnot | null>(null);
+
+  if (selectedKnot === null) {
+    return <KnotGallery onSelectKnot={setSelectedKnot} />;
   }
 
-  return <EditorPage onBackToGallery={() => setShowGallery(true)} />;
+  return (
+    <EditorPage 
+      onBackToGallery={() => setSelectedKnot(null)}
+      initialKnot={selectedKnot}
+    />
+  );
 }
