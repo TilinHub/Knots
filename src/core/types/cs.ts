@@ -1,6 +1,6 @@
 /**
  * Tipos base para el sistema de diagramas CS
- * (combinación de segmentos rectos y arcos de círculo)
+ * (combinación de segmentos rectos, arcos de círculo y discos)
  */
 
 /** Punto 2D en el plano cartesiano */
@@ -15,6 +15,8 @@ export interface CSSegment {
   kind: 'segment';
   p1: Point2D;
   p2: Point2D;
+  /** IDs de discos conectados (opcional) */
+  connectedDisks?: string[];
 }
 
 /** Arco circular definido por centro, radio y ángulos */
@@ -25,10 +27,22 @@ export interface CSArc {
   radius: number;
   startAngle: number; // radianes (0 = derecha, π/2 = arriba)
   endAngle: number;   // radianes
+  /** IDs de discos conectados (opcional) */
+  connectedDisks?: string[];
 }
 
-/** Bloque CS: puede ser segmento o arco */
-export type CSBlock = CSSegment | CSArc;
+/** Disco de contacto como elemento del diagrama */
+export interface CSDisk {
+  id: string;
+  kind: 'disk';
+  center: Point2D;
+  radius: number;
+  label?: string; // Etiqueta personalizada (R1, R2, etc.)
+  color?: string; // Color del disco
+}
+
+/** Bloque CS: puede ser segmento, arco o disco */
+export type CSBlock = CSSegment | CSArc | CSDisk;
 
 /** Diagrama CS completo */
 export interface CSDiagram {
