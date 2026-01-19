@@ -94,23 +94,23 @@ export function CSCanvas({
 
     if (block.kind === 'segment') {
       if (dragState.pointType === 'p1') {
-        onUpdateBlock(block.id, { p1: pos });
+        onUpdateBlock(block.id, { p1: pos } as Partial<CSBlock>);
       } else if (dragState.pointType === 'p2') {
-        onUpdateBlock(block.id, { p2: pos });
+        onUpdateBlock(block.id, { p2: pos } as Partial<CSBlock>);
       }
     } else if (block.kind === 'arc') {
       if (dragState.pointType === 'center') {
-        onUpdateBlock(block.id, { center: pos });
+        onUpdateBlock(block.id, { center: pos } as Partial<CSBlock>);
       } else if (dragState.pointType === 'start') {
         const dx = pos.x - block.center.x;
         const dy = pos.y - block.center.y;
         const angle = Math.atan2(dy, dx);
-        onUpdateBlock(block.id, { startAngle: angle });
+        onUpdateBlock(block.id, { startAngle: angle } as Partial<CSBlock>);
       } else if (dragState.pointType === 'end') {
         const dx = pos.x - block.center.x;
         const dy = pos.y - block.center.y;
         const angle = Math.atan2(dy, dx);
-        onUpdateBlock(block.id, { endAngle: angle });
+        onUpdateBlock(block.id, { endAngle: angle } as Partial<CSBlock>);
       }
     }
   }
