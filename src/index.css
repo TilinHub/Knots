@@ -24,12 +24,13 @@
   --canvas-bg: #FAFAFA;
   --canvas-grid: #E5E5E5;
   --canvas-segment: #1D1D1F;
-  --canvas-arc: #007AFF;
+  --canvas-arc: #34C759;     /* Verde (antes era azul #007AFF) */
   --canvas-cross: #FF3B30;
   
   /* ===== ACENTOS FUNCIONALES ===== */
   --accent-valid: #34C759;
   --accent-error: #FF3B30;
+  --accent-primary: #007AFF;
   --border: #D2D2D7;
   
   /* ===== ESPACIADO ===== */
