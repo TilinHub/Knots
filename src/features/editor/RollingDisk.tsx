@@ -30,7 +30,7 @@ export function RollingDisk({
 }: RollingDiskProps) {
   const [progress, setProgress] = React.useState(0);
   const [trail, setTrail] = React.useState<Point[]>([]);
-  const animationRef = React.useRef<number>();
+  const animationRef = React.useRef<number | undefined>(undefined);
   const lastTimeRef = React.useRef<number>(0);
 
   const lengthInfo = React.useMemo(() => getCurveLengthInfo(blocks), [blocks]);
@@ -68,7 +68,7 @@ export function RollingDisk({
   // Animación
   React.useEffect(() => {
     if (!isPlaying || totalLength === 0) {
-      if (animationRef.current) {
+      if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
       }
       return;
@@ -94,7 +94,7 @@ export function RollingDisk({
     animationRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (animationRef.current) {
+      if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
       }
     };
@@ -105,16 +105,22 @@ export function RollingDisk({
     if (!showTrail) return;
     if (!currentState) return;
 
-    setTrail((prev: Point[]) => {
-      const newTrail: Point[] = [...prev, currentState.diskCenter];
-      // Limitar trail a últimos 500 puntos para performance
-      const MAX_TRAIL_LENGTH = 500;
-      if (newTrail.length <= MAX_TRAIL_LENGTH) {
+    setTrail((prev) => {
+      const newTrail = [...prev, currentState.diskCenter];
+      const MAX_LENGTH = 500;
+      
+      // Si no excede el límite, devolver el array completo
+      if (newTrail.length <= MAX_LENGTH) {
         return newTrail;
       }
-      // Usar filter con index en lugar de slice para evitar problema de sobrecarga
-      const skipCount = newTrail.length - MAX_TRAIL_LENGTH;
-      return newTrail.filter((_, index) => index >= skipCount);
+      
+      // Truncar manualmente construyendo un nuevo array
+      const result: Point[] = [];
+      const startIdx = newTrail.length - MAX_LENGTH;
+      for (let i = startIdx; i < newTrail.length; i++) {
+        result.push(newTrail[i] as Point);
+      }
+      return result;
     });
   }, [currentState, showTrail]);
 
