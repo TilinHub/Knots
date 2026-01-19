@@ -29,11 +29,13 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const [gridSpacing, setGridSpacing] = React.useState(20);
   const [angleUnit, setAngleUnit] = React.useState<'deg' | 'rad'>('deg');
 
-  // Rolling mode states
+  // Rolling mode states - NEW TWO-STEP SELECTION
   const [rollingMode, setRollingMode] = React.useState(false);
-  const [diskRadius, setDiskRadius] = React.useState(30);
-  const [rollingSpeed, setRollingSpeed] = React.useState(0.1);
+  const [pivotDiskId, setPivotDiskId] = React.useState<string | null>(null);
+  const [rollingDiskId, setRollingDiskId] = React.useState<string | null>(null);
+  const [theta, setTheta] = React.useState(0); // ángulo de rotación
   const [isRolling, setIsRolling] = React.useState(false);
+  const [rollingSpeed, setRollingSpeed] = React.useState(0.02);
   const [showTrail, setShowTrail] = React.useState(true);
 
   // Contact graph state
@@ -41,13 +43,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
   // Convertir nudo inicial a bloques CS
   React.useEffect(() => {
-    if (!initialKnot || initialKnot.id === 0) return; // 0 = nuevo nudo vacío
+    if (!initialKnot || initialKnot.id === 0) return;
     
-    // Convertir edges del nudo a segmentos CS
     const initialBlocks: CSBlock[] = initialKnot.edges.map((edge, idx) => {
       const [nodeA, nodeB] = edge;
-      
-      // Posicionar nodos en círculo para visualización inicial
       const angleA = (nodeA / initialKnot.nodes.length) * 2 * Math.PI;
       const angleB = (nodeB / initialKnot.nodes.length) * 2 * Math.PI;
       const radius = 100;
@@ -69,25 +68,54 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     setBlocks(initialBlocks);
   }, [initialKnot]);
 
-  // Separar bloques no-disco para validación y cálculos
+  // Separar bloques no-disco
   const nonDiskBlocks = React.useMemo(() => blocks.filter(b => b.kind !== 'disk'), [blocks]);
+  const diskBlocks = React.useMemo(() => blocks.filter(b => b.kind === 'disk') as CSDisk[], [blocks]);
 
-  // Validación automática (solo bloques no-disco)
   const validation = React.useMemo(() => validateContinuity(nonDiskBlocks), [nonDiskBlocks]);
-  
-  // Cálculo de longitud (solo bloques no-disco)
   const lengthInfo = React.useMemo(() => getCurveLengthInfo(nonDiskBlocks), [nonDiskBlocks]);
 
-  // Obtener bloque seleccionado
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
   const selectedBlockLength = selectedBlock && selectedBlock.kind !== 'disk' ? blockLength(selectedBlock) : null;
 
-  // Funciones de conversión
   const radToDeg = (rad: number) => (rad * 180 / Math.PI);
   const degToRad = (deg: number) => (deg * Math.PI / 180);
 
-  // Contador de discos para IDs únicos
   const diskCount = blocks.filter(b => b.kind === 'disk').length;
+
+  // Handler para selección de discos en rolling mode
+  const handleDiskClickInRollingMode = React.useCallback((diskId: string) => {
+    if (!pivotDiskId) {
+      // Primer click: seleccionar pivote
+      setPivotDiskId(diskId);
+      setRollingDiskId(null);
+      setTheta(0);
+    } else if (diskId === pivotDiskId) {
+      // Click en el mismo pivote: resetear
+      setPivotDiskId(null);
+      setRollingDiskId(null);
+      setTheta(0);
+    } else if (!rollingDiskId) {
+      // Segundo click: seleccionar disco rodante
+      setRollingDiskId(diskId);
+      setTheta(0);
+    } else {
+      // Ya hay dos seleccionados: cambiar el rodante
+      setRollingDiskId(diskId);
+      setTheta(0);
+    }
+  }, [pivotDiskId, rollingDiskId]);
+
+  // Animación del rolling
+  React.useEffect(() => {
+    if (!isRolling || !pivotDiskId || !rollingDiskId) return;
+    
+    const interval = setInterval(() => {
+      setTheta(prev => prev + rollingSpeed);
+    }, 16); // ~60fps
+
+    return () => clearInterval(interval);
+  }, [isRolling, pivotDiskId, rollingDiskId, rollingSpeed]);
 
   function addSegment() {
     const id = `s${Date.now()}`;
@@ -132,19 +160,24 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   function deleteBlock(id: string) {
     setBlocks(blocks.filter((b) => b.id !== id));
     if (selectedBlockId === id) setSelectedBlockId(null);
+    // Reset rolling selection si se elimina un disco involucrado
+    if (id === pivotDiskId) {
+      setPivotDiskId(null);
+      setRollingDiskId(null);
+    } else if (id === rollingDiskId) {
+      setRollingDiskId(null);
+    }
   }
 
   function updateBlock(id: string, updates: Partial<CSBlock>) {
     setBlocks(
       blocks.map((b) => {
         if (b.id !== id) return b;
-        // Merge updates with existing block
         return { ...b, ...updates } as CSBlock;
       })
     );
   }
 
-  // Determinar color y texto del estado
   const statusColor = nonDiskBlocks.length === 0 
     ? 'var(--text-tertiary)'
     : validation.valid 
@@ -225,6 +258,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                 setShowContactDisks(!showContactDisks);
                 if (!showContactDisks) {
                   setRollingMode(false);
+                  setPivotDiskId(null);
+                  setRollingDiskId(null);
                 }
               }}
               style={{
@@ -244,12 +279,15 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
           )}
 
           {/* Rolling Mode Toggle */}
-          {validation.valid && nonDiskBlocks.length > 0 && !showContactDisks && (
+          {diskBlocks.length >= 2 && !showContactDisks && (
             <button
               onClick={() => {
                 setRollingMode(!rollingMode);
                 if (!rollingMode) {
                   setIsRolling(false);
+                  setPivotDiskId(null);
+                  setRollingDiskId(null);
+                  setTheta(0);
                 }
               }}
               style={{
@@ -268,7 +306,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             </button>
           )}
 
-          {/* Longitud total (solo si es válido) */}
           {validation.valid && nonDiskBlocks.length > 0 && !showContactDisks && (
             <div
               style={{
@@ -337,16 +374,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         </div>
       </header>
 
-      {/* MAIN: Canvas + Sidebar */}
+      {/* MAIN */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        {/* CANVAS */}
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            minWidth: 0,
-          }}
-        >
+        <div style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
           <CSCanvas 
             blocks={blocks} 
             selectedBlockId={selectedBlockId}
@@ -355,11 +385,12 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             showGrid={showGrid}
             gridSpacing={gridSpacing}
             rollingMode={rollingMode}
-            diskRadius={diskRadius}
-            rollingSpeed={rollingSpeed}
-            isRolling={isRolling}
+            pivotDiskId={pivotDiskId}
+            rollingDiskId={rollingDiskId}
+            theta={theta}
             showTrail={showTrail}
             showContactDisks={showContactDisks}
+            onDiskClick={rollingMode ? handleDiskClickInRollingMode : undefined}
           />
         </div>
 
@@ -375,6 +406,151 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               overflowY: 'auto',
             }}
           >
+            {/* ROLLING MODE CONTROLS */}
+            {rollingMode && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 'var(--space-sm)',
+                  }}
+                >
+                  🎡 Rolling Mode
+                </h2>
+
+                {/* Instrucciones */}
+                <div
+                  style={{
+                    padding: 'var(--space-sm)',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '6px',
+                    fontSize: 'var(--fs-caption)',
+                    color: 'var(--text-secondary)',
+                    marginBottom: 'var(--space-md)',
+                    lineHeight: '1.5',
+                  }}
+                >
+                  {!pivotDiskId && '1️⃣ Click en disco pivote (fijo)'}
+                  {pivotDiskId && !rollingDiskId && '2️⃣ Click en disco rodante'}
+                  {pivotDiskId && rollingDiskId && '✅ Usa controles para rodar'}
+                </div>
+
+                {/* Estado actual */}
+                {pivotDiskId && (
+                  <div style={{ marginBottom: 'var(--space-md)', fontSize: 'var(--fs-caption)' }}>
+                    <div style={{ color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                      <strong>Pivote:</strong> {diskBlocks.find(d => d.id === pivotDiskId)?.label || pivotDiskId}
+                    </div>
+                    {rollingDiskId && (
+                      <div style={{ color: 'var(--text-secondary)' }}>
+                        <strong>Rodante:</strong> {diskBlocks.find(d => d.id === rollingDiskId)?.label || rollingDiskId}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Controles */}
+                {pivotDiskId && rollingDiskId && (
+                  <>
+                    <div style={{ marginBottom: 'var(--space-md)' }}>
+                      <Button
+                        onClick={() => setIsRolling(!isRolling)}
+                        style={{ width: '100%', background: isRolling ? 'var(--accent-error)' : 'var(--accent-primary)' }}
+                      >
+                        {isRolling ? '⏸️ Pausar' : '▶️ Iniciar'}
+                      </Button>
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--space-sm)' }}>
+                      <label
+                        style={{
+                          fontSize: 'var(--fs-caption)',
+                          color: 'var(--text-secondary)',
+                          display: 'block',
+                          marginBottom: '4px',
+                          fontWeight: 'var(--fw-medium)',
+                        }}
+                      >
+                        Ángulo: {(theta % (2 * Math.PI)).toFixed(2)} rad
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max={2 * Math.PI}
+                        step="0.05"
+                        value={theta % (2 * Math.PI)}
+                        onChange={(e) => setTheta(Number(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--space-sm)' }}>
+                      <label
+                        style={{
+                          fontSize: 'var(--fs-caption)',
+                          color: 'var(--text-secondary)',
+                          display: 'block',
+                          marginBottom: '4px',
+                          fontWeight: 'var(--fw-medium)',
+                        }}
+                      >
+                        Velocidad: {rollingSpeed.toFixed(3)}x
+                      </label>
+                      <input
+                        type="range"
+                        min="0.005"
+                        max="0.1"
+                        step="0.005"
+                        value={rollingSpeed}
+                        onChange={(e) => setRollingSpeed(Number(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Trayectoria</span>
+                      <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={showTrail}
+                          onChange={(e) => setShowTrail(e.target.checked)}
+                          style={{ marginRight: '6px' }}
+                        />
+                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                          {showTrail ? 'Sí' : 'No'}
+                        </span>
+                      </label>
+                    </div>
+
+                    <div style={{ marginTop: 'var(--space-md)' }}>
+                      <Button
+                        onClick={() => {
+                          setPivotDiskId(null);
+                          setRollingDiskId(null);
+                          setTheta(0);
+                          setIsRolling(false);
+                        }}
+                        variant="secondary"
+                        style={{ width: '100%' }}
+                      >
+                        🔄 Resetear selección
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* CONTACT GRAPH INFO */}
             {showContactDisks && (
               <div
@@ -427,104 +603,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               </div>
             )}
 
-            {/* ROLLING MODE CONTROLS */}
-            {rollingMode && (
-              <div
-                style={{
-                  padding: 'var(--space-md)',
-                  borderBottom: '1px solid var(--border)',
-                  background: 'var(--bg-primary)',
-                }}
-              >
-                <h2
-                  style={{
-                    fontSize: 'var(--fs-caption)',
-                    fontWeight: 'var(--fw-semibold)',
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    marginBottom: 'var(--space-sm)',
-                  }}
-                >
-                  🎡 Rolling Mode
-                </h2>
-
-                {/* Play/Pause */}
-                <div style={{ marginBottom: 'var(--space-md)' }}>
-                  <Button
-                    onClick={() => setIsRolling(!isRolling)}
-                    style={{ width: '100%', background: isRolling ? 'var(--accent-error)' : 'var(--accent-primary)' }}
-                  >
-                    {isRolling ? '⏸️ Pausar' : '▶️ Iniciar'}
-                  </Button>
-                </div>
-
-                {/* Disk Radius */}
-                <div style={{ marginBottom: 'var(--space-sm)' }}>
-                  <label
-                    style={{
-                      fontSize: 'var(--fs-caption)',
-                      color: 'var(--text-secondary)',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontWeight: 'var(--fw-medium)',
-                    }}
-                  >
-                    Radio del disco: {diskRadius}px
-                  </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="80"
-                    step="5"
-                    value={diskRadius}
-                    onChange={(e) => setDiskRadius(Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                {/* Rolling Speed */}
-                <div style={{ marginBottom: 'var(--space-sm)' }}>
-                  <label
-                    style={{
-                      fontSize: 'var(--fs-caption)',
-                      color: 'var(--text-secondary)',
-                      display: 'block',
-                      marginBottom: '4px',
-                      fontWeight: 'var(--fw-medium)',
-                    }}
-                  >
-                    Velocidad: {rollingSpeed.toFixed(2)}x
-                  </label>
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="0.5"
-                    step="0.05"
-                    value={rollingSpeed}
-                    onChange={(e) => setRollingSpeed(Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                {/* Show Trail Toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Mostrar trayectoria</span>
-                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={showTrail}
-                      onChange={(e) => setShowTrail(e.target.checked)}
-                      style={{ marginRight: '6px' }}
-                    />
-                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                      {showTrail ? 'Sí' : 'No'}
-                    </span>
-                  </label>
-                </div>
-              </div>
-            )}
-
             {/* CONTROLES DE VISTA */}
             {!rollingMode && !showContactDisks && (
               <div
@@ -546,7 +624,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                   Vista
                 </h2>
 
-                {/* Toggle grilla */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
                   <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Grilla</span>
                   <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -562,7 +639,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                   </label>
                 </div>
 
-                {/* Espaciado de grilla */}
                 {showGrid && (
                   <div style={{ marginBottom: 'var(--space-sm)' }}>
                     <label
@@ -587,7 +663,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                   </div>
                 )}
 
-                {/* Toggle unidades de ángulo */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Ángulos</span>
                   <div style={{ display: 'flex', gap: '4px' }}>
@@ -724,7 +799,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                   </div>
                 )}
 
-                {/* Botones añadir - CON DISCO */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-md)' }}>
                   <Button onClick={addDisk} style={{ background: '#4A90E2' }}>🔵 + Disco</Button>
                   <Button onClick={addSegment}>+ Segmento</Button>
@@ -733,7 +807,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               </div>
             )}
 
-            {/* PANEL DE PROPIEDADES - CON SOPORTE PARA DISCOS */}
+            {/* PANEL DE PROPIEDADES */}
             {!rollingMode && !showContactDisks && selectedBlock && (
               <div
                 style={{
@@ -768,7 +842,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                   {selectedBlock.kind === 'disk' ? (
-                    // PROPIEDADES DEL DISCO
                     <>
                       <CoordInput
                         label="Centro"
@@ -976,7 +1049,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                           />
                         </div>
                       </div>
-                      {/* Mostrar longitud de arco con fórmula */}
                       <div
                         style={{
                           fontSize: 'var(--fs-caption)',
@@ -1114,7 +1186,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               </div>
             )}
 
-            {/* Información de longitud */}
             {validation.valid && (
               <div style={{ marginBottom: 'var(--space-md)' }}>
                 <div
