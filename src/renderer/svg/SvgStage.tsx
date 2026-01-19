@@ -102,6 +102,7 @@ export function SvgStage(props: {
     return m;
   }, [scene.points]);
 
+  // Usar radio geométrico (radius) para cálculos del hull
   const disks = React.useMemo(
     () => scene.points.map((p) => ({ id: p.id, x: p.x, y: p.y, r: scene.radius })),
     [scene.points, scene.radius]
@@ -349,7 +350,7 @@ export function SvgStage(props: {
         />
       )}
 
-      {/* Nodes */}
+      {/* Nodes - usar visualRadius para renderizado */}
       <g>
         {scene.points.map((p: Point) => {
           const selected = p.id === selectedPointId;
@@ -377,13 +378,13 @@ export function SvgStage(props: {
                 ref={selected ? selectedCircleRef : undefined}
                 cx={p.x}
                 cy={p.y}
-                r={scene.radius}
+                r={scene.visualRadius}
                 fill={COLORS.nodeFill}
                 stroke={stroke}
                 strokeWidth={1}
               />
               <text
-                x={p.x + scene.radius + 6}
+                x={p.x + scene.visualRadius + 6}
                 y={p.y + 5}
                 fill={COLORS.nodeText}
                 fontSize={13}
