@@ -84,7 +84,7 @@ export function CSCanvas({
     
     if (!pivot || !rolling) return null;
     
-    // Distancia entre centros: suma de radios (rodado externo)
+    // Distancia entre centros: suma de radios GEOMÉTRICOS (rodado externo)
     const distance = pivot.radius + rolling.radius;
     
     // Nueva posición del centro del disco rodante
@@ -113,7 +113,7 @@ export function CSCanvas({
     }
   }, [rollingDiskPosition, showTrail, rollingMode, rollingDiskId]);
 
-  // Validar overlap entre discos
+  // Validar overlap entre discos (usando radio GEOMÉTRICO)
   const checkDiskOverlap = React.useCallback((diskId: string, newCenter: Point2D, radius: number): boolean => {
     for (const other of disks) {
       if (other.id === diskId) continue;
@@ -216,7 +216,7 @@ export function CSCanvas({
         y: block.center.y + deltaY
       };
       
-      // Validar que no haya overlap
+      // Validar que no haya overlap (usando radio GEOMÉTRICO)
       if (!checkDiskOverlap(block.id, newCenter, block.radius)) {
         onUpdateBlock(block.id, { center: newCenter } as Partial<CSBlock>);
         
@@ -333,6 +333,9 @@ export function CSCanvas({
         const isPivot = rollingMode && disk.id === pivotDiskId;
         const isRollingDisk = rollingMode && disk.id === rollingDiskId;
         
+        // Usar visualRadius para renderizado
+        const renderRadius = disk.visualRadius;
+        
         // Borde según estado
         let strokeColor = "#2E6BA8";
         let strokeWidth = 4;
@@ -353,7 +356,7 @@ export function CSCanvas({
             <circle
               cx={cx + 3}
               cy={cy + 3}
-              r={disk.radius}
+              r={renderRadius}
               fill="rgba(0, 0, 0, 0.15)"
               pointerEvents="none"
             />
@@ -361,7 +364,7 @@ export function CSCanvas({
             <circle
               cx={cx}
               cy={cy}
-              r={disk.radius}
+              r={renderRadius}
               fill={`url(#gradient-${disk.id})`}
               stroke={strokeColor}
               strokeWidth={strokeWidth}
@@ -379,10 +382,10 @@ export function CSCanvas({
             />
             {/* Brillo */}
             <ellipse
-              cx={cx - disk.radius * 0.25}
-              cy={cy - disk.radius * 0.25}
-              rx={disk.radius * 0.4}
-              ry={disk.radius * 0.3}
+              cx={cx - renderRadius * 0.25}
+              cy={cy - renderRadius * 0.25}
+              rx={renderRadius * 0.4}
+              ry={renderRadius * 0.3}
               fill="rgba(255, 255, 255, 0.3)"
               pointerEvents="none"
             />
@@ -392,16 +395,16 @@ export function CSCanvas({
                 <line
                   x1={cx}
                   y1={cy}
-                  x2={cx + disk.radius * Math.cos(rollingDiskPosition.spinAngle)}
-                  y2={cy - disk.radius * Math.sin(rollingDiskPosition.spinAngle)}
+                  x2={cx + renderRadius * Math.cos(rollingDiskPosition.spinAngle)}
+                  y2={cy - renderRadius * Math.sin(rollingDiskPosition.spinAngle)}
                   stroke="white"
                   strokeWidth="3"
                   opacity="0.8"
                   pointerEvents="none"
                 />
                 <circle
-                  cx={cx + disk.radius * Math.cos(rollingDiskPosition.spinAngle)}
-                  cy={cy - disk.radius * Math.sin(rollingDiskPosition.spinAngle)}
+                  cx={cx + renderRadius * Math.cos(rollingDiskPosition.spinAngle)}
+                  cy={cy - renderRadius * Math.sin(rollingDiskPosition.spinAngle)}
                   r="5"
                   fill="white"
                   pointerEvents="none"
@@ -441,7 +444,7 @@ export function CSCanvas({
             {isPivot && (
               <text
                 x={cx}
-                y={cy - disk.radius - 10}
+                y={cy - renderRadius - 10}
                 fontSize="10"
                 fill="#FFD700"
                 fontFamily="var(--ff-mono)"
@@ -455,7 +458,7 @@ export function CSCanvas({
             {isRollingDisk && (
               <text
                 x={cx}
-                y={cy - disk.radius - 10}
+                y={cy - renderRadius - 10}
                 fontSize="10"
                 fill="#FF6B6B"
                 fontFamily="var(--ff-mono)"
