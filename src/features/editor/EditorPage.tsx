@@ -459,7 +459,7 @@ export function EditorPage() {
                         x={selectedBlock.p1.x}
                         y={selectedBlock.p1.y}
                         onChange={(x, y) =>
-                          updateBlock(selectedBlock.id, { p1: { x, y } } as Partial<CSSegment>)
+                          updateBlock(selectedBlock.id, { p1: { x, y } })
                         }
                       />
                       <CoordInput
@@ -467,7 +467,7 @@ export function EditorPage() {
                         x={selectedBlock.p2.x}
                         y={selectedBlock.p2.y}
                         onChange={(x, y) =>
-                          updateBlock(selectedBlock.id, { p2: { x, y } } as Partial<CSSegment>)
+                          updateBlock(selectedBlock.id, { p2: { x, y } })
                         }
                       />
                     </>
@@ -478,7 +478,7 @@ export function EditorPage() {
                         x={selectedBlock.center.x}
                         y={selectedBlock.center.y}
                         onChange={(x, y) =>
-                          updateBlock(selectedBlock.id, { center: { x, y } } as Partial<CSArc>)
+                          updateBlock(selectedBlock.id, { center: { x, y } })
                         }
                       />
                       <div>
@@ -498,7 +498,7 @@ export function EditorPage() {
                           type="number"
                           value={selectedBlock.radius}
                           onChange={(e) =>
-                            updateBlock(selectedBlock.id, { radius: Number(e.target.value) } as Partial<CSArc>)
+                            updateBlock(selectedBlock.id, { radius: Number(e.target.value) })
                           }
                           step="0.1"
                           style={{
@@ -535,9 +535,7 @@ export function EditorPage() {
                             onChange={(e) => {
                               const value = Number(e.target.value);
                               const radValue = angleUnit === 'deg' ? degToRad(value) : value;
-                              updateBlock(selectedBlock.id, {
-                                startAngle: radValue,
-                              } as Partial<CSArc>);
+                              updateBlock(selectedBlock.id, { startAngle: radValue });
                             }}
                             step={angleUnit === 'deg' ? '1' : '0.01'}
                             style={{
@@ -574,9 +572,7 @@ export function EditorPage() {
                             onChange={(e) => {
                               const value = Number(e.target.value);
                               const radValue = angleUnit === 'deg' ? degToRad(value) : value;
-                              updateBlock(selectedBlock.id, {
-                                endAngle: radValue,
-                              } as Partial<CSArc>);
+                              updateBlock(selectedBlock.id, { endAngle: radValue });
                             }}
                             step={angleUnit === 'deg' ? '1' : '0.01'}
                             style={{
