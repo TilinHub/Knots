@@ -87,7 +87,7 @@ function tangentsAlign(t1: Point2D, t2: Point2D): boolean {
 /**
  * Encontrar cadenas continuas de bloques, independiente del orden
  */
-function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
+export function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
   if (blocks.length === 0) return [];
   if (blocks.length === 1) return [[blocks[0]]];
 
