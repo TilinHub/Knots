@@ -33,7 +33,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const [rollingMode, setRollingMode] = React.useState(false);
   const [pivotDiskId, setPivotDiskId] = React.useState<string | null>(null);
   const [rollingDiskId, setRollingDiskId] = React.useState<string | null>(null);
-  const [theta, setTheta] = React.useState(0); // ángulo de rotación
+  const [theta, setTheta] = React.useState(0);
   const [isRolling, setIsRolling] = React.useState(false);
   const [rollingSpeed, setRollingSpeed] = React.useState(0.02);
   const [showTrail, setShowTrail] = React.useState(true);
@@ -83,39 +83,90 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
   const diskCount = blocks.filter(b => b.kind === 'disk').length;
 
+  // Validar colisión del disco rodante con otros discos
+  const checkRollingCollision = React.useCallback((newTheta: number): boolean => {
+    if (!pivotDiskId || !rollingDiskId) return false;
+    
+    const pivot = diskBlocks.find(d => d.id === pivotDiskId);
+    const rolling = diskBlocks.find(d => d.id === rollingDiskId);
+    
+    if (!pivot || !rolling) return false;
+    
+    const distance = pivot.radius + rolling.radius;
+    const newCenter = {
+      x: pivot.center.x + distance * Math.cos(newTheta),
+      y: pivot.center.y + distance * Math.sin(newTheta),
+    };
+    
+    // Verificar colisión con todos los demás discos (excepto pivote y rodante)
+    for (const other of diskBlocks) {
+      if (other.id === pivotDiskId || other.id === rollingDiskId) continue;
+      
+      const dx = newCenter.x - other.center.x;
+      const dy = newCenter.y - other.center.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      // Colisión si la distancia es menor que la suma de radios
+      if (dist < rolling.radius + other.radius - 1) {
+        return true; // Hay colisión
+      }
+    }
+    
+    return false; // No hay colisión
+  }, [pivotDiskId, rollingDiskId, diskBlocks]);
+
   // Handler para selección de discos en rolling mode
   const handleDiskClickInRollingMode = React.useCallback((diskId: string) => {
     if (!pivotDiskId) {
-      // Primer click: seleccionar pivote
       setPivotDiskId(diskId);
       setRollingDiskId(null);
       setTheta(0);
+      setIsRolling(false);
     } else if (diskId === pivotDiskId) {
-      // Click en el mismo pivote: resetear
       setPivotDiskId(null);
       setRollingDiskId(null);
       setTheta(0);
+      setIsRolling(false);
     } else if (!rollingDiskId) {
-      // Segundo click: seleccionar disco rodante
       setRollingDiskId(diskId);
       setTheta(0);
+      setIsRolling(false);
     } else {
-      // Ya hay dos seleccionados: cambiar el rodante
       setRollingDiskId(diskId);
       setTheta(0);
+      setIsRolling(false);
     }
   }, [pivotDiskId, rollingDiskId]);
 
-  // Animación del rolling
+  // Animación del rolling con detección de colisión
   React.useEffect(() => {
     if (!isRolling || !pivotDiskId || !rollingDiskId) return;
     
     const interval = setInterval(() => {
-      setTheta(prev => prev + rollingSpeed);
+      setTheta(prev => {
+        const newTheta = prev + rollingSpeed;
+        
+        // Verificar colisión antes de actualizar
+        if (checkRollingCollision(newTheta)) {
+          setIsRolling(false); // Detener animación
+          return prev; // Mantener ángulo actual
+        }
+        
+        return newTheta;
+      });
     }, 16); // ~60fps
 
     return () => clearInterval(interval);
-  }, [isRolling, pivotDiskId, rollingDiskId, rollingSpeed]);
+  }, [isRolling, pivotDiskId, rollingDiskId, rollingSpeed, checkRollingCollision]);
+
+  // Handler para cambio manual de theta (slider)
+  const handleThetaChange = React.useCallback((newTheta: number) => {
+    // Verificar colisión antes de permitir el cambio
+    if (!checkRollingCollision(newTheta)) {
+      setTheta(newTheta);
+    }
+    // Si hay colisión, no actualizar theta (se mantiene en la posición actual)
+  }, [checkRollingCollision]);
 
   function addSegment() {
     const id = `s${Date.now()}`;
@@ -160,12 +211,13 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   function deleteBlock(id: string) {
     setBlocks(blocks.filter((b) => b.id !== id));
     if (selectedBlockId === id) setSelectedBlockId(null);
-    // Reset rolling selection si se elimina un disco involucrado
     if (id === pivotDiskId) {
       setPivotDiskId(null);
       setRollingDiskId(null);
+      setIsRolling(false);
     } else if (id === rollingDiskId) {
       setRollingDiskId(null);
+      setIsRolling(false);
     }
   }
 
@@ -251,7 +303,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-          {/* Contact Graph Toggle */}
           {nonDiskBlocks.length >= 3 && (
             <button
               onClick={() => {
@@ -260,6 +311,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                   setRollingMode(false);
                   setPivotDiskId(null);
                   setRollingDiskId(null);
+                  setIsRolling(false);
                 }
               }}
               style={{
@@ -278,7 +330,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             </button>
           )}
 
-          {/* Rolling Mode Toggle */}
           {diskBlocks.length >= 2 && !showContactDisks && (
             <button
               onClick={() => {
@@ -489,7 +540,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                         max={2 * Math.PI}
                         step="0.05"
                         value={theta % (2 * Math.PI)}
-                        onChange={(e) => setTheta(Number(e.target.value))}
+                        onChange={(e) => handleThetaChange(Number(e.target.value))}
                         style={{ width: '100%' }}
                       />
                     </div>
