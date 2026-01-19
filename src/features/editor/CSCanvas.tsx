@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CSBlock, Point2D } from '../../core/types/cs';
+import type { CSBlock, CSDisk, Point2D } from '../../core/types/cs';
 import { findAllCrossings } from '../../core/geometry/intersections';
 import { RollingDisk } from './RollingDisk';
 import { detectRegionsWithDisks } from '../../core/algorithms/regionDetection';
@@ -23,7 +23,7 @@ interface CSCanvasProps {
   showContactDisks?: boolean;
 }
 
-type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end';
+type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end' | 'disk';
 
 interface DragState {
   blockId: string;
@@ -58,16 +58,20 @@ export function CSCanvas({
   const centerX = width / 2;
   const centerY = height / 2;
 
-  // Detectar cruces
-  const crossings = React.useMemo(() => findAllCrossings(blocks), [blocks]);
+  // Separar discos de otros bloques
+  const disks = blocks.filter((b): b is CSDisk => b.kind === 'disk');
+  const nonDiskBlocks = blocks.filter((b) => b.kind !== 'disk');
 
-  // Detectar regiones y discos de contacto
+  // Detectar cruces solo en bloques no-disco
+  const crossings = React.useMemo(() => findAllCrossings(nonDiskBlocks), [nonDiskBlocks]);
+
+  // Detectar regiones y discos de contacto (solo si está activado y no hay discos manuales)
   const regions = React.useMemo(() => {
-    if (showContactDisks && blocks.length >= 3) {
-      return detectRegionsWithDisks(blocks);
+    if (showContactDisks && nonDiskBlocks.length >= 3 && disks.length === 0) {
+      return detectRegionsWithDisks(nonDiskBlocks);
     }
     return [];
-  }, [blocks, showContactDisks]);
+  }, [nonDiskBlocks, showContactDisks, disks.length]);
 
   // Convertir coordenadas cartesianas a SVG (invertir Y)
   function toSVG(x: number, y: number): [number, number] {
@@ -136,6 +140,24 @@ export function CSCanvas({
         const angle = Math.atan2(dy, dx);
         onUpdateBlock(block.id, { endAngle: angle } as Partial<CSBlock>);
       }
+    } else if (block.kind === 'disk' && dragState.pointType === 'disk') {
+      // Mover el disco completo
+      const deltaX = pos.x - dragState.startX;
+      const deltaY = pos.y - dragState.startY;
+      
+      onUpdateBlock(block.id, {
+        center: {
+          x: block.center.x + deltaX,
+          y: block.center.y + deltaY
+        }
+      } as Partial<CSBlock>);
+      
+      // Actualizar posición de inicio para el próximo frame
+      setDragState({
+        ...dragState,
+        startX: pos.x,
+        startY: pos.y,
+      });
     }
   }
 
@@ -200,6 +222,15 @@ export function CSCanvas({
             </radialGradient>
           ))
         )}
+        
+        {/* Gradientes para discos manuales */}
+        {disks.map((disk) => (
+          <radialGradient key={`gradient-${disk.id}`} id={`gradient-${disk.id}`}>
+            <stop offset="0%" stopColor={disk.color ? disk.color : "#6BB6FF"} stopOpacity="0.9" />
+            <stop offset="50%" stopColor={disk.color ? disk.color : "#4A90E2"} stopOpacity="0.8" />
+            <stop offset="100%" stopColor={disk.color ? disk.color : "#2E6BA8"} stopOpacity="0.7" />
+          </radialGradient>
+        ))}
       </defs>
 
       {/* Grid de fondo */}
@@ -225,8 +256,67 @@ export function CSCanvas({
         opacity="0.6"
       />
 
-      {/* Renderizar discos de contacto PRIMERO (debajo de todo) */}
-      {showContactDisks && regions.map((region) =>
+      {/* Renderizar discos manuales PRIMERO (debajo de todo) */}
+      {disks.map((disk) => {
+        const [cx, cy] = toSVG(disk.center.x, disk.center.y);
+        const isSelected = disk.id === selectedBlockId;
+        
+        return (
+          <g key={disk.id}>
+            {/* Sombra del disco */}
+            <circle
+              cx={cx + 3}
+              cy={cy + 3}
+              r={disk.radius}
+              fill="rgba(0, 0, 0, 0.15)"
+              pointerEvents="none"
+            />
+            {/* Disco con gradiente */}
+            <circle
+              cx={cx}
+              cy={cy}
+              r={disk.radius}
+              fill={`url(#gradient-${disk.id})`}
+              stroke={isSelected ? "#FFD700" : "#2E6BA8"}
+              strokeWidth={isSelected ? "5" : "4"}
+              opacity="0.85"
+              style={{ cursor: 'grab' }}
+              onMouseDown={(e) => handleMouseDown(disk.id, 'disk', e)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectBlock(disk.id);
+              }}
+            />
+            {/* Brillo en el disco */}
+            <ellipse
+              cx={cx - disk.radius * 0.25}
+              cy={cy - disk.radius * 0.25}
+              rx={disk.radius * 0.4}
+              ry={disk.radius * 0.3}
+              fill="rgba(255, 255, 255, 0.3)"
+              pointerEvents="none"
+            />
+            {/* Etiqueta del disco */}
+            <text
+              x={cx}
+              y={cy + 4}
+              fontSize="13"
+              fill="white"
+              fontFamily="var(--ff-mono)"
+              fontWeight="700"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              pointerEvents="none"
+              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+            >
+              {disk.label || disk.id.replace('disk-', 'D')}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Renderizar discos de contacto automáticos (solo si no hay discos manuales) */}
+      {showContactDisks && disks.length === 0 && regions.map((region) =>
         region.disks.map((disk) => {
           const [cx, cy] = toSVG(disk.center.x, disk.center.y);
           return (
@@ -279,8 +369,8 @@ export function CSCanvas({
         })
       )}
 
-      {/* Renderizar bloques CS */}
-      {blocks.map((block) => {
+      {/* Renderizar bloques CS (segmentos y arcos) */}
+      {nonDiskBlocks.map((block) => {
         const isSelected = block.id === selectedBlockId;
         const strokeWidth = isSelected ? 3 : 2;
         const blockOpacity = rollingMode ? 0.4 : (isSelected ? 1 : 0.8);
@@ -468,9 +558,9 @@ export function CSCanvas({
       })}
 
       {/* Rolling Disk */}
-      {rollingMode && blocks.length > 0 && (
+      {rollingMode && nonDiskBlocks.length > 0 && (
         <RollingDisk
-          blocks={blocks}
+          blocks={nonDiskBlocks}
           diskRadius={diskRadius}
           speed={rollingSpeed}
           isPlaying={isRolling}
@@ -507,8 +597,23 @@ export function CSCanvas({
         </text>
       )}
 
+      {/* Contador de discos manuales */}
+      {disks.length > 0 && (
+        <text
+          x="16"
+          y="24"
+          fontSize="12"
+          fill="#4A90E2"
+          fontFamily="var(--ff-mono)"
+          fontWeight="600"
+          pointerEvents="none"
+        >
+          🔵 {disks.length} disco{disks.length !== 1 ? 's' : ''}
+        </text>
+      )}
+
       {/* Contador de discos de contacto */}
-      {showContactDisks && regions.length > 0 && (
+      {showContactDisks && regions.length > 0 && disks.length === 0 && (
         <text
           x="16"
           y="24"
