@@ -127,6 +127,13 @@ export function EditorPage({ onBackToGallery }: EditorPageProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-tertiary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'none';
               }}
             >
               ← Galería
@@ -271,7 +278,7 @@ export function EditorPage({ onBackToGallery }: EditorPageProps) {
           />
         </div>
 
-        {/* SIDEBAR - resto del código sin cambios... */}
+        {/* SIDEBAR */}
         {sidebarOpen && (
           <aside
             style={{
@@ -282,10 +289,677 @@ export function EditorPage({ onBackToGallery }: EditorPageProps) {
               flexDirection: 'column',
             }}
           >
-            {/* Contenido del sidebar (sin cambios) */}
+            {/* ROLLING MODE CONTROLS */}
+            {rollingMode && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 'var(--space-sm)',
+                  }}
+                >
+                  🎡 Rolling Mode
+                </h2>
+
+                {/* Play/Pause */}
+                <div style={{ marginBottom: 'var(--space-md)' }}>
+                  <Button
+                    onClick={() => setIsRolling(!isRolling)}
+                    style={{ width: '100%', background: isRolling ? 'var(--accent-error)' : 'var(--accent-primary)' }}
+                  >
+                    {isRolling ? '⏸️ Pausar' : '▶️ Iniciar'}
+                  </Button>
+                </div>
+
+                {/* Disk Radius */}
+                <div style={{ marginBottom: 'var(--space-sm)' }}>
+                  <label
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      color: 'var(--text-secondary)',
+                      display: 'block',
+                      marginBottom: '4px',
+                      fontWeight: 'var(--fw-medium)',
+                    }}
+                  >
+                    Radio del disco: {diskRadius}px
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="80"
+                    step="5"
+                    value={diskRadius}
+                    onChange={(e) => setDiskRadius(Number(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                {/* Rolling Speed */}
+                <div style={{ marginBottom: 'var(--space-sm)' }}>
+                  <label
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      color: 'var(--text-secondary)',
+                      display: 'block',
+                      marginBottom: '4px',
+                      fontWeight: 'var(--fw-medium)',
+                    }}
+                  >
+                    Velocidad: {rollingSpeed.toFixed(2)}x
+                  </label>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="0.5"
+                    step="0.05"
+                    value={rollingSpeed}
+                    onChange={(e) => setRollingSpeed(Number(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                {/* Show Trail Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Mostrar trayectoria</span>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showTrail}
+                      onChange={(e) => setShowTrail(e.target.checked)}
+                      style={{ marginRight: '6px' }}
+                    />
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                      {showTrail ? 'Sí' : 'No'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* CONTROLES DE VISTA */}
+            {!rollingMode && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 'var(--space-sm)',
+                  }}
+                >
+                  Vista
+                </h2>
+
+                {/* Toggle grilla */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Grilla</span>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showGrid}
+                      onChange={(e) => setShowGrid(e.target.checked)}
+                      style={{ marginRight: '6px' }}
+                    />
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                      {showGrid ? 'Visible' : 'Oculta'}
+                    </span>
+                  </label>
+                </div>
+
+                {/* Espaciado de grilla */}
+                {showGrid && (
+                  <div style={{ marginBottom: 'var(--space-sm)' }}>
+                    <label
+                      style={{
+                        fontSize: 'var(--fs-caption)',
+                        color: 'var(--text-secondary)',
+                        display: 'block',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      Espaciado: {gridSpacing}px
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="50"
+                      step="5"
+                      value={gridSpacing}
+                      onChange={(e) => setGridSpacing(Number(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                )}
+
+                {/* Toggle unidades de ángulo */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Ángulos</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => setAngleUnit('deg')}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: 'var(--fs-caption)',
+                        background: angleUnit === 'deg' ? 'var(--bg-primary)' : 'transparent',
+                        border: `1px solid ${angleUnit === 'deg' ? 'var(--border)' : 'transparent'}`,
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: angleUnit === 'deg' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      grados
+                    </button>
+                    <button
+                      onClick={() => setAngleUnit('rad')}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: 'var(--fs-caption)',
+                        background: angleUnit === 'rad' ? 'var(--bg-primary)' : 'transparent',
+                        border: `1px solid ${angleUnit === 'rad' ? 'var(--border)' : 'transparent'}`,
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: angleUnit === 'rad' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      radianes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LISTA DE BLOQUES */}
+            {!rollingMode && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                  flex: 1,
+                  overflowY: 'auto',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+                  <h2
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      fontWeight: 'var(--fw-semibold)',
+                      color: 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    Bloques ({blocks.length})
+                  </h2>
+                </div>
+
+                {blocks.length === 0 ? (
+                  <div
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      color: 'var(--text-tertiary)',
+                      textAlign: 'center',
+                      padding: 'var(--space-lg)',
+                    }}
+                  >
+                    Sin bloques aún
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {blocks.map((block) => {
+                      const length = blockLength(block);
+                      return (
+                        <div
+                          key={block.id}
+                          onClick={() => setSelectedBlockId(block.id)}
+                          style={{
+                            padding: 'var(--space-sm)',
+                            background: selectedBlockId === block.id ? 'var(--bg-primary)' : 'transparent',
+                            border: `1px solid ${selectedBlockId === block.id ? 'var(--border)' : 'transparent'}`,
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedBlockId !== block.id) {
+                              e.currentTarget.style.background = 'var(--bg-tertiary)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedBlockId !== block.id) {
+                              e.currentTarget.style.background = 'transparent';
+                            }
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-medium)', color: 'var(--text-primary)' }}>
+                              {block.id}
+                            </div>
+                            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                              {block.kind === 'segment' ? 'Segmento' : 'Arco'} · L = {length.toFixed(1)} px
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteBlock(block.id);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--text-tertiary)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              fontSize: '14px',
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Botones añadir */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-md)' }}>
+                  <Button onClick={addSegment}>+ Segmento</Button>
+                  <Button onClick={addArc} variant="secondary">
+                    + Arco
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* PANEL DE PROPIEDADES DINÁMICO */}
+            {!rollingMode && selectedBlock && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  background: 'var(--bg-primary)',
+                }}
+              >
+                <div style={{ marginBottom: 'var(--space-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <h3 style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-primary)' }}>
+                      {selectedBlock.id}
+                    </h3>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                      {selectedBlock.kind === 'segment' ? 'Segmento' : 'Arco'}
+                    </div>
+                  </div>
+                  {selectedBlockLength !== null && (
+                    <div
+                      style={{
+                        fontSize: 'var(--fs-caption)',
+                        fontFamily: 'var(--ff-mono)',
+                        color: 'var(--text-secondary)',
+                        padding: '4px 8px',
+                        background: 'var(--bg-secondary)',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      L = {selectedBlockLength.toFixed(2)}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                  {selectedBlock.kind === 'segment' ? (
+                    <>
+                      <CoordInput
+                        label="P₁"
+                        x={selectedBlock.p1.x}
+                        y={selectedBlock.p1.y}
+                        onChange={(x, y) =>
+                          updateBlock(selectedBlock.id, { p1: { x, y } })
+                        }
+                      />
+                      <CoordInput
+                        label="P₂"
+                        x={selectedBlock.p2.x}
+                        y={selectedBlock.p2.y}
+                        onChange={(x, y) =>
+                          updateBlock(selectedBlock.id, { p2: { x, y } })
+                        }
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <CoordInput
+                        label="Centro"
+                        x={selectedBlock.center.x}
+                        y={selectedBlock.center.y}
+                        onChange={(x, y) =>
+                          updateBlock(selectedBlock.id, { center: { x, y } })
+                        }
+                      />
+                      <div>
+                        <label
+                          style={{
+                            fontSize: 'var(--fs-caption)',
+                            color: 'var(--text-secondary)',
+                            fontWeight: 'var(--fw-medium)',
+                            textTransform: 'uppercase',
+                            display: 'block',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          Radio (r)
+                        </label>
+                        <input
+                          type="number"
+                          value={selectedBlock.radius}
+                          onChange={(e) =>
+                            updateBlock(selectedBlock.id, { radius: Number(e.target.value) })
+                          }
+                          step="0.1"
+                          style={{
+                            width: '100%',
+                            height: '32px',
+                            padding: '0 8px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            fontFamily: 'var(--ff-mono)',
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              fontSize: 'var(--fs-caption)',
+                              color: 'var(--text-secondary)',
+                              fontWeight: 'var(--fw-medium)',
+                              textTransform: 'uppercase',
+                              display: 'block',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            θ₁ {angleUnit === 'deg' ? '(°)' : '(rad)'}
+                          </label>
+                          <input
+                            type="number"
+                            value={
+                              angleUnit === 'deg' 
+                                ? radToDeg(selectedBlock.startAngle).toFixed(2)
+                                : selectedBlock.startAngle.toFixed(4)
+                            }
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              const radValue = angleUnit === 'deg' ? degToRad(value) : value;
+                              updateBlock(selectedBlock.id, { startAngle: radValue });
+                            }}
+                            step={angleUnit === 'deg' ? '1' : '0.01'}
+                            style={{
+                              width: '100%',
+                              height: '32px',
+                              padding: '0 8px',
+                              border: '1px solid var(--border)',
+                              borderRadius: '6px',
+                              fontFamily: 'var(--ff-mono)',
+                              fontSize: '13px',
+                            }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              fontSize: 'var(--fs-caption)',
+                              color: 'var(--text-secondary)',
+                              fontWeight: 'var(--fw-medium)',
+                              textTransform: 'uppercase',
+                              display: 'block',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            θ₂ {angleUnit === 'deg' ? '(°)' : '(rad)'}
+                          </label>
+                          <input
+                            type="number"
+                            value={
+                              angleUnit === 'deg'
+                                ? radToDeg(selectedBlock.endAngle).toFixed(2)
+                                : selectedBlock.endAngle.toFixed(4)
+                            }
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              const radValue = angleUnit === 'deg' ? degToRad(value) : value;
+                              updateBlock(selectedBlock.id, { endAngle: radValue });
+                            }}
+                            step={angleUnit === 'deg' ? '1' : '0.01'}
+                            style={{
+                              width: '100%',
+                              height: '32px',
+                              padding: '0 8px',
+                              border: '1px solid var(--border)',
+                              borderRadius: '6px',
+                              fontFamily: 'var(--ff-mono)',
+                              fontSize: '13px',
+                            }}
+                          />
+                        </div>
+                      </div>
+                      {/* Mostrar longitud de arco con fórmula */}
+                      <div
+                        style={{
+                          fontSize: 'var(--fs-caption)',
+                          color: 'var(--text-secondary)',
+                          padding: '8px',
+                          background: 'var(--bg-secondary)',
+                          borderRadius: '4px',
+                          fontFamily: 'var(--ff-mono)',
+                        }}
+                      >
+                        L = r × |Δθ| = {selectedBlock.radius.toFixed(1)} × {Math.abs(selectedBlock.endAngle - selectedBlock.startAngle).toFixed(3)}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!rollingMode && !selectedBlock && blocks.length > 0 && (
+              <div
+                style={{
+                  padding: 'var(--space-lg)',
+                  textAlign: 'center',
+                  color: 'var(--text-tertiary)',
+                  fontSize: 'var(--fs-caption)',
+                }}
+              >
+                Selecciona un bloque para editar
+              </div>
+            )}
           </aside>
         )}
       </div>
+
+      {/* MODAL DE VALIDACIÓN */}
+      {showValidation && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowValidation(false)}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: 'var(--space-lg)',
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                fontSize: 'var(--fs-header)',
+                fontWeight: 'var(--fw-semibold)',
+                marginBottom: 'var(--space-md)',
+              }}
+            >
+              Validación de Continuidad
+            </h3>
+
+            {validation.errors.length > 0 && (
+              <div style={{ marginBottom: 'var(--space-md)' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--accent-error)',
+                    textTransform: 'uppercase',
+                    marginBottom: 'var(--space-xs)',
+                  }}
+                >
+                  Errores
+                </div>
+                {validation.errors.map((err, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      fontSize: 'var(--fs-body)',
+                      color: 'var(--text-primary)',
+                      padding: 'var(--space-sm)',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: '6px',
+                      marginBottom: 'var(--space-xs)',
+                      fontFamily: 'var(--ff-mono)',
+                    }}
+                  >
+                    {err}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {validation.warnings.length > 0 && (
+              <div style={{ marginBottom: 'var(--space-md)' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    marginBottom: 'var(--space-xs)',
+                  }}
+                >
+                  Advertencias
+                </div>
+                {validation.warnings.map((warn, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      fontSize: 'var(--fs-body)',
+                      color: 'var(--text-secondary)',
+                      padding: 'var(--space-sm)',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: '6px',
+                      marginBottom: 'var(--space-xs)',
+                      fontFamily: 'var(--ff-mono)',
+                    }}
+                  >
+                    {warn}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Información de longitud */}
+            {validation.valid && (
+              <div style={{ marginBottom: 'var(--space-md)' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--fs-body)',
+                    color: 'var(--accent-valid)',
+                    textAlign: 'center',
+                    padding: 'var(--space-md)',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '8px',
+                    marginBottom: 'var(--space-md)',
+                  }}
+                >
+                  ✓ Diagrama CS válido
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    marginBottom: 'var(--space-xs)',
+                  }}
+                >
+                  Longitud de Curva
+                </div>
+                <div
+                  style={{
+                    padding: 'var(--space-md)',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 'var(--fs-header)',
+                      fontWeight: 'var(--fw-semibold)',
+                      color: 'var(--text-primary)',
+                      fontFamily: 'var(--ff-mono)',
+                      marginBottom: 'var(--space-sm)',
+                    }}
+                  >
+                    L = {lengthInfo.totalLength.toFixed(2)} px
+                  </div>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                    {lengthInfo.blockLengths.map((info, i) => (
+                      <div key={info.id} style={{ marginBottom: '4px' }}>
+                        {info.id}: {info.length.toFixed(2)} px
+                        {i < lengthInfo.blockLengths.length - 1 && ' +'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={() => setShowValidation(false)}>Cerrar</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
