@@ -127,11 +127,13 @@ export function RollingDisk({
   // Early return si no hay estado válido
   if (!currentState || totalLength === 0) return null;
 
-  // Aquí currentState está garantizado que no es null
+  // Extraer todos los valores necesarios de currentState
   const contactX = currentState.contact.x;
   const contactY = currentState.contact.y;
   const diskCenterX = currentState.diskCenter.x;
   const diskCenterY = currentState.diskCenter.y;
+  const tangentX = currentState.tangent.x;
+  const tangentY = currentState.tangent.y;
 
   const [contactSvgX, contactSvgY] = toSVG(contactX, contactY);
   const [diskCenterSvgX, diskCenterSvgY] = toSVG(diskCenterX, diskCenterY);
@@ -226,8 +228,8 @@ export function RollingDisk({
         <line
           x1={contactSvgX}
           y1={contactSvgY}
-          x2={contactSvgX + currentState.tangent.x * 50}
-          y2={contactSvgY - currentState.tangent.y * 50}
+          x2={contactSvgX + tangentX * 50}
+          y2={contactSvgY - tangentY * 50}
           stroke="green"
           strokeWidth="2"
           markerEnd="url(#arrowhead)"
