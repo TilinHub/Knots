@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CSBlock, Point2D } from '../../core/types/cs';
 import { findAllCrossings } from '../../core/geometry/intersections';
+import { RollingDisk } from './RollingDisk';
 
 interface CSCanvasProps {
   blocks: CSBlock[];
@@ -11,6 +12,12 @@ interface CSCanvasProps {
   gridSpacing?: number;
   width?: number;
   height?: number;
+  // Rolling mode props
+  rollingMode?: boolean;
+  diskRadius?: number;
+  rollingSpeed?: number;
+  isRolling?: boolean;
+  showTrail?: boolean;
 }
 
 type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end';
@@ -34,7 +41,12 @@ export function CSCanvas({
   showGrid = true,
   gridSpacing = 20,
   width = 800, 
-  height = 600 
+  height = 600,
+  rollingMode = false,
+  diskRadius = 30,
+  rollingSpeed = 0.1,
+  isRolling = false,
+  showTrail = true,
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
@@ -195,6 +207,7 @@ export function CSCanvas({
       {blocks.map((block) => {
         const isSelected = block.id === selectedBlockId;
         const strokeWidth = isSelected ? 3 : 2;
+        const blockOpacity = rollingMode ? 0.4 : (isSelected ? 1 : 0.8);
 
         if (block.kind === 'segment') {
           const [x1, y1] = toSVG(block.p1.x, block.p1.y);
@@ -225,11 +238,11 @@ export function CSCanvas({
                 stroke="var(--canvas-segment)"
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
-                opacity={isSelected ? 1 : 0.8}
+                opacity={blockOpacity}
                 pointerEvents="none"
               />
               {/* Handles arrastrables */}
-              {isSelected && (
+              {isSelected && !rollingMode && (
                 <>
                   <circle 
                     cx={x1} 
@@ -253,7 +266,7 @@ export function CSCanvas({
                   />
                 </>
               )}
-              {!isSelected && (
+              {!isSelected && !rollingMode && (
                 <>
                   <circle cx={x1} cy={y1} r="4" fill="var(--canvas-segment)" pointerEvents="none" />
                   <circle cx={x2} cy={y2} r="4" fill="var(--canvas-segment)" pointerEvents="none" />
@@ -301,11 +314,11 @@ export function CSCanvas({
                 stroke="var(--canvas-arc)"
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
-                opacity={isSelected ? 1 : 0.8}
+                opacity={blockOpacity}
                 pointerEvents="none"
               />
               {/* Handles arrastrables */}
-              {isSelected && (
+              {isSelected && !rollingMode && (
                 <>
                   {/* Centro */}
                   <circle 
@@ -342,7 +355,7 @@ export function CSCanvas({
                   />
                 </>
               )}
-              {!isSelected && (
+              {!isSelected && !rollingMode && (
                 <>
                   <circle cx={cx} cy={cy} r="3" fill="var(--canvas-arc)" opacity="0.5" pointerEvents="none" />
                   <circle cx={startX} cy={startY} r="4" fill="var(--canvas-arc)" pointerEvents="none" />
@@ -356,8 +369,8 @@ export function CSCanvas({
         return null;
       })}
 
-      {/* Renderizar puntos de cruce */}
-      {crossings.map((cross) => {
+      {/* Renderizar puntos de cruce (solo si no está en modo rolling) */}
+      {!rollingMode && crossings.map((cross) => {
         const [cx, cy] = toSVG(cross.position.x, cross.position.y);
         return (
           <g key={cross.id}>
@@ -378,6 +391,19 @@ export function CSCanvas({
         );
       })}
 
+      {/* Rolling Disk */}
+      {rollingMode && blocks.length > 0 && (
+        <RollingDisk
+          blocks={blocks}
+          diskRadius={diskRadius}
+          speed={rollingSpeed}
+          isPlaying={isRolling}
+          showTrail={showTrail}
+          centerX={centerX}
+          centerY={centerY}
+        />
+      )}
+
       {/* Etiqueta de origen */}
       <text
         x={centerX + 8}
@@ -391,7 +417,7 @@ export function CSCanvas({
       </text>
 
       {/* Contador de cruces */}
-      {crossings.length > 0 && (
+      {!rollingMode && crossings.length > 0 && (
         <text
           x="16"
           y="24"
