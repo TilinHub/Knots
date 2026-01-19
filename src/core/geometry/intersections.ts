@@ -34,8 +34,14 @@ export function findAllCrossings(blocks: CSBlock[]): CrossPoint[] {
 
 /**
  * Encontrar intersecciones entre dos bloques CS
+ * Nota: Los discos no generan intersecciones (no son curvas)
  */
 function findBlockIntersections(b1: CSBlock, b2: CSBlock): Point2D[] {
+  // Los discos no tienen intersecciones con otros elementos
+  if (b1.kind === 'disk' || b2.kind === 'disk') {
+    return [];
+  }
+
   if (b1.kind === 'segment' && b2.kind === 'segment') {
     return segmentSegmentIntersection(b1, b2);
   }
