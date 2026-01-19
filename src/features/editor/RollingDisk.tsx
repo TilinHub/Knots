@@ -109,12 +109,12 @@ export function RollingDisk({
       const newTrail: Point[] = [...prev, currentState.diskCenter];
       // Limitar trail a últimos 500 puntos para performance
       const MAX_TRAIL_LENGTH = 500;
-      if (newTrail.length > MAX_TRAIL_LENGTH) {
-        const startIdx: number = newTrail.length - MAX_TRAIL_LENGTH;
-        const endIdx: number = newTrail.length;
-        return newTrail.slice(startIdx, endIdx);
+      if (newTrail.length <= MAX_TRAIL_LENGTH) {
+        return newTrail;
       }
-      return newTrail;
+      // Usar filter con index en lugar de slice para evitar problema de sobrecarga
+      const skipCount = newTrail.length - MAX_TRAIL_LENGTH;
+      return newTrail.filter((_, index) => index >= skipCount);
     });
   }, [currentState, showTrail]);
 
