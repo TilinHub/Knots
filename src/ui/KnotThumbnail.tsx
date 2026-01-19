@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Network } from 'vis-network';
 
 interface KnotThumbnailProps {
@@ -12,54 +12,88 @@ export default function KnotThumbnail({ nodes, edges, size = 70 }: KnotThumbnail
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!divRef.current) return;
+    if (!divRef.current || nodes.length === 0) return;
 
-    const network = new Network(
-      divRef.current,
-      {
-        nodes: nodes.map(id => ({ id })),
-        edges: edges.map(([from, to]) => ({ from, to }))
-      },
-      {
-        physics: false,
-        height: `${size}px`,
-        width: `${size}px`,
-        nodes: { 
-          shape: 'dot', 
-          size: 8, 
-          color: '#8fbfff', 
-          borderWidth: 0 
+    let network: Network | null = null;
+
+    try {
+      network = new Network(
+        divRef.current,
+        {
+          nodes: nodes.map(id => ({ id })),
+          edges: edges.map(([from, to]) => ({ from, to }))
         },
-        edges: { 
-          color: '#8fbfff', 
-          width: 1 
-        },
-        layout: { improvedLayout: true }
-      }
-    );
+        {
+          physics: {
+            enabled: true,
+            stabilization: {
+              iterations: 100,
+              updateInterval: 25
+            }
+          },
+          height: `${size}px`,
+          width: `${size}px`,
+          nodes: { 
+            shape: 'dot', 
+            size: 8, 
+            color: '#8fbfff', 
+            borderWidth: 0 
+          },
+          edges: { 
+            color: '#8fbfff', 
+            width: 2,
+            smooth: false
+          },
+          layout: { 
+            improvedLayout: true
+          },
+          interaction: {
+            dragNodes: false,
+            dragView: false,
+            selectable: false,
+            zoomView: false
+          }
+        }
+      );
 
-    const captureCanvas = () => {
-      const canvas = divRef.current?.querySelector('canvas');
-      if (canvas) {
-        setImageUrl(canvas.toDataURL('image/png'));
-        network.destroy();
-      }
-    };
+      const captureCanvas = () => {
+        const canvas = divRef.current?.querySelector('canvas');
+        if (canvas && network) {
+          setImageUrl(canvas.toDataURL('image/png'));
+          network.destroy();
+          network = null;
+        }
+      };
 
-    network.once('afterDrawing', captureCanvas);
-    const fallbackTimer = setTimeout(captureCanvas, 300);
+      // Esperar a que la física se estabilice
+      network.on('stabilizationIterationsDone', () => {
+        setTimeout(captureCanvas, 100);
+      });
 
-    return () => {
-      clearTimeout(fallbackTimer);
-      network.destroy();
-    };
+      // Fallback en caso de que no se estabilice
+      const fallbackTimer = setTimeout(captureCanvas, 800);
+
+      return () => {
+        clearTimeout(fallbackTimer);
+        if (network) {
+          network.destroy();
+        }
+      };
+    } catch (error) {
+      console.error('Error creating network:', error);
+    }
   }, [nodes, edges, size]);
 
   return (
     <>
       <div
         ref={divRef}
-        style={{ position: 'absolute', inset: 0, visibility: 'hidden' }}
+        style={{ 
+          position: 'absolute', 
+          left: '-9999px',
+          top: 0,
+          visibility: 'hidden'
+        }}
       />
       {imageUrl ? (
         <img
@@ -67,7 +101,11 @@ export default function KnotThumbnail({ nodes, edges, size = 70 }: KnotThumbnail
           alt="Knot preview"
           width={size}
           height={size}
-          style={{ display: 'block', borderRadius: 4 }}
+          style={{ 
+            display: 'block', 
+            borderRadius: 4,
+            backgroundColor: '#fff'
+          }}
         />
       ) : (
         <div
@@ -75,9 +113,16 @@ export default function KnotThumbnail({ nodes, edges, size = 70 }: KnotThumbnail
             width: size,
             height: size,
             background: '#f0f0f0',
-            borderRadius: 4
+            borderRadius: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#999',
+            fontSize: '12px'
           }}
-        />
+        >
+          Loading...
+        </div>
       )}
     </>
   );
