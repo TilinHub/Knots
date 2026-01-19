@@ -9,5 +9,5 @@ export default function App() {
     return <KnotGallery onSelectKnot={() => setShowGallery(false)} />;
   }
 
-  return <EditorPage />;
+  return <EditorPage onBackToGallery={() => setShowGallery(true)} />;
 }
