@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CSBlock, CSSegment, CSArc } from '../../core/types/cs';
+import type { CSBlock } from '../../core/types/cs';
 import { CoordInput } from '../../ui/CoordInput';
 import { Button } from '../../ui/Button';
 import { CSCanvas } from './CSCanvas';
@@ -35,7 +35,7 @@ export function EditorPage() {
 
   function addSegment() {
     const id = `s${blocks.length + 1}`;
-    const newSegment: CSSegment = {
+    const newSegment: CSBlock = {
       id,
       kind: 'segment',
       p1: { x: 0, y: 0 },
@@ -47,7 +47,7 @@ export function EditorPage() {
 
   function addArc() {
     const id = `a${blocks.length + 1}`;
-    const newArc: CSArc = {
+    const newArc: CSBlock = {
       id,
       kind: 'arc',
       center: { x: 50, y: 50 },
