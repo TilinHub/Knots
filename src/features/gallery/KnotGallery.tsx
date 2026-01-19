@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import KnotThumbnail from '../../ui/KnotThumbnail';
-import { EditorPage } from '../editor/EditorPage';
 
 // Ejemplos de nudos predefinidos
 const SAMPLE_KNOTS = [
@@ -35,16 +34,9 @@ interface KnotGalleryProps {
 }
 
 export function KnotGallery({ onSelectKnot }: KnotGalleryProps) {
-  const [selectedKnot, setSelectedKnot] = useState<typeof SAMPLE_KNOTS[0] | null>(null);
-
   const handleKnotClick = (knot: typeof SAMPLE_KNOTS[0]) => {
-    setSelectedKnot(knot);
     onSelectKnot?.(knot);
   };
-
-  if (selectedKnot) {
-    return <EditorPage />;
-  }
 
   return (
     <div style={{
@@ -127,7 +119,7 @@ export function KnotGallery({ onSelectKnot }: KnotGalleryProps) {
         
         {/* Botón para crear nuevo nudo */}
         <div
-          onClick={() => setSelectedKnot({ id: 0, name: 'Nuevo', nodes: [], edges: [] })}
+          onClick={() => handleKnotClick({ id: 0, name: 'Nuevo', nodes: [], edges: [] })}
           style={{
             backgroundColor: 'white',
             borderRadius: '8px',
