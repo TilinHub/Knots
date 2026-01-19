@@ -92,6 +92,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     
     if (!pivot || !rolling) return false;
     
+    // Usar radio geométrico para cálculos de colisión
     const distance = pivot.radius + rolling.radius;
     const newCenter = {
       x: pivot.center.x + distance * Math.cos(newTheta),
@@ -106,8 +107,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       const dy = newCenter.y - other.center.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       
-      // Colisión si la distancia es menor que la suma de radios
-      if (dist < rolling.radius + other.radius - 1) {
+      // Colisión si la distancia es menor que la suma de radios (usando radio geométrico)
+      if (dist < rolling.radius + other.radius - 0.1) {
         return true; // Hay colisión
       }
     }
@@ -200,7 +201,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       id,
       kind: 'disk',
       center: { x: diskCount * 80, y: 0 },
-      radius: 40,
+      radius: 1,              // Radio geométrico (para cálculos)
+      visualRadius: 40,       // Radio visual (para renderizado)
       label: `D${diskCount + 1}`,
       color: '#4A90E2',
     };
@@ -825,7 +827,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                             <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
                               {displayName}
                               {length !== null && ` · L = ${length.toFixed(1)} px`}
-                              {block.kind === 'disk' && ` · r = ${block.radius.toFixed(0)} px`}
+                              {block.kind === 'disk' && ` · r = ${block.visualRadius.toFixed(0)} px (visual)`}
                             </div>
                           </div>
                           <button
@@ -913,13 +915,13 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                             marginBottom: '4px',
                           }}
                         >
-                          Radio (r)
+                          Radio Visual
                         </label>
                         <input
                           type="number"
-                          value={selectedBlock.radius}
+                          value={selectedBlock.visualRadius}
                           onChange={(e) =>
-                            updateBlock(selectedBlock.id, { radius: Number(e.target.value) })
+                            updateBlock(selectedBlock.id, { visualRadius: Number(e.target.value) })
                           }
                           min="10"
                           max="100"
@@ -933,6 +935,15 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                             fontFamily: 'var(--ff-mono)',
                           }}
                         />
+                        <div
+                          style={{
+                            fontSize: 'var(--fs-caption)',
+                            color: 'var(--text-tertiary)',
+                            marginTop: '4px',
+                          }}
+                        >
+                          Radio geométrico: {selectedBlock.radius} (fijo para cálculos)
+                        </div>
                       </div>
                       <div>
                         <label
