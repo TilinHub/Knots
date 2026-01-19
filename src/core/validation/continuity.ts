@@ -85,37 +85,107 @@ function tangentsAlign(t1: Point2D, t2: Point2D): boolean {
 }
 
 /**
- * Validar continuidad de un diagrama CS
+ * Encontrar cadenas continuas de bloques, independiente del orden
  */
-export function validateContinuity(blocks: CSBlock[]): ValidationResult {
+function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
+  if (blocks.length === 0) return [];
+  if (blocks.length === 1) return [[blocks[0]]];
+
+  const chains: CSBlock[][] = [];
+  const used = new Set<string>();
+
+  for (const startBlock of blocks) {
+    if (used.has(startBlock.id)) continue;
+
+    const chain: CSBlock[] = [startBlock];
+    used.add(startBlock.id);
+
+    // Intentar extender la cadena hacia adelante
+    let currentEnd = getEndPoint(startBlock);
+    let extended = true;
+
+    while (extended) {
+      extended = false;
+      for (const candidate of blocks) {
+        if (used.has(candidate.id)) continue;
+
+        const candStart = getStartPoint(candidate);
+        const candEnd = getEndPoint(candidate);
+
+        // ¿El inicio del candidato conecta con el final actual?
+        if (pointsEqual(currentEnd, candStart)) {
+          chain.push(candidate);
+          used.add(candidate.id);
+          currentEnd = candEnd;
+          extended = true;
+          break;
+        }
+        // ¿El final del candidato conecta con el final actual? (invertir)
+        else if (pointsEqual(currentEnd, candEnd)) {
+          // Necesitaríamos invertir el bloque, por ahora skip
+          // En el futuro podríamos soportar esto
+        }
+      }
+    }
+
+    // Intentar extender hacia atrás desde el inicio
+    let currentStart = getStartPoint(startBlock);
+    extended = true;
+
+    while (extended) {
+      extended = false;
+      for (const candidate of blocks) {
+        if (used.has(candidate.id)) continue;
+
+        const candEnd = getEndPoint(candidate);
+
+        // ¿El final del candidato conecta con el inicio actual?
+        if (pointsEqual(candEnd, currentStart)) {
+          chain.unshift(candidate);
+          used.add(candidate.id);
+          currentStart = getStartPoint(candidate);
+          extended = true;
+          break;
+        }
+      }
+    }
+
+    if (chain.length > 0) {
+      chains.push(chain);
+    }
+  }
+
+  // Ordenar por longitud (más larga primero)
+  return chains.sort((a, b) => b.length - a.length);
+}
+
+/**
+ * Validar continuidad de una cadena ordenada
+ */
+function validateChain(chain: CSBlock[]): { errors: string[], warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  if (blocks.length === 0) {
-    return { valid: false, errors: ['Diagrama vacío'], warnings: [] };
-  }
-
-  if (blocks.length === 1) {
-    warnings.push('Solo un bloque. No hay continuidad que validar.');
-    return { valid: true, errors: [], warnings };
+  if (chain.length === 1) {
+    return { errors, warnings };
   }
 
   // Validar conexiones entre bloques consecutivos
-  for (let i = 0; i < blocks.length - 1; i++) {
-    const current = blocks[i];
-    const next = blocks[i + 1];
+  for (let i = 0; i < chain.length - 1; i++) {
+    const current = chain[i];
+    const next = chain[i + 1];
 
     const endPoint = getEndPoint(current);
     const startPoint = getStartPoint(next);
 
-    // 1. Continuidad posicional
+    // 1. Continuidad posicional (debería estar garantizada por findContinuousChains)
     if (!pointsEqual(endPoint, startPoint)) {
       const distance = Math.hypot(startPoint.x - endPoint.x, startPoint.y - endPoint.y);
       errors.push(
         `Discontinuidad entre ${current.id} y ${next.id}: ` +
         `distancia = ${distance.toFixed(2)} px`
       );
-      continue; // No tiene sentido verificar tangencia si no hay conexión
+      continue;
     }
 
     // 2. Continuidad tangencial
@@ -130,21 +200,56 @@ export function validateContinuity(blocks: CSBlock[]): ValidationResult {
     }
   }
 
-  // Verificar si el diagrama es cerrado (opcional)
-  const firstStart = getStartPoint(blocks[0]);
-  const lastEnd = getEndPoint(blocks[blocks.length - 1]);
+  // Verificar si la cadena es cerrada
+  const firstStart = getStartPoint(chain[0]);
+  const lastEnd = getEndPoint(chain[chain.length - 1]);
   const isClosed = pointsEqual(firstStart, lastEnd);
 
   if (isClosed) {
-    // Verificar tangencia en el cierre
-    const lastTangent = getEndTangent(blocks[blocks.length - 1]);
-    const firstTangent = getStartTangent(blocks[0]);
+    const lastTangent = getEndTangent(chain[chain.length - 1]);
+    const firstTangent = getStartTangent(chain[0]);
 
     if (!tangentsAlign(lastTangent, firstTangent)) {
-      warnings.push('Diagrama cerrado pero tangencia no continua en el cierre');
+      warnings.push('Curva cerrada pero tangencia no continua en el cierre');
     }
-  } else {
-    warnings.push('Diagrama abierto (primer y último punto no conectan)');
+  }
+
+  return { errors, warnings };
+}
+
+/**
+ * Validar continuidad de un diagrama CS
+ */
+export function validateContinuity(blocks: CSBlock[]): ValidationResult {
+  if (blocks.length === 0) {
+    return { valid: false, errors: ['Diagrama vacío'], warnings: [] };
+  }
+
+  // Encontrar cadenas continuas
+  const chains = findContinuousChains(blocks);
+
+  if (chains.length === 0) {
+    return { valid: false, errors: ['No se encontraron cadenas continuas'], warnings: [] };
+  }
+
+  // Validar la cadena más larga
+  const mainChain = chains[0];
+  const { errors, warnings } = validateChain(mainChain);
+
+  // Advertencias sobre bloques no conectados
+  if (mainChain.length < blocks.length) {
+    const unused = blocks.filter(b => !mainChain.includes(b));
+    warnings.push(
+      `${unused.length} bloque(s) no conectado(s): ${unused.map(b => b.id).join(', ')}`
+    );
+  }
+
+  // Información sobre múltiples cadenas
+  if (chains.length > 1) {
+    warnings.push(
+      `Se encontraron ${chains.length} cadenas separadas. ` +
+      `Validando la más larga (${mainChain.length} bloques).`
+    );
   }
 
   return {
