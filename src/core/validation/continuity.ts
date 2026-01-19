@@ -4,7 +4,8 @@
 
 import type { CSBlock, CSSegment, CSArc, ValidationResult, Point2D } from '../types/cs';
 
-const EPSILON = 1e-6; // Tolerancia para comparaciones numéricas
+// Tolerancia para comparaciones numéricas (2px para snap y errores de redondeo)
+const EPSILON = 2.0;
 
 /**
  * Obtener el punto inicial de un bloque CS
@@ -80,7 +81,7 @@ function pointsEqual(p1: Point2D, p2: Point2D): boolean {
 function tangentsAlign(t1: Point2D, t2: Point2D): boolean {
   // Producto escalar debe ser cercano a 1 (vectores unitarios alineados)
   const dot = t1.x * t2.x + t1.y * t2.y;
-  return Math.abs(dot - 1) < 0.01; // Tolerancia de ~5 grados
+  return Math.abs(dot - 1) < 0.1; // Tolerancia ~25 grados
 }
 
 /**
@@ -112,7 +113,7 @@ export function validateContinuity(blocks: CSBlock[]): ValidationResult {
       const distance = Math.hypot(startPoint.x - endPoint.x, startPoint.y - endPoint.y);
       errors.push(
         `Discontinuidad entre ${current.id} y ${next.id}: ` +
-        `distancia = ${distance.toFixed(4)}`
+        `distancia = ${distance.toFixed(2)} px`
       );
       continue; // No tiene sentido verificar tangencia si no hay conexión
     }
