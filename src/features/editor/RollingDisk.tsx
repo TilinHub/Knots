@@ -124,13 +124,17 @@ export function RollingDisk({
     lastTimeRef.current = 0;
   }, [blocks]);
 
+  // Early return si no hay estado válido
   if (!currentState || totalLength === 0) return null;
 
-  const [contactX, contactY] = toSVG(currentState.contact.x, currentState.contact.y);
-  const [diskCenterX, diskCenterY] = toSVG(
-    currentState.diskCenter.x,
-    currentState.diskCenter.y
-  );
+  // Aquí currentState está garantizado que no es null
+  const contactX = currentState.contact.x;
+  const contactY = currentState.contact.y;
+  const diskCenterX = currentState.diskCenter.x;
+  const diskCenterY = currentState.diskCenter.y;
+
+  const [contactSvgX, contactSvgY] = toSVG(contactX, contactY);
+  const [diskCenterSvgX, diskCenterSvgY] = toSVG(diskCenterX, diskCenterY);
 
   // Calcular rotación del disco basada en la distancia recorrida
   const distanceTraveled = progress * totalLength;
@@ -157,10 +161,10 @@ export function RollingDisk({
 
       {/* Radio del disco (línea desde centro a punto de contacto) */}
       <line
-        x1={diskCenterX}
-        y1={diskCenterY}
-        x2={contactX}
-        y2={contactY}
+        x1={diskCenterSvgX}
+        y1={diskCenterSvgY}
+        x2={contactSvgX}
+        y2={contactSvgY}
         stroke="var(--text-tertiary)"
         strokeWidth="1.5"
         strokeDasharray="3 3"
@@ -169,8 +173,8 @@ export function RollingDisk({
 
       {/* Círculo del disco */}
       <circle
-        cx={diskCenterX}
-        cy={diskCenterY}
+        cx={diskCenterSvgX}
+        cy={diskCenterSvgY}
         r={diskRadius}
         fill="none"
         stroke="var(--accent-primary)"
@@ -180,8 +184,8 @@ export function RollingDisk({
 
       {/* Centro del disco */}
       <circle
-        cx={diskCenterX}
-        cy={diskCenterY}
+        cx={diskCenterSvgX}
+        cy={diskCenterSvgY}
         r="4"
         fill="var(--accent-primary)"
         stroke="white"
@@ -190,8 +194,8 @@ export function RollingDisk({
 
       {/* Punto de contacto */}
       <circle
-        cx={contactX}
-        cy={contactY}
+        cx={contactSvgX}
+        cy={contactSvgY}
         r="5"
         fill="var(--accent-error)"
         stroke="white"
@@ -199,19 +203,19 @@ export function RollingDisk({
       />
 
       {/* Marca visual en el disco para mostrar rotación */}
-      <g transform={`rotate(${-rotationAngle} ${diskCenterX} ${diskCenterY})`}>
+      <g transform={`rotate(${-rotationAngle} ${diskCenterSvgX} ${diskCenterSvgY})`}>
         <line
-          x1={diskCenterX}
-          y1={diskCenterY}
-          x2={diskCenterX + diskRadius * 0.8}
-          y2={diskCenterY}
+          x1={diskCenterSvgX}
+          y1={diskCenterSvgY}
+          x2={diskCenterSvgX + diskRadius * 0.8}
+          y2={diskCenterSvgY}
           stroke="var(--accent-primary)"
           strokeWidth="2"
           strokeLinecap="round"
         />
         <circle
-          cx={diskCenterX + diskRadius * 0.8}
-          cy={diskCenterY}
+          cx={diskCenterSvgX + diskRadius * 0.8}
+          cy={diskCenterSvgY}
           r="3"
           fill="var(--accent-primary)"
         />
@@ -220,10 +224,10 @@ export function RollingDisk({
       {/* Vector tangente (opcional, para debug) */}
       {false && (
         <line
-          x1={contactX}
-          y1={contactY}
-          x2={contactX + currentState.tangent.x * 50}
-          y2={contactY - currentState.tangent.y * 50}
+          x1={contactSvgX}
+          y1={contactSvgY}
+          x2={contactSvgX + currentState.tangent.x * 50}
+          y2={contactSvgY - currentState.tangent.y * 50}
           stroke="green"
           strokeWidth="2"
           markerEnd="url(#arrowhead)"
