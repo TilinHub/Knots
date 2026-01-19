@@ -13,6 +13,8 @@ interface RollingDiskProps {
   centerY: number;
 }
 
+type Point = { x: number; y: number };
+
 /**
  * Componente que renderiza un disco rodando sobre la curva CS
  * y su trayectoria (roulette/cicloide)
@@ -27,7 +29,7 @@ export function RollingDisk({
   centerY,
 }: RollingDiskProps) {
   const [progress, setProgress] = React.useState(0);
-  const [trail, setTrail] = React.useState<Array<{ x: number; y: number }>>([]);
+  const [trail, setTrail] = React.useState<Point[]>([]);
   const animationRef = React.useRef<number>();
   const lastTimeRef = React.useRef<number>(0);
 
@@ -103,13 +105,14 @@ export function RollingDisk({
     if (!showTrail) return;
     if (!currentState) return;
 
-    setTrail((prev) => {
-      const newTrail = [...prev, currentState.diskCenter];
+    setTrail((prev: Point[]) => {
+      const newTrail: Point[] = [...prev, currentState.diskCenter];
       // Limitar trail a últimos 500 puntos para performance
-      const maxLength = 500;
-      if (newTrail.length > maxLength) {
-        const startIndex = newTrail.length - maxLength;
-        return newTrail.slice(startIndex, newTrail.length);
+      const MAX_TRAIL_LENGTH = 500;
+      if (newTrail.length > MAX_TRAIL_LENGTH) {
+        const startIdx: number = newTrail.length - MAX_TRAIL_LENGTH;
+        const endIdx: number = newTrail.length;
+        return newTrail.slice(startIdx, endIdx);
       }
       return newTrail;
     });
