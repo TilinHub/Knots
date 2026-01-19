@@ -1,73 +1,197 @@
-# React + TypeScript + Vite
+# 🪢 Knots - CS Diagram Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Knots** es un editor interactivo de diagramas CS (Curvature-Segment) para visualizar y analizar curvas compuestas por segmentos lineales y arcos circulares.
 
-Currently, two official plugins are available:
+🌐 **Demo en vivo**: [https://tilinhub.github.io/Knots/](https://tilinhub.github.io/Knots/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## ✨ Características
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 📐 Editor de Curvas CS
+- **Segmentos lineales**: Define puntos inicial y final con coordenadas cartesianas
+- **Arcos circulares**: Configura centro, radio y ángulos de inicio/fin
+- **Sistema de coordenadas cartesiano**: Origen centrado con ejes X e Y visibles
+- **Grilla ajustable**: Control de visibilidad y espaciado
+- **Snap a grilla**: Los puntos se ajustan automáticamente cada 5px
 
-## Expanding the ESLint configuration
+### ✅ Validación de Continuidad
+- Verifica que los bloques estén conectados correctamente
+- Detecta discontinuidades entre segmentos y arcos
+- Calcula longitud total de la curva
+- Muestra longitud individual de cada bloque
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🎪 Rolling Mode (Modo Rodante)
+**¡NUEVA FUNCIONALIDAD!** Visualiza un disco rodando sobre tu curva CS:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Animación de disco**: Observa un círculo rodando a lo largo de la curva
+- **Trayectoria del centro**: Visualiza la cicloide/roulette generada
+- **Controles interactivos**:
+  - ▶️ Play/Pause de la animación
+  - 📏 Ajuste de radio del disco (10-80px)
+  - ⚡ Control de velocidad (0.05x - 0.5x)
+  - 👁️ Toggle de visualización de trayectoria
+- **Rotación realista**: El disco rota de acuerdo a la distancia recorrida
+- **Punto de contacto**: Marca roja muestra dónde el disco toca la curva
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 🎨 Interfaz Intuitiva
+- **Drag & drop**: Arrastra puntos de control directamente en el canvas
+- **Panel de propiedades**: Edición numérica precisa de coordenadas y ángulos
+- **Unidades flexibles**: Cambia entre grados y radianes
+- **Sidebar colapsable**: Maximiza el espacio de trabajo
+- **Detección de cruces**: Identifica automáticamente intersecciones en la curva
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## 🚀 Uso
+
+### 1. Crear una Curva
+
+1. **Añadir bloques**:
+   - Haz clic en `+ Segmento` para agregar una línea recta
+   - Haz clic en `+ Arco` para agregar un arco circular
+
+2. **Editar visualmente**:
+   - Selecciona un bloque haciendo clic sobre él
+   - Arrastra los puntos de control (círculos) para modificar la forma
+
+3. **Editar con precisión**:
+   - Usa el panel de propiedades en el sidebar
+   - Ingresa valores exactos para coordenadas, radios y ángulos
+
+### 2. Validar Continuidad
+
+1. Construye tu curva conectando varios bloques
+2. Haz clic en el indicador de estado en el header
+3. Revisa errores y advertencias de continuidad
+4. Verifica la longitud total de la curva
+
+### 3. Activar Rolling Mode
+
+**Requisito**: La curva debe ser válida (bloques continuos)
+
+1. Haz clic en el botón **🎡 Rolling Mode** en el header
+2. Ajusta los controles en el sidebar:
+   - **Radio del disco**: Tamaño del círculo rodante
+   - **Velocidad**: Qué tan rápido se mueve el disco
+   - **Mostrar trayectoria**: Toggle para ver/ocultar la roulette
+3. Presiona **▶️ Iniciar** para comenzar la animación
+4. Observa:
+   - El disco azul rodando sobre la curva
+   - El punto rojo de contacto
+   - La trayectoria punteada del centro del disco
+   - La rotación del disco (marca con punto)
+
+---
+
+## 🧮 Conceptos Matemáticos
+
+### Diagrama CS (Curvature-Segment)
+Un diagrama CS es una representación de curvas suaves mediante:
+- **Segmentos (S)**: Líneas rectas con curvatura κ = 0
+- **Arcos (C)**: Arcos circulares con curvatura κ = 1/r
+
+### Continuidad
+Para que una curva CS sea válida, debe cumplir:
+- **C⁰ continuidad**: El punto final de cada bloque debe coincidir con el inicio del siguiente
+- **Tolerancia**: ε < 0.01 px (punto flotante)
+
+### Longitud de Curva
+- **Segmento**: `L = √((x₂-x₁)² + (y₂-y₁)²)`
+- **Arco**: `L = r × |θ₂ - θ₁|`
+- **Curva total**: `L_total = Σ L_i`
+
+### Roulette (Trayectoria del Rolling Mode)
+Cuando un círculo de radio **r** rueda sobre una curva, el centro del círculo describe una curva llamada **roulette** o **cicloide generalizada**. Esta trayectoria es perpendicular a la curva original a una distancia **r**.
+
+**Matemáticamente**:
+- Punto de contacto: `P(s)` en la curva a longitud de arco `s`
+- Tangente unitaria: `T(s) = dP/ds`
+- Normal unitaria: `N(s) = (-T_y, T_x)`
+- Centro del disco: `C(s) = P(s) + r·N(s)`
+
+---
+
+## 🛠️ Tecnologías
+
+- **React 18** con TypeScript
+- **Vite** como build tool
+- **SVG** para renderizado del canvas
+- **requestAnimationFrame** para animaciones suaves
+- **CSS Variables** para theming
+
+---
+
+## 📦 Estructura del Proyecto
+
+```
+src/
+├── core/
+│   ├── types/
+│   │   └── cs.ts              # Tipos de bloques CS
+│   ├── geometry/
+│   │   ├── arcLength.ts       # Cálculo de longitudes
+│   │   ├── intersections.ts   # Detección de cruces
+│   │   └── curveTraversal.ts  # Recorrido de curva para rolling mode
+│   └── validation/
+│       └── continuity.ts      # Validación de continuidad
+├── features/
+│   └── editor/
+│       ├── EditorPage.tsx     # Página principal del editor
+│       ├── CSCanvas.tsx       # Canvas SVG interactivo
+│       └── RollingDisk.tsx    # Componente de disco rodante
+├── ui/
+│   ├── Button.tsx
+│   └── CoordInput.tsx
+└── styles/
+    └── global.css             # Variables CSS y estilos globales
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🎯 Roadmap
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- [x] Editor básico de segmentos y arcos
+- [x] Validación de continuidad
+- [x] Cálculo de longitud de curva
+- [x] Detección de intersecciones
+- [x] **Rolling Mode con animación**
+- [ ] Exportar curva como SVG/PNG
+- [ ] Guardar/cargar proyectos (JSON)
+- [ ] Modo de edición de curvatura (κ-diagram)
+- [ ] Análisis de segunda derivada (transición de curvatura)
+- [ ] Generación de curvas Bézier equivalentes
+
+---
+
+## 👨‍💻 Desarrollo
+
+```bash
+# Instalar dependencias
+npm install
+
+# Servidor de desarrollo
+npm run dev
+
+# Build para producción
+npm run build
+
+# Preview del build
+npm run preview
 ```
+
+---
+
+## 📄 Licencia
+
+MIT License - Siente libre de usar este proyecto para aprender o construir sobre él.
+
+---
+
+## 🙏 Inspiración
+
+Este proyecto fue inspirado por el trabajo de [Fhv75/penny-graphs-viewer](https://github.com/Fhv75/penny-graphs-viewer) y herramientas de diseño de curvas geométricas.
+
+---
+
+**Hecho con ❤️ por [TilinHub](https://github.com/TilinHub)**
