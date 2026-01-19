@@ -100,7 +100,8 @@ export function RollingDisk({
 
   // Actualizar trail
   React.useEffect(() => {
-    if (!currentState || !showTrail) return;
+    if (!showTrail) return;
+    if (!currentState) return;
 
     setTrail((prev) => {
       const newTrail = [...prev, currentState.diskCenter];
