@@ -159,41 +159,51 @@ export function CSCanvas({
         }
       }}
     >
-      {/* Grid de fondo - MEJORADO */}
-      {showGrid && (
-        <>
-          <defs>
-            <pattern 
-              id="smallGrid" 
-              width={gridSpacing} 
-              height={gridSpacing} 
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`}
-                fill="none"
-                stroke="#d0d0d0"
-                strokeWidth="0.5"
-              />
-            </pattern>
-            <pattern 
-              id="largeGrid" 
-              width={gridSpacing * 5} 
-              height={gridSpacing * 5} 
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width={gridSpacing * 5} height={gridSpacing * 5} fill="url(#smallGrid)" />
-              <path
-                d={`M ${gridSpacing * 5} 0 L 0 0 0 ${gridSpacing * 5}`}
-                fill="none"
-                stroke="#b0b0b0"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#largeGrid)" />
-        </>
-      )}
+      {/* Definiciones de gradientes para discos */}
+      <defs>
+        {/* Grid patterns */}
+        <pattern 
+          id="smallGrid" 
+          width={gridSpacing} 
+          height={gridSpacing} 
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`}
+            fill="none"
+            stroke="#d0d0d0"
+            strokeWidth="0.5"
+          />
+        </pattern>
+        <pattern 
+          id="largeGrid" 
+          width={gridSpacing * 5} 
+          height={gridSpacing * 5} 
+          patternUnits="userSpaceOnUse"
+        >
+          <rect width={gridSpacing * 5} height={gridSpacing * 5} fill="url(#smallGrid)" />
+          <path
+            d={`M ${gridSpacing * 5} 0 L 0 0 0 ${gridSpacing * 5}`}
+            fill="none"
+            stroke="#b0b0b0"
+            strokeWidth="1"
+          />
+        </pattern>
+        
+        {/* Gradientes para discos de contacto */}
+        {regions.map((region) =>
+          region.disks.map((disk) => (
+            <radialGradient key={`gradient-${disk.id}`} id={`gradient-${disk.id}`}>
+              <stop offset="0%" stopColor="#6BB6FF" stopOpacity="0.9" />
+              <stop offset="50%" stopColor="#4A90E2" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#2E6BA8" stopOpacity="0.7" />
+            </radialGradient>
+          ))
+        )}
+      </defs>
+
+      {/* Grid de fondo */}
+      {showGrid && <rect width="100%" height="100%" fill="url(#largeGrid)" />}
 
       {/* Ejes cartesianos */}
       <line
@@ -221,36 +231,48 @@ export function CSCanvas({
           const [cx, cy] = toSVG(disk.center.x, disk.center.y);
           return (
             <g key={disk.id}>
+              {/* Sombra del disco */}
+              <circle
+                cx={cx + 3}
+                cy={cy + 3}
+                r={disk.radius}
+                fill="rgba(0, 0, 0, 0.15)"
+                pointerEvents="none"
+              />
               {/* Disco con gradiente */}
-              <defs>
-                <radialGradient id={`gradient-${disk.id}`}>
-                  <stop offset="0%" stopColor="#5BA3E8" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#3B82C9" stopOpacity="0.6" />
-                </radialGradient>
-              </defs>
               <circle
                 cx={cx}
                 cy={cy}
                 r={disk.radius}
                 fill={`url(#gradient-${disk.id})`}
                 stroke="#2E6BA8"
-                strokeWidth="3"
-                opacity="0.7"
+                strokeWidth="4"
+                opacity="0.85"
+                pointerEvents="none"
+              />
+              {/* Brillo en el disco */}
+              <ellipse
+                cx={cx - disk.radius * 0.25}
+                cy={cy - disk.radius * 0.25}
+                rx={disk.radius * 0.4}
+                ry={disk.radius * 0.3}
+                fill="rgba(255, 255, 255, 0.3)"
                 pointerEvents="none"
               />
               {/* Etiqueta del disco */}
               <text
                 x={cx}
-                y={cy}
-                fontSize="11"
+                y={cy + 4}
+                fontSize="13"
                 fill="white"
                 fontFamily="var(--ff-mono)"
-                fontWeight="600"
+                fontWeight="700"
                 textAnchor="middle"
                 dominantBaseline="middle"
                 pointerEvents="none"
+                style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
               >
-                {region.id}
+                {region.id.replace('region-', 'R')}
               </text>
             </g>
           );
@@ -423,8 +445,8 @@ export function CSCanvas({
         return null;
       })}
 
-      {/* Renderizar puntos de cruce (solo si no está en modo rolling) */}
-      {!rollingMode && crossings.map((cross) => {
+      {/* Renderizar puntos de cruce (solo si no está en modo rolling ni mostrando discos) */}
+      {!rollingMode && !showContactDisks && crossings.map((cross) => {
         const [cx, cy] = toSVG(cross.position.x, cross.position.y);
         return (
           <g key={cross.id}>
@@ -471,7 +493,7 @@ export function CSCanvas({
       </text>
 
       {/* Contador de cruces */}
-      {!rollingMode && crossings.length > 0 && (
+      {!rollingMode && !showContactDisks && crossings.length > 0 && (
         <text
           x="16"
           y="24"
@@ -489,14 +511,14 @@ export function CSCanvas({
       {showContactDisks && regions.length > 0 && (
         <text
           x="16"
-          y="44"
+          y="24"
           fontSize="12"
           fill="#4A90E2"
           fontFamily="var(--ff-mono)"
           fontWeight="600"
           pointerEvents="none"
         >
-          🔵 {regions.length} disco{regions.length !== 1 ? 's' : ''}
+          🔵 {regions.length} disco{regions.length !== 1 ? 's' : ''} de contacto
         </text>
       )}
     </svg>
