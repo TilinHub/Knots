@@ -4,6 +4,7 @@ import { CoordInput } from '../../ui/CoordInput';
 import { Button } from '../../ui/Button';
 import { CSCanvas } from './CSCanvas';
 import { validateContinuity } from '../../core/validation/continuity';
+import { getCurveLengthInfo, blockLength } from '../../core/geometry/arcLength';
 
 /**
  * Página principal del editor de diagramas CS
@@ -19,9 +20,13 @@ export function EditorPage() {
 
   // Validación automática
   const validation = React.useMemo(() => validateContinuity(blocks), [blocks]);
+  
+  // Cálculo de longitud
+  const lengthInfo = React.useMemo(() => getCurveLengthInfo(blocks), [blocks]);
 
   // Obtener bloque seleccionado
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+  const selectedBlockLength = selectedBlock ? blockLength(selectedBlock) : null;
 
   function addSegment() {
     const id = `s${blocks.length + 1}`;
@@ -108,6 +113,23 @@ export function EditorPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          {/* Longitud total (solo si es válido) */}
+          {validation.valid && blocks.length > 0 && (
+            <div
+              style={{
+                fontSize: 'var(--fs-caption)',
+                color: 'var(--text-secondary)',
+                fontWeight: 'var(--fw-medium)',
+                padding: '4px 12px',
+                background: 'var(--bg-tertiary)',
+                borderRadius: '6px',
+                fontFamily: 'var(--ff-mono)',
+              }}
+            >
+              L = {lengthInfo.totalLength.toFixed(2)} px
+            </div>
+          )}
+
           <button
             onClick={() => blocks.length > 0 && setShowValidation(true)}
             disabled={blocks.length === 0}
@@ -289,58 +311,61 @@ export function EditorPage() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {blocks.map((block) => (
-                    <div
-                      key={block.id}
-                      onClick={() => setSelectedBlockId(block.id)}
-                      style={{
-                        padding: 'var(--space-sm)',
-                        background: selectedBlockId === block.id ? 'var(--bg-primary)' : 'transparent',
-                        border: `1px solid ${selectedBlockId === block.id ? 'var(--border)' : 'transparent'}`,
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        transition: 'all 0.15s',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (selectedBlockId !== block.id) {
-                          e.currentTarget.style.background = 'var(--bg-tertiary)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedBlockId !== block.id) {
-                          e.currentTarget.style.background = 'transparent';
-                        }
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-medium)', color: 'var(--text-primary)' }}>
-                          {block.id}
-                        </div>
-                        <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                          {block.kind === 'segment' ? 'Segmento' : 'Arco'}
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteBlock(block.id);
-                        }}
+                  {blocks.map((block) => {
+                    const length = blockLength(block);
+                    return (
+                      <div
+                        key={block.id}
+                        onClick={() => setSelectedBlockId(block.id)}
                         style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--text-tertiary)',
+                          padding: 'var(--space-sm)',
+                          background: selectedBlockId === block.id ? 'var(--bg-primary)' : 'transparent',
+                          border: `1px solid ${selectedBlockId === block.id ? 'var(--border)' : 'transparent'}`,
+                          borderRadius: '6px',
                           cursor: 'pointer',
-                          padding: '4px',
-                          fontSize: '14px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedBlockId !== block.id) {
+                            e.currentTarget.style.background = 'var(--bg-tertiary)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedBlockId !== block.id) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
                         }}
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-medium)', color: 'var(--text-primary)' }}>
+                            {block.id}
+                          </div>
+                          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                            {block.kind === 'segment' ? 'Segmento' : 'Arco'} · {length.toFixed(1)} px
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteBlock(block.id);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-tertiary)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            fontSize: '14px',
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -361,13 +386,29 @@ export function EditorPage() {
                   background: 'var(--bg-primary)',
                 }}
               >
-                <div style={{ marginBottom: 'var(--space-sm)' }}>
-                  <h3 style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-primary)' }}>
-                    {selectedBlock.id}
-                  </h3>
-                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                    {selectedBlock.kind === 'segment' ? 'Segmento' : 'Arco'}
+                <div style={{ marginBottom: 'var(--space-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <h3 style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-primary)' }}>
+                      {selectedBlock.id}
+                    </h3>
+                    <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                      {selectedBlock.kind === 'segment' ? 'Segmento' : 'Arco'}
+                    </div>
                   </div>
+                  {selectedBlockLength !== null && (
+                    <div
+                      style={{
+                        fontSize: 'var(--fs-caption)',
+                        fontFamily: 'var(--ff-mono)',
+                        color: 'var(--text-secondary)',
+                        padding: '4px 8px',
+                        background: 'var(--bg-secondary)',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {selectedBlockLength.toFixed(2)} px
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
@@ -623,16 +664,61 @@ export function EditorPage() {
               </div>
             )}
 
-            {validation.valid && validation.errors.length === 0 && (
-              <div
-                style={{
-                  fontSize: 'var(--fs-body)',
-                  color: 'var(--accent-valid)',
-                  textAlign: 'center',
-                  padding: 'var(--space-lg)',
-                }}
-              >
-                ✓ Diagrama CS válido
+            {/* Información de longitud */}
+            {validation.valid && (
+              <div style={{ marginBottom: 'var(--space-md)' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--fs-body)',
+                    color: 'var(--accent-valid)',
+                    textAlign: 'center',
+                    padding: 'var(--space-md)',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '8px',
+                    marginBottom: 'var(--space-md)',
+                  }}
+                >
+                  ✓ Diagrama CS válido
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    marginBottom: 'var(--space-xs)',
+                  }}
+                >
+                  Longitud de Curva
+                </div>
+                <div
+                  style={{
+                    padding: 'var(--space-md)',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 'var(--fs-header)',
+                      fontWeight: 'var(--fw-semibold)',
+                      color: 'var(--text-primary)',
+                      fontFamily: 'var(--ff-mono)',
+                      marginBottom: 'var(--space-sm)',
+                    }}
+                  >
+                    {lengthInfo.totalLength.toFixed(2)} px
+                  </div>
+                  <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                    {lengthInfo.blockLengths.map((info, i) => (
+                      <div key={info.id} style={{ marginBottom: '4px' }}>
+                        {info.id}: {info.length.toFixed(2)} px
+                        {i < lengthInfo.blockLengths.length - 1 && ' +'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
