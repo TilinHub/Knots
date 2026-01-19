@@ -27,19 +27,26 @@ export function arcLength(arc: CSArc): number {
 
 /**
  * Calcula la longitud de un bloque CS
+ * Nota: Los discos no tienen longitud de curva (retorna 0)
  */
 export function blockLength(block: CSBlock): number {
   if (block.kind === 'segment') {
     return segmentLength(block);
   }
-  return arcLength(block);
+  if (block.kind === 'arc') {
+    return arcLength(block);
+  }
+  // Los discos no tienen longitud
+  return 0;
 }
 
 /**
- * Calcula la longitud total de todos los bloques
+ * Calcula la longitud total de todos los bloques (excluyendo discos)
  */
 export function totalCurveLength(blocks: CSBlock[]): number {
-  return blocks.reduce((sum, block) => sum + blockLength(block), 0);
+  return blocks
+    .filter(b => b.kind !== 'disk')
+    .reduce((sum, block) => sum + blockLength(block), 0);
 }
 
 /**
@@ -55,16 +62,21 @@ export interface LengthInfo {
 }
 
 export function getCurveLengthInfo(blocks: CSBlock[]): LengthInfo {
+  // Filtrar discos antes de encontrar cadenas
+  const nonDiskBlocks = blocks.filter(b => b.kind !== 'disk');
+  
   // Encontrar la cadena continua más larga
-  const chains = findContinuousChains(blocks);
+  const chains = findContinuousChains(nonDiskBlocks);
   const mainChain = chains.length > 0 ? chains[0] : [];
 
   // Calcular longitudes solo de la cadena principal
-  const blockLengths = mainChain.map(block => ({
-    id: block.id,
-    kind: block.kind,
-    length: blockLength(block),
-  }));
+  const blockLengths = mainChain
+    .filter(b => b.kind !== 'disk')
+    .map(block => ({
+      id: block.id,
+      kind: block.kind as 'segment' | 'arc',
+      length: blockLength(block),
+    }));
 
   const totalLength = blockLengths.reduce((sum, info) => sum + info.length, 0);
 
