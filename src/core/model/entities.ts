@@ -26,7 +26,8 @@ export type Arc = {
 export type Primitive = Segment | Arc;
 
 export type Scene = {
-  radius: number; // radio global fijo (para arcos)
+  radius: number; // radio geométrico (para cálculos, usar 1)
+  visualRadius: number; // radio visual (para renderizado, puede ser grande)
   points: Point[];
   primitives: Primitive[];
 };
