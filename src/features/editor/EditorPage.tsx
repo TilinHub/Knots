@@ -19,6 +19,13 @@ export function EditorPage() {
   const [gridSpacing, setGridSpacing] = React.useState(20);
   const [angleUnit, setAngleUnit] = React.useState<'deg' | 'rad'>('deg');
 
+  // Rolling mode states
+  const [rollingMode, setRollingMode] = React.useState(false);
+  const [diskRadius, setDiskRadius] = React.useState(30);
+  const [rollingSpeed, setRollingSpeed] = React.useState(0.1);
+  const [isRolling, setIsRolling] = React.useState(false);
+  const [showTrail, setShowTrail] = React.useState(true);
+
   // Validación automática
   const validation = React.useMemo(() => validateContinuity(blocks), [blocks]);
   
@@ -122,6 +129,31 @@ export function EditorPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          {/* Rolling Mode Toggle */}
+          {validation.valid && blocks.length > 0 && (
+            <button
+              onClick={() => {
+                setRollingMode(!rollingMode);
+                if (!rollingMode) {
+                  setIsRolling(false);
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                fontSize: 'var(--fs-caption)',
+                fontWeight: 'var(--fw-medium)',
+                background: rollingMode ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                color: rollingMode ? 'white' : 'var(--text-primary)',
+                border: `1px solid ${rollingMode ? 'var(--accent-primary)' : 'var(--border)'}`,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              🎡 Rolling Mode
+            </button>
+          )}
+
           {/* Longitud total (solo si es válido) */}
           {validation.valid && blocks.length > 0 && (
             <div
@@ -208,6 +240,11 @@ export function EditorPage() {
             onUpdateBlock={updateBlock}
             showGrid={showGrid}
             gridSpacing={gridSpacing}
+            rollingMode={rollingMode}
+            diskRadius={diskRadius}
+            rollingSpeed={rollingSpeed}
+            isRolling={isRolling}
+            showTrail={showTrail}
           />
         </div>
 
@@ -222,113 +259,15 @@ export function EditorPage() {
               flexDirection: 'column',
             }}
           >
-            {/* CONTROLES DE VISTA */}
-            <div
-              style={{
-                padding: 'var(--space-md)',
-                borderBottom: '1px solid var(--border)',
-              }}
-            >
-              <h2
+            {/* ROLLING MODE CONTROLS */}
+            {rollingMode && (
+              <div
                 style={{
-                  fontSize: 'var(--fs-caption)',
-                  fontWeight: 'var(--fw-semibold)',
-                  color: 'var(--text-secondary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: 'var(--space-sm)',
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
                 }}
               >
-                Vista
-              </h2>
-
-              {/* Toggle grilla */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
-                <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Grilla</span>
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={showGrid}
-                    onChange={(e) => setShowGrid(e.target.checked)}
-                    style={{ marginRight: '6px' }}
-                  />
-                  <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                    {showGrid ? 'Visible' : 'Oculta'}
-                  </span>
-                </label>
-              </div>
-
-              {/* Espaciado de grilla */}
-              {showGrid && (
-                <div style={{ marginBottom: 'var(--space-sm)' }}>
-                  <label
-                    style={{
-                      fontSize: 'var(--fs-caption)',
-                      color: 'var(--text-secondary)',
-                      display: 'block',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    Espaciado: {gridSpacing}px
-                  </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="50"
-                    step="5"
-                    value={gridSpacing}
-                    onChange={(e) => setGridSpacing(Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-              )}
-
-              {/* Toggle unidades de ángulo */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Ángulos</span>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button
-                    onClick={() => setAngleUnit('deg')}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: 'var(--fs-caption)',
-                      background: angleUnit === 'deg' ? 'var(--bg-primary)' : 'transparent',
-                      border: `1px solid ${angleUnit === 'deg' ? 'var(--border)' : 'transparent'}`,
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      color: angleUnit === 'deg' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    grados
-                  </button>
-                  <button
-                    onClick={() => setAngleUnit('rad')}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: 'var(--fs-caption)',
-                      background: angleUnit === 'rad' ? 'var(--bg-primary)' : 'transparent',
-                      border: `1px solid ${angleUnit === 'rad' ? 'var(--border)' : 'transparent'}`,
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      color: angleUnit === 'rad' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    radianes
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* LISTA DE BLOQUES */}
-            <div
-              style={{
-                padding: 'var(--space-md)',
-                borderBottom: '1px solid var(--border)',
-                flex: 1,
-                overflowY: 'auto',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
                 <h2
                   style={{
                     fontSize: 'var(--fs-caption)',
@@ -336,94 +275,294 @@ export function EditorPage() {
                     color: 'var(--text-secondary)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
+                    marginBottom: 'var(--space-sm)',
                   }}
                 >
-                  Bloques ({blocks.length})
+                  🎡 Rolling Mode
                 </h2>
-              </div>
 
-              {blocks.length === 0 ? (
-                <div
+                {/* Play/Pause */}
+                <div style={{ marginBottom: 'var(--space-md)' }}>
+                  <Button
+                    onClick={() => setIsRolling(!isRolling)}
+                    style={{ width: '100%', background: isRolling ? 'var(--accent-error)' : 'var(--accent-primary)' }}
+                  >
+                    {isRolling ? '⏸️ Pausar' : '▶️ Iniciar'}
+                  </Button>
+                </div>
+
+                {/* Disk Radius */}
+                <div style={{ marginBottom: 'var(--space-sm)' }}>
+                  <label
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      color: 'var(--text-secondary)',
+                      display: 'block',
+                      marginBottom: '4px',
+                      fontWeight: 'var(--fw-medium)',
+                    }}
+                  >
+                    Radio del disco: {diskRadius}px
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="80"
+                    step="5"
+                    value={diskRadius}
+                    onChange={(e) => setDiskRadius(Number(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                {/* Rolling Speed */}
+                <div style={{ marginBottom: 'var(--space-sm)' }}>
+                  <label
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      color: 'var(--text-secondary)',
+                      display: 'block',
+                      marginBottom: '4px',
+                      fontWeight: 'var(--fw-medium)',
+                    }}
+                  >
+                    Velocidad: {rollingSpeed.toFixed(2)}x
+                  </label>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="0.5"
+                    step="0.05"
+                    value={rollingSpeed}
+                    onChange={(e) => setRollingSpeed(Number(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                {/* Show Trail Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Mostrar trayectoria</span>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showTrail}
+                      onChange={(e) => setShowTrail(e.target.checked)}
+                      style={{ marginRight: '6px' }}
+                    />
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                      {showTrail ? 'Sí' : 'No'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* CONTROLES DE VISTA */}
+            {!rollingMode && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                }}
+              >
+                <h2
                   style={{
                     fontSize: 'var(--fs-caption)',
-                    color: 'var(--text-tertiary)',
-                    textAlign: 'center',
-                    padding: 'var(--space-lg)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 'var(--space-sm)',
                   }}
                 >
-                  Sin bloques aún
+                  Vista
+                </h2>
+
+                {/* Toggle grilla */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Grilla</span>
+                  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showGrid}
+                      onChange={(e) => setShowGrid(e.target.checked)}
+                      style={{ marginRight: '6px' }}
+                    />
+                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                      {showGrid ? 'Visible' : 'Oculta'}
+                    </span>
+                  </label>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {blocks.map((block) => {
-                    const length = blockLength(block);
-                    return (
-                      <div
-                        key={block.id}
-                        onClick={() => setSelectedBlockId(block.id)}
-                        style={{
-                          padding: 'var(--space-sm)',
-                          background: selectedBlockId === block.id ? 'var(--bg-primary)' : 'transparent',
-                          border: `1px solid ${selectedBlockId === block.id ? 'var(--border)' : 'transparent'}`,
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          transition: 'all 0.15s',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (selectedBlockId !== block.id) {
-                            e.currentTarget.style.background = 'var(--bg-tertiary)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (selectedBlockId !== block.id) {
-                            e.currentTarget.style.background = 'transparent';
-                          }
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-medium)', color: 'var(--text-primary)' }}>
-                            {block.id}
-                          </div>
-                          <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                            {block.kind === 'segment' ? 'Segmento' : 'Arco'} · L = {length.toFixed(1)} px
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteBlock(block.id);
-                          }}
+
+                {/* Espaciado de grilla */}
+                {showGrid && (
+                  <div style={{ marginBottom: 'var(--space-sm)' }}>
+                    <label
+                      style={{
+                        fontSize: 'var(--fs-caption)',
+                        color: 'var(--text-secondary)',
+                        display: 'block',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      Espaciado: {gridSpacing}px
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="50"
+                      step="5"
+                      value={gridSpacing}
+                      onChange={(e) => setGridSpacing(Number(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                )}
+
+                {/* Toggle unidades de ángulo */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Ángulos</span>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => setAngleUnit('deg')}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: 'var(--fs-caption)',
+                        background: angleUnit === 'deg' ? 'var(--bg-primary)' : 'transparent',
+                        border: `1px solid ${angleUnit === 'deg' ? 'var(--border)' : 'transparent'}`,
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: angleUnit === 'deg' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      grados
+                    </button>
+                    <button
+                      onClick={() => setAngleUnit('rad')}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: 'var(--fs-caption)',
+                        background: angleUnit === 'rad' ? 'var(--bg-primary)' : 'transparent',
+                        border: `1px solid ${angleUnit === 'rad' ? 'var(--border)' : 'transparent'}`,
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: angleUnit === 'rad' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      radianes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LISTA DE BLOQUES */}
+            {!rollingMode && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                  flex: 1,
+                  overflowY: 'auto',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' }}>
+                  <h2
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      fontWeight: 'var(--fw-semibold)',
+                      color: 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    Bloques ({blocks.length})
+                  </h2>
+                </div>
+
+                {blocks.length === 0 ? (
+                  <div
+                    style={{
+                      fontSize: 'var(--fs-caption)',
+                      color: 'var(--text-tertiary)',
+                      textAlign: 'center',
+                      padding: 'var(--space-lg)',
+                    }}
+                  >
+                    Sin bloques aún
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {blocks.map((block) => {
+                      const length = blockLength(block);
+                      return (
+                        <div
+                          key={block.id}
+                          onClick={() => setSelectedBlockId(block.id)}
                           style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--text-tertiary)',
+                            padding: 'var(--space-sm)',
+                            background: selectedBlockId === block.id ? 'var(--bg-primary)' : 'transparent',
+                            border: `1px solid ${selectedBlockId === block.id ? 'var(--border)' : 'transparent'}`,
+                            borderRadius: '6px',
                             cursor: 'pointer',
-                            padding: '4px',
-                            fontSize: '14px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedBlockId !== block.id) {
+                              e.currentTarget.style.background = 'var(--bg-tertiary)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedBlockId !== block.id) {
+                              e.currentTarget.style.background = 'transparent';
+                            }
                           }}
                         >
-                          ×
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 'var(--fs-body)', fontWeight: 'var(--fw-medium)', color: 'var(--text-primary)' }}>
+                              {block.id}
+                            </div>
+                            <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                              {block.kind === 'segment' ? 'Segmento' : 'Arco'} · L = {length.toFixed(1)} px
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteBlock(block.id);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--text-tertiary)',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              fontSize: '14px',
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-              {/* Botones añadir */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-md)' }}>
-                <Button onClick={addSegment}>+ Segmento</Button>
-                <Button onClick={addArc} variant="secondary">
-                  + Arco
-                </Button>
+                {/* Botones añadir */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)', marginTop: 'var(--space-md)' }}>
+                  <Button onClick={addSegment}>+ Segmento</Button>
+                  <Button onClick={addArc} variant="secondary">
+                    + Arco
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* PANEL DE PROPIEDADES DINÁMICO */}
-            {selectedBlock && (
+            {!rollingMode && selectedBlock && (
               <div
                 style={{
                   padding: 'var(--space-md)',
@@ -610,7 +749,7 @@ export function EditorPage() {
               </div>
             )}
 
-            {!selectedBlock && blocks.length > 0 && (
+            {!rollingMode && !selectedBlock && blocks.length > 0 && (
               <div
                 style={{
                   padding: 'var(--space-lg)',
