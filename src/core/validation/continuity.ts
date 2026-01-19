@@ -86,77 +86,128 @@ function tangentsAlign(t1: Point2D, t2: Point2D): boolean {
 
 /**
  * Encontrar cadenas continuas de bloques, independiente del orden
+ * Algoritmo mejorado con mejor manejo de ciclos
  */
 export function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
   if (blocks.length === 0) return [];
   if (blocks.length === 1) return [[blocks[0]]];
 
-  const chains: CSBlock[][] = [];
   const used = new Set<string>();
+  const chains: CSBlock[][] = [];
 
+  // Construir grafo de adyacencia
+  const adjacency = new Map<string, Array<{ block: CSBlock, connectsTo: 'start' | 'end' }>>();
+  
+  for (const block of blocks) {
+    adjacency.set(block.id, []);
+  }
+
+  // Encontrar todas las conexiones
+  for (let i = 0; i < blocks.length; i++) {
+    for (let j = 0; j < blocks.length; j++) {
+      if (i === j) continue;
+      
+      const blockA = blocks[i];
+      const blockB = blocks[j];
+      
+      const aStart = getStartPoint(blockA);
+      const aEnd = getEndPoint(blockA);
+      const bStart = getStartPoint(blockB);
+      const bEnd = getEndPoint(blockB);
+
+      // A.end conecta con B.start
+      if (pointsEqual(aEnd, bStart)) {
+        adjacency.get(blockA.id)?.push({ block: blockB, connectsTo: 'start' });
+      }
+      
+      // A.start conecta con B.end
+      if (pointsEqual(aStart, bEnd)) {
+        adjacency.get(blockB.id)?.push({ block: blockA, connectsTo: 'start' });
+      }
+    }
+  }
+
+  // Construir cadenas siguiendo las conexiones
   for (const startBlock of blocks) {
     if (used.has(startBlock.id)) continue;
 
-    const chain: CSBlock[] = [startBlock];
-    used.add(startBlock.id);
+    const chain: CSBlock[] = [];
+    const visited = new Set<string>();
+    
+    // DFS para encontrar toda la cadena conectada
+    function dfs(block: CSBlock) {
+      if (visited.has(block.id)) return;
+      visited.add(block.id);
+      chain.push(block);
+      used.add(block.id);
 
-    // Intentar extender la cadena hacia adelante
-    let currentEnd = getEndPoint(startBlock);
-    let extended = true;
-
-    while (extended) {
-      extended = false;
-      for (const candidate of blocks) {
-        if (used.has(candidate.id)) continue;
-
-        const candStart = getStartPoint(candidate);
-        const candEnd = getEndPoint(candidate);
-
-        // ¿El inicio del candidato conecta con el final actual?
-        if (pointsEqual(currentEnd, candStart)) {
-          chain.push(candidate);
-          used.add(candidate.id);
-          currentEnd = candEnd;
-          extended = true;
-          break;
-        }
-        // ¿El final del candidato conecta con el final actual? (invertir)
-        else if (pointsEqual(currentEnd, candEnd)) {
-          // Necesitaríamos invertir el bloque, por ahora skip
-          // En el futuro podríamos soportar esto
+      const neighbors = adjacency.get(block.id) || [];
+      for (const { block: neighbor } of neighbors) {
+        if (!visited.has(neighbor.id)) {
+          dfs(neighbor);
         }
       }
     }
 
-    // Intentar extender hacia atrás desde el inicio
-    let currentStart = getStartPoint(startBlock);
-    extended = true;
-
-    while (extended) {
-      extended = false;
-      for (const candidate of blocks) {
-        if (used.has(candidate.id)) continue;
-
-        const candEnd = getEndPoint(candidate);
-
-        // ¿El final del candidato conecta con el inicio actual?
-        if (pointsEqual(candEnd, currentStart)) {
-          chain.unshift(candidate);
-          used.add(candidate.id);
-          currentStart = getStartPoint(candidate);
-          extended = true;
-          break;
-        }
-      }
-    }
-
+    dfs(startBlock);
+    
     if (chain.length > 0) {
-      chains.push(chain);
+      // Reordenar la cadena para que sea secuencial
+      const orderedChain = orderChain(chain);
+      chains.push(orderedChain);
     }
   }
 
   // Ordenar por longitud (más larga primero)
   return chains.sort((a, b) => b.length - a.length);
+}
+
+/**
+ * Reordenar una cadena de bloques para que sea secuencial
+ */
+function orderChain(blocks: CSBlock[]): CSBlock[] {
+  if (blocks.length <= 1) return blocks;
+
+  const used = new Set<string>();
+  const ordered: CSBlock[] = [];
+
+  // Empezar con el primer bloque
+  let current = blocks[0];
+  ordered.push(current);
+  used.add(current.id);
+
+  // Seguir la cadena
+  while (ordered.length < blocks.length) {
+    const currentEnd = getEndPoint(current);
+    let found = false;
+
+    // Buscar el siguiente bloque que conecta
+    for (const candidate of blocks) {
+      if (used.has(candidate.id)) continue;
+
+      const candStart = getStartPoint(candidate);
+      if (pointsEqual(currentEnd, candStart)) {
+        ordered.push(candidate);
+        used.add(candidate.id);
+        current = candidate;
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      // No se pudo continuar, agregar bloques restantes sin orden
+      for (const block of blocks) {
+        if (!used.has(block.id)) {
+          ordered.push(block);
+          used.add(block.id);
+        }
+      }
+      break;
+    }
+  }
+
+  return ordered;
 }
 
 /**
@@ -178,7 +229,7 @@ function validateChain(chain: CSBlock[]): { errors: string[], warnings: string[]
     const endPoint = getEndPoint(current);
     const startPoint = getStartPoint(next);
 
-    // 1. Continuidad posicional (debería estar garantizada por findContinuousChains)
+    // 1. Continuidad posicional
     if (!pointsEqual(endPoint, startPoint)) {
       const distance = Math.hypot(startPoint.x - endPoint.x, startPoint.y - endPoint.y);
       errors.push(
