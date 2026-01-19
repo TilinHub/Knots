@@ -8,13 +8,19 @@ import { getCurveLengthInfo, blockLength } from '../../core/geometry/arcLength';
 
 interface EditorPageProps {
   onBackToGallery?: () => void;
+  initialKnot?: {
+    id: number;
+    name: string;
+    nodes: number[];
+    edges: [number, number][];
+  };
 }
 
 /**
  * Página principal del editor de diagramas CS
  * Layout: Header + Canvas + Sidebar colapsable
  */
-export function EditorPage({ onBackToGallery }: EditorPageProps) {
+export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const [blocks, setBlocks] = React.useState<CSBlock[]>([]);
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
@@ -29,6 +35,36 @@ export function EditorPage({ onBackToGallery }: EditorPageProps) {
   const [rollingSpeed, setRollingSpeed] = React.useState(0.1);
   const [isRolling, setIsRolling] = React.useState(false);
   const [showTrail, setShowTrail] = React.useState(true);
+
+  // Convertir nudo inicial a bloques CS
+  React.useEffect(() => {
+    if (!initialKnot || initialKnot.id === 0) return; // 0 = nuevo nudo vacío
+    
+    // Convertir edges del nudo a segmentos CS
+    const initialBlocks: CSBlock[] = initialKnot.edges.map((edge, idx) => {
+      const [nodeA, nodeB] = edge;
+      
+      // Posicionar nodos en círculo para visualización inicial
+      const angleA = (nodeA / initialKnot.nodes.length) * 2 * Math.PI;
+      const angleB = (nodeB / initialKnot.nodes.length) * 2 * Math.PI;
+      const radius = 100;
+      
+      return {
+        id: `s${idx + 1}`,
+        kind: 'segment',
+        p1: { 
+          x: Math.round(Math.cos(angleA) * radius), 
+          y: Math.round(Math.sin(angleA) * radius)
+        },
+        p2: { 
+          x: Math.round(Math.cos(angleB) * radius), 
+          y: Math.round(Math.sin(angleB) * radius)
+        },
+      } as CSSegment;
+    });
+    
+    setBlocks(initialBlocks);
+  }, [initialKnot]);
 
   // Validación automática
   const validation = React.useMemo(() => validateContinuity(blocks), [blocks]);
@@ -154,7 +190,7 @@ export function EditorPage({ onBackToGallery }: EditorPageProps) {
               color: 'var(--text-secondary)',
             }}
           >
-            CS Diagram Builder
+            {initialKnot && initialKnot.id !== 0 ? initialKnot.name : 'CS Diagram Builder'}
           </div>
         </div>
 
