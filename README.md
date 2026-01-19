@@ -14,6 +14,7 @@
 - **Sistema de coordenadas cartesiano**: Origen centrado con ejes X e Y visibles
 - **Grilla ajustable**: Control de visibilidad y espaciado
 - **Snap a grilla**: Los puntos se ajustan automáticamente cada 5px
+- **Radio geométrico separado**: Los cálculos geométricos usan radio 1 mientras que la visualización puede usar cualquier tamaño
 
 ### ✅ Validación de Continuidad
 - Verifica que los bloques estén conectados correctamente
@@ -91,6 +92,29 @@ Un diagrama CS es una representación de curvas suaves mediante:
 - **Segmentos (S)**: Líneas rectas con curvatura κ = 0
 - **Arcos (C)**: Arcos circulares con curvatura κ = 1/r
 
+### Radio Geométrico vs Visual
+
+**IMPORTANTE**: El proyecto separa dos conceptos de radio:
+
+- **`radius`** (Radio geométrico): Usado en todos los cálculos geométricos (hull, distancias, intersecciones). Se recomienda usar **radio = 1** para mantener la pureza matemática.
+
+- **`visualRadius`** (Radio visual): Usado exclusivamente para el renderizado SVG. Puede ser cualquier valor grande (ej. 25) para que los círculos se vean bien en pantalla.
+
+Esta separación permite:
+- Cálculos geométricos precisos con radio unitario
+- Visualización clara con círculos de tamaño apropiado
+- Escalar la visualización sin afectar la geometría subyacente
+
+**Ejemplo de uso**:
+```typescript
+const scene: Scene = {
+  points: [...],
+  primitives: [...],
+  radius: 1,           // Para cálculos geométricos
+  visualRadius: 25     // Para visualización
+};
+```
+
 ### Continuidad
 Para que una curva CS sea válida, debe cumplir:
 - **C⁰ continuidad**: El punto final de cada bloque debe coincidir con el inicio del siguiente
@@ -129,8 +153,11 @@ src/
 ├── core/
 │   ├── types/
 │   │   └── cs.ts              # Tipos de bloques CS
+│   ├── model/
+│   │   └── entities.ts        # Tipos Scene, Point, Primitive (con radius y visualRadius)
 │   ├── geometry/
 │   │   ├── arcLength.ts       # Cálculo de longitudes
+│   │   ├── diskHull.ts        # Cálculo de envolvente de discos
 │   │   ├── intersections.ts   # Detección de cruces
 │   │   └── curveTraversal.ts  # Recorrido de curva para rolling mode
 │   └── validation/
@@ -140,6 +167,9 @@ src/
 │       ├── EditorPage.tsx     # Página principal del editor
 │       ├── CSCanvas.tsx       # Canvas SVG interactivo
 │       └── RollingDisk.tsx    # Componente de disco rodante
+├── renderer/
+│   └── svg/
+│       └── SvgStage.tsx       # Renderizador SVG con soporte para visualRadius
 ├── ui/
 │   ├── Button.tsx
 │   └── CoordInput.tsx
@@ -156,6 +186,7 @@ src/
 - [x] Cálculo de longitud de curva
 - [x] Detección de intersecciones
 - [x] **Rolling Mode con animación**
+- [x] **Separación de radio geométrico y visual**
 - [ ] Exportar curva como SVG/PNG
 - [ ] Guardar/cargar proyectos (JSON)
 - [ ] Modo de edición de curvatura (κ-diagram)
