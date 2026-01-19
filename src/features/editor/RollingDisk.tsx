@@ -103,10 +103,10 @@ export function RollingDisk({
     if (!showTrail) return;
     if (!currentState) return;
 
-    setTrail((prev) => {
-      const newTrail = [...prev, currentState.diskCenter];
+    setTrail((prev: Array<{ x: number; y: number }>) => {
+      const newTrail: Array<{ x: number; y: number }> = [...prev, currentState.diskCenter];
       // Limitar trail a últimos 500 puntos para performance
-      return newTrail.length > 500 ? newTrail.slice(-500) : newTrail;
+      return newTrail.length > 500 ? newTrail.slice(newTrail.length - 500) : newTrail;
     });
   }, [currentState, showTrail]);
 
