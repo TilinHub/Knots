@@ -5,8 +5,10 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client"],
     "skipLibCheck": true,
+
+    /* Keep vite types, but don't exclude react typings */
+    "types": ["vite/client", "react", "react-dom"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",

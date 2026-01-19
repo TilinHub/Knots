@@ -1,6 +1,8 @@
 import type { CSBlock, Point2D } from '../types/cs';
 import { blockLength } from './arcLength';
 
+const TAU = Math.PI * 2;
+
 /**
  * Estado de un punto en la curva con información de tangente
  */
@@ -71,7 +73,9 @@ function getPointOnBlock(block: CSBlock, t: number): CurveState {
       position: { x, y },
       tangent,
     };
-  } else {
+  }
+
+  if (block.kind === 'arc') {
     // Arco
     const startAngle = block.startAngle;
     const endAngle = block.endAngle;
@@ -82,12 +86,10 @@ function getPointOnBlock(block: CSBlock, t: number): CurveState {
     const x = block.center.x + block.radius * Math.cos(currentAngle);
     const y = block.center.y + block.radius * Math.sin(currentAngle);
 
-    // Tangente en el arco (derivada de la posición respecto al ángulo)
-    // dx/dθ = -r*sin(θ), dy/dθ = r*cos(θ)
-    // Normalizado
+    // Tangente en el arco
     const tangent: Point2D = {
-      x: -Math.sin(currentAngle) * Math.sign(angleSpan),
-      y: Math.cos(currentAngle) * Math.sign(angleSpan),
+      x: -Math.sin(currentAngle) * Math.sign(angleSpan || 1),
+      y: Math.cos(currentAngle) * Math.sign(angleSpan || 1),
     };
 
     return {
@@ -95,6 +97,22 @@ function getPointOnBlock(block: CSBlock, t: number): CurveState {
       tangent,
     };
   }
+
+  // Disco: muestreamos su circunferencia en CCW
+  const currentAngle = TAU * t;
+
+  const x = block.center.x + block.radius * Math.cos(currentAngle);
+  const y = block.center.y + block.radius * Math.sin(currentAngle);
+
+  const tangent: Point2D = {
+    x: -Math.sin(currentAngle),
+    y: Math.cos(currentAngle),
+  };
+
+  return {
+    position: { x, y },
+    tangent,
+  };
 }
 
 /**
