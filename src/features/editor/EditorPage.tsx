@@ -36,6 +36,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const [isRolling, setIsRolling] = React.useState(false);
   const [showTrail, setShowTrail] = React.useState(true);
 
+  // Contact graph state
+  const [showContactDisks, setShowContactDisks] = React.useState(false);
+
   // Convertir nudo inicial a bloques CS
   React.useEffect(() => {
     if (!initialKnot || initialKnot.id === 0) return; // 0 = nuevo nudo vacío
@@ -195,8 +198,33 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          {/* Contact Graph Toggle */}
+          {blocks.length >= 3 && (
+            <button
+              onClick={() => {
+                setShowContactDisks(!showContactDisks);
+                if (!showContactDisks) {
+                  setRollingMode(false);
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                fontSize: 'var(--fs-caption)',
+                fontWeight: 'var(--fw-medium)',
+                background: showContactDisks ? '#4A90E2' : 'var(--bg-tertiary)',
+                color: showContactDisks ? 'white' : 'var(--text-primary)',
+                border: `1px solid ${showContactDisks ? '#4A90E2' : 'var(--border)'}`,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              🔵 Grafos de Contacto
+            </button>
+          )}
+
           {/* Rolling Mode Toggle */}
-          {validation.valid && blocks.length > 0 && (
+          {validation.valid && blocks.length > 0 && !showContactDisks && (
             <button
               onClick={() => {
                 setRollingMode(!rollingMode);
@@ -221,7 +249,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
           )}
 
           {/* Longitud total (solo si es válido) */}
-          {validation.valid && blocks.length > 0 && (
+          {validation.valid && blocks.length > 0 && !showContactDisks && (
             <div
               style={{
                 fontSize: 'var(--fs-caption)',
@@ -311,6 +339,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             rollingSpeed={rollingSpeed}
             isRolling={isRolling}
             showTrail={showTrail}
+            showContactDisks={showContactDisks}
           />
         </div>
 
@@ -325,6 +354,58 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               flexDirection: 'column',
             }}
           >
+            {/* CONTACT GRAPH INFO */}
+            {showContactDisks && (
+              <div
+                style={{
+                  padding: 'var(--space-md)',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 'var(--space-sm)',
+                  }}
+                >
+                  🔵 Grafos de Contacto
+                </h2>
+
+                <div
+                  style={{
+                    padding: 'var(--space-md)',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: '8px',
+                    fontSize: 'var(--fs-body)',
+                    color: 'var(--text-primary)',
+                    lineHeight: '1.6',
+                  }}
+                >
+                  <p style={{ marginBottom: 'var(--space-sm)' }}>
+                    Los <strong>discos de contacto</strong> representan las regiones vacías del diagrama del nudo.
+                  </p>
+                  <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
+                    Cada disco se posiciona en el centro de una región cerrada formada por los segmentos y arcos del diagrama.
+                  </p>
+                </div>
+
+                <div style={{ marginTop: 'var(--space-md)' }}>
+                  <Button
+                    onClick={() => setShowContactDisks(false)}
+                    variant="secondary"
+                    style={{ width: '100%' }}
+                  >
+                    Ocultar Discos
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* ROLLING MODE CONTROLS */}
             {rollingMode && (
               <div
@@ -424,7 +505,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             )}
 
             {/* CONTROLES DE VISTA */}
-            {!rollingMode && (
+            {!rollingMode && !showContactDisks && (
               <div
                 style={{
                   padding: 'var(--space-md)',
@@ -523,7 +604,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             )}
 
             {/* LISTA DE BLOQUES */}
-            {!rollingMode && (
+            {!rollingMode && !showContactDisks && (
               <div
                 style={{
                   padding: 'var(--space-md)',
@@ -628,7 +709,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             )}
 
             {/* PANEL DE PROPIEDADES DINÁMICO */}
-            {!rollingMode && selectedBlock && (
+            {!rollingMode && !showContactDisks && selectedBlock && (
               <div
                 style={{
                   padding: 'var(--space-md)',
@@ -815,7 +896,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               </div>
             )}
 
-            {!rollingMode && !selectedBlock && blocks.length > 0 && (
+            {!rollingMode && !showContactDisks && !selectedBlock && blocks.length > 0 && (
               <div
                 style={{
                   padding: 'var(--space-lg)',
