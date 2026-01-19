@@ -36,9 +36,10 @@ export interface CSDisk {
   id: string;
   kind: 'disk';
   center: Point2D;
-  radius: number;
-  label?: string; // Etiqueta personalizada (R1, R2, etc.)
-  color?: string; // Color del disco
+  radius: number;        // Radio geométrico (para cálculos, usar 1)
+  visualRadius: number;  // Radio visual (para renderizado, puede ser grande ej. 40)
+  label?: string;        // Etiqueta personalizada (R1, R2, etc.)
+  color?: string;        // Color del disco
 }
 
 /** Bloque CS: puede ser segmento, arco o disco */
