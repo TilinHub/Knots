@@ -9,30 +9,40 @@ const EPSILON = 2.0;
 
 /**
  * Obtener el punto inicial de un bloque CS
+ * Nota: Los discos no tienen puntos de inicio/fin (retorna su centro)
  */
 export function getStartPoint(block: CSBlock): Point2D {
   if (block.kind === 'segment') {
     return block.p1;
   }
-  // Arco: punto inicial en startAngle
-  return {
-    x: block.center.x + block.radius * Math.cos(block.startAngle),
-    y: block.center.y + block.radius * Math.sin(block.startAngle),
-  };
+  if (block.kind === 'arc') {
+    // Arco: punto inicial en startAngle
+    return {
+      x: block.center.x + block.radius * Math.cos(block.startAngle),
+      y: block.center.y + block.radius * Math.sin(block.startAngle),
+    };
+  }
+  // Disco: retornar centro (no tiene punto de inicio)
+  return block.center;
 }
 
 /**
  * Obtener el punto final de un bloque CS
+ * Nota: Los discos no tienen puntos de inicio/fin (retorna su centro)
  */
 export function getEndPoint(block: CSBlock): Point2D {
   if (block.kind === 'segment') {
     return block.p2;
   }
-  // Arco: punto final en endAngle
-  return {
-    x: block.center.x + block.radius * Math.cos(block.endAngle),
-    y: block.center.y + block.radius * Math.sin(block.endAngle),
-  };
+  if (block.kind === 'arc') {
+    // Arco: punto final en endAngle
+    return {
+      x: block.center.x + block.radius * Math.cos(block.endAngle),
+      y: block.center.y + block.radius * Math.sin(block.endAngle),
+    };
+  }
+  // Disco: retornar centro (no tiene punto final)
+  return block.center;
 }
 
 /**
@@ -46,11 +56,15 @@ export function getStartTangent(block: CSBlock): Point2D {
     const len = Math.hypot(dx, dy);
     return len > EPSILON ? { x: dx / len, y: dy / len } : { x: 0, y: 0 };
   }
-  // Arco: tangente perpendicular al radio en startAngle
-  return {
-    x: -Math.sin(block.startAngle),
-    y: Math.cos(block.startAngle),
-  };
+  if (block.kind === 'arc') {
+    // Arco: tangente perpendicular al radio en startAngle
+    return {
+      x: -Math.sin(block.startAngle),
+      y: Math.cos(block.startAngle),
+    };
+  }
+  // Disco: sin tangente definida
+  return { x: 0, y: 0 };
 }
 
 /**
@@ -61,11 +75,15 @@ export function getEndTangent(block: CSBlock): Point2D {
     // Segmento: misma tangente en ambos extremos
     return getStartTangent(block);
   }
-  // Arco: tangente perpendicular al radio en endAngle
-  return {
-    x: -Math.sin(block.endAngle),
-    y: Math.cos(block.endAngle),
-  };
+  if (block.kind === 'arc') {
+    // Arco: tangente perpendicular al radio en endAngle
+    return {
+      x: -Math.sin(block.endAngle),
+      y: Math.cos(block.endAngle),
+    };
+  }
+  // Disco: sin tangente definida
+  return { x: 0, y: 0 };
 }
 
 /**
@@ -317,8 +335,12 @@ export function getBlockLength(block: CSBlock): number {
   if (block.kind === 'segment') {
     return Math.hypot(block.p2.x - block.p1.x, block.p2.y - block.p1.y);
   }
-  // Arco: longitud = radio * ángulo
-  let angle = block.endAngle - block.startAngle;
-  if (angle < 0) angle += 2 * Math.PI;
-  return block.radius * angle;
+  if (block.kind === 'arc') {
+    // Arco: longitud = radio * ángulo
+    let angle = block.endAngle - block.startAngle;
+    if (angle < 0) angle += 2 * Math.PI;
+    return block.radius * angle;
+  }
+  // Disco: no tiene longitud
+  return 0;
 }
