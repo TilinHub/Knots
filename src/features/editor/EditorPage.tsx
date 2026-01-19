@@ -174,6 +174,7 @@ export function EditorPage() {
             blocks={blocks} 
             selectedBlockId={selectedBlockId}
             onSelectBlock={setSelectedBlockId}
+            onUpdateBlock={updateBlock}
             showGrid={showGrid}
             gridSpacing={gridSpacing}
           />
