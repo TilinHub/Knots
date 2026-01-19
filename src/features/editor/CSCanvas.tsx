@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CSBlock, CSArc, CSSegment, Point2D } from '../../core/types/cs';
+import type { CSBlock, Point2D } from '../../core/types/cs';
 import { findAllCrossings } from '../../core/geometry/intersections';
 
 interface CSCanvasProps {
