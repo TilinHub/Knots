@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CSBlock } from '../../core/types/cs';
+import type { CSBlock, CSSegment, CSArc } from '../../core/types/cs';
 import { CoordInput } from '../../ui/CoordInput';
 import { Button } from '../../ui/Button';
 import { CSCanvas } from './CSCanvas';
@@ -35,7 +35,7 @@ export function EditorPage() {
 
   function addSegment() {
     const id = `s${blocks.length + 1}`;
-    const newSegment: CSBlock = {
+    const newSegment: CSSegment = {
       id,
       kind: 'segment',
       p1: { x: 0, y: 0 },
@@ -47,7 +47,7 @@ export function EditorPage() {
 
   function addArc() {
     const id = `a${blocks.length + 1}`;
-    const newArc: CSBlock = {
+    const newArc: CSArc = {
       id,
       kind: 'arc',
       center: { x: 50, y: 50 },
@@ -66,7 +66,11 @@ export function EditorPage() {
 
   function updateBlock(id: string, updates: Partial<CSBlock>) {
     setBlocks(
-      blocks.map((b) => (b.id === id ? { ...b, ...updates } : b))
+      blocks.map((b) => {
+        if (b.id !== id) return b;
+        // Merge updates with existing block
+        return { ...b, ...updates } as CSBlock;
+      })
     );
   }
 
