@@ -17,6 +17,7 @@ export function EditorPage() {
   const [showValidation, setShowValidation] = React.useState(false);
   const [showGrid, setShowGrid] = React.useState(true);
   const [gridSpacing, setGridSpacing] = React.useState(20);
+  const [angleUnit, setAngleUnit] = React.useState<'deg' | 'rad'>('deg');
 
   // Validación automática
   const validation = React.useMemo(() => validateContinuity(blocks), [blocks]);
@@ -27,6 +28,10 @@ export function EditorPage() {
   // Obtener bloque seleccionado
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
   const selectedBlockLength = selectedBlock ? blockLength(selectedBlock) : null;
+
+  // Funciones de conversión
+  const radToDeg = (rad: number) => (rad * 180 / Math.PI);
+  const degToRad = (deg: number) => (deg * Math.PI / 180);
 
   function addSegment() {
     const id = `s${blocks.length + 1}`;
@@ -206,7 +211,7 @@ export function EditorPage() {
         {sidebarOpen && (
           <aside
             style={{
-              width: '300px',
+              width: '320px',
               borderLeft: '1px solid var(--border)',
               background: 'var(--bg-secondary)',
               display: 'flex',
@@ -251,7 +256,7 @@ export function EditorPage() {
 
               {/* Espaciado de grilla */}
               {showGrid && (
-                <div>
+                <div style={{ marginBottom: 'var(--space-sm)' }}>
                   <label
                     style={{
                       fontSize: 'var(--fs-caption)',
@@ -273,6 +278,41 @@ export function EditorPage() {
                   />
                 </div>
               )}
+
+              {/* Toggle unidades de ángulo */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Ángulos</span>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    onClick={() => setAngleUnit('deg')}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: 'var(--fs-caption)',
+                      background: angleUnit === 'deg' ? 'var(--bg-primary)' : 'transparent',
+                      border: `1px solid ${angleUnit === 'deg' ? 'var(--border)' : 'transparent'}`,
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      color: angleUnit === 'deg' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    grados
+                  </button>
+                  <button
+                    onClick={() => setAngleUnit('rad')}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: 'var(--fs-caption)',
+                      background: angleUnit === 'rad' ? 'var(--bg-primary)' : 'transparent',
+                      border: `1px solid ${angleUnit === 'rad' ? 'var(--border)' : 'transparent'}`,
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      color: angleUnit === 'rad' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    radianes
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* LISTA DE BLOQUES */}
@@ -344,7 +384,7 @@ export function EditorPage() {
                             {block.id}
                           </div>
                           <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                            {block.kind === 'segment' ? 'Segmento' : 'Arco'} · {length.toFixed(1)} px
+                            {block.kind === 'segment' ? 'Segmento' : 'Arco'} · L = {length.toFixed(1)} px
                           </div>
                         </div>
                         <button
@@ -406,7 +446,7 @@ export function EditorPage() {
                         borderRadius: '4px',
                       }}
                     >
-                      {selectedBlockLength.toFixed(2)} px
+                      L = {selectedBlockLength.toFixed(2)}
                     </div>
                   )}
                 </div>
@@ -452,7 +492,7 @@ export function EditorPage() {
                             marginBottom: '4px',
                           }}
                         >
-                          Radio
+                          Radio (r)
                         </label>
                         <input
                           type="number"
@@ -483,17 +523,23 @@ export function EditorPage() {
                               marginBottom: '4px',
                             }}
                           >
-                            θ₁
+                            θ₁ {angleUnit === 'deg' ? '(°)' : '(rad)'}
                           </label>
                           <input
                             type="number"
-                            value={selectedBlock.startAngle}
-                            onChange={(e) =>
-                              updateBlock(selectedBlock.id, {
-                                startAngle: Number(e.target.value),
-                              } as Partial<CSArc>)
+                            value={
+                              angleUnit === 'deg' 
+                                ? radToDeg(selectedBlock.startAngle).toFixed(2)
+                                : selectedBlock.startAngle.toFixed(4)
                             }
-                            step="0.1"
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              const radValue = angleUnit === 'deg' ? degToRad(value) : value;
+                              updateBlock(selectedBlock.id, {
+                                startAngle: radValue,
+                              } as Partial<CSArc>);
+                            }}
+                            step={angleUnit === 'deg' ? '1' : '0.01'}
                             style={{
                               width: '100%',
                               height: '32px',
@@ -516,17 +562,23 @@ export function EditorPage() {
                               marginBottom: '4px',
                             }}
                           >
-                            θ₂
+                            θ₂ {angleUnit === 'deg' ? '(°)' : '(rad)'}
                           </label>
                           <input
                             type="number"
-                            value={selectedBlock.endAngle}
-                            onChange={(e) =>
-                              updateBlock(selectedBlock.id, {
-                                endAngle: Number(e.target.value),
-                              } as Partial<CSArc>)
+                            value={
+                              angleUnit === 'deg'
+                                ? radToDeg(selectedBlock.endAngle).toFixed(2)
+                                : selectedBlock.endAngle.toFixed(4)
                             }
-                            step="0.1"
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              const radValue = angleUnit === 'deg' ? degToRad(value) : value;
+                              updateBlock(selectedBlock.id, {
+                                endAngle: radValue,
+                              } as Partial<CSArc>);
+                            }}
+                            step={angleUnit === 'deg' ? '1' : '0.01'}
                             style={{
                               width: '100%',
                               height: '32px',
@@ -538,6 +590,19 @@ export function EditorPage() {
                             }}
                           />
                         </div>
+                      </div>
+                      {/* Mostrar longitud de arco con fórmula */}
+                      <div
+                        style={{
+                          fontSize: 'var(--fs-caption)',
+                          color: 'var(--text-secondary)',
+                          padding: '8px',
+                          background: 'var(--bg-secondary)',
+                          borderRadius: '4px',
+                          fontFamily: 'var(--ff-mono)',
+                        }}
+                      >
+                        L = r × |Δθ| = {selectedBlock.radius.toFixed(1)} × {Math.abs(selectedBlock.endAngle - selectedBlock.startAngle).toFixed(3)}
                       </div>
                     </>
                   )}
@@ -708,7 +773,7 @@ export function EditorPage() {
                       marginBottom: 'var(--space-sm)',
                     }}
                   >
-                    {lengthInfo.totalLength.toFixed(2)} px
+                    L = {lengthInfo.totalLength.toFixed(2)} px
                   </div>
                   <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
                     {lengthInfo.blockLengths.map((info, i) => (
