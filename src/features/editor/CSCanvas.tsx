@@ -522,14 +522,16 @@ export function CSCanvas({
 
         if (block.kind === 'arc') {
           const [cx, cy] = toSVG(block.center.x, block.center.y);
-          const startX = cx + block.radius * Math.cos(block.startAngle);
-          const startY = cy - block.radius * Math.sin(block.startAngle);
-          const endX = cx + block.radius * Math.cos(block.endAngle);
-          const endY = cy - block.radius * Math.sin(block.endAngle);
+          // Usar visualRadius para renderizado SVG
+          const renderRadius = block.visualRadius;
+          const startX = cx + renderRadius * Math.cos(block.startAngle);
+          const startY = cy - renderRadius * Math.sin(block.startAngle);
+          const endX = cx + renderRadius * Math.cos(block.endAngle);
+          const endY = cy - renderRadius * Math.sin(block.endAngle);
           let angleDiff = block.endAngle - block.startAngle;
           if (angleDiff < 0) angleDiff += 2 * Math.PI;
           const largeArc = angleDiff > Math.PI ? 1 : 0;
-          const pathData = `M ${startX} ${startY} A ${block.radius} ${block.radius} 0 ${largeArc} 0 ${endX} ${endY}`;
+          const pathData = `M ${startX} ${startY} A ${renderRadius} ${renderRadius} 0 ${largeArc} 0 ${endX} ${endY}`;
 
           return (
             <g key={block.id}>
