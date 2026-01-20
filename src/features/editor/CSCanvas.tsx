@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CSBlock, CSDisk, Point2D } from '../../core/types/cs';
+import type { CSBlock, CSDisk, Point2D, CSArc } from '../../core/types/cs';
 import { findAllCrossings } from '../../core/geometry/intersections';
 import { detectRegionsWithDisks } from '../../core/algorithms/regionDetection';
 
@@ -137,6 +137,75 @@ export function CSCanvas({
     return false; // No hay overlap
   }, [disks]);
 
+  // NUEVA FUNCIÓN: Snap a borde de arco
+  const snapToArcEdge = React.useCallback((point: Point2D, currentBlockId: string): Point2D => {
+    const SNAP_THRESHOLD = 15; // Distancia máxima para snap (15px)
+    
+    // Buscar arcos cercanos (excluyendo el bloque actual)
+    for (const block of blocks) {
+      if (block.kind !== 'arc' || block.id === currentBlockId) continue;
+      
+      const arc = block as CSArc;
+      
+      // Calcular distancia del punto al centro del arco
+      const dx = point.x - arc.center.x;
+      const dy = point.y - arc.center.y;
+      const distToCenter = Math.sqrt(dx * dx + dy * dy);
+      
+      // Verificar si está cerca del borde del arco (usando visualRadius)
+      const distToBorder = Math.abs(distToCenter - arc.visualRadius);
+      
+      if (distToBorder < SNAP_THRESHOLD) {
+        // Calcular ángulo del punto respecto al centro del arco
+        const angle = Math.atan2(dy, dx);
+        
+        // Normalizar ángulos del arco
+        let startAngle = arc.startAngle;
+        let endAngle = arc.endAngle;
+        
+        // Normalizar el ángulo del punto al rango del arco
+        let normalizedAngle = angle;
+        
+        // Verificar si el ángulo está dentro del rango del arco
+        // Manejar caso de arco que cruza 0 radianes
+        if (endAngle < startAngle) {
+          // Arco cruza 0 radianes
+          if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+          if (startAngle < 0) startAngle += 2 * Math.PI;
+          if (endAngle < 0) endAngle += 2 * Math.PI;
+        }
+        
+        const isInArcRange = (endAngle >= startAngle) 
+          ? (normalizedAngle >= startAngle - 0.3 && normalizedAngle <= endAngle + 0.3)
+          : (normalizedAngle >= startAngle - 0.3 || normalizedAngle <= endAngle + 0.3);
+        
+        if (isInArcRange) {
+          // Encontrar el punto más cercano en el arco: inicio, fin, o proyección
+          const startPoint = {
+            x: arc.center.x + arc.visualRadius * Math.cos(arc.startAngle),
+            y: arc.center.y + arc.visualRadius * Math.sin(arc.startAngle),
+          };
+          const endPoint = {
+            x: arc.center.x + arc.visualRadius * Math.cos(arc.endAngle),
+            y: arc.center.y + arc.visualRadius * Math.sin(arc.endAngle),
+          };
+          
+          const distToStart = Math.hypot(point.x - startPoint.x, point.y - startPoint.y);
+          const distToEnd = Math.hypot(point.x - endPoint.x, point.y - endPoint.y);
+          
+          // Snap al punto más cercano (inicio o fin del arco)
+          if (distToStart < distToEnd && distToStart < SNAP_THRESHOLD) {
+            return startPoint;
+          } else if (distToEnd < SNAP_THRESHOLD) {
+            return endPoint;
+          }
+        }
+      }
+    }
+    
+    return point; // No hay snap, retornar punto original
+  }, [blocks]);
+
   // Convertir coordenadas cartesianas a SVG
   function toSVG(x: number, y: number): [number, number] {
     return [centerX + x, centerY - y];
@@ -195,10 +264,13 @@ export function CSCanvas({
     if (!block) return;
 
     if (block.kind === 'segment') {
+      // Aplicar snap a borde de arco para puntos de segmento
+      const snappedPos = snapToArcEdge(pos, block.id);
+      
       if (dragState.pointType === 'p1') {
-        onUpdateBlock(block.id, { p1: pos } as Partial<CSBlock>);
+        onUpdateBlock(block.id, { p1: snappedPos } as Partial<CSBlock>);
       } else if (dragState.pointType === 'p2') {
-        onUpdateBlock(block.id, { p2: pos } as Partial<CSBlock>);
+        onUpdateBlock(block.id, { p2: snappedPos } as Partial<CSBlock>);
       }
     } else if (block.kind === 'arc') {
       if (dragState.pointType === 'center') {
