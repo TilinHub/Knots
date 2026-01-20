@@ -137,8 +137,8 @@ export function CSCanvas({
     return false; // No hay overlap
   }, [disks]);
 
-  // NUEVA FUNCIÓN: Snap a borde de arco
-  const snapToArcEdge = React.useCallback((point: Point2D, currentBlockId: string): Point2D => {
+  // FUNCIÓN: Snap a borde de arco con coordenadas EXACTAS
+  const snapToArcEdge = React.useCallback((point: Point2D, currentBlockId: string): { snapped: Point2D, wasSnapped: boolean } => {
     const SNAP_THRESHOLD = 15; // Distancia máxima para snap (15px)
     
     // Buscar arcos cercanos (excluyendo el bloque actual)
@@ -180,7 +180,7 @@ export function CSCanvas({
           : (normalizedAngle >= startAngle - 0.3 || normalizedAngle <= endAngle + 0.3);
         
         if (isInArcRange) {
-          // Encontrar el punto más cercano en el arco: inicio, fin, o proyección
+          // Calcular puntos EXACTOS del arco (SIN redondear)
           const startPoint = {
             x: arc.center.x + arc.visualRadius * Math.cos(arc.startAngle),
             y: arc.center.y + arc.visualRadius * Math.sin(arc.startAngle),
@@ -195,15 +195,15 @@ export function CSCanvas({
           
           // Snap al punto más cercano (inicio o fin del arco)
           if (distToStart < distToEnd && distToStart < SNAP_THRESHOLD) {
-            return startPoint;
+            return { snapped: startPoint, wasSnapped: true };
           } else if (distToEnd < SNAP_THRESHOLD) {
-            return endPoint;
+            return { snapped: endPoint, wasSnapped: true };
           }
         }
       }
     }
     
-    return point; // No hay snap, retornar punto original
+    return { snapped: point, wasSnapped: false }; // No hay snap
   }, [blocks]);
 
   // Convertir coordenadas cartesianas a SVG
@@ -211,11 +211,19 @@ export function CSCanvas({
     return [centerX + x, centerY - y];
   }
 
-  // Convertir coordenadas SVG a cartesianas
+  // Convertir coordenadas SVG a cartesianas (CON redondeo a grilla)
   function fromSVG(svgX: number, svgY: number): Point2D {
     return {
       x: Math.round((svgX - centerX) / 5) * 5,
       y: Math.round((centerY - svgY) / 5) * 5,
+    };
+  }
+
+  // Convertir coordenadas SVG a cartesianas (SIN redondeo - para snap exacto)
+  function fromSVGExact(svgX: number, svgY: number): Point2D {
+    return {
+      x: svgX - centerX,
+      y: centerY - svgY,
     };
   }
 
@@ -227,6 +235,16 @@ export function CSCanvas({
     const svgX = (e.clientX - rect.left) * scaleX;
     const svgY = (e.clientY - rect.top) * scaleY;
     return fromSVG(svgX, svgY);
+  }
+
+  function getMousePositionExact(e: React.MouseEvent<SVGSVGElement>): Point2D | null {
+    if (!svgRef.current) return null;
+    const rect = svgRef.current.getBoundingClientRect();
+    const scaleX = width / rect.width;
+    const scaleY = height / rect.height;
+    const svgX = (e.clientX - rect.left) * scaleX;
+    const svgY = (e.clientY - rect.top) * scaleY;
+    return fromSVGExact(svgX, svgY);
   }
 
   function handleMouseDown(blockId: string, pointType: PointType, e: React.MouseEvent) {
@@ -257,7 +275,7 @@ export function CSCanvas({
     if (!dragState) return;
     if (rollingMode) return; // No arrastrar en rolling mode
     
-    const pos = getMousePosition(e);
+    const pos = getMousePositionExact(e);
     if (!pos) return;
 
     const block = blocks.find(b => b.id === dragState.blockId);
@@ -265,16 +283,26 @@ export function CSCanvas({
 
     if (block.kind === 'segment') {
       // Aplicar snap a borde de arco para puntos de segmento
-      const snappedPos = snapToArcEdge(pos, block.id);
+      const { snapped: snappedPos, wasSnapped } = snapToArcEdge(pos, block.id);
+      
+      // Si hubo snap, usar coordenadas exactas; si no, redondear a grilla
+      const finalPos = wasSnapped ? snappedPos : {
+        x: Math.round(pos.x / 5) * 5,
+        y: Math.round(pos.y / 5) * 5,
+      };
       
       if (dragState.pointType === 'p1') {
-        onUpdateBlock(block.id, { p1: snappedPos } as Partial<CSBlock>);
+        onUpdateBlock(block.id, { p1: finalPos } as Partial<CSBlock>);
       } else if (dragState.pointType === 'p2') {
-        onUpdateBlock(block.id, { p2: snappedPos } as Partial<CSBlock>);
+        onUpdateBlock(block.id, { p2: finalPos } as Partial<CSBlock>);
       }
     } else if (block.kind === 'arc') {
       if (dragState.pointType === 'center') {
-        onUpdateBlock(block.id, { center: pos } as Partial<CSBlock>);
+        const roundedPos = {
+          x: Math.round(pos.x / 5) * 5,
+          y: Math.round(pos.y / 5) * 5,
+        };
+        onUpdateBlock(block.id, { center: roundedPos } as Partial<CSBlock>);
       } else if (dragState.pointType === 'start') {
         const dx = pos.x - block.center.x;
         const dy = pos.y - block.center.y;
