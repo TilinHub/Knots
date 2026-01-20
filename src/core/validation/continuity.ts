@@ -17,8 +17,8 @@ export function getStartPoint(block: CSBlock): Point2D {
   }
   if (block.kind === 'arc') {
     // Arco: punto inicial en startAngle
-    // USAR radius (geométrico) para cálculos de continuidad, NO visualRadius
-    const r = block.radius;
+    // USAR visualRadius para que las conexiones coincidan con el borde visual
+    const r = block.visualRadius;
     return {
       x: block.center.x + r * Math.cos(block.startAngle),
       y: block.center.y + r * Math.sin(block.startAngle),
@@ -38,8 +38,8 @@ export function getEndPoint(block: CSBlock): Point2D {
   }
   if (block.kind === 'arc') {
     // Arco: punto final en endAngle
-    // USAR radius (geométrico) para cálculos de continuidad, NO visualRadius
-    const r = block.radius;
+    // USAR visualRadius para que las conexiones coincidan con el borde visual
+    const r = block.visualRadius;
     return {
       x: block.center.x + r * Math.cos(block.endAngle),
       y: block.center.y + r * Math.sin(block.endAngle),
