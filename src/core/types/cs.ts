@@ -24,10 +24,10 @@ export interface CSArc {
   id: string;
   kind: 'arc';
   center: Point2D;
-  radius: number;        // Radio geométrico (para cálculos, longitud de arco, etc.)
-  visualRadius: number;  // Radio visual (para renderizado SVG, puede ser diferente)
-  startAngle: number;    // radianes (0 = derecha, π/2 = arriba)
-  endAngle: number;      // radianes
+  radius: number;         // Radio geométrico (para cálculos, longitud de arco, etc.)
+  visualRadius?: number;  // Radio visual (para renderizado SVG, opcional, usa radius si no se especifica)
+  startAngle: number;     // radianes (0 = derecha, π/2 = arriba)
+  endAngle: number;       // radianes
   /** IDs de discos conectados (opcional) */
   connectedDisks?: string[];
 }
@@ -37,10 +37,10 @@ export interface CSDisk {
   id: string;
   kind: 'disk';
   center: Point2D;
-  radius: number;        // Radio geométrico (para cálculos, usar 1)
-  visualRadius: number;  // Radio visual (para renderizado, puede ser grande ej. 40)
-  label?: string;        // Etiqueta personalizada (R1, R2, etc.)
-  color?: string;        // Color del disco
+  radius: number;         // Radio geométrico (para cálculos, usar 1)
+  visualRadius?: number;  // Radio visual (para renderizado, opcional, usa radius si no se especifica)
+  label?: string;         // Etiqueta personalizada (R1, R2, etc.)
+  color?: string;         // Color del disco
 }
 
 /** Bloque CS: puede ser segmento, arco o disco */
