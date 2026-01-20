@@ -92,8 +92,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     
     if (!pivot || !rolling) return false;
     
-    // Usar radio geométrico para cálculos de colisión
-    const distance = pivot.radius + rolling.radius;
+    // Usar radio VISUAL para cálculos de colisión en rolling mode
+    const distance = pivot.visualRadius + rolling.visualRadius;
     const newCenter = {
       x: pivot.center.x + distance * Math.cos(newTheta),
       y: pivot.center.y + distance * Math.sin(newTheta),
@@ -107,8 +107,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       const dy = newCenter.y - other.center.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       
-      // Colisión si la distancia es menor que la suma de radios (usando radio geométrico)
-      if (dist < rolling.radius + other.radius - 0.1) {
+      // Colisión si la distancia es menor que la suma de radios VISUALES
+      if (dist < rolling.visualRadius + other.visualRadius - 0.1) {
         return true; // Hay colisión
       }
     }
