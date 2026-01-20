@@ -188,7 +188,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       kind: 'arc',
       center: { x: 50, y: 50 },
       radius: 50,           // Radio geométrico (para longitud de arco)
-      visualRadius: 840,    // Radio visual (para renderizado SVG, más grande)
+      visualRadius: 40,     // Radio visual (para renderizado SVG)
       startAngle: 0,
       endAngle: Math.PI / 2,
     };
