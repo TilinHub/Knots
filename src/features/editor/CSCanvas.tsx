@@ -113,17 +113,24 @@ export function CSCanvas({
     }
   }, [rollingDiskPosition, showTrail, rollingMode, rollingDiskId]);
 
-  // Validar overlap entre discos (usando radio GEOMÉTRICO)
-  const checkDiskOverlap = React.useCallback((diskId: string, newCenter: Point2D, radius: number): boolean => {
+  // Validar overlap entre discos (usando RADIO VISUAL)
+  const checkDiskOverlap = React.useCallback((diskId: string, newCenter: Point2D): boolean => {
+    const current = disks.find(d => d.id === diskId);
+    if (!current) return false;
+
+    const currentR = current.visualRadius;
+
     for (const other of disks) {
       if (other.id === diskId) continue;
       
       const dx = newCenter.x - other.center.x;
       const dy = newCenter.y - other.center.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
+
+      const otherR = other.visualRadius;
       
       // Permitir contacto tangente pero no overlap (distancia < suma de radios)
-      if (distance < radius + other.radius - 1) {
+      if (distance < currentR + otherR - 1) {
         return true; // Hay overlap
       }
     }
@@ -216,8 +223,8 @@ export function CSCanvas({
         y: block.center.y + deltaY
       };
       
-      // Validar que no haya overlap (usando radio GEOMÉTRICO)
-      if (!checkDiskOverlap(block.id, newCenter, block.radius)) {
+      // Validar que no haya overlap (usando radio VISUAL)
+      if (!checkDiskOverlap(block.id, newCenter)) {
         onUpdateBlock(block.id, { center: newCenter } as Partial<CSBlock>);
         
         setDragState({
