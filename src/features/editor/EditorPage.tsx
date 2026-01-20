@@ -187,7 +187,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       id,
       kind: 'arc',
       center: { x: 50, y: 50 },
-      radius: 25,
+      radius: 50,           // Radio geométrico (para longitud de arco)
+      visualRadius: 840,    // Radio visual (para renderizado SVG, más grande)
       startAngle: 0,
       endAngle: Math.PI / 2,
     };
@@ -828,6 +829,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                               {displayName}
                               {length !== null && ` · L = ${length.toFixed(1)} px`}
                               {block.kind === 'disk' && ` · r = ${block.visualRadius.toFixed(0)} px (visual)`}
+                              {block.kind === 'arc' && ` · r = ${block.visualRadius.toFixed(0)} px (visual)`}
                             </div>
                           </div>
                           <button
@@ -1016,7 +1018,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                             marginBottom: '4px',
                           }}
                         >
-                          Radio (r)
+                          Radio Geométrico (r)
                         </label>
                         <input
                           type="number"
@@ -1034,6 +1036,56 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                             fontFamily: 'var(--ff-mono)',
                           }}
                         />
+                        <div
+                          style={{
+                            fontSize: 'var(--fs-caption)',
+                            color: 'var(--text-tertiary)',
+                            marginTop: '4px',
+                          }}
+                        >
+                          Usado para cálculo de longitud: L = r × |Δθ|
+                        </div>
+                      </div>
+                      <div>
+                        <label
+                          style={{
+                            fontSize: 'var(--fs-caption)',
+                            color: 'var(--text-secondary)',
+                            fontWeight: 'var(--fw-medium)',
+                            textTransform: 'uppercase',
+                            display: 'block',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          Radio Visual
+                        </label>
+                        <input
+                          type="number"
+                          value={selectedBlock.visualRadius}
+                          onChange={(e) =>
+                            updateBlock(selectedBlock.id, { visualRadius: Number(e.target.value) })
+                          }
+                          min="10"
+                          max="1000"
+                          step="10"
+                          style={{
+                            width: '100%',
+                            height: '32px',
+                            padding: '0 8px',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            fontFamily: 'var(--ff-mono)',
+                          }}
+                        />
+                        <div
+                          style={{
+                            fontSize: 'var(--fs-caption)',
+                            color: 'var(--text-tertiary)',
+                            marginTop: '4px',
+                          }}
+                        >
+                          Solo para renderizado SVG (visual)
+                        </div>
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
                         <div style={{ flex: 1 }}>
