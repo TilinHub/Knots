@@ -84,8 +84,8 @@ export function CSCanvas({
     
     if (!pivot || !rolling) return null;
     
-    // Distancia entre centros: suma de radios GEOMÉTRICOS (rodado externo)
-    const distance = pivot.radius + rolling.radius;
+    // Distancia entre centros: suma de radios VISUALES (rodado externo)
+    const distance = pivot.visualRadius + rolling.visualRadius;
     
     // Nueva posición del centro del disco rodante
     const newCenter: Point2D = {
@@ -94,8 +94,8 @@ export function CSCanvas({
     };
     
     // Rotación propia del disco (sin deslizamiento)
-    // Para rodado externo: spinAngle = -(distance / radius) * theta
-    const spinAngle = -(distance / rolling.radius) * theta;
+    // Para rodado externo: spinAngle = -(distance / visualRadius) * theta
+    const spinAngle = -(distance / rolling.visualRadius) * theta;
     
     return { center: newCenter, spinAngle };
   }, [rollingMode, pivotDiskId, rollingDiskId, theta, disks]);
