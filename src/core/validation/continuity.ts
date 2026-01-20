@@ -17,9 +17,11 @@ export function getStartPoint(block: CSBlock): Point2D {
   }
   if (block.kind === 'arc') {
     // Arco: punto inicial en startAngle
+    // Usar visualRadius porque es el radio real de renderizado
+    const r = block.visualRadius || block.radius;
     return {
-      x: block.center.x + block.radius * Math.cos(block.startAngle),
-      y: block.center.y + block.radius * Math.sin(block.startAngle),
+      x: block.center.x + r * Math.cos(block.startAngle),
+      y: block.center.y + r * Math.sin(block.startAngle),
     };
   }
   // Disco: retornar centro (no tiene punto de inicio)
@@ -36,9 +38,11 @@ export function getEndPoint(block: CSBlock): Point2D {
   }
   if (block.kind === 'arc') {
     // Arco: punto final en endAngle
+    // Usar visualRadius porque es el radio real de renderizado
+    const r = block.visualRadius || block.radius;
     return {
-      x: block.center.x + block.radius * Math.cos(block.endAngle),
-      y: block.center.y + block.radius * Math.sin(block.endAngle),
+      x: block.center.x + r * Math.cos(block.endAngle),
+      y: block.center.y + r * Math.sin(block.endAngle),
     };
   }
   // Disco: retornar centro (no tiene punto final)
@@ -336,7 +340,8 @@ export function getBlockLength(block: CSBlock): number {
     return Math.hypot(block.p2.x - block.p1.x, block.p2.y - block.p1.y);
   }
   if (block.kind === 'arc') {
-    // Arco: longitud = radio * ángulo
+    // Arco: longitud = radio geométrico * ángulo
+    // IMPORTANTE: usar radius (geométrico), NO visualRadius
     let angle = block.endAngle - block.startAngle;
     if (angle < 0) angle += 2 * Math.PI;
     return block.radius * angle;
