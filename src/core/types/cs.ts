@@ -24,9 +24,10 @@ export interface CSArc {
   id: string;
   kind: 'arc';
   center: Point2D;
-  radius: number;
-  startAngle: number; // radianes (0 = derecha, π/2 = arriba)
-  endAngle: number;   // radianes
+  radius: number;        // Radio geométrico (para cálculos, longitud de arco, etc.)
+  visualRadius: number;  // Radio visual (para renderizado SVG, puede ser diferente)
+  startAngle: number;    // radianes (0 = derecha, π/2 = arriba)
+  endAngle: number;      // radianes
   /** IDs de discos conectados (opcional) */
   connectedDisks?: string[];
 }
