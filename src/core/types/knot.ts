@@ -146,7 +146,6 @@ export interface ContactEdge {
   contactPoint?: Point2D;
   angle?: number;
 }
-}
 
 // Dubins paths
 export interface DubinsConfig {
