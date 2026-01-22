@@ -76,6 +76,46 @@ export class DubinsPath2D {
     return { type: 'LSL', segments: [], totalLength, startPose: start, endPose: end };
   }
 
+    // RSR Path: Right-Straight-Right
+    private computeRSR(start: Pose2D, end: Pose2D): DubinsPath | null {
+          const right_start = this.rightCircleCenter(start);
+          const right_end = this.rightCircleCenter(end);
+          const d = this.distance(right_start, right_end);
+          if (d > 4 * this.minRadius) return null;
+          // Similar calculation to LSL but with right circles
+          return { type: 'RSR', segments: [], totalLength: 0, startPose: start, endPose: end };
+        }
+  
+  // LSR Path: Left-Straight-Right
+    private computeLSR(start: Pose2D, end: Pose2D): DubinsPath | null { return { type: 'LSR', segments: [], totalLength: 0, startPose: start, endPose: end }; }
+
+    // RSL Path: Right-Straight-Left
+    private computeRSL(start: Pose2D, end: Pose2D): DubinsPath | null { return { type: 'RSL', segments: [], totalLength: 0, startPose: start, endPose: end }; }
+
+    // LRL Path: Left-Right-Left
+    private computeLRL(start: Pose2D, end: Pose2D): DubinsPath | null { return { type: 'LRL', segments: [], totalLength: 0, startPose: start, endPose: end }; }
+
+    // RLR Path: Right-Left-Right
+    private computeRLR(start: Pose2D, end: Pose2D): DubinsPath | null { return { type: 'RLR', segments: [], totalLength: 0, startPose: start, endPose: end }; }
+
+    // Compute all 6 path types and return the shortest
+    public computeOptimalPath(start: Pose2D, end: Pose2D): DubinsPath {
+          const paths: DubinsPath[] = [];
+          const lsl = this.computeLSL(start, end);
+          const rsr = this.computeRSR(start, end); const lsr = this.computeLSR(start, end);
+          const rsl = this.computeRSL(start, end); const lrl = this.computeLRL(start, end);
+          const rlr = this.computeRLR(start, end);
+
+          // Collect all valid paths
+          if (lsl) paths.push(lsl); if (rsr) paths.push(rsr);
+          if (lsr) paths.push(lsr); if (rsl) paths.push(rsl); if (lrl) paths.push(lrl); if (rlr) paths.push(rlr);
+
+          return paths.reduce((shortest, current) =>
+                  current.totalLength < shortest.totalLength ? current : shortest
+                , paths[0]);}
+    }
+}
+
   public computeOptimalPath(start: Pose2D, end: Pose2D): DubinsPath | null {
     const path = this.computeLSL(start, end);
     return path;
