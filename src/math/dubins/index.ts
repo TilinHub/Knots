@@ -16,4 +16,4 @@ export { calculateKnotLength, estimateAverageCurvature } from './KnotLength';
 export type { KnotLengthResult, KnotLengthOptions } from './KnotLength';
 
 // Exportar ejemplos
-export { DUBINS_EXAMPLES, validatePathType } from './examples';
+export { DUBINS_EXAMPLES, pe } from './examples';
