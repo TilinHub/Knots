@@ -5,8 +5,8 @@
  * para cada tipo de path según la clasificación de Dubins (1957)
  */
 
-import { DubinsPath } from './DubinsPaths';
-import { Pose2D } from '../../DubinsPath';
+import type { DubinsPath } from '../../core/math/DubinsPath';
+import type { Pose2D } from '../../core/math/DubinsPath';
 
 /**
  * Configuraciones de ejemplo que garantizan cada tipo de Dubins path
