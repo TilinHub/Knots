@@ -695,10 +695,12 @@ export class DubinsPathCalculator {
   /**
    * Compute arc length for left turn
    */
-  private computeLeftArcLength(start: Pose2D | Point2D, end: Point2D, center: Point2D): number {
+  private computeLeftArcLength(start: Pose2D | Point2D, end: Pose2D | Point2D, center: Point2D): number {
     const startPos = 'position' in start ? start.position : start;
+    const endPos = 'position' in end ? end.position : end;
+
     const angle1 = Math.atan2(startPos.y - center.y, startPos.x - center.x);
-    const angle2 = Math.atan2(end.y - center.y, end.x - center.x);
+    const angle2 = Math.atan2(endPos.y - center.y, endPos.x - center.x);
     
     let deltaAngle = angle2 - angle1;
     if (deltaAngle < 0) {
@@ -711,10 +713,12 @@ export class DubinsPathCalculator {
   /**
    * Compute arc length for right turn
    */
-  private computeRightArcLength(start: Pose2D | Point2D, end: Point2D, center: Point2D): number {
+  private computeRightArcLength(start: Pose2D | Point2D, end: Pose2D | Point2D, center: Point2D): number {
     const startPos = 'position' in start ? start.position : start;
+    const endPos = 'position' in end ? end.position : end;
+
     const angle1 = Math.atan2(startPos.y - center.y, startPos.x - center.x);
-    const angle2 = Math.atan2(end.y - center.y, end.x - center.x);
+    const angle2 = Math.atan2(endPos.y - center.y, endPos.x - center.x);
     
     let deltaAngle = angle1 - angle2;
     if (deltaAngle < 0) {
