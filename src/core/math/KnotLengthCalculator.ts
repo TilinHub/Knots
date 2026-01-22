@@ -18,7 +18,8 @@
  * For closed curves (knots), pₙ₊₁ = p₀
  */
 
-import { DubinsPathCalculator, Pose2D, Point2D, DubinsPath } from './DubinsPath';
+import { DubinsPathCalculator } from './DubinsPath';
+import type { Pose2D, Point2D, DubinsPath } from './DubinsPath';
 
 /**
  * Knot embedding representation
