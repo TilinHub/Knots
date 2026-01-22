@@ -1,3 +1,7 @@
+/**
+ * Utilidades geométricas para arcos circulares
+ */
+
 export function polarToCartesian(
   c: { x: number; y: number },
   r: number,
@@ -35,7 +39,7 @@ export function arcToSvgPathD(params: {
   // SVG large-arc-flag es 1 si el arco es > 180°
   const largeArcFlag = rawDelta > Math.PI ? 1 : 0;
 
-  // SVG sweep-flag: 1 es “positivo” en el sistema de SVG; como SVG usa eje Y hacia abajo,
+  // SVG sweep-flag: 1 es "positivo" en el sistema de SVG; como SVG usa eje Y hacia abajo,
   // en práctica lo más estable es mapearlo así y ajustar si ves el arco al revés:
   const sweepFlag = sweep === "ccw" ? 1 : 0;
 
