@@ -5,7 +5,7 @@
  * Basado en el paper de Díaz & Ayala (2020) sobre bounded curvature paths
  */
 
-import type { DubinsPath } from './DubinsPaths';
+import type { DubinsPath } from '../../core/math/DubinsPath';
 
 /**
  * Resultado del cálculo de longitud de un nudo
