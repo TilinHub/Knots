@@ -442,3 +442,115 @@ El paper extiende la teoría a:
 - **UAVs**: Vuelo con restricciones de curvatura
 - **Teoría de nudos**: Longitud con curvatura acotada
 - **Diseño de caminos**: Ferrocarriles, carreteras
+
+
+## Los 6 Caminos de Dubins: Clasificacion Exhaustiva
+
+Segun la caracterizacion fundamental de Dubins (1957), existen exactamente **6 tipos** de caminos de longitud minima entre dos puntos en el tangent bundle TR². Esta seccion proporciona un analisis exhaustivo basado en el paper "Census of Bounded Curvature Paths" (Diaz & Ayala, 2020).
+
+### Notacion Fundamental
+
+- **L**: Arco circular a la **izquierda** (left turn)
+- **R**: Arco circular a la **derecha** (right turn) 
+- **S**: Segmento recto (straight line segment)
+- **r** = radio minimo de curvatura (min_radius = 1.0)
+- **κ** = curvatura = 1/r (en nuestro caso, κ = 1)
+
+### Clasificacion de los 6 Caminos
+
+Los 6 caminos de Dubins se clasifican en dos categorias:
+
+#### 1. Caminos CSC (Circle-Straight-Circle)
+
+Estos caminos consisten en: **Arco - Recta - Arco**
+
+**1.1 LSL Path (Left-Straight-Left)**
+
+Es el camino que comienza con un arco circular a la izquierda, continua con un segmento recto, y termina con otro arco circular a la izquierda.
+
+- **Estructura**: L + S + L
+- **Centro inicial**: Centro del circulo tangente a la izquierda en la posicion inicial
+- **Centro final**: Centro del circulo tangente a la izquierda en la posicion final
+- **Aplicacion practica**: Cuando el vehiculo debe girar izquierda-izquierda
+- **Condicion de validez**: Los dos circulos deben permitir una tangente recta comun
+- **Formula de largo**: L_LSL = L_arc1 + L_straight + L_arc2
+
+**1.2 RSR Path (Right-Straight-Right)**
+
+- **Estructura**: R + S + R
+- **Descripcion**: Simetrico al LSL pero con giros a la derecha
+- **Centro inicial**: Centro del circulo tangente a la derecha en la posicion inicial
+- **Centro final**: Centro del circulo tangente a la derecha en la posicion final
+- **Aplicacion**: Cuando el vehiculo debe girar derecha-derecha
+- **Simetria**: Especular respecto a LSL
+
+**1.3 LSR Path (Left-Straight-Right)**
+
+- **Estructura**: L + S + R
+- **Descripcion**: Comienza con arco a la izquierda, continua recto, termina con arco a la derecha
+- **Centro inicial**: Centro del circulo tangente a la izquierda
+- **Centro final**: Centro del circulo tangente a la derecha
+- **Aplicacion**: Giros mixtos izquierda-derecha
+- **Complejidad**: Requiere analisis de tangente comun externa entre circulos de curvatura opuesta
+
+**1.4 RSL Path (Right-Straight-Left)**
+
+- **Estructura**: R + S + L
+- **Descripcion**: Comienza con arco a la derecha, continua recto, termina con arco a la izquierda
+- **Centro inicial**: Centro del circulo tangente a la derecha
+- **Centro final**: Centro del circulo tangente a la izquierda
+- **Aplicacion**: Giros mixtos derecha-izquierda
+- **Simetria**: Especular respecto a LSR
+
+#### 2. Caminos CCC (Circle-Circle-Circle)
+
+Estos caminos consisten en: Arco - Arco - Arco (tres arcos consecutivos)
+
+**2.1 LRL Path (Left-Right-Left)**
+
+- Estructura: L + R + L
+- Descripcion: El vehiculo realiza un arco a la izquierda, luego a la derecha, luego a la izquierda
+- Centro 1: Circulo tangente a la izquierda en posicion inicial
+- Centro 2: Circulo tangente a la derecha en posicion intermedia
+- Centro 3: Circulo tangente a la izquierda en posicion final
+- Aplicacion: Maniobras de cambio de direccion
+- Formula: L_LRL = r*alpha_1 + r*alpha_2 + r*alpha_3
+
+**2.2 RLR Path (Right-Left-Right)**
+
+- Estructura: R + L + R
+- Descripcion: Simetrico al LRL pero comenzando con giro a la derecha
+- Simetria: Especular respecto a LRL
+
+### Tabla Resumen de los 6 Caminos de Dubins
+
+| Tipo | Categoria | Estructura | Giros | Complejidad |
+|------|-----------|-----------|-------|------|
+| LSL  | CSC       | L + S + L | Izq-Izq | Media |
+| RSR  | CSC       | R + S + R | Der-Der | Media |
+| LSR  | CSC       | L + S + R | Izq-Der | Alta |
+| RSL  | CSC       | R + S + L | Der-Izq | Alta |
+| LRL  | CCC       | L + R + L | Izq-Der-Izq | Muy Alta |
+| RLR  | CCC       | R + L + R | Der-Izq-Der | Muy Alta |
+
+### Formulacion Matematica Rigurosa
+
+Para cualquier par de poses (x, X, y, Y) en el tangent bundle TR^2, donde:
+- x, y son puntos en R^2
+- X, Y son vectores unitarios (direcciones tangentes)
+- r es el radio minimo de curvatura
+
+El algoritmo optimo es:
+
+1. Calcular centros de circulos tangentes
+2. Verificar validez geometrica de cada camino
+3. Calcular longitud total de cada camino valido
+4. Retornar el de menor longitud
+
+### Aplicacion a Diagramas de Nudos
+
+En el contexto de nudos matematicos, los 6 caminos de Dubins son fundamentales para:
+
+1. **Medicion de Largo de Proyecciones**: Calcular el largo de la envolvente planar del nudo
+2. **Optimizacion de Diagramas**: Encontrar el diagrama mas "limpio" o efficient
+3. **Invariantes Topologicos**: Entender relaciones entre diferentes representaciones
