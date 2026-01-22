@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { DubinsPath2D, Pose2D, DubinsPath } from './DubinsPath';
+import { DubinsPathCalculator } from './core/math/DubinsPath';
+import type { Pose2D, DubinsPath } from './core/math/DubinsPath';
 
 interface DubinsPathVisualizerProps {
     width?: number;
@@ -10,7 +11,7 @@ const DubinsPathVisualizer: React.FC<DubinsPathVisualizerProps> = ({
     width = 800, height = 600, minRadius = 30, showPaths = true
   }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [dubinsPath] = useState(() => new DubinsPath2D(minRadius));
+    const [dubinsPath] = useState(() => new DubinsPathCalculator(minRadius));
 
     // Draw Dubins paths on canvas
     useEffect(() => { /* Drawing logic here */ }, [showPaths, width, height]);
