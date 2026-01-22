@@ -3,8 +3,9 @@
  * Basado en: Dubins, L.E. (1957) y Diaz & Ayala (2020)
  */
 
-import { Point2D } from '../../core/types/knot';
-import { Pose2D, DubinsSegment, DubinsPath } from '../../DubinsPath';
+import type { Point2D } from '../../core/types/knot';
+import { DubinsSegment } from '../../DubinsPath';
+import type { Pose2D, DubinsPath } from '../../DubinsPath';
 
 /**
  * Calculador de caminos óptimos de Dubins
