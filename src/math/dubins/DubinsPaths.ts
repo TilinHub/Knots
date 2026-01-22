@@ -4,7 +4,7 @@
  */
 
 import type { Point2D } from '../../core/types/knot';
-import { DubinsSegment } from '../../DubinsPath';
+import type { DubinsSegment } from '../../DubinsPath';
 import type { Pose2D, DubinsPath } from '../../DubinsPath';
 
 /**
