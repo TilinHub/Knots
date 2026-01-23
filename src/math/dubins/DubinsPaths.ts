@@ -1,56 +1,38 @@
 /**
- * Implementación rigurosa de Dubins Paths
- * Basado en: Dubins, L.E. (1957) y Diaz & Ayala (2020)
+ * Public facade for Dubins paths.
+ *
+ * Source of truth: src/core/math/DubinsPath.ts
+ * This module exposes a stable API under src/math/dubins.
  */
 
-import type { Point2D } from '../../core/types/knot';
-import type { DubinsSegment } from '../../DubinsPath';
-import type { Pose2D, DubinsPath } from '../../DubinsPath';
+export {
+  DubinsPathCalculator,
+} from '../../core/math/DubinsPath';
 
-/**
- * Calculador de caminos óptimos de Dubins
- * Implementa los 6 tipos de caminos: LSL, RSR, LSR, RSL, LRL, RLR
- */
-export class DubinsPathCalculator {
-  private minRadius: number;
+export type {
+  Point2D,
+  Pose2D,
+  DubinsSegment,
+  DubinsPath,
+} from '../../core/math/DubinsPath';
 
-  constructor(minRadius: number = 1.0) {
-    this.minRadius = minRadius;
-  }
+import { DubinsPathCalculator } from '../../core/math/DubinsPath';
+import type { DubinsPath, Pose2D } from '../../core/math/DubinsPath';
 
-  /**
-   * Calcula el camino de Dubins óptimo entre dos poses
-   */
-  public computeOptimalPath(start: Pose2D, end: Pose2D): DubinsPath | null {
-    // Implementación placeholder para compilación
-    return {
-      type: 'LSL',
-      segments: [],
-      totalLength: 0,
-      startPose: start,
-      endPose: end,
-    };
-  }
-
-  /**
-   * Calcula la distancia euclidiana entre dos puntos
-   */
-  private distance(p1: Point2D, p2: Point2D): number {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-}
-
-// Exporta funciones públicas
-export function calculateDubinsPath(start: Pose2D, end: Pose2D, minRadius?: number): DubinsPath | null {
-  const calculator = new DubinsPathCalculator(minRadius || 1.0);
+export function calculateDubinsPath(
+  start: Pose2D,
+  end: Pose2D,
+  minRadius: number = 1.0,
+): DubinsPath | null {
+  const calculator = new DubinsPathCalculator(minRadius);
   return calculator.computeOptimalPath(start, end);
 }
 
 /**
- * Calcula la longitud total de un camino de Dubins
+ * Total length of a Dubins path.
+ * Falls back to summing segments if totalLength is missing.
  */
 export function calculatePathLength(path: DubinsPath): number {
-  return path.segments.reduce((sum, segment) => sum + segment.length, 0);
+  if (Number.isFinite(path.totalLength)) return path.totalLength;
+  return path.segments.reduce((sum, seg) => sum + seg.length, 0);
 }
