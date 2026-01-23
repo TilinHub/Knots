@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { DubinsPathCalculator } from '../../core/math';
+import { DubinsPathCalculator } from '@/core/math';
 
 export interface DubinsPathVisualizerProps {
   width?: number;

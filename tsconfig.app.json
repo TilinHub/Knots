@@ -10,6 +10,12 @@
     /* Keep vite types, but don't exclude react typings */
     "types": ["vite/client", "react", "react-dom"],
 
+    /* Imports */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { EditorPage } from "../features/editor/EditorPage";
-import { KnotGallery } from "../features/gallery/KnotGallery";
+import { EditorPage } from '@/features/editor/EditorPage';
+import { KnotGallery } from '@/features/gallery/KnotGallery';
 
 // Tipo para el nudo seleccionado
 export interface SelectedKnot {
@@ -18,7 +18,7 @@ export default function App() {
   }
 
   return (
-    <EditorPage 
+    <EditorPage
       onBackToGallery={() => setSelectedKnot(null)}
       initialKnot={selectedKnot}
     />

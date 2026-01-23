@@ -1,7 +1,7 @@
 import React from 'react';
-import type { CSBlock, CSDisk, Point2D, CSArc } from '../../core/types/cs';
-import { findAllCrossings } from '../../core/geometry/intersections';
-import { detectRegionsWithDisks } from '../../core/algorithms/regionDetection';
+import type { CSBlock, CSDisk, Point2D, CSArc } from '@/core/types/cs';
+import { findAllCrossings } from '@/core/geometry/intersections';
+import { detectRegionsWithDisks } from '@/core/algorithms/regionDetection';
 
 interface CSCanvasProps {
   blocks: CSBlock[];
@@ -36,14 +36,14 @@ interface DragState {
  * Canvas SVG para renderizar diagramas CS
  * Sistema de coordenadas cartesiano con origen en el centro
  */
-export function CSCanvas({ 
-  blocks, 
+export function CSCanvas({
+  blocks,
   selectedBlockId,
   onSelectBlock,
   onUpdateBlock,
   showGrid = true,
   gridSpacing = 20,
-  width = 800, 
+  width = 800,
   height = 600,
   rollingMode = false,
   pivotDiskId = null,
@@ -56,7 +56,7 @@ export function CSCanvas({
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
   const [trailPoints, setTrailPoints] = React.useState<Point2D[]>([]);
-  
+
   const centerX = width / 2;
   const centerY = height / 2;
 
@@ -78,25 +78,25 @@ export function CSCanvas({
   // Calcular posición del disco rodante
   const rollingDiskPosition = React.useMemo(() => {
     if (!rollingMode || !pivotDiskId || !rollingDiskId) return null;
-    
+
     const pivot = disks.find(d => d.id === pivotDiskId);
     const rolling = disks.find(d => d.id === rollingDiskId);
-    
+
     if (!pivot || !rolling) return null;
-    
+
     // Distancia entre centros: suma de radios VISUALES (rodado externo)
     const distance = pivot.visualRadius + rolling.visualRadius;
-    
+
     // Nueva posición del centro del disco rodante
     const newCenter: Point2D = {
       x: pivot.center.x + distance * Math.cos(theta),
       y: pivot.center.y + distance * Math.sin(theta),
     };
-    
+
     // Rotación propia del disco (sin deslizamiento)
     // Para rodado externo: spinAngle = -(distance / visualRadius) * theta
     const spinAngle = -(distance / rolling.visualRadius) * theta;
-    
+
     return { center: newCenter, spinAngle };
   }, [rollingMode, pivotDiskId, rollingDiskId, theta, disks]);
 
@@ -122,13 +122,13 @@ export function CSCanvas({
 
     for (const other of disks) {
       if (other.id === diskId) continue;
-      
+
       const dx = newCenter.x - other.center.x;
       const dy = newCenter.y - other.center.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       const otherR = other.visualRadius;
-      
+
       // Permitir contacto tangente pero no overlap (distancia < suma de radios)
       if (distance < currentR + otherR - 1) {
         return true; // Hay overlap
@@ -140,32 +140,32 @@ export function CSCanvas({
   // FUNCIÓN: Snap a borde de arco con coordenadas EXACTAS
   const snapToArcEdge = React.useCallback((point: Point2D, currentBlockId: string): { snapped: Point2D, wasSnapped: boolean } => {
     const SNAP_THRESHOLD = 15; // Distancia máxima para snap (15px)
-    
+
     // Buscar arcos cercanos (excluyendo el bloque actual)
     for (const block of blocks) {
       if (block.kind !== 'arc' || block.id === currentBlockId) continue;
-      
+
       const arc = block as CSArc;
-      
+
       // Calcular distancia del punto al centro del arco
       const dx = point.x - arc.center.x;
       const dy = point.y - arc.center.y;
       const distToCenter = Math.sqrt(dx * dx + dy * dy);
-      
+
       // Verificar si está cerca del borde del arco (usando visualRadius)
       const distToBorder = Math.abs(distToCenter - arc.visualRadius);
-      
+
       if (distToBorder < SNAP_THRESHOLD) {
         // Calcular ángulo del punto respecto al centro del arco
         const angle = Math.atan2(dy, dx);
-        
+
         // Normalizar ángulos del arco
         let startAngle = arc.startAngle;
         let endAngle = arc.endAngle;
-        
+
         // Normalizar el ángulo del punto al rango del arco
         let normalizedAngle = angle;
-        
+
         // Verificar si el ángulo está dentro del rango del arco
         // Manejar caso de arco que cruza 0 radianes
         if (endAngle < startAngle) {
@@ -174,11 +174,11 @@ export function CSCanvas({
           if (startAngle < 0) startAngle += 2 * Math.PI;
           if (endAngle < 0) endAngle += 2 * Math.PI;
         }
-        
-        const isInArcRange = (endAngle >= startAngle) 
+
+        const isInArcRange = (endAngle >= startAngle)
           ? (normalizedAngle >= startAngle - 0.3 && normalizedAngle <= endAngle + 0.3)
           : (normalizedAngle >= startAngle - 0.3 || normalizedAngle <= endAngle + 0.3);
-        
+
         if (isInArcRange) {
           // Calcular puntos EXACTOS del arco (SIN redondear)
           const startPoint = {
@@ -189,10 +189,10 @@ export function CSCanvas({
             x: arc.center.x + arc.visualRadius * Math.cos(arc.endAngle),
             y: arc.center.y + arc.visualRadius * Math.sin(arc.endAngle),
           };
-          
+
           const distToStart = Math.hypot(point.x - startPoint.x, point.y - startPoint.y);
           const distToEnd = Math.hypot(point.x - endPoint.x, point.y - endPoint.y);
-          
+
           // Snap al punto más cercano (inicio o fin del arco)
           if (distToStart < distToEnd && distToStart < SNAP_THRESHOLD) {
             return { snapped: startPoint, wasSnapped: true };
@@ -202,7 +202,7 @@ export function CSCanvas({
         }
       }
     }
-    
+
     return { snapped: point, wasSnapped: false }; // No hay snap
   }, [blocks]);
 
@@ -249,7 +249,7 @@ export function CSCanvas({
 
   function handleMouseDown(blockId: string, pointType: PointType, e: React.MouseEvent) {
     e.stopPropagation();
-    
+
     // En rolling mode, solo permitir selección de discos
     if (rollingMode && onDiskClick) {
       const block = blocks.find(b => b.id === blockId);
@@ -258,10 +258,10 @@ export function CSCanvas({
       }
       return;
     }
-    
+
     const pos = getMousePosition(e as React.MouseEvent<SVGSVGElement>);
     if (!pos) return;
-    
+
     setDragState({
       blockId,
       pointType,
@@ -274,7 +274,7 @@ export function CSCanvas({
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
     if (!dragState) return;
     if (rollingMode) return; // No arrastrar en rolling mode
-    
+
     const pos = getMousePositionExact(e);
     if (!pos) return;
 
@@ -284,13 +284,13 @@ export function CSCanvas({
     if (block.kind === 'segment') {
       // Aplicar snap a borde de arco para puntos de segmento
       const { snapped: snappedPos, wasSnapped } = snapToArcEdge(pos, block.id);
-      
+
       // Si hubo snap, usar coordenadas exactas; si no, redondear a grilla
       const finalPos = wasSnapped ? snappedPos : {
         x: Math.round(pos.x / 5) * 5,
         y: Math.round(pos.y / 5) * 5,
       };
-      
+
       if (dragState.pointType === 'p1') {
         onUpdateBlock(block.id, { p1: finalPos } as Partial<CSBlock>);
       } else if (dragState.pointType === 'p2') {
@@ -317,16 +317,16 @@ export function CSCanvas({
     } else if (block.kind === 'disk' && dragState.pointType === 'disk') {
       const deltaX = pos.x - dragState.startX;
       const deltaY = pos.y - dragState.startY;
-      
+
       const newCenter = {
         x: block.center.x + deltaX,
         y: block.center.y + deltaY
       };
-      
+
       // Validar que no haya overlap (usando radio VISUAL)
       if (!checkDiskOverlap(block.id, newCenter)) {
         onUpdateBlock(block.id, { center: newCenter } as Partial<CSBlock>);
-        
+
         setDragState({
           ...dragState,
           startX: pos.x,
@@ -358,10 +358,10 @@ export function CSCanvas({
     >
       <defs>
         {/* Grid patterns */}
-        <pattern 
-          id="smallGrid" 
-          width={gridSpacing} 
-          height={gridSpacing} 
+        <pattern
+          id="smallGrid"
+          width={gridSpacing}
+          height={gridSpacing}
           patternUnits="userSpaceOnUse"
         >
           <path
@@ -371,10 +371,10 @@ export function CSCanvas({
             strokeWidth="0.5"
           />
         </pattern>
-        <pattern 
-          id="largeGrid" 
-          width={gridSpacing * 5} 
-          height={gridSpacing * 5} 
+        <pattern
+          id="largeGrid"
+          width={gridSpacing * 5}
+          height={gridSpacing * 5}
           patternUnits="userSpaceOnUse"
         >
           <rect width={gridSpacing * 5} height={gridSpacing * 5} fill="url(#smallGrid)" />
@@ -385,7 +385,7 @@ export function CSCanvas({
             strokeWidth="1"
           />
         </pattern>
-        
+
         {/* Gradientes para discos de contacto */}
         {regions.map((region) =>
           region.disks.map((disk) => (
@@ -396,7 +396,7 @@ export function CSCanvas({
             </radialGradient>
           ))
         )}
-        
+
         {/* Gradientes para discos manuales */}
         {disks.map((disk) => (
           <radialGradient key={`gradient-${disk.id}`} id={`gradient-${disk.id}`}>
@@ -434,15 +434,15 @@ export function CSCanvas({
         // Si este disco está rodando, usar la posición calculada
         const isRolling = rollingMode && disk.id === rollingDiskId && rollingDiskPosition;
         const center = isRolling ? rollingDiskPosition.center : disk.center;
-        
+
         const [cx, cy] = toSVG(center.x, center.y);
         const isSelected = disk.id === selectedBlockId;
         const isPivot = rollingMode && disk.id === pivotDiskId;
         const isRollingDisk = rollingMode && disk.id === rollingDiskId;
-        
+
         // Usar visualRadius para renderizado
         const renderRadius = disk.visualRadius;
-        
+
         // Borde según estado
         let strokeColor = "#2E6BA8";
         let strokeWidth = 4;
@@ -456,7 +456,7 @@ export function CSCanvas({
           strokeColor = "#4ECDC4";
           strokeWidth = 5;
         }
-        
+
         return (
           <g key={disk.id}>
             {/* Sombra */}
