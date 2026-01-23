@@ -8,6 +8,8 @@
  * public module `src/math/dubins`) going forward.
  */
 
+import { DubinsPathCalculator, type DubinsPath } from './core/math/DubinsPath';
+
 export type {
   Point2D,
   Pose2D,
@@ -15,7 +17,7 @@ export type {
   DubinsPath,
 } from './core/math/DubinsPath';
 
-export { DubinsPathCalculator } from './core/math/DubinsPath';
+export { DubinsPathCalculator };
 
 /**
  * Legacy pose shape used by early code in this repo.
@@ -34,15 +36,13 @@ export interface LegacyPose2D {
  * Prefer `DubinsPathCalculator`.
  */
 export class DubinsPath2D {
-  private readonly calc: import('./core/math/DubinsPath').DubinsPathCalculator;
+  private readonly calc: DubinsPathCalculator;
 
   constructor(minRadius: number = 1.0) {
-    const { DubinsPathCalculator } = require('./core/math/DubinsPath');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.calc = new DubinsPathCalculator(minRadius);
   }
 
-  public computeOptimalPath(start: LegacyPose2D, end: LegacyPose2D) {
+  public computeOptimalPath(start: LegacyPose2D, end: LegacyPose2D): DubinsPath {
     const path = this.calc.computeOptimalPath(
       { position: { x: start.x, y: start.y }, theta: start.theta },
       { position: { x: end.x, y: end.y }, theta: end.theta },
