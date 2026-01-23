@@ -1,6 +1,7 @@
 /**
  * CSEnvelope - Envolvente suave e interactiva para curvas CS
  * Calcula y renderiza una envolvente que se ajusta dinámicamente con los discos
+ * con interpolación mejorada y transiciones suaves
  */
 
 import { Point2D } from '../types/cs';
@@ -29,13 +30,16 @@ interface TangentSegment {
   tangent1: TangentLine;
   tangent2: TangentLine;
   arcPoints: Point2D[];
+  transitionPoints: Point2D[];
 }
 
 export class SmoothCSEnvelope {
   private circles: Circle[] = [];
   private envelopePoints: Point2D[] = [];
-  private smoothness: number = 30; // Puntos de interpolación
-  private minDistanceThreshold: number = 0.01; // Umbral para círculos muy juntos
+  private smoothness: number = 40; // Puntos de interpolación (más = más suave)
+  private minDistanceThreshold: number = 1; // Umbral para círculos muy juntos
+  private bezierTension: number = 0.5; // Tensión de curvas Bézier (0-1)
+  private adaptiveSmoothing: boolean = true; // Suavizado adaptativo basado en curvatura
 
   constructor(circles: Circle[] = []) {
     this.circles = circles;
@@ -55,7 +59,7 @@ export class SmoothCSEnvelope {
 
     if (this.circles.length === 1) {
       // Para un solo círculo, la envolvente es el círculo mismo
-      this.envelopePoints = this.createCirclePoints(this.circles[0], 50);
+      this.envelopePoints = this.createCirclePoints(this.circles[0], 60);
       return this.envelopePoints;
     }
 
@@ -95,17 +99,32 @@ export class SmoothCSEnvelope {
       const tangents = this.calculateExternalTangents(current, next);
 
       if (tangents) {
+        const arcPoints = this.calculateArcPoints(
+          current,
+          tangents.inner.angle1,
+          tangents.outer.angle1
+        );
+
+        // Calcula puntos de transición suaves
+        const transitionPoints = this.calculateTransitionPoints(
+          arcPoints[arcPoints.length - 1],
+          tangents.outer.p1,
+          tangents.outer.p2,
+          current,
+          next
+        );
+
         segments.push({
           circle1: current,
           circle2: next,
           tangent1: tangents.outer,
           tangent2: tangents.inner,
-          arcPoints: this.calculateArcPoints(
-            current,
-            tangents.inner.angle1,
-            tangents.outer.angle1
-          ),
+          arcPoints,
+          transitionPoints,
         });
+      } else {
+        // Maneja caso de círculos superpuestos
+        segments.push(this.createFallbackSegment(current, next, i));
       }
     }
 
@@ -113,7 +132,46 @@ export class SmoothCSEnvelope {
   }
 
   /**
-   * Calcula las tangentes externas entre dos círculos
+   * Crea un segmento de respaldo cuando los círculos están muy juntos
+   */
+  private createFallbackSegment(c1: Circle, c2: Circle, index: number): TangentSegment {
+    const dx = c2.center.x - c1.center.x;
+    const dy = c2.center.y - c1.center.y;
+    const centerAngle = Math.atan2(dy, dx);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Factor de contracción basado en distancia
+    const maxDist = c1.radius + c2.radius;
+    const collapseFactor = Math.max(0.1, Math.min(1, dist / maxDist));
+    const angleSpread = (Math.PI / 4) * collapseFactor;
+
+    const angle1 = centerAngle + angleSpread;
+    const angle2 = centerAngle - angleSpread;
+
+    const arcPoints = this.calculateArcPoints(c1, angle2, angle1);
+
+    const tangent: TangentLine = {
+      p1: arcPoints[arcPoints.length - 1],
+      p2: {
+        x: c2.center.x + c2.radius * Math.cos(angle1),
+        y: c2.center.y + c2.radius * Math.sin(angle1),
+      },
+      angle1,
+      angle2,
+    };
+
+    return {
+      circle1: c1,
+      circle2: c2,
+      tangent1: tangent,
+      tangent2: tangent,
+      arcPoints,
+      transitionPoints: [tangent.p1, tangent.p2],
+    };
+  }
+
+  /**
+   * Calcula las tangentes externas entre dos círculos con mejor manejo de casos límite
    */
   private calculateExternalTangents(
     c1: Circle,
@@ -123,19 +181,24 @@ export class SmoothCSEnvelope {
     const dy = c2.center.y - c1.center.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    // Si los círculos están demasiado cerca o se superponen
-    const minDist = Math.abs(c1.radius - c2.radius);
-    if (dist < minDist + this.minDistanceThreshold) {
-      // Contrae la envolvente - usa puntos del círculo más grande
-      return this.calculateCollapsedTangents(c1, c2, dist);
+    // Si los círculos están demasiado cerca
+    if (dist < this.minDistanceThreshold) {
+      return null;
+    }
+
+    const radiusSum = c1.radius + c2.radius;
+
+    // Si los círculos se superponen significativamente
+    if (dist < radiusSum * 0.5) {
+      return null;
     }
 
     // Ángulo entre centros
     const centerAngle = Math.atan2(dy, dx);
 
-    // Ángulo de tangencia para tangente externa
-    const radiusSum = c1.radius + c2.radius;
-    const tangentAngle = Math.asin(Math.min(1, radiusSum / dist));
+    // Calcula ángulo de tangencia con manejo seguro
+    const sinValue = Math.min(1, Math.max(-1, radiusSum / dist));
+    const tangentAngle = Math.asin(sinValue);
 
     // Tangente externa superior
     const outerAngle = centerAngle + tangentAngle;
@@ -171,52 +234,120 @@ export class SmoothCSEnvelope {
   }
 
   /**
-   * Maneja el caso cuando los círculos están muy juntos o se superponen
+   * Calcula puntos de transición suaves entre arco y tangente
    */
-  private calculateCollapsedTangents(
+  private calculateTransitionPoints(
+    arcEnd: Point2D,
+    tangentStart: Point2D,
+    tangentEnd: Point2D,
     c1: Circle,
-    c2: Circle,
-    dist: number
-  ): ExternalTangents | null {
-    const dx = c2.center.x - c1.center.x;
-    const dy = c2.center.y - c1.center.y;
-    const centerAngle = Math.atan2(dy, dx);
+    c2: Circle
+  ): Point2D[] {
+    const dist = this.distance(c1.center, c2.center);
+    const radiusSum = c1.radius + c2.radius;
+    
+    // Más puntos para transiciones más largas
+    const transitionLength = this.distance(tangentStart, tangentEnd);
+    const steps = Math.max(10, Math.floor(transitionLength / 5));
 
-    // Usa un ángulo reducido para la contracción
-    const collapseFactor = Math.max(0, dist / (c1.radius + c2.radius));
-    const reducedAngle = (Math.PI / 6) * collapseFactor;
-
-    const outer: TangentLine = {
-      p1: {
-        x: c1.center.x + c1.radius * Math.cos(centerAngle + reducedAngle),
-        y: c1.center.y + c1.radius * Math.sin(centerAngle + reducedAngle),
-      },
-      p2: {
-        x: c2.center.x + c2.radius * Math.cos(centerAngle + reducedAngle),
-        y: c2.center.y + c2.radius * Math.sin(centerAngle + reducedAngle),
-      },
-      angle1: centerAngle + reducedAngle,
-      angle2: centerAngle + reducedAngle,
-    };
-
-    const inner: TangentLine = {
-      p1: {
-        x: c1.center.x + c1.radius * Math.cos(centerAngle - reducedAngle),
-        y: c1.center.y + c1.radius * Math.sin(centerAngle - reducedAngle),
-      },
-      p2: {
-        x: c2.center.x + c2.radius * Math.cos(centerAngle - reducedAngle),
-        y: c2.center.y + c2.radius * Math.sin(centerAngle - reducedAngle),
-      },
-      angle1: centerAngle - reducedAngle,
-      angle2: centerAngle - reducedAngle,
-    };
-
-    return { outer, inner };
+    // Usa spline cúbico para transición ultra suave
+    return this.catmullRomSpline(
+      [arcEnd, tangentStart, tangentEnd],
+      steps,
+      this.bezierTension
+    );
   }
 
   /**
-   * Calcula puntos de arco circular entre dos ángulos
+   * Implementa spline Catmull-Rom para interpolación suave
+   */
+  private catmullRomSpline(
+    points: Point2D[],
+    steps: number,
+    tension: number = 0.5
+  ): Point2D[] {
+    if (points.length < 3) {
+      return this.linearInterpolation(points, steps);
+    }
+
+    const result: Point2D[] = [];
+    const segments = points.length - 1;
+
+    for (let seg = 0; seg < segments; seg++) {
+      const p0 = seg > 0 ? points[seg - 1] : points[seg];
+      const p1 = points[seg];
+      const p2 = points[seg + 1];
+      const p3 = seg < segments - 1 ? points[seg + 2] : points[seg + 1];
+
+      for (let i = 0; i < steps; i++) {
+        const t = i / steps;
+        const point = this.catmullRomPoint(p0, p1, p2, p3, t, tension);
+        result.push(point);
+      }
+    }
+
+    result.push(points[points.length - 1]);
+    return result;
+  }
+
+  /**
+   * Calcula un punto en curva Catmull-Rom
+   */
+  private catmullRomPoint(
+    p0: Point2D,
+    p1: Point2D,
+    p2: Point2D,
+    p3: Point2D,
+    t: number,
+    tension: number
+  ): Point2D {
+    const t2 = t * t;
+    const t3 = t2 * t;
+
+    const v0x = (p2.x - p0.x) * tension;
+    const v0y = (p2.y - p0.y) * tension;
+    const v1x = (p3.x - p1.x) * tension;
+    const v1y = (p3.y - p1.y) * tension;
+
+    return {
+      x:
+        (2 * p1.x - 2 * p2.x + v0x + v1x) * t3 +
+        (-3 * p1.x + 3 * p2.x - 2 * v0x - v1x) * t2 +
+        v0x * t +
+        p1.x,
+      y:
+        (2 * p1.y - 2 * p2.y + v0y + v1y) * t3 +
+        (-3 * p1.y + 3 * p2.y - 2 * v0y - v1y) * t2 +
+        v0y * t +
+        p1.y,
+    };
+  }
+
+  /**
+   * Interpolación lineal simple como fallback
+   */
+  private linearInterpolation(points: Point2D[], steps: number): Point2D[] {
+    const result: Point2D[] = [];
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      
+      for (let j = 0; j < steps; j++) {
+        const t = j / steps;
+        result.push({
+          x: p1.x + (p2.x - p1.x) * t,
+          y: p1.y + (p2.y - p1.y) * t,
+        });
+      }
+    }
+    
+    result.push(points[points.length - 1]);
+    return result;
+  }
+
+  /**
+   * Calcula puntos de arco circular entre dos ángulos con suavizado adaptativo
    */
   private calculateArcPoints(
     circle: Circle,
@@ -224,9 +355,8 @@ export class SmoothCSEnvelope {
     endAngle: number
   ): Point2D[] {
     const points: Point2D[] = [];
-    const steps = 20;
-
-    // Normaliza ángulos para ir en sentido antihorario
+    
+    // Normaliza ángulos
     let angle1 = this.normalizeAngle(startAngle);
     let angle2 = this.normalizeAngle(endAngle);
 
@@ -234,7 +364,14 @@ export class SmoothCSEnvelope {
       angle2 += 2 * Math.PI;
     }
 
-    const angleStep = (angle2 - angle1) / steps;
+    const angleSpan = angle2 - angle1;
+    
+    // Más puntos para arcos más grandes
+    const steps = this.adaptiveSmoothing
+      ? Math.max(15, Math.floor((angleSpan / (2 * Math.PI)) * 40))
+      : 20;
+
+    const angleStep = angleSpan / steps;
 
     for (let i = 0; i <= steps; i++) {
       const angle = angle1 + angleStep * i;
@@ -257,7 +394,7 @@ export class SmoothCSEnvelope {
   }
 
   /**
-   * Interpola suavemente entre segmentos usando curvas de Bézier
+   * Interpola suavemente entre segmentos usando splines
    */
   private interpolateSmoothPath(segments: TangentSegment[]): Point2D[] {
     const smoothPath: Point2D[] = [];
@@ -268,80 +405,52 @@ export class SmoothCSEnvelope {
       // Agrega puntos de arco del círculo actual
       smoothPath.push(...segment.arcPoints);
 
-      // Conecta con curva de Bézier suave a la siguiente tangente
-      const nextSegment = segments[(i + 1) % segments.length];
-
-      const bezierPoints = this.createBezierTransition(
-        segment.arcPoints[segment.arcPoints.length - 1],
-        segment.tangent1.p1,
-        segment.tangent1.p2,
-        nextSegment.arcPoints[0]
-      );
-
-      smoothPath.push(...bezierPoints.slice(1)); // Evita duplicar el primer punto
+      // Agrega puntos de transición suave
+      if (segment.transitionPoints.length > 2) {
+        smoothPath.push(...segment.transitionPoints.slice(1));
+      } else {
+        // Fallback a línea directa
+        smoothPath.push(segment.tangent1.p2);
+      }
     }
 
     return smoothPath;
   }
 
   /**
-   * Crea transición suave usando curva de Bézier cúbica
+   * Calcula distancia entre dos puntos
    */
-  private createBezierTransition(
-    p0: Point2D,
-    p1: Point2D,
-    p2: Point2D,
-    p3: Point2D
-  ): Point2D[] {
-    const points: Point2D[] = [];
-    const steps = this.smoothness;
-
-    // Puntos de control para Bézier cúbica
-    const cp1 = {
-      x: p0.x + (p1.x - p0.x) * 0.4,
-      y: p0.y + (p1.y - p0.y) * 0.4,
-    };
-
-    const cp2 = {
-      x: p2.x + (p3.x - p2.x) * 0.4,
-      y: p2.y + (p3.y - p2.y) * 0.4,
-    };
-
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const point = this.cubicBezier(p1, cp1, cp2, p2, t);
-      points.push(point);
-    }
-
-    return points;
+  private distance(p1: Point2D, p2: Point2D): number {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
   /**
-   * Calcula punto en curva de Bézier cúbica
-   */
-  private cubicBezier(
-    p0: Point2D,
-    p1: Point2D,
-    p2: Point2D,
-    p3: Point2D,
-    t: number
-  ): Point2D {
-    const mt = 1 - t;
-    const mt2 = mt * mt;
-    const mt3 = mt2 * mt;
-    const t2 = t * t;
-    const t3 = t2 * t;
-
-    return {
-      x: mt3 * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t3 * p3.x,
-      y: mt3 * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t3 * p3.y,
-    };
-  }
-
-  /**
-   * Actualiza círculos y recalcula envolvente (llamar cuando se mueven discos)
+   * Actualiza círculos y recalcula envolvente de forma eficiente
+   * (llamar cuando se mueven discos)
    */
   updateCircles(circles: Circle[]): void {
+    // Detecta si hubo cambios significativos
+    const hasChanged = 
+      circles.length !== this.circles.length ||
+      circles.some((c, i) => {
+        const old = this.circles[i];
+        return !old || 
+          this.distance(c.center, old.center) > 0.5 ||
+          Math.abs(c.radius - old.radius) > 0.1;
+      });
+
+    if (hasChanged) {
+      this.circles = circles;
+      this.calculateEnvelope();
+    }
+  }
+
+  /**
+   * Actualiza círculos sin validación (para animaciones fluidas)
+   */
+  updateCirclesImmediate(circles: Circle[]): void {
     this.circles = circles;
     this.calculateEnvelope();
   }
@@ -351,6 +460,26 @@ export class SmoothCSEnvelope {
    */
   setSmoothness(value: number): void {
     this.smoothness = Math.max(10, Math.min(100, value));
+    if (this.circles.length > 0) {
+      this.calculateEnvelope();
+    }
+  }
+
+  /**
+   * Ajusta tensión de curvas Bézier (0-1)
+   */
+  setBezierTension(value: number): void {
+    this.bezierTension = Math.max(0, Math.min(1, value));
+    if (this.circles.length > 0) {
+      this.calculateEnvelope();
+    }
+  }
+
+  /**
+   * Activa/desactiva suavizado adaptativo
+   */
+  setAdaptiveSmoothing(enabled: boolean): void {
+    this.adaptiveSmoothing = enabled;
     if (this.circles.length > 0) {
       this.calculateEnvelope();
     }
@@ -375,5 +504,12 @@ export class SmoothCSEnvelope {
    */
   isEmpty(): boolean {
     return this.envelopePoints.length === 0;
+  }
+
+  /**
+   * Obtiene los círculos actuales
+   */
+  getCircles(): Circle[] {
+    return [...this.circles];
   }
 }
