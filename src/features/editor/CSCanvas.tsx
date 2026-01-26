@@ -2,7 +2,9 @@ import React from 'react';
 import type { CSBlock, CSDisk, Point2D, CSArc } from '@/core/types/cs';
 import { findAllCrossings } from '@/core/geometry/intersections';
 import { detectRegionsWithDisks } from '@/core/algorithms/regionDetection';
-import { computeDiskHull, type Disk } from '@/core/geometry/diskHull';
+import { type Disk } from '@/core/geometry/diskHull';
+import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
+
 
 interface CSCanvasProps {
   blocks: CSBlock[];
@@ -65,18 +67,15 @@ export function CSCanvas({
   const disks = blocks.filter((b): b is CSDisk => b.kind === 'disk');
   const nonDiskBlocks = blocks.filter((b) => b.kind !== 'disk');
 
-  // Calcular el "Belt" (Convex Hull) de los discos
-  const hullData = React.useMemo(() => {
-    if (disks.length < 2) return null;
-    // Mapear CSDisk a la estructura Disk que espera diskHull
-    const simpleDisks: Disk[] = disks.map(d => ({
-      id: d.id,
-      x: d.center.x,
-      y: d.center.y,
-      r: d.visualRadius // Usamos radio visual para el hull
-    }));
-    return computeDiskHull(simpleDisks);
-  }, [disks]);
+  // Mapear CSDisk a la estructura Disk que espera diskHull
+  const simpleDisks = React.useMemo(() => disks.map(d => ({
+    id: d.id,
+    x: d.center.x,
+    y: d.center.y,
+    r: d.visualRadius
+  })), [disks]);
+
+  const hullData = useDiskHull(simpleDisks);
 
 
   // Detectar cruces solo en bloques no-disco

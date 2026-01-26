@@ -13,9 +13,11 @@ import logging
 
 from .models import (
     Pose2D, DubinsPathRequest, DubinsPathResponse,
-    FlexibleEnvelopeRequest, FlexibleEnvelopeResponse
+    FlexibleEnvelopeRequest, FlexibleEnvelopeResponse,
+    EnvelopePoint
 )
 from .dubins_paths import DubinsPathCalculator
+import numpy as np
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -139,6 +141,67 @@ async def dubins_info():
         ],
         "reference": "Diaz, A., & Ayala, L. (2020). Census of bounded curvature paths."
     }
+
+# ========== Envelope Endpoints ==========
+
+@app.post("/api/envelope/compute", response_model=FlexibleEnvelopeResponse)
+async def compute_flexible_envelope(request: FlexibleEnvelopeRequest) -> FlexibleEnvelopeResponse:
+    """Compute convex hull of disk centers using SciPy.
+    
+    Returns the indices of the disks that form the convex hull in CCW order.
+    This is mathematically robust for calculating the 'belt' around equal-radius disks.
+    """
+    try:
+        start_time = time()
+        
+        if not request.disks:
+            return FlexibleEnvelopeResponse(
+                envelope_points=[],
+                convex_hull_indices=[],
+                smoothed_curve=[],
+                computation_time_ms=0
+            )
+            
+        points = np.array([[d.center.x, d.center.y] for d in request.disks])
+        
+        if len(points) < 3:
+            # Trivial case: all points are on hull
+            hull_indices = list(range(len(points)))
+            # Sort by angle around centroid for consistency? 
+            # Or just return as is if < 3.
+            # SciPy handles n=2 but returns both indices.
+            pass
+        else:
+             # Compute Convex Hull
+            from scipy.spatial import ConvexHull
+            hull = ConvexHull(points)
+            hull_indices = hull.vertices.tolist() # Vertices are in CCW order by default in 2D
+            
+        # Ensure indices map back to original disks
+        # SciPy returns indices into the points array, which matches request.disks order.
+        
+        envelope_points = [
+            EnvelopePoint(x=request.disks[i].center.x, y=request.disks[i].center.y)
+            for i in hull_indices
+        ]
+        
+        computation_time_ms = (time() - start_time) * 1000
+        
+        return FlexibleEnvelopeResponse(
+            envelope_points=envelope_points,
+            convex_hull_indices=hull_indices,
+            smoothed_curve=[],
+            computation_time_ms=computation_time_ms
+        )
+
+    except Exception as e:
+        logger.error(f"Error computing envelope: {str(e)}")
+        # Fallback for collinear points or other SciPy edge cases: Monotone Chain in Python
+        # For now, return error
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 if __name__ == "__main__":
     import uvicorn
