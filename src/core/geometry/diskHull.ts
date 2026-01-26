@@ -75,6 +75,14 @@ function normalizeAngle(a: number) {
 /**
  * Andrew monotone chain convex hull ids (orden CCW). [web:382]
  */
+// ... (imports and types remain the same, simplified for context)
+import type { DiskHull, HullSegment, Disk, Vec2, TangentSegment, ArcSegment } from './diskHull'; // Self-reference for types if needed, or just keep them
+
+// ... (helper functions cross, sub, add, mul, perpLeft, len, norm, angleOf, normalizeAngle remain SAME)
+
+/**
+ * Andrew monotone chain convex hull ids (orden CCW).
+ */
 function convexHullIdsMonotoneChain(disks: Disk[]) {
   const map = new Map<string, Disk>();
   for (const d of disks) map.set(`${d.x},${d.y}`, d);
@@ -114,8 +122,6 @@ function convexHullIdsMonotoneChain(disks: Disk[]) {
 
 /**
  * Tangente externa “lado izquierdo” para dos círculos de igual radio.
- * Para un recorrido CCW del hull, queremos el segmento tangente que queda al “exterior”,
- * que corresponde a usar el normal n = left(unit(d)) para el edge i->i+1.
  */
 function outerTangentEqualRadiusCCW(d1: Disk, d2: Disk) {
   const c1 = { x: d1.x, y: d1.y };
@@ -130,53 +136,50 @@ function outerTangentEqualRadiusCCW(d1: Disk, d2: Disk) {
   return { p1, p2 };
 }
 
-/**
- * Para el arco en un disco: elegir el tramo exterior.
- * En CCW, el “exterior” es el que avanza CCW desde startAngle a endAngle (delta positivo),
- * si no, usar el complemento (delta negativo implica barrer CW).
- * En canvas tu amigo decide counterclockwise con normalizeAngle(end-start). [file:421][file:425]
- */
 function arcFlagsFromAngles(startAngle: number, endAngle: number) {
   const d = normalizeAngle(endAngle - startAngle);
   const abs = Math.abs(d);
 
-  // En SVG sweepFlag: 1 = "positive-angle direction" (depende del sistema),
-  // pero en práctica en SVG con y hacia abajo suele invertirse.
-  // Para que se vea bien en tu app, usamos: d >= 0 -> sweepFlag=0 (CCW visual), d < 0 -> 1.
-  // Esto evita el sweep fijo que te dejaba arcos por el lado equivocado. [file:421]
-  const sweepFlag: 0 | 1 = d >= 0 ? 0 : 1;
+  // Sweep flag 0 for CCW in Cartesian (usually)
+  // For SVG paths, A rx ry rot large sweep x y
+  // In Cartesian, CCW is positive angle delta.
+  // We want to draw CCW.
+  const sweepFlag: 0 | 1 = 0;
 
   // largeArcFlag: 1 si el arco “largo” (> pi)
-  const largeArcFlag: 0 | 1 = abs > Math.PI ? 1 : 0;
+  // normalizeAngle returns [-pi, pi), if we strictly want positive diff [0, 2pi), adjust
+  let diff = endAngle - startAngle;
+  while (diff < 0) diff += 2 * Math.PI;
+  while (diff >= 2 * Math.PI) diff -= 2 * Math.PI;
+
+  const largeArcFlag: 0 | 1 = diff > Math.PI ? 1 : 0;
 
   return { sweepFlag, largeArcFlag };
 }
 
 /**
- * Convierte segmentos a un path continuo tipo exportHullPath. [file:421]
+ * Convierte segmentos a un path continuo.
+ * Asume que los segmentos están ordenados y conectados (endPoint del anterior == from/startPoint del siguiente)
  */
 export function hullSegmentsToSvgPath(segments: HullSegment[]) {
+  if (segments.length === 0) return "";
+
   const cmds: string[] = [];
-  let current: Vec2 | null = null;
+
+  // Move to start of first segment
+  const start = segments[0].type === 'tangent' ? segments[0].from : segments[0].startPoint;
+  cmds.push(`M ${start.x} ${start.y}`);
 
   for (const s of segments) {
     if (s.type === "tangent") {
-      if (
-        !current ||
-        Math.abs(current.x - s.from.x) > 1e-6 ||
-        Math.abs(current.y - s.from.y) > 1e-6
-      ) {
-        cmds.push(`M ${s.from.x} ${s.from.y}`);
-      }
       cmds.push(`L ${s.to.x} ${s.to.y}`);
-      current = s.to;
     } else {
       const r = s.disk.r;
       cmds.push(`A ${r} ${r} 0 ${s.largeArcFlag} ${s.sweepFlag} ${s.endPoint.x} ${s.endPoint.y}`);
-      current = s.endPoint;
     }
   }
 
+  cmds.push("Z"); // Cerrar path
   return cmds.join(" ");
 }
 
@@ -184,27 +187,30 @@ function buildHullSegmentsCCW(hullDisks: Disk[]) {
   const segments: HullSegment[] = [];
   if (hullDisks.length < 2) return segments;
 
-  // 1) Tangentes CCW (una por arista)
-  const tangents: Array<{ from: Vec2; to: Vec2 }> = [];
+  // 1) Calcular todas las tangentes primero (sin pushear a segments aún)
+  const tangents: Array<{ from: Vec2; to: Vec2; disk1: Disk; disk2: Disk }> = [];
   for (let i = 0; i < hullDisks.length; i++) {
     const curr = hullDisks[i];
     const next = hullDisks[(i + 1) % hullDisks.length];
     const t = outerTangentEqualRadiusCCW(curr, next);
-    if (!t) {
-      tangents.push({ from: { x: curr.x, y: curr.y }, to: { x: next.x, y: next.y } });
-      continue;
-    }
-    tangents.push({ from: t.p1, to: t.p2 });
-    segments.push({ type: "tangent", from: t.p1, to: t.p2, disk1: curr, disk2: next });
+
+    // Fallback si coinciden: línea centro a centro (no ideal pero evita crash)
+    const tan = t ? { from: t.p1, to: t.p2 } : { from: { x: curr.x, y: curr.y }, to: { x: next.x, y: next.y } };
+    tangents.push({ ...tan, disk1: curr, disk2: next });
   }
 
-  // 2) Arcos: en cada disco i, desde el final de la tangente (i-1)->i hasta el inicio de la tangente i->(i+1)
+  // 2) Intercalar: Arc -> Tangent -> Arc -> Tangent ...
+  // Para cerrar el loop correctamente, empezamos en el disco 0.
+  // El "arco" en disco 0 conecta la tangente entrante (desde N-1) con la saliente (hacia 1).
+
   for (let i = 0; i < hullDisks.length; i++) {
     const curr = hullDisks[i];
-    const prevIndex = (i - 1 + hullDisks.length) % hullDisks.length;
+    const prevTan = tangents[(i - 1 + hullDisks.length) % hullDisks.length];
+    const currTan = tangents[i];
 
-    const startPoint = tangents[prevIndex].to; // llega al disco curr
-    const endPoint = tangents[i].from;         // sale desde curr
+    // Arco en curr: entra prevTan.to -> sale currTan.from
+    const startPoint = prevTan.to;
+    const endPoint = currTan.from;
 
     const c = { x: curr.x, y: curr.y };
     const startAngle = angleOf(c, startPoint);
@@ -222,6 +228,15 @@ function buildHullSegmentsCCW(hullDisks: Disk[]) {
       sweepFlag,
       largeArcFlag,
     });
+
+    // Tangente curr -> next
+    segments.push({
+      type: "tangent",
+      from: currTan.from,
+      to: currTan.to,
+      disk1: currTan.disk1,
+      disk2: currTan.disk2
+    });
   }
 
   return segments;
@@ -231,12 +246,22 @@ export function computeDiskHull(disks: Disk[]): DiskHull {
   if (disks.length === 0) {
     return { hullDisks: [], segments: [], svgPathD: "", stats: { disks: 0, tangents: 0, arcs: 0 } };
   }
+
+  // Caso 1 disco: dibujar círculo completo
   if (disks.length === 1) {
-    return { hullDisks: disks.slice(), segments: [], svgPathD: "", stats: { disks: 1, tangents: 0, arcs: 0 } };
+    const d = disks[0];
+    // Path: Move to (x+r, y), Arc around to close
+    const path = `M ${d.x + d.r} ${d.y} A ${d.r} ${d.r} 0 1 0 ${d.x - d.r} ${d.y} A ${d.r} ${d.r} 0 1 0 ${d.x + d.r} ${d.y}`;
+    return {
+      hullDisks: disks.slice(),
+      segments: [],
+      svgPathD: path,
+      stats: { disks: 1, tangents: 0, arcs: 1 }
+    };
   }
 
   const idToDisk = new Map(disks.map((d) => [d.id, d] as const));
-  const hullIds = convexHullIdsMonotoneChain(disks); // CCW estable [web:382]
+  const hullIds = convexHullIdsMonotoneChain(disks);
   const hullDisks = hullIds.map((id) => idToDisk.get(id)!).filter(Boolean);
 
   const segments = buildHullSegmentsCCW(hullDisks);
