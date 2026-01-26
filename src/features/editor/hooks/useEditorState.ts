@@ -1,0 +1,151 @@
+import { useState, useMemo, useEffect } from 'react';
+import type { CSBlock, CSDisk, CSArc, CSSegment } from '../../../core/types/cs';
+import { validateContinuity } from '../../../core/validation/continuity';
+import { getCurveLengthInfo, blockLength } from '../../../core/geometry/arcLength';
+
+interface InitialKnot {
+    id: number;
+    name: string;
+    nodes: number[];
+    edges: [number, number][];
+}
+
+export function useEditorState(initialKnot?: InitialKnot) {
+    // Data State
+    const [blocks, setBlocks] = useState<CSBlock[]>([]);
+    const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+
+    // UI State
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [showGrid, setShowGrid] = useState(true);
+    const [gridSpacing, setGridSpacing] = useState(20);
+    const [angleUnit, setAngleUnit] = useState<'deg' | 'rad'>('deg');
+    const [showContactDisks, setShowContactDisks] = useState(false);
+    const [showValidation, setShowValidation] = useState(false);
+
+    // Initialize blocks from knot
+    useEffect(() => {
+        if (!initialKnot || initialKnot.id === 0) return;
+
+        const initialBlocks: CSBlock[] = initialKnot.edges.map((edge, idx) => {
+            const [nodeA, nodeB] = edge;
+            const angleA = (nodeA / initialKnot.nodes.length) * 2 * Math.PI;
+            const angleB = (nodeB / initialKnot.nodes.length) * 2 * Math.PI;
+            const radius = 100;
+
+            return {
+                id: `s${idx + 1}`,
+                kind: 'segment',
+                p1: {
+                    x: Math.round(Math.cos(angleA) * radius),
+                    y: Math.round(Math.sin(angleA) * radius)
+                },
+                p2: {
+                    x: Math.round(Math.cos(angleB) * radius),
+                    y: Math.round(Math.sin(angleB) * radius)
+                },
+            } as CSSegment;
+        });
+
+        setBlocks(initialBlocks);
+    }, [initialKnot]);
+
+    // Computed
+    const nonDiskBlocks = useMemo(() => blocks.filter(b => b.kind !== 'disk'), [blocks]);
+    const diskBlocks = useMemo(() => blocks.filter(b => b.kind === 'disk') as CSDisk[], [blocks]);
+    const validation = useMemo(() => validateContinuity(nonDiskBlocks), [nonDiskBlocks]);
+    const lengthInfo = useMemo(() => getCurveLengthInfo(nonDiskBlocks), [nonDiskBlocks]);
+    const diskCount = diskBlocks.length;
+
+    const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+
+    // Actions
+    function addSegment() {
+        const id = `s${Date.now()}`;
+        const newSegment: CSSegment = {
+            id,
+            kind: 'segment',
+            p1: { x: 0, y: 0 },
+            p2: { x: 100, y: 50 },
+        };
+        setBlocks(prev => [...prev, newSegment]);
+        setSelectedBlockId(id);
+    }
+
+    function addArc() {
+        const id = `a${Date.now()}`;
+        const newArc: CSArc = {
+            id,
+            kind: 'arc',
+            center: { x: 50, y: 50 },
+            radius: 1,
+            visualRadius: 40,
+            startAngle: 0,
+            endAngle: Math.PI / 2,
+        };
+        setBlocks(prev => [...prev, newArc]);
+        setSelectedBlockId(id);
+    }
+
+    function addDisk() {
+        const id = `disk-${diskCount + 1}`;
+        const newDisk: CSDisk = {
+            id,
+            kind: 'disk',
+            center: { x: diskCount * 80, y: 0 },
+            radius: 1,
+            visualRadius: 40,
+            label: `D${diskCount + 1}`,
+            color: '#4A90E2',
+        };
+        setBlocks(prev => [...prev, newDisk]);
+        setSelectedBlockId(id);
+    }
+
+    function deleteBlock(id: string) {
+        setBlocks(prev => prev.filter((b) => b.id !== id));
+        if (selectedBlockId === id) setSelectedBlockId(null);
+    }
+
+    function updateBlock(id: string, updates: Partial<CSBlock>) {
+        setBlocks(prev =>
+            prev.map((b) => {
+                if (b.id !== id) return b;
+                return { ...b, ...updates } as CSBlock;
+            })
+        );
+    }
+
+    return {
+        state: {
+            blocks,
+            selectedBlockId,
+            selectedBlock,
+            sidebarOpen,
+            showGrid,
+            gridSpacing,
+            angleUnit,
+            showContactDisks,
+            showValidation,
+            nonDiskBlocks,
+            diskBlocks,
+            validation,
+            lengthInfo,
+        },
+        actions: {
+            setBlocks,
+            setSelectedBlockId,
+            setSidebarOpen,
+            setShowGrid,
+            setGridSpacing,
+            setAngleUnit,
+            setShowContactDisks,
+            setShowValidation,
+            addSegment,
+            addArc,
+            addDisk,
+            deleteBlock,
+            updateBlock,
+        }
+    };
+}
