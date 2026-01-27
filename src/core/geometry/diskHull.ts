@@ -273,3 +273,32 @@ export function computeHullLength(hull: DiskHull): number {
   }
   return totalLength;
 }
+
+export type HullMetrics = {
+  totalLength: number;
+  tangentLength: number;
+  arcLength: number;
+};
+
+export function computeHullMetrics(hull: DiskHull): HullMetrics {
+  let tangentLength = 0;
+  let arcLength = 0;
+
+  for (const seg of hull.segments) {
+    if (seg.type === 'tangent') {
+      const dx = seg.to.x - seg.from.x;
+      const dy = seg.to.y - seg.from.y;
+      tangentLength += Math.sqrt(dx * dx + dy * dy);
+    } else {
+      let diff = seg.endAngle - seg.startAngle;
+      while (diff < 0) diff += 2 * Math.PI;
+      arcLength += seg.disk.r * diff;
+    }
+  }
+
+  return {
+    totalLength: tangentLength + arcLength,
+    tangentLength,
+    arcLength
+  };
+}

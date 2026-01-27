@@ -6,7 +6,7 @@ import { useKnotState } from './hooks/useKnotState';
 import { EditorHeader } from './components/EditorHeader';
 import { useMemo } from 'react';
 import type { CSDisk } from '../../core/types/cs';
-import { computeDiskHull, computeHullLength } from '../../core/geometry/diskHull';
+import { computeDiskHull, computeHullLength, computeHullMetrics } from '../../core/geometry/diskHull';
 import { EditorSidebar } from './components/EditorSidebar';
 
 interface EditorPageProps {
@@ -29,12 +29,11 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const rollingState = useRollingMode({ blocks: editorState.blocks });
   const knotState = useKnotState();
 
-  const hullLength = useMemo(() => {
+  const hullMetrics = useMemo(() => {
     // Only calculate if we are in Penny Graph mode (disks only, no segments)
     // or if the user wants to see the hull length specifically.
-    // Assuming "envolvente cs" refers to the disk hull.
     const disks = editorState.diskBlocks;
-    if (disks.length < 2) return 0;
+    if (disks.length < 2) return { totalLength: 0, tangentLength: 0, arcLength: 0 };
 
     // We need to map to simple disks
     const simpleDisks = disks.map(d => ({
@@ -45,7 +44,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     }));
 
     const hull = computeDiskHull(simpleDisks);
-    return computeHullLength(hull);
+    return computeHullMetrics(hull);
   }, [editorState.diskBlocks]);
 
   const handleToggleKnotMode = () => {
@@ -75,9 +74,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
         validation={editorState.validation}
-        // Hack: Override lengthInfo if we have hullLength and no other segments
+        // Hack: Override lengthInfo if we have hullMetrics and no other segments
         lengthInfo={editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
-          ? { totalLength: hullLength }
+          ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
           : editorState.lengthInfo}
         sidebarOpen={editorState.sidebarOpen}
         onToggleSidebar={() => editorActions.setSidebarOpen(!editorState.sidebarOpen)}

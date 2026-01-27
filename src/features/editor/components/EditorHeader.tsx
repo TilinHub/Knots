@@ -1,4 +1,4 @@
-import type { FC } from 'react'; // Keep type import if needed, or remove if not used. Actually remove React import entirely if possible. 
+import { useState, type FC } from 'react';
 
 interface EditorHeaderProps {
     initialKnotName?: string;
@@ -10,7 +10,7 @@ interface EditorHeaderProps {
     nonDiskBlocksCount: number;
     diskBlocksCount: number;
     validation: { valid: boolean; errors: any[] };
-    lengthInfo: { totalLength: number };
+    lengthInfo: { totalLength: number; tangentLength?: number; arcLength?: number };
     sidebarOpen: boolean;
     onToggleSidebar: () => void;
     onShowValidationDetails: () => void;
@@ -36,6 +36,7 @@ export const EditorHeader = ({
     knotMode,
     onToggleKnotMode,
 }: EditorHeaderProps) => {
+    const [showLengthDetails, setShowLengthDetails] = useState(false);
 
     const statusColor = nonDiskBlocksCount === 0
         ? 'var(--text-tertiary)'
@@ -161,18 +162,53 @@ export const EditorHeader = ({
                 )}
 
                 {((validation.valid && nonDiskBlocksCount > 0) || (diskBlocksCount >= 2 && !showContactDisks)) && (
-                    <div
-                        style={{
-                            fontSize: 'var(--fs-caption)',
-                            color: 'var(--text-secondary)',
-                            fontWeight: 'var(--fw-medium)',
-                            padding: '4px 12px',
-                            background: 'var(--bg-tertiary)',
-                            borderRadius: '6px',
-                            fontFamily: 'var(--ff-mono)',
-                        }}
-                    >
-                        L = {lengthInfo.totalLength.toFixed(2)} px
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            onClick={() => setShowLengthDetails(!showLengthDetails)}
+                            style={{
+                                fontSize: 'var(--fs-caption)',
+                                color: 'var(--text-secondary)',
+                                fontWeight: 'var(--fw-medium)',
+                                padding: '4px 12px',
+                                background: 'var(--bg-tertiary)',
+                                borderRadius: '6px',
+                                fontFamily: 'var(--ff-mono)',
+                                border: 'none',
+                                cursor: 'help',
+                            }}
+                        >
+                            L = {lengthInfo.totalLength.toFixed(2)} px
+                        </button>
+                        {showLengthDetails && lengthInfo.tangentLength !== undefined && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                marginTop: '8px',
+                                background: 'white',
+                                border: '1px solid var(--border)',
+                                borderRadius: '6px',
+                                padding: '8px 12px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                zIndex: 10,
+                                minWidth: '160px',
+                                fontSize: 'var(--fs-caption)',
+                                color: 'var(--text-primary)',
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                    <span>Rectas:</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{lengthInfo.tangentLength?.toFixed(2)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                    <span>Arcos:</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{lengthInfo.arcLength?.toFixed(2)}</span>
+                                </div>
+                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '4px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                                    <span>Total:</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{lengthInfo.totalLength.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
