@@ -6,6 +6,8 @@ import { type Disk } from '@/core/geometry/diskHull';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
 import { KnotRenderer } from './components/KnotRenderer';
 import type { KnotDiagram } from '@/core/types/knot';
+import { DubinsRenderer } from './components/DubinsRenderer';
+import type { DubinsPath, Config } from '@/core/geometry/dubins';
 
 
 interface CSCanvasProps {
@@ -30,6 +32,14 @@ interface CSCanvasProps {
   onKnotSegmentClick?: (index: number) => void;
   // Contact graph props
   showContactDisks?: boolean;
+  // Dubins props
+  dubinsMode?: boolean;
+  dubinsPaths?: DubinsPath[];
+  dubinsStart?: Config | null;
+  dubinsEnd?: Config | null;
+  dubinsVisibleTypes?: Set<string>;
+  onSetDubinsStart?: (c: Config | null) => void;
+  onSetDubinsEnd?: (c: Config | null) => void;
 }
 
 type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end' | 'disk';
@@ -37,6 +47,7 @@ type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end' | 'disk';
 interface DragState {
   blockId: string;
   pointType: PointType;
+  dragSubtype?: 'move' | 'rotate'; // NEW
   startX: number;
   startY: number;
 }
@@ -64,6 +75,13 @@ export function CSCanvas({
   knotMode = false,
   knot = null,
   onKnotSegmentClick,
+  dubinsMode = false,
+  dubinsPaths = [],
+  dubinsStart = null,
+  dubinsEnd = null,
+  dubinsVisibleTypes = new Set(),
+  onSetDubinsStart,
+  onSetDubinsEnd,
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
@@ -139,6 +157,16 @@ export function CSCanvas({
     return false;
   }, [disks]);
 
+  // Helper for snapping
+  const findClosestDisk = React.useCallback((x: number, y: number): CSDisk | null => {
+    for (const disk of disks) {
+      const dx = x - disk.center.x;
+      const dy = y - disk.center.y;
+      if (Math.sqrt(dx * dx + dy * dy) < disk.visualRadius) return disk;
+    }
+    return null;
+  }, [disks]);
+
   // Convertir coordenadas cartesianas a SVG
   function toSVG(x: number, y: number): [number, number] {
     return [centerX + x, centerY - y];
@@ -179,6 +207,107 @@ export function CSCanvas({
 
   function handleMouseDown(blockId: string, pointType: PointType, e: React.MouseEvent) {
     e.stopPropagation();
+
+    // DUBINS INTERACTION
+    if (dubinsMode) {
+      const pos = getMousePositionExact(e as any);
+      if (!pos) return;
+
+      // Transform SVG Y (Down) to Cartesian Y (Up)
+      const cartX = pos.x;
+      const cartY = pos.y; // Correct? fromSVGExact returns: { x: svgX - centerX, y: centerY - svgY }
+      // Ah, fromSVGExact ALREADY converts to Cartesian (Y Up relative to center).
+      // Standard Math atan2(y, x) works directly on these coords.
+
+      // Logic:
+      // 1. If Start is not set, we place Start.
+      // 2. If Start is set but End is not, we place End.
+      // 3. If both set, simple click clears? Or dragging modifies closest?
+      // Let's go simple: Click clears if both exist.
+
+      // Hit Testing
+      const hitRadius = 30; // Increased from 20 for better usability
+
+      const checkHit = (c: Config | null, id: string): 'move' | 'rotate' | null => {
+        if (!c) return null;
+        const distBase = Math.sqrt(Math.pow(cartX - c.x, 2) + Math.pow(cartY - c.y, 2));
+        if (distBase < hitRadius) return 'move';
+
+        const tipX = c.x + 40 * Math.cos(c.theta);
+        const tipY = c.y + 40 * Math.sin(c.theta);
+        const distTip = Math.sqrt(Math.pow(cartX - tipX, 2) + Math.pow(cartY - tipY, 2));
+        if (distTip < hitRadius) return 'rotate';
+
+        return null;
+      };
+
+      // Check hits (End first so it renders on top/claims priority if stacked? Actually Start is usually first. Doesn't matter much)
+      const hitStart = checkHit(dubinsStart, 'dubins-start');
+      const hitEnd = checkHit(dubinsEnd, 'dubins-end');
+
+      if (hitStart) {
+        setDragState({
+          blockId: 'dubins-start',
+          pointType: 'start',
+          dragSubtype: hitStart,
+          startX: cartX,
+          startY: cartY
+        });
+        return;
+      }
+
+      if (hitEnd) {
+        setDragState({
+          blockId: 'dubins-end',
+          pointType: 'end',
+          dragSubtype: hitEnd,
+          startX: cartX,
+          startY: cartY
+        });
+        return;
+      }
+
+      // PLACEMENT LOGIC
+      // Only place if missing. NEVER clear existing ones on background click (prevents "disappearing").
+
+      // Helper for snapping
+      // (Using component-level findClosestDisk)
+
+      const snapOrRaw = (x: number, y: number) => {
+        const d = findClosestDisk(x, y);
+        return d ? { x: d.center.x, y: d.center.y } : { x, y };
+      };
+
+      if (!dubinsStart) {
+        const coords = snapOrRaw(cartX, cartY);
+        setDragState({
+          blockId: 'dubins-start',
+          pointType: 'start',
+          dragSubtype: 'rotate', // Immediately rotate after placing
+          startX: coords.x,
+          startY: coords.y
+        });
+        onSetDubinsStart?.({ x: coords.x, y: coords.y, theta: 0 });
+        return;
+      }
+
+      if (!dubinsEnd) {
+        const coords = snapOrRaw(cartX, cartY);
+        setDragState({
+          blockId: 'dubins-end',
+          pointType: 'end',
+          dragSubtype: 'rotate', // Immediately rotate after placing
+          startX: coords.x,
+          startY: coords.y
+        });
+        onSetDubinsEnd?.({ x: coords.x, y: coords.y, theta: 0 });
+        return;
+      }
+
+      // If both exist and clicked background -> Do nothing (or just deselect standard blocks)
+      return;
+    }
+
     if (rollingMode && onDiskClick) {
       const block = blocks.find(b => b.id === blockId);
       if (block?.kind === 'disk') onDiskClick(blockId);
@@ -187,12 +316,15 @@ export function CSCanvas({
     const pos = getMousePositionExact(e as any); // Simplificado para usar coordenadas base
     if (!pos) return;
 
+    // ... Standard (rest of legacy logic remains) ...
     // Necesitamos posición 'SVG' cruda para delta tracking preciso visualmente si queremos
     // pero fromSVGExact ya nos da el punto en el espacio lógico. Usaremos ese.
     // Para consistencia con lógica anterior:
     const rect = svgRef.current!.getBoundingClientRect();
     const rawX = (e.clientX - rect.left) * (width / rect.width);
     const rawY = (e.clientY - rect.top) * (height / rect.height);
+
+    // Helper for snapping (Using component-level findClosestDisk)
 
     setDragState({
       blockId,
@@ -205,7 +337,44 @@ export function CSCanvas({
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
     if (!dragState) return;
+
+    if (dubinsMode) {
+      const pos = getMousePositionExact(e);
+      if (!pos) return;
+
+      const currentX = pos.x;
+      const currentY = pos.y;
+
+      const isStart = dragState.blockId === 'dubins-start';
+      const currentConfig = isStart ? dubinsStart : dubinsEnd;
+      const setConfig = isStart ? onSetDubinsStart : onSetDubinsEnd;
+
+      if (!currentConfig) return;
+
+      if (dragState.dragSubtype === 'move') {
+        let targetX = currentX;
+        let targetY = currentY;
+
+        // Snap to Disk Center if hovering one
+        const snappedDisk = findClosestDisk(currentX, currentY);
+        if (snappedDisk) {
+          targetX = snappedDisk.center.x;
+          targetY = snappedDisk.center.y;
+        }
+
+        setConfig?.({ ...currentConfig, x: targetX, y: targetY });
+      } else {
+        const dx = currentX - currentConfig.x;
+        const dy = currentY - currentConfig.y;
+        const theta = Math.atan2(dy, dx);
+        setConfig?.({ ...currentConfig, theta });
+      }
+      return;
+    }
+
+
     if (rollingMode) return;
+    // ... rest of standard logic ...
 
     // Convertir a SVG coords para calcular delta en píxeles de pantalla/svg
     const rect = svgRef.current!.getBoundingClientRect();
@@ -244,8 +413,6 @@ export function CSCanvas({
         });
       }
     }
-    // ... (Logica para segmentos/arcos omitida/simplificada o mantenida si es necesario)
-    // Por ahora nos enfocamos en Penny Graphs (Discos)
   }
 
   function handleMouseUp() {
@@ -263,7 +430,13 @@ export function CSCanvas({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onSelectBlock(null);
+        if (e.target === e.currentTarget) {
+          onSelectBlock(null);
+          // Ensure Dubins gets triggered if we click background
+          if (dubinsMode && e.currentTarget) {
+            handleMouseDown('background', 'p1', e);
+          }
+        }
       }}
     >
       <defs>
@@ -299,6 +472,17 @@ export function CSCanvas({
           <KnotRenderer
             knot={knot}
             onSegmentClick={(idx) => onKnotSegmentClick?.(idx)}
+          />
+        </g>
+      )}
+
+      {dubinsMode && (
+        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <DubinsRenderer
+            paths={dubinsPaths || []}
+            startConfig={dubinsStart || null}
+            endConfig={dubinsEnd || null}
+            visibleTypes={dubinsVisibleTypes || new Set()}
           />
         </g>
       )}

@@ -58,6 +58,7 @@ interface EditorSidebarProps {
     rollingState: RollingState;
     editorState: EditorState;
     actions: EditorActions;
+    dubinsState?: any;
 }
 
 export const EditorSidebar = ({
@@ -66,6 +67,7 @@ export const EditorSidebar = ({
     rollingState,
     editorState,
     actions,
+    dubinsState,
 }: EditorSidebarProps) => {
     if (!isOpen) return null;
 
@@ -79,7 +81,6 @@ export const EditorSidebar = ({
                 background: 'var(--bg-secondary)',
                 display: 'flex',
                 flexDirection: 'column',
-                overflowY: 'auto',
             }}
         >
             {/* ROLLING MODE PANEL */}
@@ -168,6 +169,24 @@ export const EditorSidebar = ({
                         onUpdateBlock={actions.updateBlock}
                         onDeleteBlock={actions.deleteBlock}
                     />
+
+                    {dubinsState && (
+                        <div style={{ padding: 'var(--space-md)', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid var(--border)' }}>
+                            <div style={{ marginBottom: '12px', fontWeight: 'bold', fontSize: 'var(--fs-caption)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>DUBINS PATHS</span>
+                                <Button
+                                    onClick={() => {
+                                        dubinsState.actions.setStartConfig(null);
+                                        dubinsState.actions.setEndConfig(null);
+                                    }}
+                                    variant="secondary"
+                                    style={{ padding: '2px 8px', fontSize: '10px' }}
+                                >
+                                    Limpiar
+                                </Button>
+                            </div>
+                        </div>
+                    )}
 
                     <div style={{ padding: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
                         <h3 style={{ fontSize: 'var(--fs-caption)', marginBottom: '8px', color: 'var(--text-secondary)' }}>Agregar</h3>

@@ -17,6 +17,9 @@ interface EditorHeaderProps {
     // Knot/Reidemeister Mode
     knotMode: boolean;
     onToggleKnotMode: () => void;
+    // Dubins
+    dubinsMode: boolean;
+    onToggleDubinsMode: () => void;
 }
 
 export const EditorHeader = ({
@@ -35,6 +38,8 @@ export const EditorHeader = ({
     onShowValidationDetails,
     knotMode,
     onToggleKnotMode,
+    dubinsMode,
+    onToggleDubinsMode,
 }: EditorHeaderProps) => {
     const [showLengthDetails, setShowLengthDetails] = useState(false);
 
@@ -139,6 +144,25 @@ export const EditorHeader = ({
                         }}
                     >
                         🪢 Knot Mode
+                    </button>
+                )}
+
+                {!showContactDisks && !knotMode && !rollingMode && (
+                    <button
+                        onClick={onToggleDubinsMode}
+                        style={{
+                            padding: '6px 12px',
+                            fontSize: 'var(--fs-caption)',
+                            fontWeight: 'var(--fw-medium)',
+                            background: dubinsMode ? '#4ECDC4' : 'var(--bg-tertiary)',
+                            color: dubinsMode ? 'white' : 'var(--text-primary)',
+                            border: `1px solid ${dubinsMode ? '#4ECDC4' : 'var(--border)'}`,
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                        }}
+                    >
+                        🚗 Dubins
                     </button>
                 )}
 

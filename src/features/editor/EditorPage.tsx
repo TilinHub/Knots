@@ -3,6 +3,7 @@ import { CSCanvas } from './CSCanvas';
 import { useEditorState } from './hooks/useEditorState';
 import { useRollingMode } from './hooks/useRollingMode';
 import { useKnotState } from './hooks/useKnotState';
+import { useDubinsState } from './hooks/useDubinsState'; // NEW
 import { EditorHeader } from './components/EditorHeader';
 import { useMemo } from 'react';
 import type { CSDisk } from '../../core/types/cs';
@@ -28,6 +29,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
   const knotState = useKnotState();
+  const dubinsState = useDubinsState(); // NEW
 
   const hullMetrics = useMemo(() => {
     // Only calculate if we are in Penny Graph mode (disks only, no segments)
@@ -69,6 +71,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onToggleRollingMode={rollingState.toggleMode}
         knotMode={knotState.mode === 'knot'}
         onToggleKnotMode={handleToggleKnotMode}
+        dubinsMode={dubinsState.state.isActive}
+        onToggleDubinsMode={dubinsState.actions.toggleMode}
         showContactDisks={editorState.showContactDisks}
         onToggleContactDisks={() => editorActions.setShowContactDisks(!editorState.showContactDisks)}
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
@@ -112,7 +116,18 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             knot={knotState.knot}
             onKnotSegmentClick={knotState.actions.applyTwist}
 
+
+
             showContactDisks={editorState.showContactDisks}
+
+            // Dubins
+            dubinsMode={dubinsState.state.isActive}
+            dubinsPaths={(dubinsState.state.computedPaths || []).slice(0, dubinsState.state.maxPathsToShow)}
+            dubinsStart={dubinsState.state.startConfig}
+            dubinsEnd={dubinsState.state.endConfig}
+            dubinsVisibleTypes={dubinsState.state.visiblePaths}
+            onSetDubinsStart={dubinsState.actions.setStartConfig}
+            onSetDubinsEnd={dubinsState.actions.setEndConfig}
           />
         </div>
 
@@ -120,6 +135,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
           isOpen={editorState.sidebarOpen}
           rollingMode={rollingState.isActive}
           rollingState={rollingState}
+          dubinsState={dubinsState}
           editorState={editorState}
           actions={editorActions}
         />
