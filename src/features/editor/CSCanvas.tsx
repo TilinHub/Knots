@@ -1,6 +1,6 @@
 import React from 'react';
 import type { CSBlock, CSDisk, Point2D, CSArc } from '@/core/types/cs';
-import { findAllCrossings } from '@/core/geometry/intersections';
+import { findAllCrossings, findDiskContacts, type DiskContact } from '@/core/geometry/intersections';
 import { detectRegionsWithDisks } from '@/core/algorithms/regionDetection';
 import { type Disk } from '@/core/geometry/diskHull';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
@@ -108,6 +108,9 @@ export function CSCanvas({
   // Detectar cruces solo en bloques no-disco
   const crossings = React.useMemo(() => findAllCrossings(nonDiskBlocks), [nonDiskBlocks]);
 
+  // Detectar contactos entre discos (Dubins constraint)
+  const contacts = React.useMemo(() => findDiskContacts(disks), [disks]);
+
   // Detectar regiones y discos de contacto (Legacy/Optional)
   const regions = React.useMemo(() => {
     if (showContactDisks && nonDiskBlocks.length >= 3 && disks.length === 0) {
@@ -157,15 +160,7 @@ export function CSCanvas({
     return false;
   }, [disks]);
 
-  // Helper for snapping
-  const findClosestDisk = React.useCallback((x: number, y: number): CSDisk | null => {
-    for (const disk of disks) {
-      const dx = x - disk.center.x;
-      const dy = y - disk.center.y;
-      if (Math.sqrt(dx * dx + dy * dy) < disk.visualRadius) return disk;
-    }
-    return null;
-  }, [disks]);
+
 
   // Convertir coordenadas cartesianas a SVG
   function toSVG(x: number, y: number): [number, number] {
@@ -268,43 +263,11 @@ export function CSCanvas({
       }
 
       // PLACEMENT LOGIC
-      // Only place if missing. NEVER clear existing ones on background click (prevents "disappearing").
+      // Disabled for strict Contact-Based Interaction.
+      // User must click on explicit Contact Points (orange circles).
 
-      // Helper for snapping
-      // (Using component-level findClosestDisk)
-
-      const snapOrRaw = (x: number, y: number) => {
-        const d = findClosestDisk(x, y);
-        return d ? { x: d.center.x, y: d.center.y } : { x, y };
-      };
-
-      if (!dubinsStart) {
-        const coords = snapOrRaw(cartX, cartY);
-        setDragState({
-          blockId: 'dubins-start',
-          pointType: 'start',
-          dragSubtype: 'rotate', // Immediately rotate after placing
-          startX: coords.x,
-          startY: coords.y
-        });
-        onSetDubinsStart?.({ x: coords.x, y: coords.y, theta: 0 });
-        return;
-      }
-
-      if (!dubinsEnd) {
-        const coords = snapOrRaw(cartX, cartY);
-        setDragState({
-          blockId: 'dubins-end',
-          pointType: 'end',
-          dragSubtype: 'rotate', // Immediately rotate after placing
-          startX: coords.x,
-          startY: coords.y
-        });
-        onSetDubinsEnd?.({ x: coords.x, y: coords.y, theta: 0 });
-        return;
-      }
-
-      // If both exist and clicked background -> Do nothing (or just deselect standard blocks)
+      // If we clicked background and not a contact loop above (which stops prop),
+      // we do nothing here.
       return;
     }
 
@@ -355,14 +318,41 @@ export function CSCanvas({
         let targetX = currentX;
         let targetY = currentY;
 
-        // Snap to Disk Center if hovering one
-        const snappedDisk = findClosestDisk(currentX, currentY);
-        if (snappedDisk) {
-          targetX = snappedDisk.center.x;
-          targetY = snappedDisk.center.y;
+        // Snap to Contact Point if hovering one
+        let closestContact: DiskContact | null = null;
+        let minDist = 30; // Snap radius
+
+        for (const c of contacts) {
+          const dist = Math.sqrt(Math.pow(currentX - c.point.x, 2) + Math.pow(currentY - c.point.y, 2));
+          if (dist < minDist) {
+            minDist = dist;
+            closestContact = c;
+          }
         }
 
-        setConfig?.({ ...currentConfig, x: targetX, y: targetY });
+        if (closestContact) {
+          targetX = closestContact.point.x;
+          targetY = closestContact.point.y;
+          // Also force orientation? User might want to adjust orientation manually, 
+          // but user request implies strict strictness.
+          // Let's snap position but let orientation be free IF dragging rotation?
+          // Wait, this is 'move' subtype. 
+          // Should we also snap theta if we snap POS?
+          // Usually yes, the contact implies a specific tangent.
+          // Let's snap theta too for convenience.
+          setConfig?.({
+            x: targetX,
+            y: targetY,
+            theta: closestContact.tangentAngle
+          });
+        } else {
+          // If not snapping to contact, allow free move OR block it?
+          // User said "no hacer dubins en el aire". 
+          // Maybe we only update if snapped?
+          // Or we allow free move but rely on visual feedback.
+          // Let's allow free move for now but heavy snap availability.
+          setConfig?.({ ...currentConfig, x: targetX, y: targetY });
+        }
       } else {
         const dx = currentX - currentConfig.x;
         const dy = currentY - currentConfig.y;
@@ -484,6 +474,38 @@ export function CSCanvas({
             endConfig={dubinsEnd || null}
             visibleTypes={dubinsVisibleTypes || new Set()}
           />
+          {/* Render Contacts */}
+          {contacts.map((c, i) => (
+            <g key={`contact-${i}`}
+              transform={`translate(${c.point.x}, ${c.point.y})`}
+              style={{ cursor: 'pointer' }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                // Prioritize determining Start or End
+                // If Start is null, set Start.
+                // If Start exists but End is null, set End.
+                // If both exist, maybe reset? Or let user drag standard way?
+                // "No hacer dubins en el aire" -> Strict click setting.
+
+                const config = { x: c.point.x, y: c.point.y, theta: c.tangentAngle };
+
+                // Toggle logic or strict sequence?
+                if (!dubinsStart) {
+                  onSetDubinsStart?.(config);
+                } else if (!dubinsEnd) {
+                  onSetDubinsEnd?.(config);
+                } else {
+                  // Reset and start over?
+                  onSetDubinsStart?.(config);
+                  onSetDubinsEnd?.(null);
+                }
+              }}
+            >
+              <circle r="6" fill="#FF8C00" stroke="white" strokeWidth="2" />
+              {/* Tangent Guide */}
+              <line x1="-10" y1="0" x2="10" y2="0" stroke="#FF8C00" strokeWidth="1" transform={`rotate(${c.tangentAngle * 180 / Math.PI})`} opacity="0.5" />
+            </g>
+          ))}
         </g>
       )}
 

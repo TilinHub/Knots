@@ -2,7 +2,7 @@
  * Detección de intersecciones (cruces) entre bloques CS
  */
 
-import type { CSBlock, CSSegment, CSArc, CrossPoint, Point2D } from '../types/cs';
+import type { CSBlock, CSSegment, CSArc, CrossPoint, Point2D, CSDisk } from '../types/cs';
 
 const EPSILON = 1e-6;
 
@@ -17,7 +17,7 @@ export function findAllCrossings(blocks: CSBlock[]): CrossPoint[] {
   for (let i = 0; i < blocks.length; i++) {
     for (let j = i + 1; j < blocks.length; j++) {
       const intersections = findBlockIntersections(blocks[i], blocks[j]);
-      
+
       for (const point of intersections) {
         crossings.push({
           id: `cross${crossId++}`,
@@ -45,19 +45,19 @@ function findBlockIntersections(b1: CSBlock, b2: CSBlock): Point2D[] {
   if (b1.kind === 'segment' && b2.kind === 'segment') {
     return segmentSegmentIntersection(b1, b2);
   }
-  
+
   if (b1.kind === 'segment' && b2.kind === 'arc') {
     return segmentArcIntersection(b1, b2);
   }
-  
+
   if (b1.kind === 'arc' && b2.kind === 'segment') {
     return segmentArcIntersection(b2, b1);
   }
-  
+
   if (b1.kind === 'arc' && b2.kind === 'arc') {
     return arcArcIntersection(b1, b2);
   }
-  
+
   return [];
 }
 
@@ -69,7 +69,7 @@ function segmentSegmentIntersection(s1: CSSegment, s2: CSSegment): Point2D[] {
   const { p1: c, p2: d } = s2;
 
   const denom = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
-  
+
   // Paralelos o coincidentes
   if (Math.abs(denom) < EPSILON) return [];
 
@@ -97,7 +97,7 @@ function segmentArcIntersection(seg: CSSegment, arc: CSArc): Point2D[] {
   // Vector dirección del segmento
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
-  
+
   // Vector desde centro del círculo al inicio del segmento
   const fx = p1.x - center.x;
   const fy = p1.y - center.y;
@@ -108,7 +108,7 @@ function segmentArcIntersection(seg: CSSegment, arc: CSArc): Point2D[] {
   const c = fx * fx + fy * fy - radius * radius;
 
   const discriminant = b * b - 4 * a * c;
-  
+
   if (discriminant < 0) return []; // No hay intersección
 
   const sqrtDisc = Math.sqrt(discriminant);
@@ -193,21 +193,21 @@ function arcArcIntersection(a1: CSArc, a2: CSArc): Point2D[] {
  */
 function isPointOnArc(point: Point2D, arc: CSArc): boolean {
   const { center, startAngle, endAngle } = arc;
-  
+
   let angle = Math.atan2(point.y - center.y, point.x - center.x);
-  
+
   // Normalizar ángulo a [0, 2π)
   if (angle < 0) angle += 2 * Math.PI;
-  
+
   let start = startAngle;
   let end = endAngle;
-  
+
   // Normalizar ángulos del arco
   while (start < 0) start += 2 * Math.PI;
   while (end < 0) end += 2 * Math.PI;
   while (start >= 2 * Math.PI) start -= 2 * Math.PI;
   while (end >= 2 * Math.PI) end -= 2 * Math.PI;
-  
+
   // Verificar si el ángulo está en el rango
   if (start <= end) {
     return angle >= start - EPSILON && angle <= end + EPSILON;
@@ -215,4 +215,49 @@ function isPointOnArc(point: Point2D, arc: CSArc): boolean {
     // Arco cruza 0°
     return angle >= start - EPSILON || angle <= end + EPSILON;
   }
+}
+
+export interface DiskContact {
+  point: Point2D;
+  disk1Id: string;
+  disk2Id: string;
+  tangentAngle: number; // Angle of the common tangent
+  normalAngle: number; // Angle of the line connecting centers
+}
+
+export function findDiskContacts(disks: CSDisk[]): DiskContact[] {
+  const contacts: DiskContact[] = [];
+  const TOLERANCE = 20.0; // Relaxed tolerance for visual contact
+
+  for (let i = 0; i < disks.length; i++) {
+    for (let j = i + 1; j < disks.length; j++) {
+      const d1 = disks[i];
+      const d2 = disks[j];
+      const dx = d2.center.x - d1.center.x;
+      const dy = d2.center.y - d1.center.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      // Check if touching (dist approx r1 + r2)
+      const touchDist = d1.visualRadius + d2.visualRadius;
+      if (Math.abs(dist - touchDist) < TOLERANCE) {
+        // Calculate contact point (weighted by radii if needed, but here r is visualRadius)
+        // P = C1 + (C2-C1) * r1 / (r1+r2)
+        const ratio = d1.visualRadius / (d1.visualRadius + d2.visualRadius);
+        const cx = d1.center.x + dx * ratio;
+        const cy = d1.center.y + dy * ratio;
+
+        const normalAngle = Math.atan2(dy, dx);
+        const tangentAngle = normalAngle + Math.PI / 2; // Perpendicular
+
+        contacts.push({
+          point: { x: cx, y: cy },
+          disk1Id: d1.id,
+          disk2Id: d2.id,
+          tangentAngle,
+          normalAngle
+        });
+      }
+    }
+  }
+  return contacts;
 }
