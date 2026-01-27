@@ -88,9 +88,11 @@ function jarvisMarch(disks: Disk[]): Disk[] {
 
       const c = cross(disks[currentIdx], disks[nextIdx], disks[i]);
 
-      // We want Left (CCW) turns. Cross < 0.
-      // If 'i' is to the LEFT of current->next, it's a better candidate for the CCW edge.
-      const isLeft = c < 0;
+      // We want Left (CCW) turns.
+      // In Y-Up (Cartesian): Cross > 0 is Left Turn.
+      // In Y-Down (Screen): Cross < 0 is Left Turn.
+      // The system uses Y-Up (Cartesian) for logic.
+      const isLeft = c > 0; // FIXED for Y-Up CCW
       const isCollinear = c === 0;
       const isFurthestVar = distanceSq(disks[currentIdx], disks[i]) > distanceSq(disks[currentIdx], disks[nextIdx]);
 

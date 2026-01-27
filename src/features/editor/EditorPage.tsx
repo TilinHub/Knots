@@ -2,6 +2,7 @@ import React from 'react';
 import { CSCanvas } from './CSCanvas';
 import { useEditorState } from './hooks/useEditorState';
 import { useRollingMode } from './hooks/useRollingMode';
+import { useKnotState } from './hooks/useKnotState';
 import { EditorHeader } from './components/EditorHeader';
 import { EditorSidebar } from './components/EditorSidebar';
 
@@ -23,6 +24,15 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // 1. Logic & State (Custom Hooks)
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
+  const knotState = useKnotState();
+
+  const handleToggleKnotMode = () => {
+    if (knotState.mode === 'hull') {
+      knotState.actions.initFromHull(editorState.blocks);
+    } else {
+      knotState.actions.setMode('hull');
+    }
+  };
 
   // 2. Event Handlers (can be simple wrappers or passed directly)
   // handleDiskClick logic was conceptually here but passed directly below for cleaner code
@@ -36,6 +46,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onBackToGallery={onBackToGallery}
         rollingMode={rollingState.isActive}
         onToggleRollingMode={rollingState.toggleMode}
+        knotMode={knotState.mode === 'knot'}
+        onToggleKnotMode={handleToggleKnotMode}
         showContactDisks={editorState.showContactDisks}
         onToggleContactDisks={() => editorActions.setShowContactDisks(!editorState.showContactDisks)}
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
@@ -71,6 +83,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               // Standard interaction
               onDiskClick: undefined
             })}
+
+            knotMode={knotState.mode === 'knot'}
+            knot={knotState.knot}
+            onKnotSegmentClick={knotState.actions.applyTwist}
 
             showContactDisks={editorState.showContactDisks}
           />

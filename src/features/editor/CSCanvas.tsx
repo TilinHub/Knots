@@ -4,6 +4,8 @@ import { findAllCrossings } from '@/core/geometry/intersections';
 import { detectRegionsWithDisks } from '@/core/algorithms/regionDetection';
 import { type Disk } from '@/core/geometry/diskHull';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
+import { KnotRenderer } from './components/KnotRenderer';
+import type { KnotDiagram } from '@/core/types/knot';
 
 
 interface CSCanvasProps {
@@ -22,6 +24,10 @@ interface CSCanvasProps {
   theta?: number;
   showTrail?: boolean;
   onDiskClick?: (diskId: string) => void;
+  // Knot props
+  knotMode?: boolean;
+  knot?: KnotDiagram | null;
+  onKnotSegmentClick?: (index: number) => void;
   // Contact graph props
   showContactDisks?: boolean;
 }
@@ -55,6 +61,9 @@ export function CSCanvas({
   showTrail = true,
   onDiskClick,
   showContactDisks = false,
+  knotMode = false,
+  knot = null,
+  onKnotSegmentClick,
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
@@ -274,15 +283,24 @@ export function CSCanvas({
       <line x1="0" y1={centerY} x2={width} y2={centerY} stroke="#ddd" strokeWidth="1" />
       <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="#ddd" strokeWidth="1" />
 
-      {/* BELT (Convex Hull) - Renderizado DETRÁS de los discos */}
-      {hullData && (
+      {/* BELT (Convex Hull) OR KNOT */}
+      {!knotMode && hullData && (
         <path
           d={transformPathToSVG(hullData.svgPathD)}
-          fill="rgba(137, 207, 240, 0.2)" /* Azul "Baby Blue" transparente */
-          stroke="#5CA0D3" /* Azul sólido más suave */
+          fill="rgba(137, 207, 240, 0.2)"
+          stroke="#5CA0D3"
           strokeWidth="2"
           strokeLinejoin="round"
         />
+      )}
+
+      {knotMode && knot && (
+        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <KnotRenderer
+            knot={knot}
+            onSegmentClick={(idx) => onKnotSegmentClick?.(idx)}
+          />
+        </g>
       )}
 
       {/* Discos */}

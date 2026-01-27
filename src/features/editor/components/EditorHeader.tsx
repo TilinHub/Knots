@@ -14,6 +14,9 @@ interface EditorHeaderProps {
     sidebarOpen: boolean;
     onToggleSidebar: () => void;
     onShowValidationDetails: () => void;
+    // Knot/Reidemeister Mode
+    knotMode: boolean;
+    onToggleKnotMode: () => void;
 }
 
 export const EditorHeader = ({
@@ -30,6 +33,8 @@ export const EditorHeader = ({
     sidebarOpen,
     onToggleSidebar,
     onShowValidationDetails,
+    knotMode,
+    onToggleKnotMode,
 }: EditorHeaderProps) => {
 
     const statusColor = nonDiskBlocksCount === 0
@@ -116,7 +121,27 @@ export const EditorHeader = ({
                     </button>
                 )}
 
+
                 {diskBlocksCount >= 2 && !showContactDisks && (
+                    <button
+                        onClick={onToggleKnotMode}
+                        style={{
+                            padding: '6px 12px',
+                            fontSize: 'var(--fs-caption)',
+                            fontWeight: 'var(--fw-medium)',
+                            background: knotMode ? '#FF6B6B' : 'var(--bg-tertiary)',
+                            color: knotMode ? 'white' : 'var(--text-primary)',
+                            border: `1px solid ${knotMode ? '#FF6B6B' : 'var(--border)'}`,
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                        }}
+                    >
+                        🪢 Knot Mode
+                    </button>
+                )}
+
+                {diskBlocksCount >= 2 && !showContactDisks && !knotMode && (
                     <button
                         onClick={onToggleRollingMode}
                         style={{
