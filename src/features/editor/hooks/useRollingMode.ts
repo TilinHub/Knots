@@ -27,7 +27,7 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         showTrail: true,
     });
 
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number | undefined>(undefined);
     const diskBlocks = blocks.filter((b): b is CSDisk => b.kind === 'disk');
 
     // Collision Logic (Pure function within hook scope)
