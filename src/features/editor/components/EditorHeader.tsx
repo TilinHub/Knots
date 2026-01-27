@@ -160,7 +160,7 @@ export const EditorHeader = ({
                     </button>
                 )}
 
-                {validation.valid && nonDiskBlocksCount > 0 && !showContactDisks && (
+                {((validation.valid && nonDiskBlocksCount > 0) || (diskBlocksCount >= 2 && !showContactDisks)) && (
                     <div
                         style={{
                             fontSize: 'var(--fs-caption)',

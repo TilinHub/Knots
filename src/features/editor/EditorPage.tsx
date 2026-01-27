@@ -4,6 +4,9 @@ import { useEditorState } from './hooks/useEditorState';
 import { useRollingMode } from './hooks/useRollingMode';
 import { useKnotState } from './hooks/useKnotState';
 import { EditorHeader } from './components/EditorHeader';
+import { useMemo } from 'react';
+import type { CSDisk } from '../../core/types/cs';
+import { computeDiskHull, computeHullLength } from '../../core/geometry/diskHull';
 import { EditorSidebar } from './components/EditorSidebar';
 
 interface EditorPageProps {
@@ -25,6 +28,25 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
   const knotState = useKnotState();
+
+  const hullLength = useMemo(() => {
+    // Only calculate if we are in Penny Graph mode (disks only, no segments)
+    // or if the user wants to see the hull length specifically.
+    // Assuming "envolvente cs" refers to the disk hull.
+    const disks = editorState.diskBlocks;
+    if (disks.length < 2) return 0;
+
+    // We need to map to simple disks
+    const simpleDisks = disks.map(d => ({
+      id: d.id,
+      x: d.center.x,
+      y: d.center.y,
+      r: d.visualRadius
+    }));
+
+    const hull = computeDiskHull(simpleDisks);
+    return computeHullLength(hull);
+  }, [editorState.diskBlocks]);
 
   const handleToggleKnotMode = () => {
     if (knotState.mode === 'hull') {
@@ -53,7 +75,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
         validation={editorState.validation}
-        lengthInfo={editorState.lengthInfo}
+        // Hack: Override lengthInfo if we have hullLength and no other segments
+        lengthInfo={editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
+          ? { totalLength: hullLength }
+          : editorState.lengthInfo}
         sidebarOpen={editorState.sidebarOpen}
         onToggleSidebar={() => editorActions.setSidebarOpen(!editorState.sidebarOpen)}
         onShowValidationDetails={() => editorActions.setShowValidation(true)}

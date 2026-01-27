@@ -248,3 +248,28 @@ export function computeFromOrderedHull(hullDisks: Disk[]): DiskHull {
     stats: { disks: hullDisks.length, tangents: segments.filter(s => s.type === 'tangent').length, arcs: segments.filter(s => s.type === 'arc').length }
   }
 }
+
+export function computeHullLength(hull: DiskHull): number {
+  let totalLength = 0;
+  for (const seg of hull.segments) {
+    if (seg.type === 'tangent') {
+      const dx = seg.to.x - seg.from.x;
+      const dy = seg.to.y - seg.from.y;
+      totalLength += Math.sqrt(dx * dx + dy * dy);
+    } else {
+      // Arc length = r * theta
+      // theta is absolute diff of angles ... need to be careful with direction?
+      // Hull is CCW.
+      let diff = seg.endAngle - seg.startAngle;
+      while (diff < 0) diff += 2 * Math.PI;
+      // buildHullSegmentsCCW logic ensures positive diff corresponds to the arc being drawn (short way?)
+      // Actually buildHullSegmentsCCW logic:
+      // "If CW Diff > 180, then CCW Diff < 180" -> implies we take the smaller angle?
+      // Wait, convex hull arcs are always <= 180 (convex).
+      // So normalizing to [0, 2PI) should give the correct positive angle if we assume CCW traversal blocks.
+
+      totalLength += seg.disk.r * diff;
+    }
+  }
+  return totalLength;
+}
