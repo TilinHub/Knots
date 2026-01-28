@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { calculateDubinsPaths, type Config, type DubinsType, type DubinsPath } from '../../../core/geometry/dubins';
+import { calculateDubinsPaths, checkPathCollision, calculateBitangentPaths, type Config, type DubinsType, type DubinsPath } from '../../../core/geometry/dubins';
 import { type ContactDisk } from '../../../core/types/contactGraph';
 
 export interface DubinsState {
@@ -24,90 +24,7 @@ export function useDubinsState(disks: ContactDisk[] = []) {
     const [startDiskId, setStartDiskId] = useState<string | null>(null);
     const [endDiskId, setEndDiskId] = useState<string | null>(null);
 
-    // Helper: Calculate Tangent Paths
-    const calculateTangentPaths = useCallback((sDisk: ContactDisk, eDisk: ContactDisk): DubinsPath[] => {
-        const paths: DubinsPath[] = [];
-        const dx = eDisk.center.x - sDisk.center.x;
-        const dy = eDisk.center.y - sDisk.center.y;
-        const D = Math.sqrt(dx * dx + dy * dy);
-        const phi = Math.atan2(dy, dx);
-
-        // Use max radius to ensure path clears both disks (no cutting inside)
-        const R = Math.max(sDisk.radius, eDisk.radius);
-
-        // 1. LSL (Top Tangent)
-        // Tangent points should be at phi - pi/2 (Top relative to Right heading)
-        // Solver L (+Theta/CW) curves "Down/Right". 
-        // At Top Point, Heading Right -> Tangent. Curve matches Disk curvature approx.
-        const pLSL_start = {
-            x: sDisk.center.x + sDisk.radius * Math.cos(phi - Math.PI / 2),
-            y: sDisk.center.y + sDisk.radius * Math.sin(phi - Math.PI / 2),
-            theta: phi
-        };
-        const pLSL_end = {
-            x: eDisk.center.x + eDisk.radius * Math.cos(phi - Math.PI / 2),
-            y: eDisk.center.y + eDisk.radius * Math.sin(phi - Math.PI / 2),
-            theta: phi
-        };
-        const resLSL = calculateDubinsPaths(pLSL_start, pLSL_end, R).find(p => p.type === 'LSL');
-        if (resLSL) paths.push(resLSL);
-
-        // 2. RSR (Bottom Tangent)
-        const pRSR_start = {
-            x: sDisk.center.x + sDisk.radius * Math.cos(phi + Math.PI / 2),
-            y: sDisk.center.y + sDisk.radius * Math.sin(phi + Math.PI / 2),
-            theta: phi
-        };
-        const pRSR_end = {
-            x: eDisk.center.x + eDisk.radius * Math.cos(phi + Math.PI / 2),
-            y: eDisk.center.y + eDisk.radius * Math.sin(phi + Math.PI / 2),
-            theta: phi
-        };
-        const resRSR = calculateDubinsPaths(pRSR_start, pRSR_end, R).find(p => p.type === 'RSR');
-        if (resRSR) paths.push(resRSR);
-
-        // 3. Inner Tangents (LSR, RSL)
-        const beta = Math.asin((sDisk.radius + eDisk.radius) / D); // Approximate for crossing
-        // Actually, internal tangents angle delta = asin((R1+R2)/D).
-        // If sDisk and eDisk have diff radii, we should use that. 
-        // But for visual robustness if disks separated:
-        if (!isNaN(beta)) {
-            // LSR
-            const thLSR = phi + beta;
-            // Start (L): Top-Left relative to new heading? No, Tangent is rotated 'beta' from phi.
-            // Point on disk is perpendicular to tangent.
-            // L Turn -> Normal is -90 deg.
-            const pLSR_start = {
-                x: sDisk.center.x + sDisk.radius * Math.cos(thLSR - Math.PI / 2),
-                y: sDisk.center.y + sDisk.radius * Math.sin(thLSR - Math.PI / 2),
-                theta: thLSR
-            };
-            const pLSR_end = {
-                x: eDisk.center.x + eDisk.radius * Math.cos(thLSR + Math.PI / 2), // R Turn -> Normal +90
-                y: eDisk.center.y + eDisk.radius * Math.sin(thLSR + Math.PI / 2),
-                theta: thLSR
-            };
-            const resLSR = calculateDubinsPaths(pLSR_start, pLSR_end, R).find(p => p.type === 'LSR');
-            if (resLSR) paths.push(resLSR);
-
-            // RSL
-            const thRSL = phi - beta;
-            const pRSL_start = {
-                x: sDisk.center.x + sDisk.radius * Math.cos(thRSL + Math.PI / 2),
-                y: sDisk.center.y + sDisk.radius * Math.sin(thRSL + Math.PI / 2),
-                theta: thRSL
-            };
-            const pRSL_end = {
-                x: eDisk.center.x + eDisk.radius * Math.cos(thRSL - Math.PI / 2),
-                y: eDisk.center.y + eDisk.radius * Math.sin(thRSL - Math.PI / 2),
-                theta: thRSL
-            };
-            const resRSL = calculateDubinsPaths(pRSL_start, pRSL_end, R).find(p => p.type === 'RSL');
-            if (resRSL) paths.push(resRSL);
-        }
-
-        return paths;
-    }, []);
+    // Local calculateTangentPaths removed. Using imported calculateBitangentPaths.
 
     const toggleMode = useCallback(() => {
         setIsActive(prev => {
@@ -137,16 +54,35 @@ export function useDubinsState(disks: ContactDisk[] = []) {
     }, [startDiskId, endDiskId]);
 
     const computedPaths = useMemo(() => {
+        let paths: DubinsPath[] = [];
+
         if (startDiskId && endDiskId) {
             const sDisk = disks.find(d => d.id === startDiskId);
             const eDisk = disks.find(d => d.id === endDiskId);
             if (sDisk && eDisk) {
-                return calculateTangentPaths(sDisk, eDisk);
+                // Calculate Exact Bitangent Paths
+                // We map ContactDisk to {x,y,radius}
+                const c1 = { x: sDisk.center.x, y: sDisk.center.y, radius: sDisk.radius };
+                const c2 = { x: eDisk.center.x, y: eDisk.center.y, radius: eDisk.radius };
+
+                const rawPaths = calculateBitangentPaths(c1, c2);
+
+                // Identify Obstacles: All disks except Start and End
+                const obstacles = disks
+                    .filter(d => d.id !== startDiskId && d.id !== endDiskId)
+                    .map(d => ({ x: d.center.x, y: d.center.y, radius: d.radius }));
+
+                // Filter paths that collide
+                paths = rawPaths.filter(p => !checkPathCollision(p, obstacles, 2)); // Use small stepSize for precision
             }
+        } else if (startConfig && endConfig) {
+            // Manual Mode: No disk obstacles known unless we pass all disks?
+            // For now, manual mode ignores obstacles (legacy behavior).
+            paths = calculateDubinsPaths(startConfig, endConfig, rho);
         }
-        if (!startConfig || !endConfig) return [];
-        return calculateDubinsPaths(startConfig, endConfig, rho);
-    }, [startConfig, endConfig, rho, startDiskId, endDiskId, disks, calculateTangentPaths]);
+
+        return paths;
+    }, [startConfig, endConfig, rho, startDiskId, endDiskId, disks]);
 
     const togglePathVisibility = useCallback((type: DubinsType) => {
         setVisiblePaths(prev => {

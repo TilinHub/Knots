@@ -7,11 +7,17 @@ export type DubinsType = 'LSL' | 'RSR' | 'LSR' | 'RSL' | 'RLR' | 'LRL';
 export interface DubinsPath {
     type: DubinsType;
     length: number;
-    // Lengths of the three segments (t, p, q) * rho
+    // Lengths of the three segments (t, p, q) * (respective rho)
+    // Actually, for consistency: 
+    // param1: Arc length 1
+    // param2: Straight length (or Arc 2)
+    // param3: Arc length 3
     param1: number;
     param2: number;
     param3: number;
-    rho: number;
+    rho: number; // Legacy or max rho
+    rhoStart?: number; // Specific rho for first segment
+    rhoEnd?: number;   // Specific rho for last segment
     start: Config;
     end: Config;
 }
@@ -186,121 +192,297 @@ export function calculateDubinsPaths(start: Config, end: Config, rho: number): D
 }
 
 /**
- * Helper to sample points along a Dubins path for rendering.
+ * Helper to sample points.
+ * Updated to support unequal radii if params > 0.
  */
 export function sampleDubinsPath(path: DubinsPath, stepSize: number = 2): Point[] {
     const points: Point[] = [];
-    const totalLen = path.length;
+    // Only sample if path length > 0
+    // If length is 0 (point?), return start?
 
-    let currentX = path.start.x;
-    let currentY = path.start.y;
-    let currentTh = path.start.theta;
+    // Use radii if available, else rho
+    const r1 = path.rhoStart ?? path.rho;
+    const r3 = path.rhoEnd ?? path.rho;
 
-    // We actually need to reconstruct the path logic to sample correctly.
-    // Or simpler: just generate the 3 primitives.
-    // 1. Arc/Straight
-    // 2. Straight/Arc
-    // 3. Arc
-
-    // Types mapping to operations: L = +rho, R = -rho, S = straight
-    const signs = {
-        'LSL': [1, 0, 1],
-        'RSR': [-1, 0, -1],
-        'LSR': [1, 0, -1],
-        'RSL': [-1, 0, 1],
-        'RLR': [-1, 1, -1], // Wait, RLR is Arc Arc Arc. Middle is Turn? 
-        'LRL': [1, -1, 1]
-    };
-
-    // Correct mapping: 0 = Straight. 
-    // RLR: Middle is Left turn? No. R(Start) L(Middle) R(End).
-    // So signs: [ -1, 1, -1 ]
-
-    const s = signs[path.type];
-    const lens = [path.param1, path.param2, path.param3];
-
-    points.push({ x: currentX, y: currentY });
-
-    // We sample by integrating steps
-    let dist = 0;
-    while (dist < totalLen) {
-        dist += stepSize;
-        if (dist > totalLen) dist = totalLen;
-
-        // Find which segment we are in
-        let d = dist;
-        let segIdx = 0;
-        let segDist = 0;
-
-        if (d <= lens[0]) {
-            segIdx = 0;
-            segDist = d;
-        } else if (d <= lens[0] + lens[1]) {
-            segIdx = 1;
-            segDist = d - lens[0];
-            // Need to advance start to end of seg 0
-        } else {
-            segIdx = 2;
-            segDist = d - (lens[0] + lens[1]);
-        }
-
-        // We can't jump states easily without accumulated state.
-        // It's better to implement a function `configAt(dist)`
-    }
-
-    // Re-implementation of sample using robust generator
+    // Generator
     const configAt = (l: number): Config => {
         let cx = path.start.x;
         let cy = path.start.y;
         let cth = path.start.theta;
-
         let remaining = l;
+
+        // Segments logic
+        // For standard Dubins, param1,2,3 are arc lengths (rho * t).
+        // For Bitangents, param2 is Straight Length.
+        // And signs depend on type.
+
+        const lens = [path.param1, path.param2, path.param3];
+        const signs = {
+            'LSL': [1, 0, 1],
+            'RSR': [-1, 0, -1],
+            'LSR': [1, 0, -1],
+            'RSL': [-1, 0, 1],
+            'RLR': [-1, 1, -1],
+            'LRL': [1, -1, 1]
+        };
+        const s = signs[path.type] || [0, 0, 0];
 
         for (let i = 0; i < 3; i++) {
             const segLen = lens[i];
-            const type = s[i]; // 1 (Left), -1 (Right), 0 (Straight)
-
+            const type = s[i];
             const advance = Math.min(remaining, segLen);
 
-            if (type === 0) {
-                // Straight
-                cx += advance * Math.cos(cth);
-                cy += advance * Math.sin(cth);
-            } else {
-                // Turn
-                // phi = advance / rho
-                // new x = cx + rho * sin(th + phi) - rho * sin(th) ... check math
-                // Easy way: 
-                // dx = \int cos(th + k*s) ds = ...
-                // If Left (k=1/rho): sin(th + s/rho) - sin(th)
-                // If Right (k=-1/rho): ...
+            if (advance > 0) {
+                if (type === 0) {
+                    // Straight
+                    cx += advance * Math.cos(cth);
+                    cy += advance * Math.sin(cth);
+                } else {
+                    // Turn
+                    // Use r1 (first seg) or r3 (last seg)?
+                    // Standard Dubins uses 1 rho.
+                    // Bitangents (LSL, RSR, etc) skip middle turn (param2 is straight).
+                    // So Turn 1 is Index 0 (uses r1). Turn 2 is Index 2 (uses r3).
+                    const r = (i === 0) ? r1 : r3;
+                    const curv = type / r; // +1/r or -1/r
+                    const dTh = advance * curv;
 
-                const curv = type / path.rho; // +1/rho or -1/rho
-                const dTh = advance * curv;
-
-                // standard circle integration
-                // x(t) = x0 + (sin(th0 + k*t) - sin(th0)) / k
-                // y(t) = y0 - (cos(th0 + k*t) - cos(th0)) / k
-
-                cx += (Math.sin(cth + dTh) - Math.sin(cth)) / curv;
-                cy -= (Math.cos(cth + dTh) - Math.cos(cth)) / curv;
-                cth += dTh;
+                    // x(t) = x0 + (sin(th0 + kt) - sin(th0))/k
+                    // y(t) = y0 - (cos(th0 + kt) - cos(th0))/k
+                    cx += (Math.sin(cth + dTh) - Math.sin(cth)) / curv;
+                    cy -= (Math.cos(cth + dTh) - Math.cos(cth)) / curv;
+                    cth += dTh;
+                }
+                remaining -= advance;
             }
-
-            remaining -= advance;
             if (remaining <= 0.0001) break;
         }
         return { x: cx, y: cy, theta: cth };
     };
 
-    // fill points
+    const totalLen = path.length;
     for (let l = 0; l <= totalLen; l += stepSize) {
         points.push(configAt(l));
     }
     // ensure end point
-    if (Math.abs(path.length % stepSize) > 1e-4) {
-        points.push(configAt(path.length));
+    if (Math.abs(totalLen % stepSize) > 1e-4) {
+        points.push(configAt(totalLen));
     }
 
     return points;
+}
+
+/**
+ * Calculates Exact Tangent Paths (Bitangents) between two circles of arbitrary radii.
+ * Returns standard DubinsPath objects but with specific rhoStart/rhoEnd.
+ * param1, param3 are 0 (start/end on Tangent Points). param2 is the line length.
+ * start/end configs are set to the tangent points and directions.
+ */
+export function calculateBitangentPaths(
+    c1: { x: number, y: number, radius: number },
+    c2: { x: number, y: number, radius: number }
+): DubinsPath[] {
+    const paths: DubinsPath[] = [];
+    const dx = c2.x - c1.x;
+    const dy = c2.y - c1.y;
+    const D = Math.sqrt(dx * dx + dy * dy);
+    const phi = Math.atan2(dy, dx);
+
+    if (D < Math.abs(c1.radius - c2.radius)) {
+        // One inside other - no tangents
+        return [];
+    }
+
+    // 1. Outer Tangents (LSL, RSR)
+    // Always exist if D > |R1 - R2|
+
+    // Angle offset for Outer Tangents
+    // alpha = acos((R1 - R2) / D) if R1 > R2?
+    // General form: sin(alpha) = (R1 - R2) / D ? No, constructing trapezoid.
+    // Hypotenuse D. Leg (R1 - R2).
+    // angle = acos((R1 - R2)/D) is angle between Radius and CenterLine?
+    // Let beta = asin((R1 - R2) / D).
+    // Tangent points are at phi + beta + PI/2 ?
+    // Let's use geometric construction.
+    // Normal to tangent makes angle 'theta' with centerline. 
+    // cos(theta) = (R1 - R2)/D.
+    // theta = acos((R1 - R2)/D).
+
+    // BUT we need to handle signs for R1 < R2.
+    // If R1=R2, theta = acos(0) = PI/2. Normal is perp to centerline. Tangent is parallel. Correct.
+
+    const outerTheta = Math.acos((c1.radius - c2.radius) / D);
+
+    if (!isNaN(outerTheta)) {
+        // LSL: Top tangent. Normal is at phi + outerTheta?
+        // Let's verify.
+        // R1 > R2: outerTheta < PI/2.
+        // Tangent touches C1 at phi + outerTheta.
+        // Touches C2 at phi + outerTheta.
+        // Both normals parallel.
+        // Tangent direction is perp to normal.
+        // Direction = (phi + outerTheta) - PI/2 ??
+        // Standard Dubins LSL: "Left Turn" from C1 to C2 implies traveling on the "Left" side of the connection vector?
+        // Wait, LSL means CCW circle then Straight then CCW circle.
+        // Tangent line goes from Top of C1 to Top of C2.
+        // Tangent direction is roughly phi.
+        // Tangent point Normal is roughly phi + PI/2.
+        // theta is angle of Normal relative to Centreline.
+        // So Normal Angle = phi + outerTheta.
+        // Correct.
+
+        // LSL
+        const nLSL = phi + outerTheta;
+        const tLSL_x1 = c1.x + c1.radius * Math.cos(nLSL);
+        const tLSL_y1 = c1.y + c1.radius * Math.sin(nLSL);
+        const tLSL_x2 = c2.x + c2.radius * Math.cos(nLSL);
+        const tLSL_y2 = c2.y + c2.radius * Math.sin(nLSL);
+
+        const LSL_len = Math.sqrt((tLSL_x2 - tLSL_x1) ** 2 + (tLSL_y2 - tLSL_y1) ** 2);
+        const LSL_dir = nLSL - Math.PI / 2; // Tangent (path) direction
+
+        paths.push({
+            type: 'LSL',
+            length: LSL_len,
+            param1: 0,
+            param2: LSL_len,
+            param3: 0,
+            rho: c1.radius,
+            rhoStart: c1.radius,
+            rhoEnd: c2.radius,
+            start: { x: tLSL_x1, y: tLSL_y1, theta: LSL_dir },
+            end: { x: tLSL_x2, y: tLSL_y2, theta: LSL_dir }
+        });
+
+        // RSR (Bottom tangent)
+        // Normal Angle = phi - outerTheta.
+        const nRSR = phi - outerTheta;
+        const tRSR_x1 = c1.x + c1.radius * Math.cos(nRSR);
+        const tRSR_y1 = c1.y + c1.radius * Math.sin(nRSR);
+        const tRSR_x2 = c2.x + c2.radius * Math.cos(nRSR);
+        const tRSR_y2 = c2.y + c2.radius * Math.sin(nRSR);
+
+        const RSR_len = Math.sqrt((tRSR_x2 - tRSR_x1) ** 2 + (tRSR_y2 - tRSR_y1) ** 2);
+        // Tangent dir: Normal rotated +PI/2 (since R means "Inner" side?)
+        // Wait. R turn = CW.
+        // Tangent is "below". Normal points Out.
+        // Path direction is "Right" (along phi).
+        // Normal is "Down" relative to path.
+        // So Path = Normal + PI/2.
+        const RSR_dir = nRSR + Math.PI / 2;
+
+        paths.push({
+            type: 'RSR',
+            length: RSR_len,
+            param1: 0,
+            param2: RSR_len,
+            param3: 0,
+            rho: c1.radius,
+            rhoStart: c1.radius,
+            rhoEnd: c2.radius,
+            start: { x: tRSR_x1, y: tRSR_y1, theta: RSR_dir },
+            end: { x: tRSR_x2, y: tRSR_y2, theta: RSR_dir }
+        });
+    }
+
+    // 2. Inner Tangents (LSR, RSL)
+    // Exist if D > R1 + R2
+    if (D > c1.radius + c2.radius) {
+        const innerTheta = Math.acos((c1.radius + c2.radius) / D);
+
+        if (!isNaN(innerTheta)) {
+            // LSR: Leaves C1 (Left/Top) -> Enters C2 (Right/Bottom? No, R means CW)
+            // LSR Crosses the centerline.
+            // Tangent point 1 Normal: phi + innerTheta
+            // Tangent point 2 Normal: phi + innerTheta + PI (Opposite side)
+            // Wait.
+            // Construct cross tangent.
+            // Normal 1 angle n1. Normal 2 angle n2.
+            // n1 = phi + innerTheta.
+            // n2 = phi + innerTheta + PI ? 
+            // Or n2 = phi + innerTheta?
+            // If we draw it: line goes from Top of C1 to Bottom of C2.
+            // Normal on C1 is Up-ish. Normal on C2 is Down-ish.
+            // Yes n2 = n1 + PI.
+
+            const nLSR_1 = phi + innerTheta;
+            const nLSR_2 = phi + innerTheta + Math.PI; // or -PI
+
+            const tLSR_x1 = c1.x + c1.radius * Math.cos(nLSR_1);
+            const tLSR_y1 = c1.y + c1.radius * Math.sin(nLSR_1);
+            const tLSR_x2 = c2.x + c2.radius * Math.cos(nLSR_2);
+            const tLSR_y2 = c2.y + c2.radius * Math.sin(nLSR_2);
+
+            const LSR_len = Math.sqrt((tLSR_x2 - tLSR_x1) ** 2 + (tLSR_y2 - tLSR_y1) ** 2);
+            const LSR_dir = nLSR_1 - Math.PI / 2; // Tangent perp to Normal 1
+
+            paths.push({
+                type: 'LSR',
+                length: LSR_len,
+                param1: 0,
+                param2: LSR_len,
+                param3: 0,
+                rho: c1.radius,
+                rhoStart: c1.radius,
+                rhoEnd: c2.radius,
+                start: { x: tLSR_x1, y: tLSR_y1, theta: LSR_dir },
+                end: { x: tLSR_x2, y: tLSR_y2, theta: LSR_dir }
+            });
+
+            // RSL
+            const nRSL_1 = phi - innerTheta;
+            // RSL leaves C1 at Bottom-ish.
+            const nRSL_2 = phi - innerTheta + Math.PI;
+
+            const tRSL_x1 = c1.x + c1.radius * Math.cos(nRSL_1);
+            const tRSL_y1 = c1.y + c1.radius * Math.sin(nRSL_1);
+            const tRSL_x2 = c2.x + c2.radius * Math.cos(nRSL_2);
+            const tRSL_y2 = c2.y + c2.radius * Math.sin(nRSL_2);
+
+            const RSL_len = Math.sqrt((tRSL_x2 - tRSL_x1) ** 2 + (tRSL_y2 - tRSL_y1) ** 2);
+            const RSL_dir = nRSL_1 + Math.PI / 2;
+
+            paths.push({
+                type: 'RSL',
+                length: RSL_len,
+                param1: 0,
+                param2: RSL_len,
+                param3: 0,
+                rho: c1.radius,
+                rhoStart: c1.radius,
+                rhoEnd: c2.radius,
+                start: { x: tRSL_x1, y: tRSL_y1, theta: RSL_dir },
+                end: { x: tRSL_x2, y: tRSL_y2, theta: RSL_dir }
+            });
+        }
+    }
+
+    return paths;
+}
+
+export interface Obstacle {
+    x: number;
+    y: number;
+    radius: number;
+}
+
+/**
+ * Checks if a Dubins path collides with any of the given obstacles.
+ * Uses sampling for robustness.
+ */
+export function checkPathCollision(path: DubinsPath, obstacles: Obstacle[], stepSize: number = 5): boolean {
+    if (obstacles.length === 0) return false;
+
+    // Sample points
+    const points = sampleDubinsPath(path, stepSize);
+
+    for (const p of points) {
+        for (const obs of obstacles) {
+            const distSq = (p.x - obs.x) ** 2 + (p.y - obs.y) ** 2;
+            if (distSq < (obs.radius - 1e-3) ** 2) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
