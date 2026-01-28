@@ -178,6 +178,8 @@ export const EditorSidebar = ({
                                     onClick={() => {
                                         dubinsState.actions.setStartConfig(null);
                                         dubinsState.actions.setEndConfig(null);
+                                        // Also clear disks if logic requires (though setStartConfig(null) in proper logic should ideally clear everything, 
+                                        // or we manually clear disk IDs if we could access them. useDubinsState actions should ideally have a 'reset' method)
                                     }}
                                     variant="secondary"
                                     style={{ padding: '2px 8px', fontSize: '10px' }}
@@ -185,6 +187,31 @@ export const EditorSidebar = ({
                                     Limpiar
                                 </Button>
                             </div>
+
+                            {/* Max Paths Control */}
+                            <div style={{ marginBottom: '10px' }}>
+                                <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                                    Caminos visibles: {dubinsState.state.maxPathsToShow}
+                                </label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="6"
+                                    step="1"
+                                    value={dubinsState.state.maxPathsToShow}
+                                    onChange={(e) => dubinsState.actions.setMaxPathsToShow(parseInt(e.target.value))}
+                                    style={{ width: '100%' }}
+                                />
+                            </div>
+
+                            {/* Disk Selection Status (Optional but helpful) */}
+                            {(dubinsState.state.startDiskId || dubinsState.state.endDiskId) && (
+                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', background: 'var(--bg-tertiary)', padding: '8px', borderRadius: '4px' }}>
+                                    {dubinsState.state.startDiskId && <div>Start: {dubinsState.state.startDiskId}</div>}
+                                    {dubinsState.state.endDiskId && <div>End: {dubinsState.state.endDiskId}</div>}
+                                </div>
+                            )}
+
                         </div>
                     )}
 

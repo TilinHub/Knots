@@ -8,6 +8,8 @@ interface ContactDisksProps {
   onDiskClick?: (disk: ContactDisk) => void;
   selectedDiskId?: string;
   showRegionBoundaries?: boolean;
+  startDiskId?: string | null;
+  endDiskId?: string | null;
 }
 
 /**
@@ -20,6 +22,8 @@ export function ContactDisks({
   onDiskClick,
   selectedDiskId,
   showRegionBoundaries = false,
+  startDiskId,
+  endDiskId,
 }: ContactDisksProps) {
   // Convertir coordenadas cartesianas a SVG
   function toSVG(x: number, y: number): [number, number] {
@@ -56,7 +60,23 @@ export function ContactDisks({
         <g key={`region-${region.id}`}>
           {region.disks.map((disk) => {
             const [cx, cy] = toSVG(disk.center.x, disk.center.y);
+            const isStart = startDiskId === disk.id;
+            const isEnd = endDiskId === disk.id;
             const isSelected = selectedDiskId === disk.id;
+
+            let fillColor = disk.color || 'rgba(100, 150, 255, 0.4)';
+            let strokeColor = isSelected ? 'rgba(255, 100, 100, 0.8)' : 'rgba(50, 100, 200, 0.6)';
+            let strokeW = isSelected ? 3 : 2;
+
+            if (isStart) {
+              fillColor = 'rgba(100, 255, 100, 0.6)';
+              strokeColor = 'rgba(50, 200, 50, 0.9)';
+              strokeW = 4;
+            } else if (isEnd) {
+              fillColor = 'rgba(255, 100, 100, 0.6)';
+              strokeColor = 'rgba(200, 50, 50, 0.9)';
+              strokeW = 4;
+            }
 
             return (
               <g key={disk.id}>
@@ -65,13 +85,9 @@ export function ContactDisks({
                   cx={cx}
                   cy={cy}
                   r={disk.radius}
-                  fill={disk.color || 'rgba(100, 150, 255, 0.4)'}
-                  stroke={
-                    isSelected
-                      ? 'rgba(255, 100, 100, 0.8)'
-                      : 'rgba(50, 100, 200, 0.6)'
-                  }
-                  strokeWidth={isSelected ? 3 : 2}
+                  fill={fillColor}
+                  stroke={strokeColor}
+                  strokeWidth={strokeW}
                   style={{ cursor: 'pointer' }}
                   onClick={() => onDiskClick?.(disk)}
                 />

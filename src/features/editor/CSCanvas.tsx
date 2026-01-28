@@ -38,6 +38,8 @@ interface CSCanvasProps {
   dubinsStart?: Config | null;
   dubinsEnd?: Config | null;
   dubinsVisibleTypes?: Set<string>;
+  startDiskId?: string | null;
+  endDiskId?: string | null;
   onSetDubinsStart?: (c: Config | null) => void;
   onSetDubinsEnd?: (c: Config | null) => void;
 }
@@ -80,6 +82,8 @@ export function CSCanvas({
   dubinsStart = null,
   dubinsEnd = null,
   dubinsVisibleTypes = new Set(),
+  startDiskId,
+  endDiskId,
   onSetDubinsStart,
   onSetDubinsEnd,
 }: CSCanvasProps) {
@@ -263,11 +267,20 @@ export function CSCanvas({
       }
 
       // PLACEMENT LOGIC
-      // Disabled for strict Contact-Based Interaction.
-      // User must click on explicit Contact Points (orange circles).
 
-      // If we clicked background and not a contact loop above (which stops prop),
-      // we do nothing here.
+      // If we clicked a Disk (based on blockId and pointType passed to handleMouseDown)
+      // We should trigger the Selection Logic.
+      if (blockId && pointType === 'disk') {
+        // Verify it's a disk 
+        // (handleMouseDown is called with 'disk' only from the disk render loop)
+        onDiskClick?.(blockId);
+        return;
+      }
+
+      // Disabled for strict Contact-Based Interaction.
+      // User must click on explicit Contact Points (orange circles) OR Disks now.
+
+      // If we clicked background and not a contact loop above, we do nothing here.
       return;
     }
 
@@ -513,21 +526,39 @@ export function CSCanvas({
       {disks.map((disk, index) => {
         const [cx, cy] = toSVG(disk.center.x, disk.center.y);
         const isSelected = disk.id === selectedBlockId;
+        const isStart = startDiskId === disk.id;
+        const isEnd = endDiskId === disk.id;
         const radius = disk.visualRadius;
+
+        let fill = "#89CFF0"; // Baby Blue
+        let stroke = isSelected ? "#2E6BA8" : "#5CA0D3";
+        let strokeWidth = isSelected ? 4 : 2;
+
+        if (dubinsMode) {
+          if (isStart) {
+            fill = "rgba(100, 255, 100, 0.6)";
+            stroke = "rgba(50, 200, 50, 0.9)";
+            strokeWidth = 4;
+          } else if (isEnd) {
+            fill = "rgba(255, 100, 100, 0.6)";
+            stroke = "rgba(200, 50, 50, 0.9)";
+            strokeWidth = 4;
+          }
+        }
 
         return (
           <g key={disk.id}
             onMouseDown={(e) => handleMouseDown(disk.id, 'disk', e)}
-            style={{ cursor: 'grab' }}
+            style={{ cursor: dubinsMode ? 'pointer' : 'grab' }}
           >
             {/* Relleno Azul Penny Graph style */}
             <circle
               cx={cx}
               cy={cy}
               r={radius}
-              fill="#89CFF0" /* Baby Blue */
-              stroke={isSelected ? "#2E6BA8" : "#5CA0D3"}
-              strokeWidth={isSelected ? 4 : 2}
+              fill={fill}
+              stroke={stroke}
+              strokeWidth={strokeWidth}
             />
             {/* Etiqueta (Índice) */}
             <text

@@ -106,16 +106,26 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               rollingDiskId: rollingState.rollingDiskId,
               theta: rollingState.theta,
               showTrail: rollingState.showTrail,
-              onDiskClick: rollingState.selectDisk,
+              onDiskClick: rollingState.selectDisk, // Rolling always takes precedence if active? Or handle priority.
+              // If both Dubins and Rolling are active (unlikely), we should decide priority.
+              // Assuming mutually exclusive or Rolling > Dubins.
             } : {
-              // Standard interaction
-              onDiskClick: undefined
+              // Standard or Dubins interaction
+              // If Dubins is active, we want to capture clicks.
+              onDiskClick: dubinsState.state.isActive ? (diskId) => {
+                const disk = editorState.diskBlocks.find(d => d.id === diskId);
+                if (disk) {
+                  // Map CSDisk to ContactDisk-like shape expected by hook
+                  const contactDisk = { id: disk.id, center: disk.center, radius: disk.visualRadius, color: 'blue', regionId: 'temp' };
+                  const allDisks = editorState.diskBlocks.map(d => ({ id: d.id, center: d.center, radius: d.visualRadius, color: 'blue', regionId: 'temp' }));
+                  dubinsState.actions.handleDiskSelect(contactDisk, allDisks);
+                }
+              } : undefined
             })}
 
             knotMode={knotState.mode === 'knot'}
             knot={knotState.knot}
             onKnotSegmentClick={knotState.actions.applyTwist}
-
 
 
             showContactDisks={editorState.showContactDisks}
@@ -126,6 +136,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             dubinsStart={dubinsState.state.startConfig}
             dubinsEnd={dubinsState.state.endConfig}
             dubinsVisibleTypes={dubinsState.state.visiblePaths}
+            startDiskId={dubinsState.state.startDiskId}
+            endDiskId={dubinsState.state.endDiskId}
             onSetDubinsStart={dubinsState.actions.setStartConfig}
             onSetDubinsEnd={dubinsState.actions.setEndConfig}
           />
