@@ -12,91 +12,106 @@ export interface DubinsState {
     mode: 'idle' | 'placingStart' | 'placingEnd';
 }
 
-export function useDubinsState() {
+export function useDubinsState(disks: ContactDisk[] = []) {
     const [isActive, setIsActive] = useState(false);
     const [startConfig, setStartConfig] = useState<Config | null>(null);
     const [endConfig, setEndConfig] = useState<Config | null>(null);
     const [rho, setRho] = useState<number>(50);
     const [visiblePaths, setVisiblePaths] = useState<Set<DubinsType>>(new Set(['LSL', 'RSR', 'LSR', 'RSL', 'RLR', 'LRL']));
-    const [maxPathsToShow, setMaxPathsToShow] = useState<number>(6); // Default 6 (show all relevant if checked)
+    const [maxPathsToShow, setMaxPathsToShow] = useState<number>(6);
 
     // Disk Selection State
     const [startDiskId, setStartDiskId] = useState<string | null>(null);
     const [endDiskId, setEndDiskId] = useState<string | null>(null);
 
-    // Helper to calculate config from disk centers
-    // Heuristic: Angle is from Start Center -> End Center
-    const updateConfigsFromDisks = useCallback((sDisk: ContactDisk | null, eDisk: ContactDisk | null) => {
-        if (sDisk && eDisk) {
-            const dx = eDisk.center.x - sDisk.center.x;
-            const dy = eDisk.center.y - sDisk.center.y;
-            const theta = Math.atan2(dy, dx); // Angle pointing from start to end
+    // Helper: Calculate Tangent Paths
+    const calculateTangentPaths = useCallback((sDisk: ContactDisk, eDisk: ContactDisk): DubinsPath[] => {
+        const paths: DubinsPath[] = [];
+        const dx = eDisk.center.x - sDisk.center.x;
+        const dy = eDisk.center.y - sDisk.center.y;
+        const D = Math.sqrt(dx * dx + dy * dy);
+        const phi = Math.atan2(dy, dx);
 
-            // Start configuration: Center of Start Disk, pointing to End Disk
-            setStartConfig({
-                x: sDisk.center.x,
-                y: sDisk.center.y,
-                theta: theta
-            });
+        // Use max radius to ensure path clears both disks (no cutting inside)
+        const R = Math.max(sDisk.radius, eDisk.radius);
 
-            // End configuration: Center of End Disk, pointing SAME direction (Parallel parking style)
-            // Or maybe pointing into the disk? Let's use same direction for now as 'transport' logic
-            setEndConfig({
-                x: eDisk.center.x,
-                y: eDisk.center.y,
-                theta: theta
-            });
+        // 1. LSL (Top Tangent)
+        // Tangent points should be at phi - pi/2 (Top relative to Right heading)
+        // Solver L (+Theta/CW) curves "Down/Right". 
+        // At Top Point, Heading Right -> Tangent. Curve matches Disk curvature approx.
+        const pLSL_start = {
+            x: sDisk.center.x + sDisk.radius * Math.cos(phi - Math.PI / 2),
+            y: sDisk.center.y + sDisk.radius * Math.sin(phi - Math.PI / 2),
+            theta: phi
+        };
+        const pLSL_end = {
+            x: eDisk.center.x + eDisk.radius * Math.cos(phi - Math.PI / 2),
+            y: eDisk.center.y + eDisk.radius * Math.sin(phi - Math.PI / 2),
+            theta: phi
+        };
+        const resLSL = calculateDubinsPaths(pLSL_start, pLSL_end, R).find(p => p.type === 'LSL');
+        if (resLSL) paths.push(resLSL);
+
+        // 2. RSR (Bottom Tangent)
+        const pRSR_start = {
+            x: sDisk.center.x + sDisk.radius * Math.cos(phi + Math.PI / 2),
+            y: sDisk.center.y + sDisk.radius * Math.sin(phi + Math.PI / 2),
+            theta: phi
+        };
+        const pRSR_end = {
+            x: eDisk.center.x + eDisk.radius * Math.cos(phi + Math.PI / 2),
+            y: eDisk.center.y + eDisk.radius * Math.sin(phi + Math.PI / 2),
+            theta: phi
+        };
+        const resRSR = calculateDubinsPaths(pRSR_start, pRSR_end, R).find(p => p.type === 'RSR');
+        if (resRSR) paths.push(resRSR);
+
+        // 3. Inner Tangents (LSR, RSL)
+        const beta = Math.asin((sDisk.radius + eDisk.radius) / D); // Approximate for crossing
+        // Actually, internal tangents angle delta = asin((R1+R2)/D).
+        // If sDisk and eDisk have diff radii, we should use that. 
+        // But for visual robustness if disks separated:
+        if (!isNaN(beta)) {
+            // LSR
+            const thLSR = phi + beta;
+            // Start (L): Top-Left relative to new heading? No, Tangent is rotated 'beta' from phi.
+            // Point on disk is perpendicular to tangent.
+            // L Turn -> Normal is -90 deg.
+            const pLSR_start = {
+                x: sDisk.center.x + sDisk.radius * Math.cos(thLSR - Math.PI / 2),
+                y: sDisk.center.y + sDisk.radius * Math.sin(thLSR - Math.PI / 2),
+                theta: thLSR
+            };
+            const pLSR_end = {
+                x: eDisk.center.x + eDisk.radius * Math.cos(thLSR + Math.PI / 2), // R Turn -> Normal +90
+                y: eDisk.center.y + eDisk.radius * Math.sin(thLSR + Math.PI / 2),
+                theta: thLSR
+            };
+            const resLSR = calculateDubinsPaths(pLSR_start, pLSR_end, R).find(p => p.type === 'LSR');
+            if (resLSR) paths.push(resLSR);
+
+            // RSL
+            const thRSL = phi - beta;
+            const pRSL_start = {
+                x: sDisk.center.x + sDisk.radius * Math.cos(thRSL + Math.PI / 2),
+                y: sDisk.center.y + sDisk.radius * Math.sin(thRSL + Math.PI / 2),
+                theta: thRSL
+            };
+            const pRSL_end = {
+                x: eDisk.center.x + eDisk.radius * Math.cos(thRSL - Math.PI / 2),
+                y: eDisk.center.y + eDisk.radius * Math.sin(thRSL - Math.PI / 2),
+                theta: thRSL
+            };
+            const resRSL = calculateDubinsPaths(pRSL_start, pRSL_end, R).find(p => p.type === 'RSL');
+            if (resRSL) paths.push(resRSL);
         }
+
+        return paths;
     }, []);
 
-    const selectDisk = useCallback((disk: ContactDisk) => {
-        if (!startDiskId) {
-            setStartDiskId(disk.id);
-            // If we have an end disk selected previously (edge case?), or just set start
-            // If end disk matches start, clear end?
-            if (endDiskId === disk.id) setEndDiskId(null);
-        } else {
-            // Start is already set, so this is the end disk
-            // UNLESS we clicked the start disk again? Let's allow re-selecting end easily.
-            if (startDiskId === disk.id) {
-                // Deselect start? or just ignore? Let's deselect to allow changing start.
-                setStartDiskId(null);
-                setStartConfig(null);
-                setEndConfig(null);
-                return;
-            }
-            setEndDiskId(disk.id);
-
-            // Trigger calculation logic immediately if we have the disk objects
-            // But we only have IDs here + the disk passed in.
-            // We need access to the OTHER disk object to compute configs. 
-            // We can't do it purely inside this reducer-like function without the disk list or passing both disks.
-            // A pattern adjustment: selectDisk takes (disk, allDisks) OR we just store IDs and compute configs in a useEffect?
-            // Storing IDs + useEffect is safer for consistency but `allDisks` might be expensive to traverse if huge? No, it's small.
-            // BETTER: pass the other disk if available? No, UI calls this.
-            // Let's rely on the consumed component to pass the "current" disks or ...
-            // ACTUALLY: The UI (CSCanvas) knows all disks. It could pass `selectDisk(disk, allDisks)`.
-            // OR simpler: selectDisk just helps Toggle IDs. The configs are updated by an Effect in this hook IF we had access to disks.
-            // BUT we don't have disks in this hook.
-            // So: We will store IDs here. And we need a specialized function `updateConfigs(startDisk, endDisk)` exposed?
-            // OR `selectDisk` logic handles just ID state, and we expose `setConfigsFromDisks` to be called by the `useEffect` in the component?
-            // "Declarative" approach: 
-            // The hook shouldn't know about "ContactDisk" objects details if possible, but it imports Config.
-            // Let's stick to: we return `startDiskId`, `endDiskId` and specific setters.
-            // The UI (EditorPage) will observe these IDs and call `setStartConfig`/`setEndConfig` accordingly?
-            // OR we move the disk list INTO this hook? No, state separation is good.
-
-            // For now, let's keep it simple: Start/End ID state is here.
-            // We return a helper `notifyDiskSelected(disk: ContactDisk, allDisks: ContactDisk[])`.
-        }
-    }, [startDiskId, endDiskId]);
-
-    // Alternative: purely manual Config setting is still allowed if IDs are null.
-    // Toggling mode resets everything?
     const toggleMode = useCallback(() => {
         setIsActive(prev => {
             if (prev) {
-                // Turning OFF
                 setStartDiskId(null);
                 setEndDiskId(null);
                 setStartConfig(null);
@@ -107,49 +122,31 @@ export function useDubinsState() {
         });
     }, []);
 
-    // Logic to select disk with data
-    const handleDiskSelect = useCallback((disk: ContactDisk, allDisks: ContactDisk[]) => {
-        // Logic moved here to be self-contained if we pass the array
-        // But wait, if we are just clicking ONE disk, we don't want to pass the huge array every click if unnecessary.
-        // Let's optimize:
-        // The state is: startDiskId, endDiskId.
-
-        let newStart = startDiskId;
-        let newEnd = endDiskId;
-
+    const handleDiskSelect = useCallback((disk: ContactDisk) => {
         if (!startDiskId) {
             setStartDiskId(disk.id);
-            newStart = disk.id;
-            // If we just set start, we can't compute path yet unless end is already there (unlikely if we clear on close)
+            if (endDiskId === disk.id) setEndDiskId(null);
         } else if (startDiskId === disk.id) {
-            // Deselect start
             setStartDiskId(null);
             setStartConfig(null);
             setEndConfig(null);
             setEndDiskId(null);
-            return;
         } else {
             setEndDiskId(disk.id);
-            newEnd = disk.id;
         }
-
-        // Attempt to compute configs if both exist
-        if (newStart && newEnd) {
-            const sDisk = newStart === disk.id ? disk : allDisks.find(d => d.id === newStart);
-            const eDisk = newEnd === disk.id ? disk : allDisks.find(d => d.id === newEnd);
-
-            if (sDisk && eDisk) {
-                updateConfigsFromDisks(sDisk, eDisk);
-            }
-        }
-
-    }, [startDiskId, endDiskId, updateConfigsFromDisks]);
-
+    }, [startDiskId, endDiskId]);
 
     const computedPaths = useMemo(() => {
+        if (startDiskId && endDiskId) {
+            const sDisk = disks.find(d => d.id === startDiskId);
+            const eDisk = disks.find(d => d.id === endDiskId);
+            if (sDisk && eDisk) {
+                return calculateTangentPaths(sDisk, eDisk);
+            }
+        }
         if (!startConfig || !endConfig) return [];
         return calculateDubinsPaths(startConfig, endConfig, rho);
-    }, [startConfig, endConfig, rho]);
+    }, [startConfig, endConfig, rho, startDiskId, endDiskId, disks, calculateTangentPaths]);
 
     const togglePathVisibility = useCallback((type: DubinsType) => {
         setVisiblePaths(prev => {
