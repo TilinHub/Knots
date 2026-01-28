@@ -29,7 +29,15 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
   const knotState = useKnotState();
-  const dubinsState = useDubinsState(); // NEW
+
+  // Map CSDisks to ContactDisks for Dubins logic
+  const contactDisks = useMemo(() =>
+    editorState.diskBlocks.map(d => ({
+      id: d.id, center: d.center, radius: d.visualRadius, color: 'blue', regionId: 'temp'
+    })),
+    [editorState.diskBlocks]);
+
+  const dubinsState = useDubinsState(contactDisks); // Pass disks
 
   const hullMetrics = useMemo(() => {
     // Only calculate if we are in Penny Graph mode (disks only, no segments)
@@ -113,12 +121,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               // Standard or Dubins interaction
               // If Dubins is active, we want to capture clicks.
               onDiskClick: dubinsState.state.isActive ? (diskId) => {
-                const disk = editorState.diskBlocks.find(d => d.id === diskId);
+                const disk = contactDisks.find(d => d.id === diskId);
                 if (disk) {
-                  // Map CSDisk to ContactDisk-like shape expected by hook
-                  const contactDisk = { id: disk.id, center: disk.center, radius: disk.visualRadius, color: 'blue', regionId: 'temp' };
-                  const allDisks = editorState.diskBlocks.map(d => ({ id: d.id, center: d.center, radius: d.visualRadius, color: 'blue', regionId: 'temp' }));
-                  dubinsState.actions.handleDiskSelect(contactDisk, allDisks);
+                  dubinsState.actions.handleDiskSelect(disk, contactDisks);
                 }
               } : undefined
             })}

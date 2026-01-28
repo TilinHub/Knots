@@ -18,7 +18,7 @@ const PathColors: Record<string, string> = {
 };
 
 export function DubinsRenderer({ paths, startConfig, endConfig, visibleTypes }: DubinsRendererProps) {
-    if (!startConfig && !endConfig) return null;
+    if ((!startConfig && !endConfig) && paths.length === 0) return null; // Allow render if we have paths but no global start/end
 
     return (
         <g className="dubins-renderer">
