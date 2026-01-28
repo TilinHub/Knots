@@ -4,7 +4,7 @@
  */
 
 import { SmoothCSEnvelope } from '../core/geometry/CSEnvelope';
-import { Point2D } from '../core/types/cs';
+import type { Point2D } from '../core/types/cs';
 
 export interface EnvelopeRenderOptions {
   fillColor?: string;
@@ -74,7 +74,7 @@ export class EnvelopeRenderer {
     if (opts.dashPattern && opts.dashPattern.length > 0) {
       this.ctx.setLineDash(opts.dashPattern);
     }
-    
+
     this.ctx.strokeStyle = this.getRGBAColor(opts.strokeColor!, opts.strokeOpacity!);
     this.ctx.lineWidth = opts.strokeWidth!;
     this.ctx.lineJoin = 'round'; // Esquinas suaves
@@ -245,7 +245,7 @@ export class EnvelopeRenderer {
     // Agrega destellos
     this.ctx.save();
     const sparkleInterval = Math.floor(points.length / sparkleCount);
-    
+
     for (let i = 0; i < points.length; i += sparkleInterval) {
       const point = points[i];
       const phase = (time * 0.005 + i * 0.1) % (2 * Math.PI);

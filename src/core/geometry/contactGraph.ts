@@ -1,5 +1,5 @@
-import { type ContactDisk } from '../types/contactGraph';
-import { type Point2D } from '../types/cs';
+import type { ContactDisk } from '../types/contactGraph';
+import type { Point2D } from '../types/cs';
 
 export type TangentType = 'LSL' | 'RSR' | 'LSR' | 'RSL';
 

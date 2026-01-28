@@ -118,12 +118,11 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               // If both Dubins and Rolling are active (unlikely), we should decide priority.
               // Assuming mutually exclusive or Rolling > Dubins.
             } : {
-              // Standard or Dubins interaction
               // If Dubins is active, we want to capture clicks.
               onDiskClick: dubinsState.state.isActive ? (diskId) => {
                 const disk = contactDisks.find(d => d.id === diskId);
                 if (disk) {
-                  dubinsState.actions.handleDiskSelect(disk, contactDisks);
+                  dubinsState.actions.handleDiskSelect(disk);
                 }
               } : undefined
             })}

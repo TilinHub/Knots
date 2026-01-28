@@ -1,12 +1,7 @@
-/**
- * useInteractiveEnvelope - Hook para envolvente CS interactiva
- * Sincroniza automáticamente la envolvente con los discos al moverlos
- */
-
 import { useEffect, useRef, useMemo, useCallback } from 'react';
-import { SmoothCSEnvelope, Circle } from '../../../core/geometry/CSEnvelope';
-import { EnvelopeRenderer, EnvelopeRenderOptions } from '../../../renderer/EnvelopeRenderer';
-import { Point2D } from '../../../core/types/cs';
+import { SmoothCSEnvelope, type Circle } from '../../../core/geometry/CSEnvelope';
+import { EnvelopeRenderer, type EnvelopeRenderOptions } from '../../../renderer/EnvelopeRenderer';
+import type { Point2D } from '../../../core/types/cs';
 
 interface UseInteractiveEnvelopeOptions {
   smoothness?: number;
@@ -49,7 +44,7 @@ export function useInteractiveEnvelope(
 
   const envelopeRef = useRef<SmoothCSEnvelope | null>(null);
   const rendererRef = useRef<EnvelopeRenderer | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCirclesRef = useRef<Circle[]>(initialCircles);
 
   // Inicializa envolvente

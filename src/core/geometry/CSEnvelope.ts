@@ -4,7 +4,7 @@
  * con interpolación mejorada y transiciones suaves
  */
 
-import { Point2D } from '../types/cs';
+import type { Point2D } from '../types/cs';
 
 export interface Circle {
   center: Point2D;
@@ -245,7 +245,7 @@ export class SmoothCSEnvelope {
   ): Point2D[] {
     const dist = this.distance(c1.center, c2.center);
     const radiusSum = c1.radius + c2.radius;
-    
+
     // Más puntos para transiciones más largas
     const transitionLength = this.distance(tangentStart, tangentEnd);
     const steps = Math.max(10, Math.floor(transitionLength / 5));
@@ -328,11 +328,11 @@ export class SmoothCSEnvelope {
    */
   private linearInterpolation(points: Point2D[], steps: number): Point2D[] {
     const result: Point2D[] = [];
-    
+
     for (let i = 0; i < points.length - 1; i++) {
       const p1 = points[i];
       const p2 = points[i + 1];
-      
+
       for (let j = 0; j < steps; j++) {
         const t = j / steps;
         result.push({
@@ -341,7 +341,7 @@ export class SmoothCSEnvelope {
         });
       }
     }
-    
+
     result.push(points[points.length - 1]);
     return result;
   }
@@ -355,7 +355,7 @@ export class SmoothCSEnvelope {
     endAngle: number
   ): Point2D[] {
     const points: Point2D[] = [];
-    
+
     // Normaliza ángulos
     let angle1 = this.normalizeAngle(startAngle);
     let angle2 = this.normalizeAngle(endAngle);
@@ -365,7 +365,7 @@ export class SmoothCSEnvelope {
     }
 
     const angleSpan = angle2 - angle1;
-    
+
     // Más puntos para arcos más grandes
     const steps = this.adaptiveSmoothing
       ? Math.max(15, Math.floor((angleSpan / (2 * Math.PI)) * 40))
@@ -432,11 +432,11 @@ export class SmoothCSEnvelope {
    */
   updateCircles(circles: Circle[]): void {
     // Detecta si hubo cambios significativos
-    const hasChanged = 
+    const hasChanged =
       circles.length !== this.circles.length ||
       circles.some((c, i) => {
         const old = this.circles[i];
-        return !old || 
+        return !old ||
           this.distance(c.center, old.center) > 0.5 ||
           Math.abs(c.radius - old.radius) > 0.1;
       });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { type BoundedCurvatureGraph } from '@/core/geometry/contactGraph';
+import type { BoundedCurvatureGraph } from '@/core/geometry/contactGraph';
 
 interface ContactGraphRendererProps {
     graph: BoundedCurvatureGraph;

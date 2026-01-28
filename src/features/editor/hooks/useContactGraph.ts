@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { type ContactDisk } from '../../../core/types/contactGraph';
+import type { ContactDisk } from '../../../core/types/contactGraph';
 import { buildBoundedCurvatureGraph, type BoundedCurvatureGraph } from '../../../core/geometry/contactGraph';
 
 export function useContactGraph(disks: ContactDisk[]) {
