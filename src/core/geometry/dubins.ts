@@ -197,8 +197,7 @@ export function calculateDubinsPaths(start: Config, end: Config, rho: number): D
  */
 export function sampleDubinsPath(path: DubinsPath, stepSize: number = 2): Point[] {
     const points: Point[] = [];
-    // Only sample if path length > 0
-    // If length is 0 (point?), return start?
+    const totalLen = path.length;
 
     // Use radii if available, else rho
     const r1 = path.rhoStart ?? path.rho;
@@ -251,7 +250,7 @@ export function sampleDubinsPath(path: DubinsPath, stepSize: number = 2): Point[
                     // y(t) = y0 - (cos(th0 + kt) - cos(th0))/k
                     cx += (Math.sin(cth + dTh) - Math.sin(cth)) / curv;
                     cy -= (Math.cos(cth + dTh) - Math.cos(cth)) / curv;
-                    cth += dTh;
+                    cth += dTh; // Update theta
                 }
                 remaining -= advance;
             }
@@ -260,13 +259,13 @@ export function sampleDubinsPath(path: DubinsPath, stepSize: number = 2): Point[
         return { x: cx, y: cy, theta: cth };
     };
 
-    const totalLen = path.length;
+
     for (let l = 0; l <= totalLen; l += stepSize) {
         points.push(configAt(l));
     }
     // ensure end point
-    if (Math.abs(totalLen % stepSize) > 1e-4) {
-        points.push(configAt(totalLen));
+    if (Math.abs(path.length % stepSize) > 1e-4) {
+        points.push(configAt(path.length));
     }
 
     return points;
@@ -274,9 +273,8 @@ export function sampleDubinsPath(path: DubinsPath, stepSize: number = 2): Point[
 
 /**
  * Calculates Exact Tangent Paths (Bitangents) between two circles of arbitrary radii.
- * Returns standard DubinsPath objects but with specific rhoStart/rhoEnd.
- * param1, param3 are 0 (start/end on Tangent Points). param2 is the line length.
- * start/end configs are set to the tangent points and directions.
+ * Implements logic from Gieseanw tutorial.
+ * Returns standard DubinsPath objects.
  */
 export function calculateBitangentPaths(
     c1: { x: number, y: number, radius: number },
@@ -288,133 +286,90 @@ export function calculateBitangentPaths(
     const D = Math.sqrt(dx * dx + dy * dy);
     const phi = Math.atan2(dy, dx);
 
-    if (D < Math.abs(c1.radius - c2.radius)) {
-        // One inside other - no tangents
-        return [];
-    }
+    // Safety checks
+    if (D < 1e-9) return [];
 
     // 1. Outer Tangents (LSL, RSR)
-    // Always exist if D > |R1 - R2|
+    // Condition: D > |r1 - r2|
+    if (D >= Math.abs(c1.radius - c2.radius)) {
+        // Angle gamma for normal offset
+        const gamma = Math.acos((c1.radius - c2.radius) / D);
 
-    // Angle offset for Outer Tangents
-    // alpha = acos((R1 - R2) / D) if R1 > R2?
-    // General form: sin(alpha) = (R1 - R2) / D ? No, constructing trapezoid.
-    // Hypotenuse D. Leg (R1 - R2).
-    // angle = acos((R1 - R2)/D) is angle between Radius and CenterLine?
-    // Let beta = asin((R1 - R2) / D).
-    // Tangent points are at phi + beta + PI/2 ?
-    // Let's use geometric construction.
-    // Normal to tangent makes angle 'theta' with centerline. 
-    // cos(theta) = (R1 - R2)/D.
-    // theta = acos((R1 - R2)/D).
+        if (!isNaN(gamma)) {
+            // LSL: Top Tangent
+            const alpha1_LSL = phi + gamma;
+            const alpha2_LSL = phi + gamma;
 
-    // BUT we need to handle signs for R1 < R2.
-    // If R1=R2, theta = acos(0) = PI/2. Normal is perp to centerline. Tangent is parallel. Correct.
+            const tLSL_x1 = c1.x + c1.radius * Math.cos(alpha1_LSL);
+            const tLSL_y1 = c1.y + c1.radius * Math.sin(alpha1_LSL);
+            const tLSL_x2 = c2.x + c2.radius * Math.cos(alpha2_LSL);
+            const tLSL_y2 = c2.y + c2.radius * Math.sin(alpha2_LSL);
 
-    const outerTheta = Math.acos((c1.radius - c2.radius) / D);
+            // Path Direction = Normal Direction - PI/2 (Left Turn Tangent)
+            const LSL_dir = alpha1_LSL - Math.PI / 2;
+            const LSL_len = Math.sqrt((tLSL_x2 - tLSL_x1) ** 2 + (tLSL_y2 - tLSL_y1) ** 2);
 
-    if (!isNaN(outerTheta)) {
-        // LSL: Top tangent. Normal is at phi + outerTheta?
-        // Let's verify.
-        // R1 > R2: outerTheta < PI/2.
-        // Tangent touches C1 at phi + outerTheta.
-        // Touches C2 at phi + outerTheta.
-        // Both normals parallel.
-        // Tangent direction is perp to normal.
-        // Direction = (phi + outerTheta) - PI/2 ??
-        // Standard Dubins LSL: "Left Turn" from C1 to C2 implies traveling on the "Left" side of the connection vector?
-        // Wait, LSL means CCW circle then Straight then CCW circle.
-        // Tangent line goes from Top of C1 to Top of C2.
-        // Tangent direction is roughly phi.
-        // Tangent point Normal is roughly phi + PI/2.
-        // theta is angle of Normal relative to Centreline.
-        // So Normal Angle = phi + outerTheta.
-        // Correct.
+            paths.push({
+                type: 'LSL',
+                length: LSL_len,
+                param1: 0,
+                param2: LSL_len,
+                param3: 0,
+                rho: c1.radius,
+                rhoStart: c1.radius,
+                rhoEnd: c2.radius,
+                start: { x: tLSL_x1, y: tLSL_y1, theta: LSL_dir },
+                end: { x: tLSL_x2, y: tLSL_y2, theta: LSL_dir }
+            });
 
-        // LSL
-        const nLSL = phi + outerTheta;
-        const tLSL_x1 = c1.x + c1.radius * Math.cos(nLSL);
-        const tLSL_y1 = c1.y + c1.radius * Math.sin(nLSL);
-        const tLSL_x2 = c2.x + c2.radius * Math.cos(nLSL);
-        const tLSL_y2 = c2.y + c2.radius * Math.sin(nLSL);
+            // RSR: Bottom Tangent
+            const alpha1_RSR = phi - gamma;
+            const alpha2_RSR = phi - gamma;
 
-        const LSL_len = Math.sqrt((tLSL_x2 - tLSL_x1) ** 2 + (tLSL_y2 - tLSL_y1) ** 2);
-        const LSL_dir = nLSL - Math.PI / 2; // Tangent (path) direction
+            const tRSR_x1 = c1.x + c1.radius * Math.cos(alpha1_RSR);
+            const tRSR_y1 = c1.y + c1.radius * Math.sin(alpha1_RSR);
+            const tRSR_x2 = c2.x + c2.radius * Math.cos(alpha2_RSR);
+            const tRSR_y2 = c2.y + c2.radius * Math.sin(alpha2_RSR);
 
-        paths.push({
-            type: 'LSL',
-            length: LSL_len,
-            param1: 0,
-            param2: LSL_len,
-            param3: 0,
-            rho: c1.radius,
-            rhoStart: c1.radius,
-            rhoEnd: c2.radius,
-            start: { x: tLSL_x1, y: tLSL_y1, theta: LSL_dir },
-            end: { x: tLSL_x2, y: tLSL_y2, theta: LSL_dir }
-        });
+            // Path Direction = Normal Direction + PI/2 (Right Turn Tangent)
+            const RSR_dir = alpha1_RSR + Math.PI / 2;
+            const RSR_len = Math.sqrt((tRSR_x2 - tRSR_x1) ** 2 + (tRSR_y2 - tRSR_y1) ** 2);
 
-        // RSR (Bottom tangent)
-        // Normal Angle = phi - outerTheta.
-        const nRSR = phi - outerTheta;
-        const tRSR_x1 = c1.x + c1.radius * Math.cos(nRSR);
-        const tRSR_y1 = c1.y + c1.radius * Math.sin(nRSR);
-        const tRSR_x2 = c2.x + c2.radius * Math.cos(nRSR);
-        const tRSR_y2 = c2.y + c2.radius * Math.sin(nRSR);
-
-        const RSR_len = Math.sqrt((tRSR_x2 - tRSR_x1) ** 2 + (tRSR_y2 - tRSR_y1) ** 2);
-        // Tangent dir: Normal rotated +PI/2 (since R means "Inner" side?)
-        // Wait. R turn = CW.
-        // Tangent is "below". Normal points Out.
-        // Path direction is "Right" (along phi).
-        // Normal is "Down" relative to path.
-        // So Path = Normal + PI/2.
-        const RSR_dir = nRSR + Math.PI / 2;
-
-        paths.push({
-            type: 'RSR',
-            length: RSR_len,
-            param1: 0,
-            param2: RSR_len,
-            param3: 0,
-            rho: c1.radius,
-            rhoStart: c1.radius,
-            rhoEnd: c2.radius,
-            start: { x: tRSR_x1, y: tRSR_y1, theta: RSR_dir },
-            end: { x: tRSR_x2, y: tRSR_y2, theta: RSR_dir }
-        });
+            paths.push({
+                type: 'RSR',
+                length: RSR_len,
+                param1: 0,
+                param2: RSR_len,
+                param3: 0,
+                rho: c1.radius,
+                rhoStart: c1.radius,
+                rhoEnd: c2.radius,
+                start: { x: tRSR_x1, y: tRSR_y1, theta: RSR_dir },
+                end: { x: tRSR_x2, y: tRSR_y2, theta: RSR_dir }
+            });
+        }
     }
 
     // 2. Inner Tangents (LSR, RSL)
-    // Exist if D > R1 + R2
-    if (D > c1.radius + c2.radius) {
-        const innerTheta = Math.acos((c1.radius + c2.radius) / D);
+    // Condition: D > r1 + r2
+    if (D >= c1.radius + c2.radius) {
+        const beta = Math.acos((c1.radius + c2.radius) / D);
 
-        if (!isNaN(innerTheta)) {
-            // LSR: Leaves C1 (Left/Top) -> Enters C2 (Right/Bottom? No, R means CW)
-            // LSR Crosses the centerline.
-            // Tangent point 1 Normal: phi + innerTheta
-            // Tangent point 2 Normal: phi + innerTheta + PI (Opposite side)
-            // Wait.
-            // Construct cross tangent.
-            // Normal 1 angle n1. Normal 2 angle n2.
-            // n1 = phi + innerTheta.
-            // n2 = phi + innerTheta + PI ? 
-            // Or n2 = phi + innerTheta?
-            // If we draw it: line goes from Top of C1 to Bottom of C2.
-            // Normal on C1 is Up-ish. Normal on C2 is Down-ish.
-            // Yes n2 = n1 + PI.
+        if (!isNaN(beta)) {
+            // LSR (Left Start, Right End)
+            // Normal 1: phi + beta
+            // Normal 2: phi + beta + PI
+            const alpha1_LSR = phi + beta;
+            const alpha2_LSR = phi + beta + Math.PI;
 
-            const nLSR_1 = phi + innerTheta;
-            const nLSR_2 = phi + innerTheta + Math.PI; // or -PI
+            const tLSR_x1 = c1.x + c1.radius * Math.cos(alpha1_LSR);
+            const tLSR_y1 = c1.y + c1.radius * Math.sin(alpha1_LSR);
+            const tLSR_x2 = c2.x + c2.radius * Math.cos(alpha2_LSR);
+            const tLSR_y2 = c2.y + c2.radius * Math.sin(alpha2_LSR);
 
-            const tLSR_x1 = c1.x + c1.radius * Math.cos(nLSR_1);
-            const tLSR_y1 = c1.y + c1.radius * Math.sin(nLSR_1);
-            const tLSR_x2 = c2.x + c2.radius * Math.cos(nLSR_2);
-            const tLSR_y2 = c2.y + c2.radius * Math.sin(nLSR_2);
-
+            // Dir 1 (L): Normal - PI/2
+            const LSR_dir = alpha1_LSR - Math.PI / 2;
             const LSR_len = Math.sqrt((tLSR_x2 - tLSR_x1) ** 2 + (tLSR_y2 - tLSR_y1) ** 2);
-            const LSR_dir = nLSR_1 - Math.PI / 2; // Tangent perp to Normal 1
 
             paths.push({
                 type: 'LSR',
@@ -429,18 +384,20 @@ export function calculateBitangentPaths(
                 end: { x: tLSR_x2, y: tLSR_y2, theta: LSR_dir }
             });
 
-            // RSL
-            const nRSL_1 = phi - innerTheta;
-            // RSL leaves C1 at Bottom-ish.
-            const nRSL_2 = phi - innerTheta + Math.PI;
+            // RSL (Right Start, Left End)
+            // Normal 1: phi - beta
+            // Normal 2: phi - beta + PI
+            const alpha1_RSL = phi - beta;
+            const alpha2_RSL = phi - beta + Math.PI;
 
-            const tRSL_x1 = c1.x + c1.radius * Math.cos(nRSL_1);
-            const tRSL_y1 = c1.y + c1.radius * Math.sin(nRSL_1);
-            const tRSL_x2 = c2.x + c2.radius * Math.cos(nRSL_2);
-            const tRSL_y2 = c2.y + c2.radius * Math.sin(nRSL_2);
+            const tRSL_x1 = c1.x + c1.radius * Math.cos(alpha1_RSL);
+            const tRSL_y1 = c1.y + c1.radius * Math.sin(alpha1_RSL);
+            const tRSL_x2 = c2.x + c2.radius * Math.cos(alpha2_RSL);
+            const tRSL_y2 = c2.y + c2.radius * Math.sin(alpha2_RSL);
 
+            // Dir 1 (R): Normal + PI/2
+            const RSL_dir = alpha1_RSL + Math.PI / 2;
             const RSL_len = Math.sqrt((tRSL_x2 - tRSL_x1) ** 2 + (tRSL_y2 - tRSL_y1) ** 2);
-            const RSL_dir = nRSL_1 + Math.PI / 2;
 
             paths.push({
                 type: 'RSL',
@@ -458,6 +415,193 @@ export function calculateBitangentPaths(
     }
 
     return paths;
+}
+
+// Helper to normalize angle
+const normalize = (angle: number) => angle - 2 * Math.PI * Math.floor(angle / (2 * Math.PI));
+
+/**
+ * Calculates the Single Valid Fixed-Center path for the given configurations.
+ * Respects the Heading (Theta) of start and end to determine if we are traveling "Left" (CCW) or "Right" (CW).
+ */
+/**
+ * Generalized Dubins Solver for Unequal Radii.
+ * Calculates path between two specific configurations (x,y,theta),
+ * respecting specific turning radii r1 and r2.
+ * 
+ * Strategy:
+ * 1. Compute all 4 standard bitangent candidates (LSL, RSR, LSR, RSL) geometrically between the two fixed circles.
+ * 2. For each candidate, check if the "Departure Chirality" matches the Start Config Heading.
+ *    - Start Heading "Left" (CCW) -> Path must start with L.
+ *    - Start Heading "Right" (CW) -> Path must start with R.
+ * 3. Check if "Arrival Chirality" matches End Config Heading.
+ *    - End Heading "Left" (CCW) -> Path must end with L.
+ * 1. Compute all 4 standard bitangent candidates (LSL, RSR, LSR, RSL) geometrically.
+ * 2. Filter candidates based on Heading Alignment.
+ *    - The path's start tangent must align with start.theta.
+ *    - The path's end tangent must align with end.theta.
+ * 3. Return valid paths.
+ */
+export function calculateGeneralizedDubinsPaths(
+    start: Config,
+    end: Config,
+    c1: { x: number, y: number, radius: number },
+    c2: { x: number, y: number, radius: number }
+): DubinsPath[] {
+    const paths: DubinsPath[] = [];
+    const dx = c2.x - c1.x;
+    const dy = c2.y - c1.y;
+    const D = Math.sqrt(dx * dx + dy * dy);
+    const phi = Math.atan2(dy, dx);
+
+    // Safety
+    if (D < 1e-9) return [];
+
+    // Helper: Point on circle
+    const pOnC = (c: { x: number, y: number, radius: number }, angle: number) => ({
+        x: c.x + c.radius * Math.cos(angle),
+        y: c.y + c.radius * Math.sin(angle)
+    });
+
+    // Helper: Check alignment
+    // Returns true if the path direction matches the config heading
+    const isAligned = (pathDir: number, configTheta: number) => {
+        const dx = Math.cos(pathDir);
+        const dy = Math.sin(pathDir);
+        const ux = Math.cos(configTheta);
+        const uy = Math.sin(configTheta);
+        // Dot product > 0.5 implies within 60 degrees. 
+        // Generous tolerance for manual rotation.
+        return (dx * ux + dy * uy) > 0.5;
+    };
+
+    const startAng = Math.atan2(start.y - c1.y, start.x - c1.x);
+    const endAng = Math.atan2(end.y - c2.y, end.x - c2.x);
+
+    // Define the 4 geometric solvers for bitangents
+    const solvers: Record<string, () => { alpha1: number, alpha2: number } | null> = {
+        'LSL': () => {
+            // LSL: Bottom Tangent (if phi=0). alpha = phi - gamma
+            if (D < Math.abs(c1.radius - c2.radius)) return null;
+            const gamma = Math.acos((c1.radius - c2.radius) / D);
+            if (isNaN(gamma)) return null;
+            const alpha = phi - gamma;
+            return { alpha1: alpha, alpha2: alpha };
+        },
+        'RSR': () => {
+            // RSR: Top Tangent (if phi=0). alpha = phi + gamma
+            if (D < Math.abs(c1.radius - c2.radius)) return null;
+            const gamma = Math.acos((c1.radius - c2.radius) / D);
+            if (isNaN(gamma)) return null;
+            const alpha = phi + gamma;
+            return { alpha1: alpha, alpha2: alpha };
+        },
+        'LSR': () => {
+            // LSR: C1 Bottom -> C2 Top. alpha1 = phi - beta
+            // Wait.
+            // LSL = Bottom. RSR = Top.
+            // LSR = Left(Start) -> Right(End).
+            // Left=CCW=Bottom. Right=CW=Top. (Relative to connection line?)
+            // No.
+            // "Left Turn" means Center is Left.
+            // At Bottom (0,-r), Heading East (0). Center (0,0) is Left.
+            // So L = Bottom.
+            // At Top (0,r), Heading East (0). Center (0,0) is Right.
+            // So R = Top.
+            // LSR = Bottom(C1) -> Top(C2).
+            // Tangent angle at Bottom C1 is approx -PI/2.
+            // Tangent angle at Top C2 is approx PI/2.
+            // alpha1 should be phi - beta.
+
+            if (D < c1.radius + c2.radius) return null;
+            const beta = Math.acos((c1.radius + c2.radius) / D);
+            if (isNaN(beta)) return null;
+            const alpha1 = phi - beta;
+            const alpha2 = phi - beta + Math.PI;
+            return { alpha1, alpha2 };
+        },
+        'RSL': () => {
+            // RSL: C1 Top -> C2 Bottom.
+            // R = Top. L = Bottom.
+            // alpha1 should be phi + beta.
+
+            if (D < c1.radius + c2.radius) return null;
+            const beta = Math.acos((c1.radius + c2.radius) / D);
+            if (isNaN(beta)) return null;
+            const alpha1 = phi + beta;
+            const alpha2 = phi + beta + Math.PI; // Note: Parallel lines? No, cross tangents.
+            // For inner tangents, if alpha1 is angle on C1, alpha2 on C2 is alpha1 + PI (if radii equal and on axis).
+            // Yes.
+            return { alpha1, alpha2 };
+        }
+    };
+
+    // Attempt all 4 types
+    Object.keys(solvers).forEach(type => {
+        const solver = solvers[type];
+        const res = solver();
+        if (res) {
+            const { alpha1, alpha2 } = res;
+
+            // Determine expected departure/arrival directions based on Type
+            const startType = type[0];
+            const endType = type[2];
+
+            // Expected Tangent Direction at Start/End Position to follow the circle
+            // For 'L' (CCW), Tangent = PosAngle + PI/2.
+            // For 'R' (CW), Tangent = PosAngle - PI/2.
+            const perfectStartTheta = startAng + (startType === 'L' ? Math.PI / 2 : -Math.PI / 2);
+            const perfectEndTheta = endAng + (endType === 'L' ? Math.PI / 2 : -Math.PI / 2);
+
+            // Strict Alignment Check using the Perfect Theta vs User Theta
+            // We use the User Theta ONLY to filter availability (intent).
+            if (!isAligned(perfectStartTheta, start.theta) || !isAligned(perfectEndTheta, end.theta)) {
+                return;
+            }
+
+            // Calculate lengths
+            // Arc 1
+            let arc1Len = 0;
+            if (startType === 'L') {
+                arc1Len = normalize(alpha1 - startAng) * c1.radius;
+            } else {
+                arc1Len = normalize(startAng - alpha1) * c1.radius;
+            }
+
+            // Arc 2
+            let arc2Len = 0;
+            if (endType === 'L') {
+                arc2Len = normalize(endAng - alpha2) * c2.radius;
+            } else {
+                arc2Len = normalize(alpha2 - endAng) * c2.radius;
+            }
+
+            // Straight
+            const t1 = pOnC(c1, alpha1);
+            const t2 = pOnC(c2, alpha2);
+            const straightLen = Math.sqrt((t2.x - t1.x) ** 2 + (t2.y - t1.y) ** 2);
+
+            // Use Perfect Thetas for the Path Object to ensure it strictly follows the circle
+            const cleanStart = { ...start, theta: perfectStartTheta };
+            const cleanEnd = { ...end, theta: perfectEndTheta };
+
+            paths.push({
+                type: type as DubinsType,
+                length: arc1Len + straightLen + arc2Len,
+                param1: arc1Len,
+                param2: straightLen,
+                param3: arc2Len,
+                rho: c1.radius,
+                rhoStart: c1.radius,
+                rhoEnd: c2.radius,
+                start: cleanStart, // Use enforced tangent
+                end: cleanEnd      // Use enforced tangent
+            });
+        }
+    });
+
+    // If multiple valid paths (unlikely with strict heading), sort by length
+    return paths.sort((a, b) => a.length - b.length);
 }
 
 export interface Obstacle {

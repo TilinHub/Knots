@@ -8,6 +8,10 @@ import { KnotRenderer } from './components/KnotRenderer';
 import type { KnotDiagram } from '@/core/types/knot';
 import { DubinsRenderer } from './components/DubinsRenderer';
 import type { DubinsPath, Config } from '@/core/geometry/dubins';
+import { useContactGraph } from './hooks/useContactGraph';
+import { useContactPath } from './hooks/useContactPath';
+import { ContactGraphRenderer } from './components/ContactGraphRenderer';
+import { ContactPathRenderer } from './components/ContactPathRenderer';
 
 
 interface CSCanvasProps {
@@ -114,6 +118,29 @@ export function CSCanvas({
 
   // Detectar contactos entre discos (Dubins constraint)
   const contacts = React.useMemo(() => findDiskContacts(disks), [disks]);
+
+  // NEW: Contact Graph Integration
+  // Map CSDisk to ContactDisk
+  const contactDisks = React.useMemo(() => disks.map(d => ({
+    id: d.id,
+    center: d.center,
+    radius: d.visualRadius,
+    regionId: 'default'
+  })), [disks]);
+
+  const contactGraph = useContactGraph(contactDisks);
+
+  // NEW: Active Path Selection Hook
+  const { diskSequence, activePath, toggleDisk, clearSequence } = useContactPath(contactGraph);
+
+  // Import ContactPathRenderer locally or at top
+  const interactMode = dubinsMode ? 'dubins' : 'standard'; // Just using flag for now
+
+  // Update handleMouseDown to toggle disks if in correct mode
+  // But dubinsMode is currently used for "Dubins". Let's repurpose it or add 'contactMode'.
+  // User wants "Todo el Implementation Plan", which replaced Dubins.
+  // So 'dubinsMode' effectively becomes 'ContactGraphMode'.
+
 
   // Detectar regiones y discos de contacto (Legacy/Optional)
   const regions = React.useMemo(() => {
@@ -240,12 +267,9 @@ export function CSCanvas({
         return null;
       };
 
-      // Check hits (End first so it renders on top/claims priority if stacked? Actually Start is usually first. Doesn't matter much)
-      // IMPORTANT: If we are in Disk Mode (startDiskId/endDiskId is set), we DO NOT allow manual dragging of the config arrow.
-      // This allows the click to fall through to the Disk Drag logic.
-
-      const hitStart = !startDiskId ? checkHit(dubinsStart, 'dubins-start') : null;
-      const hitEnd = !endDiskId ? checkHit(dubinsEnd, 'dubins-end') : null;
+      // Check hits (Allow dragging even if disk is selected)
+      const hitStart = checkHit(dubinsStart, 'dubins-start');
+      const hitEnd = checkHit(dubinsEnd, 'dubins-end');
 
       if (hitStart) {
         setDragState({
@@ -278,24 +302,6 @@ export function CSCanvas({
         // (handleMouseDown is called with 'disk' only from the disk render loop)
         onDiskClick?.(blockId);
         // Do NOT return here. We want to allow standard drag logic (setDragState below) to execute.
-        // But we must NOT execute the "background click check" return below.
-
-        // Break out of Dubins block? No, Dubins block is an IF.
-        // We can just fall through.
-        // But if we fall through, we hit `return` at line 284?
-        // Wait, line 284 is "If we clicked background".
-        // How do we distinguish? 
-        // We need to verify if we handled a block interaction.
-        // Actually, if blockId is set, we are interacting with a block.
-        // The check below "return" is effectively for background clicks.
-        // So we should structure:
-        // if (blockId && pointType === 'disk') { ... } 
-        // else { return; } // If background
-        // BUT we want to fall through to standard logic outside the `if (dubinsMode)` block.
-      } else {
-        // If NOT a disk interaction (i.e. background click or other ignored element), we stop standard drag.
-        // Note: Dubins manual arrows are handled above and return.
-        return;
       }
     }
 
@@ -350,7 +356,34 @@ export function CSCanvas({
         let targetX = currentX;
         let targetY = currentY;
 
-        // Snap to Contact Point if hovering one
+        // Check if constrained to a disk
+        const constrainedDiskId = isStart ? startDiskId : endDiskId;
+
+        if (constrainedDiskId) {
+          const disk = disks.find(d => d.id === constrainedDiskId);
+          if (disk) {
+            // Snap strictly to disk boundary
+            const dx = currentX - disk.center.x;
+            const dy = currentY - disk.center.y;
+            const angle = Math.atan2(dy, dx);
+
+            targetX = disk.center.x + disk.visualRadius * Math.cos(angle);
+            targetY = disk.center.y + disk.visualRadius * Math.sin(angle);
+
+            // Auto-set theta to Tangent
+            // Default to CCW tangent: Angle + PI/2
+            const targetTheta = angle + Math.PI / 2;
+
+            setConfig?.({
+              x: targetX,
+              y: targetY,
+              theta: targetTheta
+            });
+            return; // Skip other logic
+          }
+        }
+
+        // Standard Snap to Contact Point if hovering one (Manual Mode)
         let closestContact: DiskContact | null = null;
         let minDist = 30; // Snap radius
 
@@ -498,6 +531,13 @@ export function CSCanvas({
         </g>
       )}
 
+      {/* Contact Graph Overlay (Global Tangent Network) */}
+      <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+        <ContactGraphRenderer graph={contactGraph} visible={!dubinsMode} />
+        {/* Active Path Highlight */}
+        <ContactPathRenderer path={activePath} visible={true} />
+      </g>
+
       {dubinsMode && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
           <DubinsRenderer
@@ -551,17 +591,26 @@ export function CSCanvas({
 
         return (
           <g key={disk.id}
-            onMouseDown={(e) => handleMouseDown(disk.id, 'disk', e)}
-            style={{ cursor: dubinsMode ? 'pointer' : 'grab' }}
+            onMouseDown={(e) => {
+              if (interactMode === 'dubins') {
+                // Contact Path Selection Mode
+                e.stopPropagation();
+                toggleDisk(disk.id);
+              } else {
+                handleMouseDown(disk.id, 'disk', e);
+              }
+            }}
+            style={{ cursor: interactMode === 'dubins' ? 'crosshair' : 'grab' }}
           >
             {/* Relleno Azul Penny Graph style */}
             <circle
               cx={cx}
               cy={cy}
               r={radius}
-              fill={fill}
-              stroke={stroke}
-              strokeWidth={strokeWidth}
+              fill={diskSequence.includes(disk.id) ? "#FF4500" : fill} // Highlight selection
+              fillOpacity={diskSequence.includes(disk.id) ? 0.4 : 1}
+              stroke={diskSequence.includes(disk.id) ? "#FF4500" : stroke}
+              strokeWidth={diskSequence.includes(disk.id) ? 4 : strokeWidth}
             />
             {/* Etiqueta (Índice) */}
             <text
@@ -576,6 +625,22 @@ export function CSCanvas({
             >
               {index}
             </text>
+
+            {/* Sequence Order Badge */}
+            {diskSequence.includes(disk.id) && (
+              <text
+                x={cx}
+                y={cy}
+                textAnchor="middle"
+                alignmentBaseline="middle"
+                fill="white"
+                fontWeight="bold"
+                fontSize="24"
+                pointerEvents="none"
+              >
+                {diskSequence.indexOf(disk.id) + 1}
+              </text>
+            )}
 
             {/* ID Label opcional dentro si se desea, pero la imagen muestra indices fuera a veces. 
                 Dejamos indice fuera. */}
