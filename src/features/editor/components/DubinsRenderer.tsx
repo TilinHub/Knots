@@ -2,10 +2,18 @@ import React, { useMemo } from 'react';
 import { type DubinsPath, type Config, sampleDubinsPath } from '@/core/geometry/dubins';
 
 interface DubinsRendererProps {
-    paths: DubinsPath[];
-    startConfig: Config | null;
-    endConfig: Config | null;
-    visibleTypes: Set<string>;
+    // Legacy / candidates
+    paths?: DubinsPath[];
+    startConfig?: Config | null;
+    endConfig?: Config | null;
+    visibleTypes?: Set<string>;
+
+    // New Interactive Props
+    candidates?: DubinsPath[];
+    selectedPaths?: DubinsPath[];
+    onPathClick?: (path: DubinsPath) => void;
+    hoverPathType?: string | null;
+    onPathHover?: (type: string | null) => void;
 }
 
 const PathColors: Record<string, string> = {
@@ -17,21 +25,118 @@ const PathColors: Record<string, string> = {
     'LRL': '#FFEEAD'
 };
 
-export function DubinsRenderer({ paths, startConfig, endConfig, visibleTypes }: DubinsRendererProps) {
-    if ((!startConfig && !endConfig) && paths.length === 0) return null; // Allow render if we have paths but no global start/end
+export function DubinsRenderer({
+    paths = [],
+    candidates = [],
+    selectedPaths = [],
+    visibleTypes,
+    onPathClick,
+    hoverPathType,
+    onPathHover
+}: DubinsRendererProps) {
+
+    // Combine legacy paths with candidates if needed, or just treat 'paths' as legacy display
+    // We'll prioritize the new 'candidates' and 'selectedPaths' props if present.
 
     return (
         <g className="dubins-renderer">
-            {/* Render Paths */}
-            {paths.map((path, idx) => {
-                if (!visibleTypes.has(path.type)) return null;
-
-                // Sample points
-                const points = sampleDubinsPath(path, 5); // step 5px for smoothness
+            {/* 1. SELECTED PATHS (Solid, Permanent) */}
+            {selectedPaths.map((path, idx) => {
+                const points = sampleDubinsPath(path, 5);
                 const d = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
 
                 return (
-                    <g key={`${path.type}-${idx}`}>
+                    <g key={`selected-${path.type}-${idx}`}>
+                        {/* Glow/Highlight background */}
+                        <path
+                            d={d}
+                            stroke={PathColors[path.type]}
+                            strokeWidth="4"
+                            opacity="0.3"
+                            fill="none"
+                        />
+                        <path
+                            d={d}
+                            fill="none"
+                            stroke={PathColors[path.type] || '#333'}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                        />
+                        {/* Length Label (centered) */}
+                        <text
+                            x={(path.start.x + path.end.x) / 2}
+                            y={(path.start.y + path.end.y) / 2}
+                            fill={PathColors[path.type]}
+                            fontSize="12"
+                            fontWeight="bold"
+                            textAnchor="middle"
+                            dy="-5"
+                            style={{ textShadow: '0px 1px 2px black' }}
+                        >
+                            {path.length.toFixed(1)}
+                        </text>
+                    </g>
+                );
+            })}
+
+            {/* 2. CANDIDATE PATHS (Dashed, Interactive) */}
+            {candidates.map((path, idx) => {
+                const isHovered = hoverPathType === path.type;
+                const opacity = isHovered ? 1.0 : 0.4;
+                const width = isHovered ? 4 : 2;
+
+                const points = sampleDubinsPath(path, 5);
+                const d = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
+
+                return (
+                    <g
+                        key={`candidate-${path.type}-${idx}`}
+                        style={{ cursor: 'pointer' }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onPathClick?.(path);
+                        }}
+                        onMouseEnter={() => onPathHover?.(path.type)}
+                        onMouseLeave={() => onPathHover?.(null)}
+                    >
+                        {/* Invisible thick hit area */}
+                        <path d={d} stroke="transparent" strokeWidth="20" fill="none" />
+
+                        {/* Visible Dashed Line */}
+                        <path
+                            d={d}
+                            fill="none"
+                            stroke={PathColors[path.type] || '#888'}
+                            strokeWidth={width}
+                            strokeOpacity={opacity}
+                            strokeDasharray="8, 4"
+                        />
+                        {/* Type Label */}
+                        {isHovered && (
+                            <text
+                                x={(path.start.x + path.end.x) / 2}
+                                y={(path.start.y + path.end.y) / 2}
+                                fill="white"
+                                fontSize="14"
+                                fontWeight="bold"
+                                textAnchor="middle"
+                                dy="-10"
+                                style={{ pointerEvents: 'none', textShadow: '0px 0px 4px black' }}
+                            >
+                                {path.type} ({path.length.toFixed(1)})
+                            </text>
+                        )}
+                    </g>
+                );
+            })}
+
+            {/* Legacy Rendering (fallback) */}
+            {paths.map((path, idx) => {
+                if (visibleTypes && !visibleTypes.has(path.type)) return null;
+                const points = sampleDubinsPath(path, 5);
+                const d = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
+                return (
+                    <g key={`legacy-${path.type}-${idx}`}>
                         <path
                             d={d}
                             fill="none"
@@ -39,14 +144,9 @@ export function DubinsRenderer({ paths, startConfig, endConfig, visibleTypes }: 
                             strokeWidth="3"
                             strokeOpacity={0.8}
                         />
-                        {/* Label somewhere? Maybe too cluttered. */}
                     </g>
                 );
             })}
-
-            {/* Render Configurations (Arrows) */}
-            {startConfig && <ConfigArrow config={startConfig} color="blue" label="Start" />}
-            {endConfig && <ConfigArrow config={endConfig} color="red" label="End" />}
         </g>
     );
 }

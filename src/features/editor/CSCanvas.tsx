@@ -47,6 +47,11 @@ interface CSCanvasProps {
   endDiskId?: string | null;
   onSetDubinsStart?: (c: Config | null) => void;
   onSetDubinsEnd?: (c: Config | null) => void;
+  // Persistent Dubins
+  persistentDubinsState?: any; // Avoiding circular dependency hell by using any or creating shared type. 
+  // Ideally "PersistentDubinsState" but it is exported from a hook. 
+  // Let's use any for speed or duplicate interface. Using 'any' for now to avoid circular import of hook file.
+  persistentDubinsActions?: any;
 }
 
 type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end' | 'disk';
@@ -92,6 +97,8 @@ export function CSCanvas({
   endDiskId,
   onSetDubinsStart,
   onSetDubinsEnd,
+  persistentDubinsState,
+  persistentDubinsActions
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
@@ -490,7 +497,11 @@ export function CSCanvas({
         if (e.target === e.currentTarget) {
           onSelectBlock(null);
           // Ensure Dubins gets triggered if we click background
-          if (dubinsMode && e.currentTarget) {
+          if (dubinsMode) {
+            persistentDubinsActions?.setHoverDiskId(null);
+            // Optional: Clear active disk? 
+            // persistentDubinsActions?.setActiveDiskId(null);
+          } else if (e.currentTarget) {
             handleMouseDown('background', 'p1', e);
           }
         }
@@ -542,12 +553,19 @@ export function CSCanvas({
 
       {dubinsMode && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          {/* 1. Selected Paths (Behind) */}
+          <DubinsRenderer
+            selectedPaths={persistentDubinsState?.visibleSelectedPaths}
+          // Pass empty candidates here to avoid duplication
+          />
+          {/* Legacy Support if needed */}
           <DubinsRenderer
             paths={dubinsPaths || []}
             startConfig={dubinsStart || null}
             endConfig={dubinsEnd || null}
             visibleTypes={dubinsVisibleTypes || new Set()}
           />
+
           {/* Render Contacts */}
           {contacts.map((c, i) => (
             <g key={`contact-${i}`}
@@ -594,14 +612,15 @@ export function CSCanvas({
         return (
           <g key={disk.id}
             onMouseDown={(e) => {
-              if (interactMode === 'dubins') {
-                // Contact Path Selection Mode
-                e.stopPropagation();
-                toggleDisk(disk.id);
-              } else {
-                handleMouseDown(disk.id, 'disk', e);
+              // Always use handleMouseDown to allow dragging + clicking
+              handleMouseDown(disk.id, 'disk', e);
+            }}
+            onMouseEnter={() => {
+              if (dubinsMode) {
+                persistentDubinsActions?.setHoverDiskId(disk.id);
               }
             }}
+            // REMOVED onMouseLeave to keep candidates visible for selection
             style={{ cursor: interactMode === 'dubins' ? 'crosshair' : 'grab' }}
           >
             {/* Relleno Azul Penny Graph style */}
@@ -649,6 +668,18 @@ export function CSCanvas({
           </g>
         );
       })}
+
+      {/* DUBINS CANDIDATES (FRONT OF DISKS) */}
+      {dubinsMode && (
+        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <DubinsRenderer
+            candidates={persistentDubinsState?.candidates}
+            onPathClick={persistentDubinsActions?.handlePathClick}
+            hoverPathType={persistentDubinsState?.hoverPathType}
+            onPathHover={persistentDubinsActions?.setHoverPathType}
+          />
+        </g>
+      )}
 
       {/* Resto de bloques (Segmentos/Arcos) si existen */}
       {nonDiskBlocks.map((block) => (

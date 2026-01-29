@@ -4,6 +4,7 @@ import { useEditorState } from './hooks/useEditorState';
 import { useRollingMode } from './hooks/useRollingMode';
 import { useKnotState } from './hooks/useKnotState';
 import { useDubinsState } from './hooks/useDubinsState'; // NEW
+import { usePersistentDubins } from './hooks/usePersistentDubins'; // NEW [PERSISTENT]
 import { EditorHeader } from './components/EditorHeader';
 import { useMemo } from 'react';
 import type { CSDisk } from '../../core/types/cs';
@@ -38,6 +39,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     [editorState.diskBlocks]);
 
   const dubinsState = useDubinsState(contactDisks); // Pass disks
+  const persistentDubins = usePersistentDubins(contactDisks); // [NEW]
+
 
   const hullMetrics = useMemo(() => {
     // Only calculate if we are in Penny Graph mode (disks only, no segments)
@@ -88,10 +91,14 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
         validation={editorState.validation}
-        // Hack: Override lengthInfo if we have hullMetrics and no other segments
-        lengthInfo={editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
-          ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
-          : editorState.lengthInfo}
+        // Hack: Override lengthInfo if we have hullMetrics or Dubins Metrics
+        lengthInfo={
+          dubinsState.state.isActive
+            ? { totalLength: persistentDubins.state.totalLength }
+            : (editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
+              ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
+              : editorState.lengthInfo)
+        }
         sidebarOpen={editorState.sidebarOpen}
         onToggleSidebar={() => editorActions.setSidebarOpen(!editorState.sidebarOpen)}
         onShowValidationDetails={() => editorActions.setShowValidation(true)}
@@ -122,10 +129,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             } : {
               // If Dubins is active, we want to capture clicks.
               onDiskClick: dubinsState.state.isActive ? (diskId) => {
-                const disk = contactDisks.find(d => d.id === diskId);
-                if (disk) {
-                  dubinsState.actions.handleDiskSelect(disk);
-                }
+                persistentDubins.actions.handleDiskClick(diskId);
               } : undefined
             })}
 
@@ -147,6 +151,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             endDiskId={dubinsState.state.endDiskId}
             onSetDubinsStart={dubinsState.actions.setStartConfig}
             onSetDubinsEnd={dubinsState.actions.setEndConfig}
+
+            // Persistent Dubins Props
+            persistentDubinsState={persistentDubins.state}
+            persistentDubinsActions={persistentDubins.actions}
           />
         </div>
 

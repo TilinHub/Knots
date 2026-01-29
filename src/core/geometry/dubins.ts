@@ -22,6 +22,13 @@ export interface DubinsPath {
     end: Config;
 }
 
+export interface StoredDubinsPath {
+    id: string;
+    startDiskId: string;
+    endDiskId: string;
+    type: DubinsType;
+}
+
 const TwoPi = 2 * Math.PI;
 
 function mod2pi(theta: number): number {
