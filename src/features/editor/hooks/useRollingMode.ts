@@ -11,6 +11,7 @@ interface RollingState {
     rollingDiskId: string | null;
     theta: number;
     speed: number;
+    direction: 1 | -1; // 1 = CCW (Antihoraria), -1 = CW (Horaria)
     isAnimating: boolean;
     showTrail: boolean;
 }
@@ -23,6 +24,7 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         rollingDiskId: null,
         theta: 0,
         speed: 0.02,
+        direction: 1,
         isAnimating: false,
         showTrail: true,
     });
@@ -31,11 +33,11 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
     const diskBlocks = blocks.filter((b): b is CSDisk => b.kind === 'disk');
 
     // Collision Logic (Pure function within hook scope)
-    const checkCollision = useCallback((currentTheta: number, pivotId: string, rollingId: string) => {
+    const checkCollision = useCallback((currentTheta: number, pivotId: string, rollingId: string): CSDisk | null => {
         const pivot = diskBlocks.find(d => d.id === pivotId);
         const rolling = diskBlocks.find(d => d.id === rollingId);
 
-        if (!pivot || !rolling) return false;
+        if (!pivot || !rolling) return null;
 
         // Use VISUAL radius for collision to match what users see
         const distance = pivot.visualRadius + rolling.visualRadius;
@@ -51,12 +53,14 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
             const dy = newCenter.y - other.center.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            // Collision if distance < sum of visual radii
-            if (dist < rolling.visualRadius + other.visualRadius - 0.1) {
-                return true;
+            // Collision if distance < sum of visual radii (Strict, no overlap allowed)
+            const minDistance = rolling.visualRadius + other.visualRadius;
+            // Using a tiny epsilon to handle float precision issues if needed, but strict inequality is usually safer for "no overlap"
+            if (dist < minDistance - 0.001) {
+                return other; // Return the collided disk
             }
         }
-        return false;
+        return null;
     }, [diskBlocks]);
 
     // Animation Loop using requestAnimationFrame
@@ -64,9 +68,11 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         setState(prev => {
             if (!prev.isAnimating || !prev.pivotDiskId || !prev.rollingDiskId) return prev;
 
-            const newTheta = prev.theta + prev.speed;
+            const newTheta = prev.theta + (prev.speed * prev.direction);
 
-            if (checkCollision(newTheta, prev.pivotDiskId, prev.rollingDiskId)) {
+            const collisionDisk = checkCollision(newTheta, prev.pivotDiskId, prev.rollingDiskId);
+
+            if (collisionDisk) {
                 return { ...prev, isAnimating: false };
             }
 
@@ -74,7 +80,7 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         });
 
         requestRef.current = requestAnimationFrame(animate);
-    }, [checkCollision]);
+    }, [checkCollision, diskBlocks]);
 
     useEffect(() => {
         if (state.isAnimating) {
@@ -135,7 +141,22 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         });
     };
 
+    // Helper to get current rolling position
+    const getCurrentPosition = useCallback(() => {
+        if (!state.pivotDiskId || !state.rollingDiskId) return null;
+        const pivot = diskBlocks.find(d => d.id === state.pivotDiskId);
+        const rolling = diskBlocks.find(d => d.id === state.rollingDiskId);
+        if (!pivot || !rolling) return null;
+
+        const dist = pivot.visualRadius + rolling.visualRadius;
+        return {
+            x: pivot.center.x + dist * Math.cos(state.theta),
+            y: pivot.center.y + dist * Math.sin(state.theta)
+        };
+    }, [state.pivotDiskId, state.rollingDiskId, state.theta, diskBlocks]);
+
     const setSpeed = (speed: number) => setState(prev => ({ ...prev, speed }));
+    const setDirection = (dir: 1 | -1) => setState(prev => ({ ...prev, direction: dir }));
     const setShowTrail = (show: boolean) => setState(prev => ({ ...prev, showTrail: show }));
     const toggleAnimation = () => setState(prev => ({ ...prev, isAnimating: !prev.isAnimating }));
 
@@ -154,6 +175,7 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         rollingDiskId: state.rollingDiskId,
         theta: state.theta,
         speed: state.speed,
+        direction: state.direction,
         isAnimating: state.isAnimating,
         showTrail: state.showTrail,
 
@@ -162,8 +184,10 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         selectDisk,
         setTheta,
         setSpeed,
+        setDirection,
         setShowTrail,
         toggleAnimation,
-        resetSelection
+        resetSelection,
+        getCurrentPosition
     };
 }

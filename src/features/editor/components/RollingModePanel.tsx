@@ -6,14 +6,17 @@ interface RollingModePanelProps {
     rollingDiskId: string | null;
     theta: number;
     speed: number;
+    direction?: 1 | -1; // Optional to not break strict usage immediately if missed
     isAnimating: boolean;
     showTrail: boolean;
     diskBlocks: CSDisk[];
     onToggleAnimation: () => void;
     onThetaChange: (theta: number) => void;
     onSpeedChange: (speed: number) => void;
+    onDirectionChange?: (direction: 1 | -1) => void;
     onShowTrailChange: (show: boolean) => void;
     onResetSelection: () => void;
+    onCommitPosition?: () => void;
 }
 
 export const RollingModePanel = ({
@@ -21,14 +24,17 @@ export const RollingModePanel = ({
     rollingDiskId,
     theta,
     speed,
+    direction = 1,
     isAnimating,
     showTrail,
     diskBlocks,
     onToggleAnimation,
     onThetaChange,
     onSpeedChange,
+    onDirectionChange,
     onShowTrailChange,
     onResetSelection,
+    onCommitPosition
 }: RollingModePanelProps) => {
     return (
         <div
@@ -127,6 +133,36 @@ export const RollingModePanel = ({
                                 fontWeight: 'var(--fw-medium)',
                             }}
                         >
+                            Dirección
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <Button
+                                onClick={() => onDirectionChange?.(1)}
+                                variant={direction === 1 ? 'primary' : 'secondary'}
+                                style={{ flex: 1, fontSize: 'var(--fs-caption)', padding: '4px 8px' }}
+                            >
+                                ↺ Antihorario
+                            </Button>
+                            <Button
+                                onClick={() => onDirectionChange?.(-1)}
+                                variant={direction === -1 ? 'primary' : 'secondary'}
+                                style={{ flex: 1, fontSize: 'var(--fs-caption)', padding: '4px 8px' }}
+                            >
+                                ↻ Horario
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: 'var(--space-sm)' }}>
+                        <label
+                            style={{
+                                fontSize: 'var(--fs-caption)',
+                                color: 'var(--text-secondary)',
+                                display: 'block',
+                                marginBottom: '4px',
+                                fontWeight: 'var(--fw-medium)',
+                            }}
+                        >
                             Velocidad: {speed.toFixed(3)}x
                         </label>
                         <input
@@ -155,7 +191,15 @@ export const RollingModePanel = ({
                         </label>
                     </div>
 
-                    <div style={{ marginTop: 'var(--space-md)' }}>
+                    <div style={{ marginTop: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <Button
+                            onClick={onCommitPosition}
+                            variant="primary"
+                            style={{ width: '100%', background: 'var(--accent-success)' }}
+                            disabled={isAnimating}
+                        >
+                            📍 Fijar posición
+                        </Button>
                         <Button
                             onClick={onResetSelection}
                             variant="secondary"

@@ -44,13 +44,16 @@ interface RollingState {
     rollingDiskId: string | null;
     theta: number;
     speed: number;
+    direction: 1 | -1;
     isAnimating: boolean;
     showTrail: boolean;
     toggleAnimation: () => void;
     setTheta: (theta: number) => void;
     setSpeed: (speed: number) => void;
+    setDirection: (dir: 1 | -1) => void;
     setShowTrail: (show: boolean) => void;
     resetSelection: () => void;
+    getCurrentPosition: () => { x: number; y: number } | null;
 }
 
 interface EditorSidebarProps {
@@ -91,14 +94,41 @@ export const EditorSidebar = ({
                     rollingDiskId={rollingState.rollingDiskId}
                     theta={rollingState.theta}
                     speed={rollingState.speed}
+                    direction={rollingState.direction}
                     isAnimating={rollingState.isAnimating}
                     showTrail={rollingState.showTrail}
                     diskBlocks={editorState.diskBlocks}
                     onToggleAnimation={rollingState.toggleAnimation}
                     onThetaChange={rollingState.setTheta}
                     onSpeedChange={rollingState.setSpeed}
+                    onDirectionChange={rollingState.setDirection}
                     onShowTrailChange={rollingState.setShowTrail}
                     onResetSelection={rollingState.resetSelection}
+                    onCommitPosition={() => {
+                        const newPos = rollingState.getCurrentPosition();
+                        if (newPos && rollingState.rollingDiskId) {
+                            actions.updateBlock(rollingState.rollingDiskId, { center: newPos });
+                            // Optional: Reset selection/mode after commit?
+                            // User asked to "stay in that new position".
+                            // If we update block, the rolling mode needs to know the block MOVED.
+                            // But usually rolling mode depends on 'blocks' prop. 
+                            // If we update the block, re-render happens.
+                            // The rolling mode hook sees new blocks.
+                            // PIVOT is same. ROLLING is same id.
+                            // THETA should be reset to reflect new relative angle? 
+                            // actually if we commit, we physically move the disk.
+                            // The visual rolling position is based on PIVOT center + theta.
+                            // If we move the disk to where it IS, but keep theta same...
+                            // it will double apply if we aren't careful?
+                            //
+                            // WAIT. `useRollingMode` calculates position purely from theta.
+                            // If we update the REAL position, `useRollingMode` might still render it at (pivot + theta).
+                            // If we want to "stop rolling and leave it there", we probably should:
+                            // 1. Update real position.
+                            // 2. Reset rolling mode selection (so it stops overriding position).
+                            rollingState.resetSelection();
+                        }
+                    }}
                 />
             )}
 
