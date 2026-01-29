@@ -95,7 +95,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             kind: 'disk',
             center: { x: diskCount * 80, y: 0 },
             radius: 1,
-            visualRadius: 40,
+            visualRadius: diskBlocks.length > 0 ? diskBlocks[0].visualRadius : 50,
             label: `D${diskCount + 1}`,
             color: '#4A90E2',
         };
