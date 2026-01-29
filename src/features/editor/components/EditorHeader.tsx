@@ -134,7 +134,7 @@ export const EditorHeader = ({
                     </button>
                 )}
 
-                {nonDiskBlocksCount >= 3 && (
+                {true && ( // Always allow enabling Contact Graphs if desired, or at least diskBlocksCount >= 0
                     <button
                         onClick={onToggleContactDisks}
                         style={{

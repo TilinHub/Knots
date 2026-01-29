@@ -10,6 +10,8 @@ interface ContactDisksProps {
   showRegionBoundaries?: boolean;
   startDiskId?: string | null;
   endDiskId?: string | null;
+  /** Whether to show detailed coordinates */
+  showCoordinates?: boolean;
 }
 
 /**
@@ -24,6 +26,7 @@ export function ContactDisks({
   showRegionBoundaries = false,
   startDiskId,
   endDiskId,
+  showCoordinates = true,
 }: ContactDisksProps) {
   // Convertir coordenadas cartesianas a SVG
   function toSVG(x: number, y: number): [number, number] {
@@ -106,6 +109,28 @@ export function ContactDisks({
                 >
                   {disk.id.split('-')[1]}
                 </text>
+
+                {/* Centro exacto y Coordenadas */}
+                {showCoordinates && (
+                  <>
+                    <circle cx={cx} cy={cy} r={1.5} fill="rgba(0,0,0,0.7)" pointerEvents="none" />
+                    <text
+                      x={cx}
+                      y={cy + 12} // Un poco abajo del centro
+                      fontSize="6"
+                      fill="rgba(255, 255, 255, 0.9)"
+                      textAnchor="middle"
+                      dominantBaseline="hanging"
+                      pointerEvents="none"
+                      style={{
+                        userSelect: 'none',
+                        textShadow: '0px 0px 2px rgba(0,0,0,0.8)'
+                      }}
+                    >
+                      {`(${disk.center.x.toFixed(2)}, ${disk.center.y.toFixed(2)})`}
+                    </text>
+                  </>
+                )}
               </g>
             );
           })}

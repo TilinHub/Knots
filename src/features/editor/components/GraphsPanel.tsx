@@ -1,0 +1,131 @@
+import { useState, useEffect } from 'react';
+import { Button } from '../../../ui/Button';
+import loadAllGraphs, { type GraphSet } from '../../../io/loadAllGraphs';
+import { type Graph } from '../../../io/parseGraph6';
+import { graphToContactScene } from '../../../core/geometry/contactLayout';
+import type { CSDisk } from '../../../core/types/cs';
+
+interface GraphsPanelProps {
+    onLoadScene: (disks: CSDisk[]) => void;
+}
+
+export function GraphsPanel({ onLoadScene }: GraphsPanelProps) {
+    const [graphSets, setGraphSets] = useState<GraphSet[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [expandedSetLabel, setExpandedSetLabel] = useState<string | null>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        loadAllGraphs()
+            .then(sets => {
+                console.log("GraphSets loaded:", sets);
+                setGraphSets(sets);
+                // Expand first set by default
+                if (sets.length > 0) {
+                    setExpandedSetLabel(sets[0].label);
+                }
+            })
+            .catch(err => console.error("Failed to load graphs:", err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleApplyGraph = (graph: Graph) => {
+        // Generar layout usando un radio fijo por ahora 
+        // (el usuario podría querer cambiar esto después, pero empezamos con algo razonable)
+        const radius = 50;
+        const scene = graphToContactScene(graph, radius);
+
+        // Convertir Scene points a CSDisk[]
+        // Scene points from graphToContactScene are just {x, y, ...}
+        // We need to create CSDisk blocks
+        const disks: CSDisk[] = scene.points.map((p, idx) => ({
+            id: `disk-${idx + 1}`,
+            kind: 'disk',
+            center: { x: p.x, y: p.y },
+            radius: 1, // Geometric radius (convention based on Contact Graph theory usually 1)
+            visualRadius: radius, // Visual radius for rendering
+            label: `D${idx + 1}`
+        }));
+
+        console.log("Applying graph:", graph, "Generated disks:", disks);
+        onLoadScene(disks);
+    };
+
+    return (
+        <div style={{
+            padding: 'var(--space-md)',
+            borderBottom: '1px solid var(--border)',
+            background: 'var(--bg-primary)',
+            maxHeight: '400px',
+            overflowY: 'auto'
+        }}>
+            <h2
+                style={{
+                    fontSize: 'var(--fs-caption)',
+                    fontWeight: 'var(--fw-semibold)',
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: 'var(--space-sm)',
+                }}
+            >
+                📚 Librería de Grafos
+            </h2>
+
+            {loading && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>Cargando grafos...</div>}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {graphSets.map(set => (
+                    <div key={set.label} style={{ background: 'var(--bg-secondary)', borderRadius: '6px', overflow: 'hidden' }}>
+                        <div
+                            onClick={() => setExpandedSetLabel(expandedSetLabel === set.label ? null : set.label)}
+                            style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                fontSize: 'var(--fs-body)',
+                                fontWeight: '500',
+                                userSelect: 'none',
+                                background: expandedSetLabel === set.label ? 'rgba(0,0,0,0.05)' : 'transparent'
+                            }}
+                        >
+                            <span>{set.label}</span>
+                            <span style={{ fontSize: '0.8em', opacity: 0.6 }}>{set.graphs.length}</span>
+                        </div>
+
+                        {expandedSetLabel === set.label && (
+                            <div style={{ padding: '8px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+                                {set.graphs.map((graph, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleApplyGraph(graph)}
+                                        title={`Grafo #${idx + 1}: ${graph.nodes.length} nodos, ${graph.edges.length} aristas`}
+                                        style={{
+                                            aspectRatio: '1',
+                                            border: '1px solid var(--border)',
+                                            background: 'var(--bg-primary)',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '10px',
+                                            color: 'var(--text-secondary)',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
+                                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                                    >
+                                        #{idx + 1}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

@@ -1,4 +1,5 @@
 import { RollingModePanel } from './RollingModePanel';
+import { GraphsPanel } from './GraphsPanel';
 import { ViewControls } from './ViewControls';
 import { BlockList } from './BlockList';
 import { Button } from '../../../ui/Button';
@@ -149,6 +150,21 @@ export const EditorSidebar = ({
                         </Button>
                     </div>
                 </div>
+            )}
+
+            {/* GRAPHS PANEL (Visible when Contact Disks are enabled) */}
+            {showContactDisks && (
+                <GraphsPanel onLoadScene={(disks) => {
+                    // Replace all blocks with new disks
+                    actions.setBlocks(disks);
+                    // Clear selection
+                    actions.setSelectedBlockId(null);
+                    // Ensure dubins state is reset if relevant
+                    if (dubinsState) {
+                        dubinsState.actions.setStartConfig(null);
+                        dubinsState.actions.setEndConfig(null);
+                    }
+                }} />
             )}
 
             {/* STANDARD EDITOR TOOLS */}

@@ -544,12 +544,34 @@ export function CSCanvas({
         </g>
       )}
 
-      {/* Contact Graph Overlay (Global Tangent Network) */}
+      {/* Contact Graph Overlay (Global Tangent Network) - HIDDEN BY DEFAULT (Too messy) */}
       <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-        <ContactGraphRenderer graph={contactGraph} visible={!dubinsMode} />
+        {/* Only show if explicitly enabled for debugging or specific mode */}
+        {/* <ContactGraphRenderer graph={contactGraph} visible={!dubinsMode} /> */}
         {/* Active Path Highlight */}
         <ContactPathRenderer path={activePath} visible={true} />
       </g>
+
+      {/* DISK CONTACT LINES (Penny Graph Edges) */}
+      {disks.map((d1, i) =>
+        disks.slice(i + 1).map((d2) => {
+          const dist = Math.sqrt(Math.pow(d1.center.x - d2.center.x, 2) + Math.pow(d1.center.y - d2.center.y, 2));
+          const threshold = d1.visualRadius + d2.visualRadius + 0.5; // Tolerance
+          if (dist <= threshold) {
+            const [x1, y1] = toSVG(d1.center.x, d1.center.y);
+            const [x2, y2] = toSVG(d2.center.x, d2.center.y);
+            return (
+              <line
+                key={`contact-${d1.id}-${d2.id}`}
+                x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke="#5CA0D3"
+                strokeWidth="2"
+              />
+            );
+          }
+          return null;
+        })
+      )}
 
       {dubinsMode && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
@@ -643,28 +665,25 @@ export function CSCanvas({
               fill="#555"
               fontWeight="bold"
               pointerEvents="none"
+              style={{ userSelect: 'none' }}
             >
               {index}
             </text>
 
-            {/* Sequence Order Badge */}
-            {diskSequence.includes(disk.id) && (
-              <text
-                x={cx}
-                y={cy}
-                textAnchor="middle"
-                alignmentBaseline="middle"
-                fill="white"
-                fontWeight="bold"
-                fontSize="24"
-                pointerEvents="none"
-              >
-                {diskSequence.indexOf(disk.id) + 1}
-              </text>
-            )}
-
-            {/* ID Label opcional dentro si se desea, pero la imagen muestra indices fuera a veces. 
-                Dejamos indice fuera. */}
+            {/* Centro y Coordenadas (NUEVO) */}
+            <circle cx={cx} cy={cy} r={2} fill="black" pointerEvents="none" />
+            <text
+              x={cx}
+              y={cy + 12}
+              textAnchor="middle"
+              fontFamily="monospace"
+              fontSize="10"
+              fill="rgba(0,0,0,0.8)"
+              pointerEvents="none"
+              style={{ userSelect: 'none', textShadow: '0px 0px 2px white' }}
+            >
+              {`(${disk.center.x.toFixed(2)}, ${disk.center.y.toFixed(2)})`}
+            </text>
           </g>
         );
       })}
