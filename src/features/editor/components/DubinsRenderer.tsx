@@ -64,13 +64,12 @@ export function DubinsRenderer({
                         />
                         {/* Length Label (centered) */}
                         <text
-                            x={(path.start.x + path.end.x) / 2}
-                            y={(path.start.y + path.end.y) / 2}
+                            transform={`translate(${(path.start.x + path.end.x) / 2}, ${(path.start.y + path.end.y) / 2}) scale(1, -1)`}
                             fill={PathColors[path.type]}
                             fontSize="12"
                             fontWeight="bold"
                             textAnchor="middle"
-                            dy="-5"
+                            dy="5"
                             style={{ textShadow: '0px 1px 2px black' }}
                         >
                             {path.length.toFixed(1)}
@@ -114,8 +113,7 @@ export function DubinsRenderer({
                         {/* Type Label */}
                         {isHovered && (
                             <text
-                                x={(path.start.x + path.end.x) / 2}
-                                y={(path.start.y + path.end.y) / 2}
+                                transform={`translate(${(path.start.x + path.end.x) / 2}, ${(path.start.y + path.end.y) / 2}) scale(1, -1)`}
                                 fill="white"
                                 fontSize="14"
                                 fontWeight="bold"

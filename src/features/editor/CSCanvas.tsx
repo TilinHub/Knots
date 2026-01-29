@@ -609,7 +609,14 @@ export function CSCanvas({
 
       {/* Discos */}
       {disks.map((disk, index) => {
-        const [cx, cy] = toSVG(disk.center.x, disk.center.y);
+        // Default position
+        let [cx, cy] = toSVG(disk.center.x, disk.center.y);
+
+        // Override position if this is the rolling disk
+        if (rollingMode && disk.id === rollingDiskId && rollingDiskPosition) {
+          [cx, cy] = toSVG(rollingDiskPosition.center.x, rollingDiskPosition.center.y);
+        }
+
         const isSelected = disk.id === selectedBlockId;
         const isStart = startDiskId === disk.id;
         const isEnd = endDiskId === disk.id;
@@ -619,7 +626,17 @@ export function CSCanvas({
         let stroke = isSelected ? "#2E6BA8" : "#5CA0D3";
         let strokeWidth = isSelected ? 4 : 2;
 
-        if (dubinsMode) {
+        if (rollingMode) {
+          if (disk.id === pivotDiskId) {
+            fill = "rgba(100, 200, 100, 0.5)"; // Greenish for Pivot
+            stroke = "#2E8B57";
+            strokeWidth = 3;
+          } else if (disk.id === rollingDiskId) {
+            fill = "rgba(255, 165, 0, 0.6)"; // Orange for Rolling
+            stroke = "#FF8C00";
+            strokeWidth = 3;
+          }
+        } else if (dubinsMode) {
           if (isStart) {
             fill = "rgba(100, 255, 100, 0.6)";
             stroke = "rgba(50, 200, 50, 0.9)";

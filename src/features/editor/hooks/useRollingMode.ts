@@ -106,8 +106,20 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
             if (prev.pivotDiskId === diskId) {
                 return { ...prev, pivotDiskId: null, rollingDiskId: null, theta: 0, isAnimating: false };
             }
+
             // 3. Select Rolling (or change Rolling)
-            return { ...prev, rollingDiskId: diskId, theta: 0, isAnimating: false };
+            // Calculate initial theta based on current relative positions
+            const pivot = diskBlocks.find(d => d.id === prev.pivotDiskId);
+            const rolling = diskBlocks.find(d => d.id === diskId);
+
+            let initialTheta = 0;
+            if (pivot && rolling) {
+                const dx = rolling.center.x - pivot.center.x;
+                const dy = rolling.center.y - pivot.center.y;
+                initialTheta = Math.atan2(dy, dx);
+            }
+
+            return { ...prev, rollingDiskId: diskId, theta: initialTheta, isAnimating: false };
         });
     };
 
