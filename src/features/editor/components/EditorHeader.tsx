@@ -20,6 +20,9 @@ interface EditorHeaderProps {
     // Dubins
     dubinsMode: boolean;
     onToggleDubinsMode: () => void;
+    // Envelope
+    showEnvelope?: boolean; // [NEW]
+    onToggleEnvelope?: () => void; // [NEW]
 }
 
 export const EditorHeader = ({
@@ -40,6 +43,8 @@ export const EditorHeader = ({
     onToggleKnotMode,
     dubinsMode,
     onToggleDubinsMode,
+    showEnvelope = true, // [NEW] Default true
+    onToggleEnvelope, // [NEW]
 }: EditorHeaderProps) => {
     const [showLengthDetails, setShowLengthDetails] = useState(false);
 
@@ -108,6 +113,27 @@ export const EditorHeader = ({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                {/* ENVELOPE TOGGLE - NEW */}
+                {diskBlocksCount >= 2 && (
+                    <button
+                        onClick={onToggleEnvelope}
+                        style={{
+                            padding: '6px 12px',
+                            fontSize: 'var(--fs-caption)',
+                            fontWeight: 'var(--fw-medium)',
+                            background: showEnvelope ? '#6B46C1' : 'var(--bg-tertiary)', // Purple for envelope?
+                            color: showEnvelope ? 'white' : 'var(--text-primary)',
+                            border: `1px solid ${showEnvelope ? '#6B46C1' : 'var(--border)'}`,
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                        }}
+                        title={showEnvelope ? "Ocultar Envolvente" : "Mostrar Envolvente"}
+                    >
+                        🟣 Envolvente
+                    </button>
+                )}
+
                 {nonDiskBlocksCount >= 3 && (
                     <button
                         onClick={onToggleContactDisks}

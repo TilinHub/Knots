@@ -21,6 +21,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const [gridSpacing, setGridSpacing] = useState(20);
     const [angleUnit, setAngleUnit] = useState<'deg' | 'rad'>('deg');
     const [showContactDisks, setShowContactDisks] = useState(false);
+    const [showEnvelope, setShowEnvelope] = useState(true); // [NEW]
     const [showValidation, setShowValidation] = useState(false);
 
     // Initialize blocks from knot
@@ -126,6 +127,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             gridSpacing,
             angleUnit,
             showContactDisks,
+            showEnvelope, // [NEW]
             showValidation,
             nonDiskBlocks,
             diskBlocks,
@@ -140,6 +142,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             setGridSpacing,
             setAngleUnit,
             setShowContactDisks,
+            setShowEnvelope, // [NEW]
             setShowValidation,
             addSegment,
             addArc,

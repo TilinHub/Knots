@@ -36,6 +36,7 @@ interface CSCanvasProps {
   onKnotSegmentClick?: (index: number) => void;
   // Contact graph props
   showContactDisks?: boolean;
+  showEnvelope?: boolean; // [NEW]
   // Dubins props
   dubinsMode?: boolean;
   dubinsPaths?: DubinsPath[];
@@ -78,6 +79,7 @@ export function CSCanvas({
   showTrail = true,
   onDiskClick,
   showContactDisks = false,
+  showEnvelope = true, // [NEW] Default true
   knotMode = false,
   knot = null,
   onKnotSegmentClick,
@@ -512,7 +514,7 @@ export function CSCanvas({
       <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="#ddd" strokeWidth="1" />
 
       {/* BELT (Convex Hull) OR KNOT */}
-      {!knotMode && hullData && (
+      {!knotMode && hullData && showEnvelope && (
         <path
           d={transformPathToSVG(hullData.svgPathD)}
           fill="rgba(137, 207, 240, 0.2)"

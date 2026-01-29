@@ -83,6 +83,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onToggleDubinsMode={dubinsState.actions.toggleMode}
         showContactDisks={editorState.showContactDisks}
         onToggleContactDisks={() => editorActions.setShowContactDisks(!editorState.showContactDisks)}
+        showEnvelope={editorState.showEnvelope} // [NEW]
+        onToggleEnvelope={() => editorActions.setShowEnvelope(!editorState.showEnvelope)} // [NEW]
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
         validation={editorState.validation}
@@ -133,6 +135,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
 
             showContactDisks={editorState.showContactDisks}
+            showEnvelope={editorState.showEnvelope} // [NEW]
 
             // Dubins
             dubinsMode={dubinsState.state.isActive}
