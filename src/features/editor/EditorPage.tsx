@@ -31,12 +31,21 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const rollingState = useRollingMode({ blocks: editorState.blocks });
   const knotState = useKnotState();
 
-  // Map CSDisks to ContactDisks for Dubins logic
-  const contactDisks = useMemo(() =>
-    editorState.diskBlocks.map(d => ({
-      id: d.id, center: d.center, radius: d.visualRadius, color: 'blue', regionId: 'temp'
-    })),
-    [editorState.diskBlocks]);
+  // Map CSDisk to ContactDisk for Dubins logic
+  const contactDisks = useMemo(() => {
+    // If rolling, get the dynamic position
+    const rollingPos = rollingState.isActive ? rollingState.getCurrentPosition() : null;
+
+    return editorState.diskBlocks.map(d => ({
+      id: d.id,
+      center: (rollingState.isActive && d.id === rollingState.rollingDiskId && rollingPos)
+        ? rollingPos
+        : d.center,
+      radius: d.visualRadius,
+      color: 'blue',
+      regionId: 'temp'
+    }));
+  }, [editorState.diskBlocks, rollingState.isActive, rollingState.rollingDiskId, rollingState.theta, rollingState.getCurrentPosition]);
 
   const dubinsState = useDubinsState(contactDisks); // Pass disks
   const persistentDubins = usePersistentDubins(contactDisks); // [NEW]

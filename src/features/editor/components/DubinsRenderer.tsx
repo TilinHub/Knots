@@ -45,12 +45,23 @@ export function DubinsRenderer({
                 const points = sampleDubinsPath(path, 5);
                 const d = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
 
+                // Detect potential physical overlap (Distance < Sum of Radii)
+                // Assuming standard rho for both if not specified, or sum of rhoStart/rhoEnd.
+                // For LSL/RSR (outer), length is roughly distance.
+                // If length < (rhoStart + rhoEnd), it physically implies overlap if they are straight connections.
+                const r1 = path.rhoStart ?? path.rho;
+                const r2 = path.rhoEnd ?? path.rho;
+                const isOverlapping = path.length < (r1 + r2) - 0.1; // Tolerance
+
+                const labelColor = isOverlapping ? '#FF4500' : PathColors[path.type]; // Red-Orange if overlapping
+                const labelText = path.length.toFixed(2);
+
                 return (
-                    <g key={`selected-${path.type}-${idx}`}>
+                    <g key={`selected-${path.type}-${idx}-${path.length}`}>
                         {/* Glow/Highlight background */}
                         <path
                             d={d}
-                            stroke={PathColors[path.type]}
+                            stroke={isOverlapping ? '#FF0000' : PathColors[path.type]}
                             strokeWidth="4"
                             opacity="0.3"
                             fill="none"
@@ -58,21 +69,22 @@ export function DubinsRenderer({
                         <path
                             d={d}
                             fill="none"
-                            stroke={PathColors[path.type] || '#333'}
+                            stroke={isOverlapping ? '#FF0000' : (PathColors[path.type] || '#333')}
                             strokeWidth="2"
                             strokeLinecap="round"
+                            strokeDasharray={path.type.includes('S') ? undefined : "5,5"}
                         />
                         {/* Length Label (centered) */}
                         <text
                             transform={`translate(${(path.start.x + path.end.x) / 2}, ${(path.start.y + path.end.y) / 2}) scale(1, -1)`}
-                            fill={PathColors[path.type]}
+                            fill={labelColor}
                             fontSize="12"
                             fontWeight="bold"
                             textAnchor="middle"
                             dy="5"
                             style={{ textShadow: '0px 1px 2px black' }}
                         >
-                            {path.length.toFixed(1)}
+                            {labelText} {isOverlapping ? '⚠️' : ''}
                         </text>
                     </g>
                 );

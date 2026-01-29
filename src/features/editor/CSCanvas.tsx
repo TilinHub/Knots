@@ -309,7 +309,12 @@ export function CSCanvas({
       if (blockId && pointType === 'disk') {
         // Verify it's a disk 
         // (handleMouseDown is called with 'disk' only from the disk render loop)
-        onDiskClick?.(blockId);
+
+        // FIX: If rolling mode is active, let the specific rolling handler below take care of it
+        // to avoid double-toggling selection.
+        if (!rollingMode) {
+          onDiskClick?.(blockId);
+        }
         // Do NOT return here. We want to allow standard drag logic (setDragState below) to execute.
       }
     }

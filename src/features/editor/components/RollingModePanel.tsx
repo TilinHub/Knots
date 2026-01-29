@@ -195,7 +195,7 @@ export const RollingModePanel = ({
                         <Button
                             onClick={onCommitPosition}
                             variant="primary"
-                            style={{ width: '100%', background: 'var(--accent-success)' }}
+                            style={{ width: '100%', background: 'var(--accent-success)', border: '1px solid #1e7e34' }}
                             disabled={isAnimating}
                         >
                             📍 Fijar posición
