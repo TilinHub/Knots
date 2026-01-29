@@ -44,10 +44,10 @@ export function graphToContactScene(
   const n = graph.nodes.length;
   const target = 2 * radius;
 
-  const iterations = params.iterations ?? 1200;
-  const edgeK = params.edgeK ?? 0.35;
-  const repelK = params.repelK ?? 0.55;
-  const jitter = params.jitter ?? 0.15;
+  const iterations = params.iterations ?? 5000;
+  const edgeK = params.edgeK ?? 0.1; // Attraction force (weak to allow repulsion to win)
+  const repelK = params.repelK ?? 1.0; // Max repulsion for non-edges
+  const jitter = params.jitter ?? 0.5; // Higher jitter to untangle
 
   // adjacency para saber si (i,j) es arista
   const adj = new Set<string>();
@@ -88,8 +88,13 @@ export function graphToContactScene(
       const ux = dx / d;
       const uy = dy / d;
 
-      const err = d - target; // queremos err -> 0
-      const step = err * 0.5 * edgeK;
+      const err = d - target;
+      // Asymmetric force: 
+      // If overlap (err < 0), push APART strongly (0.8)
+      // If separated (err > 0), pull TOGETHER gently (edgeK = 0.1)
+      const factor = err < 0 ? 0.8 : edgeK;
+
+      const step = err * 0.5 * factor;
 
       a.x += ux * step;
       a.y += uy * step;
@@ -116,7 +121,7 @@ export function graphToContactScene(
 
         const ux = dx / d;
         const uy = dy / d;
-        const push = (target - d) * 0.5 * repelK;
+        const push = (target - d) * 0.5 * repelK; // repelK is 1.0 now
 
         a.x -= ux * push;
         a.y -= uy * push;
@@ -125,7 +130,44 @@ export function graphToContactScene(
       }
     }
 
-    // 3) “enfriar” un poco hacia el centro para que no se vaya al infinito
+    // 3) Hard Collision Resolution (Projection)
+    // Force overlap resolution by directly moving nodes apart if they are too close.
+    // This runs multiple times per iteration to stabilize.
+    for (let k = 0; k < 5; k++) {
+      let moved = false;
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const a = pts[i];
+          const b = pts[j];
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          let d = Math.hypot(dx, dy);
+          if (d < 1e-6) { dx = 1; dy = 0; d = 1; }
+
+          // If overlapping (distance < target), separate them immediately
+          // For edges: exact distance needed is target.
+          // For non-edges: min distance is target.
+          // In both cases, if d < target, we MUST separate.
+          if (d < target - 1e-4) {
+            const overlap = target - d;
+            const ux = dx / d;
+            const uy = dy / d;
+
+            const moveX = ux * overlap * 0.5;
+            const moveY = uy * overlap * 0.5;
+
+            a.x -= moveX;
+            a.y -= moveY;
+            b.x += moveX;
+            b.y += moveY;
+            moved = true;
+          }
+        }
+      }
+      if (!moved) break;
+    }
+
+    // 4) “enfriar” un poco hacia el centro para que no se vaya al infinito
     if (it % 20 === 0) {
       let cx = 0;
       let cy = 0;
