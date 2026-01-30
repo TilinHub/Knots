@@ -40,20 +40,7 @@ export function calculateBitangents(d1: ContactDisk, d2: ContactDisk): TangentSe
     if (D >= Math.abs(d1.radius - d2.radius)) {
         const gamma = Math.acos((d1.radius - d2.radius) / D);
         if (!isNaN(gamma)) {
-            // LSL (Bottom Tangent if dx>0)
-            const alphaLSL = phi - gamma;
-            const p1LSL = pOnC(d1.center, d1.radius, alphaLSL);
-            const p2LSL = pOnC(d2.center, d2.radius, alphaLSL);
-            segments.push({
-                type: 'LSL',
-                start: p1LSL,
-                end: p2LSL,
-                length: Math.sqrt((p2LSL.x - p1LSL.x) ** 2 + (p2LSL.y - p1LSL.y) ** 2),
-                startDiskId: d1.id,
-                endDiskId: d2.id
-            });
-
-            // RSR (Top Tangent if dx>0)
+            // RSR: Top Tangent (alpha = phi + gamma)
             const alphaRSR = phi + gamma;
             const p1RSR = pOnC(d1.center, d1.radius, alphaRSR);
             const p2RSR = pOnC(d2.center, d2.radius, alphaRSR);
@@ -62,6 +49,19 @@ export function calculateBitangents(d1: ContactDisk, d2: ContactDisk): TangentSe
                 start: p1RSR,
                 end: p2RSR,
                 length: Math.sqrt((p2RSR.x - p1RSR.x) ** 2 + (p2RSR.y - p1RSR.y) ** 2),
+                startDiskId: d1.id,
+                endDiskId: d2.id
+            });
+
+            // LSL: Bottom Tangent (alpha = phi - gamma)
+            const alphaLSL = phi - gamma;
+            const p1LSL = pOnC(d1.center, d1.radius, alphaLSL);
+            const p2LSL = pOnC(d2.center, d2.radius, alphaLSL);
+            segments.push({
+                type: 'LSL',
+                start: p1LSL,
+                end: p2LSL,
+                length: Math.sqrt((p2LSL.x - p1LSL.x) ** 2 + (p2LSL.y - p1LSL.y) ** 2),
                 startDiskId: d1.id,
                 endDiskId: d2.id
             });

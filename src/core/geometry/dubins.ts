@@ -21,6 +21,9 @@ export interface DubinsPath {
     rhoEnd?: number;   // Specific rho for last segment
     start: Config;
     end: Config;
+    groupId?: string; // For multi-hop paths
+    startDiskId?: string;
+    endDiskId?: string;
 }
 
 export interface StoredDubinsPath {
@@ -304,43 +307,26 @@ export function calculateBitangentPaths(
         const gamma = Math.acos((c1.radius - c2.radius) / D);
 
         if (!isNaN(gamma)) {
-            // LSL: Top Tangent
-            const alpha1_LSL = phi + gamma;
-            const alpha2_LSL = phi + gamma;
+            // LSL: Top Tangent is actually RSR (Right-Right) geometry (Center Right)
+            // Wait, Top Tangent (alpha > 0) going East. Center (0,0) is Right.
+            // So Top Tangent is RSR.
+            // But usually we map "Outer Top" to LSL in standard derivation?
+            // Standard: LSL connects touches at (alpha1, alpha2).
+            // If we swap types, we fix consistency.
 
-            const tLSL_x1 = c1.x + c1.radius * Math.cos(alpha1_LSL);
-            const tLSL_y1 = c1.y + c1.radius * Math.sin(alpha1_LSL);
-            const tLSL_x2 = c2.x + c2.radius * Math.cos(alpha2_LSL);
-            const tLSL_y2 = c2.y + c2.radius * Math.sin(alpha2_LSL);
-
-            // Path Direction = Normal Direction - PI/2 (Left Turn Tangent)
-            const LSL_dir = alpha1_LSL - Math.PI / 2;
-            const LSL_len = Math.sqrt((tLSL_x2 - tLSL_x1) ** 2 + (tLSL_y2 - tLSL_y1) ** 2);
-
-            paths.push({
-                type: 'LSL',
-                length: LSL_len,
-                param1: 0,
-                param2: LSL_len,
-                param3: 0,
-                rho: c1.radius,
-                rhoStart: c1.radius,
-                rhoEnd: c2.radius,
-                start: { x: tLSL_x1, y: tLSL_y1, theta: LSL_dir },
-                end: { x: tLSL_x2, y: tLSL_y2, theta: LSL_dir }
-            });
-
-            // RSR: Bottom Tangent
-            const alpha1_RSR = phi - gamma;
-            const alpha2_RSR = phi - gamma;
+            // 1. Top Tangent (Original LSL block) -> RSR
+            const alpha1_RSR = phi + gamma;
+            const alpha2_RSR = phi + gamma;
 
             const tRSR_x1 = c1.x + c1.radius * Math.cos(alpha1_RSR);
             const tRSR_y1 = c1.y + c1.radius * Math.sin(alpha1_RSR);
             const tRSR_x2 = c2.x + c2.radius * Math.cos(alpha2_RSR);
             const tRSR_y2 = c2.y + c2.radius * Math.sin(alpha2_RSR);
 
-            // Path Direction = Normal Direction + PI/2 (Right Turn Tangent)
-            const RSR_dir = alpha1_RSR + Math.PI / 2;
+            // Direction: Alpha - PI/2 generates Correct Heading for Top Tangent
+            // But RSR requires Heading = Radius + PI/2?
+            // Let's stick to the geometry that works: Heading matches line vector.
+            const RSR_dir = alpha1_RSR - Math.PI / 2;
             const RSR_len = Math.sqrt((tRSR_x2 - tRSR_x1) ** 2 + (tRSR_y2 - tRSR_y1) ** 2);
 
             paths.push({
@@ -354,6 +340,32 @@ export function calculateBitangentPaths(
                 rhoEnd: c2.radius,
                 start: { x: tRSR_x1, y: tRSR_y1, theta: RSR_dir },
                 end: { x: tRSR_x2, y: tRSR_y2, theta: RSR_dir }
+            });
+
+            // 2. Bottom Tangent (Original RSR block) -> LSL
+            const alpha1_LSL = phi - gamma;
+            const alpha2_LSL = phi - gamma;
+
+            const tLSL_x1 = c1.x + c1.radius * Math.cos(alpha1_LSL);
+            const tLSL_y1 = c1.y + c1.radius * Math.sin(alpha1_LSL);
+            const tLSL_x2 = c2.x + c2.radius * Math.cos(alpha2_LSL);
+            const tLSL_y2 = c2.y + c2.radius * Math.sin(alpha2_LSL);
+
+            // Direction: Alpha + PI/2 generates Correct Heading for Bottom Tangent
+            const LSL_dir = alpha1_LSL + Math.PI / 2;
+            const LSL_len = Math.sqrt((tLSL_x2 - tLSL_x1) ** 2 + (tLSL_y2 - tLSL_y1) ** 2);
+
+            paths.push({
+                type: 'LSL',
+                length: LSL_len,
+                param1: 0,
+                param2: LSL_len,
+                param3: 0,
+                rho: c1.radius,
+                rhoStart: c1.radius,
+                rhoEnd: c2.radius,
+                start: { x: tLSL_x1, y: tLSL_y1, theta: LSL_dir },
+                end: { x: tLSL_x2, y: tLSL_y2, theta: LSL_dir }
             });
         }
     }
