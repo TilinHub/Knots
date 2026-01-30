@@ -51,7 +51,12 @@ export function DubinsRenderer({
                 // If length < (rhoStart + rhoEnd), it physically implies overlap if they are straight connections.
                 const r1 = path.rhoStart ?? path.rho;
                 const r2 = path.rhoEnd ?? path.rho;
-                const isOverlapping = path.length < (r1 + r2) - 0.1; // Tolerance
+
+                // Only warn for Outer Tangents (LSL, RSR)
+                // Inner tangents (LSR, RSL) naturally have length < Distance, 
+                // so checking against Sum of Radii produces false positives when disks are separated.
+                const isOuter = path.type === 'LSL' || path.type === 'RSR';
+                const isOverlapping = isOuter && (path.length < (r1 + r2) - 0.1);
 
                 const labelColor = isOverlapping ? '#FF4500' : PathColors[path.type]; // Red-Orange if overlapping
                 const labelText = path.length.toFixed(2);

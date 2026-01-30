@@ -1,3 +1,4 @@
+import { checkDubinsPathCollision } from './collision';
 
 export type Point = { x: number; y: number };
 export type Config = { x: number; y: number; theta: number };
@@ -617,23 +618,15 @@ export interface Obstacle {
     radius: number;
 }
 
+
 /**
  * Checks if a Dubins path collides with any of the given obstacles.
- * Uses sampling for robustness.
+ * Uses robust analytic geometry (Arc-Circle and Line-Circle intersection).
+ * The stepSize parameter is ignored as analytic check is exact.
  */
+
+
 export function checkPathCollision(path: DubinsPath, obstacles: Obstacle[], stepSize: number = 5): boolean {
-    if (obstacles.length === 0) return false;
-
-    // Sample points
-    const points = sampleDubinsPath(path, stepSize);
-
-    for (const p of points) {
-        for (const obs of obstacles) {
-            const distSq = (p.x - obs.x) ** 2 + (p.y - obs.y) ** 2;
-            if (distSq < (obs.radius - 1e-3) ** 2) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return checkDubinsPathCollision(path, obstacles);
 }
+

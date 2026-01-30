@@ -68,12 +68,36 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         setState(prev => {
             if (!prev.isAnimating || !prev.pivotDiskId || !prev.rollingDiskId) return prev;
 
-            const newTheta = prev.theta + (prev.speed * prev.direction);
+            const step = prev.speed * prev.direction;
+            const newTheta = prev.theta + step;
 
             const collisionDisk = checkCollision(newTheta, prev.pivotDiskId, prev.rollingDiskId);
 
             if (collisionDisk) {
-                return { ...prev, isAnimating: false };
+                // Collision detected at newTheta. The valid position is somewhere between prev.theta and newTheta.
+                // Or we can solve for exact theta?
+                // Solving for intersection of a circle (pivot+dist) and circle (other+r_rolling) is complex analytically.
+                // Simple binary search refinement is robust enough for this frame.
+
+                let low = prev.theta;
+                let high = newTheta;
+                let validTheta = prev.theta;
+
+                // 10 iterations of binary search is plenty for visual precision
+                for (let i = 0; i < 10; i++) {
+                    const mid = (low + high) / 2;
+                    if (checkCollision(mid, prev.pivotDiskId, prev.rollingDiskId)) {
+                        // Collision at mid, go back towards low
+                        high = mid;
+                    } else {
+                        // Safe at mid, try to go further towards high
+                        validTheta = mid;
+                        low = mid;
+                    }
+                }
+
+                // Stop at last valid theta
+                return { ...prev, theta: validTheta, isAnimating: false };
             }
 
             return { ...prev, theta: newTheta };

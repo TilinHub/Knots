@@ -195,7 +195,22 @@ export function CSCanvas({
       const dy = newCenter.y - other.center.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       const otherR = other.visualRadius;
-      if (distance < currentR + otherR - 1) return true;
+
+      const minDistance = currentR + otherR;
+
+      // Strict overlap check (no -1 tolerance)
+      if (distance < minDistance) {
+        // Unsticking logic: Allow moving away if already overlapping
+        const oldDx = current.center.x - other.center.x;
+        const oldDy = current.center.y - other.center.y;
+        const oldDistance = Math.sqrt(oldDx * oldDx + oldDy * oldDy);
+
+        // If we were strictly inside (bad state) and we are improving (moving out), allow it.
+        if (oldDistance < minDistance && distance > oldDistance) {
+          continue;
+        }
+        return true;
+      }
     }
     return false;
   }, [disks]);
@@ -629,7 +644,7 @@ export function CSCanvas({
 
         let fill = "#89CFF0"; // Baby Blue
         let stroke = isSelected ? "#2E6BA8" : "#5CA0D3";
-        let strokeWidth = isSelected ? 4 : 2;
+        let strokeWidth = 2; // User requested no thickening on selection
 
         if (rollingMode) {
           if (disk.id === pivotDiskId) {
@@ -671,11 +686,15 @@ export function CSCanvas({
             <circle
               cx={cx}
               cy={cy}
-              r={radius}
+              // Compensate for stroke difference so visual boundary stays constant
+              // Unselected: Stroke 2 (Offset 1). Selected: Stroke 2 (Offset 1).
+              // We want R_visual = r + 1.
+              // So r = radius.
+              r={diskSequence.includes(disk.id) ? radius - 1 : radius}
               fill={diskSequence.includes(disk.id) ? "#FF4500" : fill} // Highlight selection
               fillOpacity={diskSequence.includes(disk.id) ? 0.4 : 1}
               stroke={diskSequence.includes(disk.id) ? "#FF4500" : stroke}
-              strokeWidth={diskSequence.includes(disk.id) ? 4 : strokeWidth}
+              strokeWidth={diskSequence.includes(disk.id) ? 4 : 2}
             />
             {/* Etiqueta (Índice) */}
             <text
