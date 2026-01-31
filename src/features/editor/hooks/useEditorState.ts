@@ -89,14 +89,33 @@ export function useEditorState(initialKnot?: InitialKnot) {
     }
 
     function addDisk() {
-        const id = `disk-${diskCount + 1}`;
+        const padding = 0; // Sin espacio, tangentes
+        let newCenter = { x: 0, y: 0 };
+        let visualRadius = 50;
+
+        if (diskBlocks.length > 0) {
+            // Heredar radio visual del primer disco (asumiendo consistencia)
+            visualRadius = diskBlocks[0].visualRadius;
+
+            // Encontrar el disco más a la derecha
+            const rightMostDisk = diskBlocks.reduce((prev, current) => {
+                return (prev.center.x + prev.visualRadius) > (current.center.x + current.visualRadius) ? prev : current;
+            });
+
+            newCenter = {
+                x: rightMostDisk.center.x + rightMostDisk.visualRadius + visualRadius + padding,
+                y: 0
+            };
+        }
+
+        const id = `disk-${Date.now()}`;
         const newDisk: CSDisk = {
             id,
             kind: 'disk',
-            center: { x: diskCount * 80, y: 0 },
+            center: newCenter,
             radius: 1,
-            visualRadius: diskBlocks.length > 0 ? diskBlocks[0].visualRadius : 50,
-            label: `D${diskCount + 1}`,
+            visualRadius: visualRadius,
+            label: `D${diskBlocks.length + 1}`,
             color: '#4A90E2',
         };
         setBlocks(prev => [...prev, newDisk]);
