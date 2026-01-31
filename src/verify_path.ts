@@ -1,7 +1,7 @@
 
-import { checkDubinsPathCollision } from './core/geometry/dubins';
+import { checkDubinsPathCollision } from './core/geometry/collision';
 import { calculateBitangentPaths } from './core/geometry/dubins';
-import { Obstacle } from './core/geometry/dubins';
+import type { Obstacle } from './core/geometry/dubins';
 
 // Mock data based on screenshot
 // 2 and 1 are Start/End.
