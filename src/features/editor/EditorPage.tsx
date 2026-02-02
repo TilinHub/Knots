@@ -103,7 +103,11 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         // Hack: Override lengthInfo if we have hullMetrics or Dubins Metrics
         lengthInfo={
           dubinsState.state.isActive
-            ? { totalLength: persistentDubins.state.totalLength }
+            ? {
+              totalLength: persistentDubins.state.totalLength,
+              tangentLength: persistentDubins.state.totalLength,
+              arcLength: 0
+            }
             : (editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
               ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
               : editorState.lengthInfo)
