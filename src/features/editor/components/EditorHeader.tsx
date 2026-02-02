@@ -227,7 +227,7 @@ export const EditorHeader = ({
                                 cursor: 'help',
                             }}
                         >
-                            L = {lengthInfo.totalLength.toFixed(2)} px
+                            L = {(lengthInfo.totalLength / 50).toFixed(2)} u
                         </button>
                         {showLengthDetails && lengthInfo.tangentLength !== undefined && (
                             <div style={{
@@ -247,15 +247,15 @@ export const EditorHeader = ({
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                     <span>Rectas:</span>
-                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{lengthInfo.tangentLength?.toFixed(2)}</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{((lengthInfo.tangentLength ?? 0) / 50).toFixed(2)}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                     <span>Arcos:</span>
-                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{lengthInfo.arcLength?.toFixed(2)}</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{((lengthInfo.arcLength ?? 0) / 50).toFixed(2)}</span>
                                 </div>
                                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '4px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
                                     <span>Total:</span>
-                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{lengthInfo.totalLength.toFixed(2)}</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{(lengthInfo.totalLength / 50).toFixed(2)}</span>
                                 </div>
                             </div>
                         )}

@@ -74,7 +74,7 @@ export function CSCanvas({
   onSelectBlock,
   onUpdateBlock,
   showGrid = true,
-  gridSpacing = 20,
+  gridSpacing = 50,
   width = 800,
   height = 600,
   rollingMode = false,
@@ -528,16 +528,18 @@ export function CSCanvas({
       }}
     >
       <defs>
-        <pattern id="smallGrid" width={gridSpacing} height={gridSpacing} patternUnits="userSpaceOnUse">
-          <path d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`} fill="none" stroke="#f0f0f0" strokeWidth="1" />
+        {/* Sub-grid (e.g., 20px) */}
+        <pattern id="smallGrid" width={gridSpacing / 5} height={gridSpacing / 5} patternUnits="userSpaceOnUse">
+          <path d={`M ${gridSpacing / 5} 0 L 0 0 0 ${gridSpacing / 5}`} fill="none" stroke="#F5F5F5" strokeWidth="1" />
         </pattern>
-        <pattern id="largeGrid" width={gridSpacing * 5} height={gridSpacing * 5} patternUnits="userSpaceOnUse">
-          <rect width={gridSpacing * 5} height={gridSpacing * 5} fill="url(#smallGrid)" />
-          <path d={`M ${gridSpacing * 5} 0 L 0 0 0 ${gridSpacing * 5}`} fill="none" stroke="#e0e0e0" strokeWidth="1" />
+        {/* Main Grid (e.g., 100px) */}
+        <pattern id="largeGrid" width={gridSpacing} height={gridSpacing} patternUnits="userSpaceOnUse">
+          <rect width={gridSpacing} height={gridSpacing} fill="url(#smallGrid)" />
+          <path d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`} fill="none" stroke="#E0E0E0" strokeWidth="1" />
         </pattern>
       </defs>
 
-      {/* Grid */}
+      {/* Grid Background */}
       {showGrid && <rect width="100%" height="100%" fill="url(#largeGrid)" />}
 
       {/* Ejes */}
@@ -723,7 +725,7 @@ export function CSCanvas({
               pointerEvents="none"
               style={{ userSelect: 'none', textShadow: '0px 0px 2px white' }}
             >
-              {`(${disk.center.x.toFixed(2)}, ${disk.center.y.toFixed(2)})`}
+              {`(${(disk.center.x / 50).toFixed(2)}, ${(disk.center.y / 50).toFixed(2)})`}
             </text>
           </g>
         );

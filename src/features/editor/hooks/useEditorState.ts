@@ -18,7 +18,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     // UI State
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [showGrid, setShowGrid] = useState(true);
-    const [gridSpacing, setGridSpacing] = useState(20);
+    const [gridSpacing, setGridSpacing] = useState(50);
     const [angleUnit, setAngleUnit] = useState<'deg' | 'rad'>('deg');
     const [showContactDisks, setShowContactDisks] = useState(false);
     const [showEnvelope, setShowEnvelope] = useState(true); // [NEW]

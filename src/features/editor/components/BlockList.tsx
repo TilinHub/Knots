@@ -84,7 +84,7 @@ export const BlockList = ({
                                     </span>
                                     {length !== null && (
                                         <span style={{ fontSize: 'var(--fs-caption)', fontFamily: 'var(--ff-mono)', color: 'var(--text-secondary)' }}>
-                                            {length.toFixed(1)} px
+                                            {(length / 50).toFixed(2)} u
                                         </span>
                                     )}
                                 </div>
@@ -97,9 +97,9 @@ export const BlockList = ({
                                                 <div style={{ display: 'flex', gap: '8px' }}>
                                                     <CoordInput
                                                         label="Centro"
-                                                        x={block.center.x}
-                                                        y={block.center.y}
-                                                        onChange={(newX, newY) => onUpdateBlock(block.id, { center: { x: newX, y: newY } })}
+                                                        x={block.center.x / 50}
+                                                        y={block.center.y / 50}
+                                                        onChange={(newX, newY) => onUpdateBlock(block.id, { center: { x: newX * 50, y: newY * 50 } })}
                                                     />
                                                 </div>
                                                 <div style={{ marginTop: '4px' }}>
