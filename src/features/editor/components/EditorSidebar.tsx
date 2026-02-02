@@ -109,29 +109,30 @@ export const EditorSidebar = ({
                         const newPos = rollingState.getCurrentPosition();
                         if (newPos && rollingState.rollingDiskId) {
                             actions.updateBlock(rollingState.rollingDiskId, { center: newPos });
-                            // Optional: Reset selection/mode after commit?
-                            // User asked to "stay in that new position".
-                            // If we update block, the rolling mode needs to know the block MOVED.
-                            // But usually rolling mode depends on 'blocks' prop. 
-                            // If we update the block, re-render happens.
-                            // The rolling mode hook sees new blocks.
-                            // PIVOT is same. ROLLING is same id.
-                            // THETA should be reset to reflect new relative angle? 
-                            // actually if we commit, we physically move the disk.
-                            // The visual rolling position is based on PIVOT center + theta.
-                            // If we move the disk to where it IS, but keep theta same...
-                            // it will double apply if we aren't careful?
-                            //
-                            // WAIT. `useRollingMode` calculates position purely from theta.
-                            // If we update the REAL position, `useRollingMode` might still render it at (pivot + theta).
-                            // If we want to "stop rolling and leave it there", we probably should:
-                            // 1. Update real position.
-                            // 2. Reset rolling mode selection (so it stops overriding position).
                             rollingState.resetSelection();
                         }
                     }}
                 />
             )}
+
+            {/* CONTACT MATRIX FOR ROLLING MODE (Dynamic) */}
+            {rollingMode && rollingState.pivotDiskId && rollingState.rollingDiskId && (
+                <div style={{ padding: '0 var(--space-md) var(--space-md)' }}>
+                    <ContactMatrixViewer disks={(() => {
+                        // Calculate dynamic positions for the matrix
+                        // We need to clone the disks and update the rolling one
+                        const currentPos = rollingState.getCurrentPosition();
+                        if (!currentPos) return editorState.diskBlocks;
+                        return editorState.diskBlocks.map(d => {
+                            if (d.id === rollingState.rollingDiskId) {
+                                return { ...d, center: currentPos };
+                            }
+                            return d;
+                        });
+                    })()} />
+                </div>
+            )}
+
 
 
             {/* CONTACT DISKS INFO PANEL */}

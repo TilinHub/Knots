@@ -111,13 +111,39 @@ export function CSCanvas({
   const disks = blocks.filter((b): b is CSDisk => b.kind === 'disk');
   const nonDiskBlocks = blocks.filter((b) => b.kind !== 'disk');
 
+  // Calculate Rolling Position first
+  const rollingDiskPosition = React.useMemo(() => {
+    if (!rollingMode || !pivotDiskId || !rollingDiskId) return null;
+    const pivot = disks.find(d => d.id === pivotDiskId);
+    const rolling = disks.find(d => d.id === rollingDiskId);
+    if (!pivot || !rolling) return null;
+    const distance = pivot.visualRadius + rolling.visualRadius;
+    const newCenter: Point2D = {
+      x: pivot.center.x + distance * Math.cos(theta),
+      y: pivot.center.y + distance * Math.sin(theta),
+    };
+    const spinAngle = -(distance / rolling.visualRadius) * theta;
+    return { center: newCenter, spinAngle };
+  }, [rollingMode, pivotDiskId, rollingDiskId, theta, disks]);
+
+  // Create list of disks with overrides applied (for Hull and Contacts)
+  const displayedDisks = React.useMemo(() => {
+    if (!rollingDiskPosition || !rollingDiskId) return disks;
+    return disks.map(d => {
+      if (d.id === rollingDiskId) {
+        return { ...d, center: rollingDiskPosition.center };
+      }
+      return d;
+    });
+  }, [disks, rollingDiskPosition, rollingDiskId]);
+
   // Mapear CSDisk a la estructura Disk que espera diskHull
-  const simpleDisks = React.useMemo(() => disks.map(d => ({
+  const simpleDisks = React.useMemo(() => displayedDisks.map(d => ({
     id: d.id,
     x: d.center.x,
     y: d.center.y,
     r: d.visualRadius
-  })), [disks]);
+  })), [displayedDisks]);
 
   const hullData = useDiskHull(simpleDisks);
 
@@ -126,16 +152,16 @@ export function CSCanvas({
   const crossings = React.useMemo(() => findAllCrossings(nonDiskBlocks), [nonDiskBlocks]);
 
   // Detectar contactos entre discos (Dubins constraint)
-  const contacts = React.useMemo(() => findDiskContacts(disks), [disks]);
+  const contacts = React.useMemo(() => findDiskContacts(displayedDisks), [displayedDisks]);
 
   // NEW: Contact Graph Integration
   // Map CSDisk to ContactDisk
-  const contactDisks = React.useMemo(() => disks.map(d => ({
+  const contactDisks = React.useMemo(() => displayedDisks.map(d => ({
     id: d.id,
     center: d.center,
     radius: d.visualRadius,
     regionId: 'default'
-  })), [disks]);
+  })), [displayedDisks]);
 
   const contactGraph = useContactGraph(contactDisks);
 
@@ -159,20 +185,7 @@ export function CSCanvas({
     return [];
   }, [nonDiskBlocks, showContactDisks, disks.length]);
 
-  // ... (Rolling logic kept for compatibility, though simplified visual focus)
-  const rollingDiskPosition = React.useMemo(() => {
-    if (!rollingMode || !pivotDiskId || !rollingDiskId) return null;
-    const pivot = disks.find(d => d.id === pivotDiskId);
-    const rolling = disks.find(d => d.id === rollingDiskId);
-    if (!pivot || !rolling) return null;
-    const distance = pivot.visualRadius + rolling.visualRadius;
-    const newCenter: Point2D = {
-      x: pivot.center.x + distance * Math.cos(theta),
-      y: pivot.center.y + distance * Math.sin(theta),
-    };
-    const spinAngle = -(distance / rolling.visualRadius) * theta;
-    return { center: newCenter, spinAngle };
-  }, [rollingMode, pivotDiskId, rollingDiskId, theta, disks]);
+
 
   React.useEffect(() => {
     if (rollingDiskPosition && showTrail) {
