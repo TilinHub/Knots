@@ -277,6 +277,14 @@ export const EditorSidebar = ({
                     </div>
                 </>
             )}
+
+            {/* CONTACT MATRIX IN MANUAL MODE */}
+            {!rollingMode && !showContactDisks && editorState.diskBlocks.length > 0 && (
+                <div style={{ padding: '0 var(--space-md) var(--space-md)', borderTop: '1px solid var(--border)' }}>
+                    <ContactMatrixViewer disks={editorState.diskBlocks} />
+                </div>
+            )}
+
         </aside>
     );
 };
