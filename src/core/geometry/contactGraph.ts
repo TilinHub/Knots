@@ -365,3 +365,32 @@ export function findEnvelopePath(graph: BoundedCurvatureGraph, diskIds: string[]
 
     return path;
 }
+
+/**
+ * Calculates the Adjacency Matrix for a set of disks based on contact.
+ * A[i][j] = 1 if disks are in contact (distance approx sum of radii), 0 otherwise.
+ */
+export function calculateAdjacencyMatrix(disks: { center: Point2D, visualRadius: number }[]): number[][] {
+    const n = disks.length;
+    const matrix: number[][] = Array(n).fill(0).map(() => Array(n).fill(0));
+    const TOLERANCE = 1.0; // Tolerance for contact detection (pixels) 
+
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const d1 = disks[i];
+            const d2 = disks[j];
+            const dx = d2.center.x - d1.center.x;
+            const dy = d2.center.y - d1.center.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Check for contact
+            const touchDist = d1.visualRadius + d2.visualRadius;
+
+            if (Math.abs(dist - touchDist) < TOLERANCE) {
+                matrix[i][j] = 1;
+                matrix[j][i] = 1;
+            }
+        }
+    }
+    return matrix;
+}

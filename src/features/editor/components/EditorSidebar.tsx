@@ -3,6 +3,7 @@ import { GraphsPanel } from './GraphsPanel';
 import { ViewControls } from './ViewControls';
 import { BlockList } from './BlockList';
 import { Button } from '../../../ui/Button';
+import { ContactMatrixViewer } from './ContactMatrixViewer';
 import type { CSBlock, CSDisk } from '../../../core/types/cs';
 import type React from 'react'; // For React.Dispatch types if used in interfaces
 
@@ -132,6 +133,7 @@ export const EditorSidebar = ({
                 />
             )}
 
+
             {/* CONTACT DISKS INFO PANEL */}
             {showContactDisks && (
                 <div
@@ -170,6 +172,7 @@ export const EditorSidebar = ({
                             Cada disco se posiciona en el centro de una región cerrada formada por los segmentos y arcos del diagrama.
                         </p>
                     </div>
+
                     <div style={{ marginTop: 'var(--space-md)' }}>
                         <Button
                             onClick={() => actions.setShowContactDisks(false)}
@@ -179,6 +182,9 @@ export const EditorSidebar = ({
                             Ocultar Discos
                         </Button>
                     </div>
+
+                    {/* CONTACT MATRIX VIEWER - NEW */}
+                    <ContactMatrixViewer disks={editorState.diskBlocks} />
                 </div>
             )}
 
