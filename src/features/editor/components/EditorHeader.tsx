@@ -229,7 +229,7 @@ export const EditorHeader = ({
                         >
                             L = {(lengthInfo.totalLength / 50).toFixed(2)} u
                         </button>
-                        {showLengthDetails && lengthInfo.tangentLength !== undefined && (
+                        {showLengthDetails && (
                             <div style={{
                                 position: 'absolute',
                                 top: '100%',

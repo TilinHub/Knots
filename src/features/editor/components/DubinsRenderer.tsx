@@ -59,7 +59,7 @@ export function DubinsRenderer({
                 const isOverlapping = isOuter && (path.length < (r1 + r2) - 0.1);
 
                 const labelColor = isOverlapping ? '#FF4500' : PathColors[path.type]; // Red-Orange if overlapping
-                const labelText = path.length.toFixed(2);
+                const labelText = (path.length / 50).toFixed(2);
 
                 return (
                     <g key={`selected-${path.type}-${idx}-${path.length}`}>
@@ -138,7 +138,7 @@ export function DubinsRenderer({
                                 dy="-10"
                                 style={{ pointerEvents: 'none', textShadow: '0px 0px 4px black' }}
                             >
-                                {path.type} ({path.length.toFixed(1)})
+                                {path.type} ({(path.length / 50).toFixed(1)})
                             </text>
                         )}
                     </g>
