@@ -1,0 +1,30 @@
+=== RUNNING SANITY CHECK (Stadium Example) ===
+1. Checks Geometricos...
+   -> All Checks PASSED
+2. Matrix Construction...
+   A dims: 1x4
+   Tc dims: 4x4
+   L dims: 5x8
+3. Functional Assembly...
+   gc norm: 2.8284271247461903
+   gw norm: 0
+4. Reduction...
+   gred norm: 2.8284271247461903
+5. Gauge Fixing...
+   Roll(c) dim: 3
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\linearAlgebra.ts:48
+        if (this.cols !== B.rows) throw new Error(`Dim mismatch: ${this.rows}x${this.cols} * ${B.rows}x${B.cols}`);
+                                        ^
+
+
+Error: Dim mismatch: 4x4 * 3x3
+    at Matrix.multiply (C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\linearAlgebra.ts:48:41)
+    at orth (C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\linearAlgebra.ts:218:14)
+    at constructGaugeBasis (C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\gauge.ts:102:21)
+    at runSanityCheck (C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\sanity.ts:114:19)
+    at <anonymous> (C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\sanity.ts:140:1)
+    at ModuleJob.run (node:internal/modules/esm/module_job:274:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.15.0
