@@ -360,15 +360,14 @@ export class SmoothCSEnvelope {
     let angle1 = this.normalizeAngle(startAngle);
     let angle2 = this.normalizeAngle(endAngle);
 
-    if (angle2 < angle1) {
-      angle2 += 2 * Math.PI;
-    }
-
-    const angleSpan = angle2 - angle1;
+    // Calculate shortest angular difference
+    let angleSpan = angle2 - angle1;
+    if (angleSpan > Math.PI) angleSpan -= 2 * Math.PI;
+    if (angleSpan < -Math.PI) angleSpan += 2 * Math.PI;
 
     // Más puntos para arcos más grandes
     const steps = this.adaptiveSmoothing
-      ? Math.max(15, Math.floor((angleSpan / (2 * Math.PI)) * 40))
+      ? Math.max(15, Math.floor((Math.abs(angleSpan) / (2 * Math.PI)) * 40))
       : 20;
 
     const angleStep = angleSpan / steps;
