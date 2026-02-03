@@ -4,9 +4,11 @@ import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
 interface ContactPathRendererProps {
     path: EnvelopeSegment[];
     visible: boolean;
+    color?: string;
+    width?: number;
 }
 
-export function ContactPathRenderer({ path, visible }: ContactPathRendererProps) {
+export function ContactPathRenderer({ path, visible, color = "#FF4500", width = 4 }: ContactPathRendererProps) {
     if (!visible || !path || path.length === 0) return null;
 
     return (
@@ -14,19 +16,13 @@ export function ContactPathRenderer({ path, visible }: ContactPathRendererProps)
             {path.map((seg, idx) => {
                 if (seg.type === 'ARC') {
                     // Render Arc
-                    // SVG Path for Arc: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
                     const startX = seg.center.x + seg.radius * Math.cos(seg.startAngle);
                     const startY = seg.center.y + seg.radius * Math.sin(seg.startAngle);
                     const endX = seg.center.x + seg.radius * Math.cos(seg.endAngle);
                     const endY = seg.center.y + seg.radius * Math.sin(seg.endAngle);
 
-                    // Flags
                     const largeArc = seg.length > Math.PI * seg.radius ? 1 : 0;
-                    // Sweep: L (CCW) -> 0 in SVG Y-Down? No.
-                    // Standard Math: L=CCW.
-                    // SVG Y-Down: +Angle is CW visually?
-                    // Let's rely on standard math coordinates since we flip Y in CSCanvas.
-                    const sweep = seg.chirality === 'L' ? 1 : 0; // Standard CCW=1
+                    const sweep = seg.chirality === 'L' ? 1 : 0;
 
                     const d = `M ${startX} ${startY} A ${seg.radius} ${seg.radius} 0 ${largeArc} ${sweep} ${endX} ${endY}`;
 
@@ -35,8 +31,8 @@ export function ContactPathRenderer({ path, visible }: ContactPathRendererProps)
                             key={`seg-${idx}-arc`}
                             d={d}
                             fill="none"
-                            stroke="#FF4500" // OrangeRed
-                            strokeWidth="4"
+                            stroke={color}
+                            strokeWidth={width}
                             strokeLinecap="round"
                         />
                     );
@@ -49,8 +45,8 @@ export function ContactPathRenderer({ path, visible }: ContactPathRendererProps)
                             y1={seg.start.y}
                             x2={seg.end.x}
                             y2={seg.end.y}
-                            stroke="#FF4500"
-                            strokeWidth="4"
+                            stroke={color}
+                            strokeWidth={width}
                             strokeLinecap="round"
                         />
                     );

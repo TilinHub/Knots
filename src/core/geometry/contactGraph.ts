@@ -147,8 +147,11 @@ export function buildBoundedCurvatureGraph(disks: ContactDisk[]): BoundedCurvatu
     for (let i = 0; i < disks.length; i++) {
         for (let j = i + 1; j < disks.length; j++) {
             const candidates = calculateBitangents(disks[i], disks[j]);
+            const reverseCandidates = calculateBitangents(disks[j], disks[i]);
 
-            for (const seg of candidates) {
+            const allCandidates = [...candidates, ...reverseCandidates];
+
+            for (const seg of allCandidates) {
                 // Check against ALL other disks
                 let blocked = false;
                 for (let k = 0; k < disks.length; k++) {

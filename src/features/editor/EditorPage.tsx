@@ -29,7 +29,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // 1. Logic & State (Custom Hooks)
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
-  const knotState = useKnotState();
+
+  // Only pass disks to knot state for graph building
+  const diskBlocks = React.useMemo(() => editorState.blocks.filter((b): b is CSDisk => b.kind === 'disk'), [editorState.blocks]);
+  const knotState = useKnotState({ blocks: diskBlocks });
 
   // Map CSDisk to ContactDisk for Dubins logic
   const contactDisks = useMemo(() => {
@@ -69,13 +72,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     return computeHullMetrics(hull);
   }, [editorState.diskBlocks]);
 
-  const handleToggleKnotMode = () => {
-    if (knotState.mode === 'hull') {
-      knotState.actions.initFromHull(editorState.blocks);
-    } else {
-      knotState.actions.setMode('hull');
-    }
-  };
+  // Use simple toggle
+  const handleToggleKnotMode = knotState.actions.toggleMode;
 
   // 2. Event Handlers (can be simple wrappers or passed directly)
   // handleDiskClick logic was conceptually here but passed directly below for cleaner code
@@ -141,14 +139,20 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               // Assuming mutually exclusive or Rolling > Dubins.
             } : {
               // If Dubins is active, we want to capture clicks.
-              onDiskClick: dubinsState.state.isActive ? (diskId) => {
-                persistentDubins.actions.handleDiskClick(diskId);
-              } : undefined
+              // If Knot Mode is active, we ALSO want to capture clicks.
+              onDiskClick: dubinsState.state.isActive
+                ? (diskId) => persistentDubins.actions.handleDiskClick(diskId)
+                : knotState.mode === 'knot'
+                  ? knotState.actions.toggleDisk
+                  : undefined
             })}
 
             knotMode={knotState.mode === 'knot'}
-            knot={knotState.knot}
-            onKnotSegmentClick={knotState.actions.applyTwist}
+            // OLD: knot={knotState.knot}
+            // NEW: pass sequences/paths for rendering
+            knotPath={knotState.knotPath}
+            knotSequence={knotState.diskSequence}
+            onKnotSegmentClick={() => { }}
 
 
             showContactDisks={editorState.showContactDisks}
@@ -176,6 +180,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
           rollingMode={rollingState.isActive}
           rollingState={rollingState}
           dubinsState={dubinsState}
+          knotMode={knotState.mode === 'knot'}
+          knotState={knotState}
           editorState={editorState}
           actions={editorActions}
         />

@@ -64,6 +64,8 @@ interface EditorSidebarProps {
     editorState: EditorState;
     actions: EditorActions;
     dubinsState?: any;
+    knotMode?: boolean; // [NEW]
+    knotState?: any;    // [NEW]
 }
 
 export const EditorSidebar = ({
@@ -73,6 +75,8 @@ export const EditorSidebar = ({
     editorState,
     actions,
     dubinsState,
+    knotMode = false,
+    knotState,
 }: EditorSidebarProps) => {
     if (!isOpen) return null;
 
@@ -113,6 +117,47 @@ export const EditorSidebar = ({
                         }
                     }}
                 />
+            )}
+
+            {/* KNOT MODE PANEL */}
+            {knotMode && knotState && (
+                <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
+                    <h2
+                        style={{
+                            fontSize: 'var(--fs-caption)',
+                            fontWeight: 'var(--fw-semibold)',
+                            color: 'var(--text-secondary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: 'var(--space-sm)',
+                        }}
+                    >
+                        🧶 Knot Construction
+                    </h2>
+                    <div style={{ marginBottom: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        Select disks in sequence to wrap the envelope around them.
+                        <br />
+                        <strong>Sequence:</strong> {knotState.diskSequence.length} disks
+                    </div>
+
+                    <Button
+                        onClick={knotState.actions.clearSequence}
+                        variant="secondary"
+                        style={{ width: '100%', borderColor: 'var(--accent-error)', color: 'var(--accent-error)' }}
+                        disabled={knotState.diskSequence.length === 0}
+                    >
+                        Clear Knot Sequence
+                    </Button>
+
+                    {knotState.diskSequence.length > 2 && (
+                        <div style={{ marginTop: '12px', padding: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', fontSize: '12px' }}>
+                            {knotState.diskSequence[0] === knotState.diskSequence[knotState.diskSequence.length - 1]
+                                ? "✅ Loop Closed"
+                                : "⚠️ Loop Open (Click first disk to close)"
+                            }
+                        </div>
+                    )}
+                </div>
             )}
 
             {/* CONTACT MATRIX FOR ROLLING MODE (Dynamic) */}
@@ -205,7 +250,7 @@ export const EditorSidebar = ({
             )}
 
             {/* STANDARD EDITOR TOOLS */}
-            {!rollingMode && !showContactDisks && (
+            {!rollingMode && !knotMode && !showContactDisks && (
                 <>
                     <ViewControls
                         showGrid={editorState.showGrid}

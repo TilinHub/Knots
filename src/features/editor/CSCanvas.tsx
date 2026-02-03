@@ -12,7 +12,7 @@ import { useContactGraph } from './hooks/useContactGraph';
 import { useContactPath } from './hooks/useContactPath';
 import { ContactGraphRenderer } from './components/ContactGraphRenderer';
 import { ContactPathRenderer } from './components/ContactPathRenderer';
-
+import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
 
 interface CSCanvasProps {
   blocks: CSBlock[];
@@ -32,7 +32,8 @@ interface CSCanvasProps {
   onDiskClick?: (diskId: string) => void;
   // Knot props
   knotMode?: boolean;
-  knot?: KnotDiagram | null;
+  knotPath?: EnvelopeSegment[];
+  knotSequence?: string[];
   onKnotSegmentClick?: (index: number) => void;
   // Contact graph props
   showContactDisks?: boolean;
@@ -86,7 +87,8 @@ export function CSCanvas({
   showContactDisks = false,
   showEnvelope = true, // [NEW] Default true
   knotMode = false,
-  knot = null,
+  knotPath = [],
+  knotSequence = [],
   onKnotSegmentClick,
   dubinsMode = false,
   dubinsPaths = [],
@@ -347,9 +349,16 @@ export function CSCanvas({
       }
     }
 
+    // KNOT MODE INTERACTION
+    if (knotMode && onDiskClick && pointType === 'disk') {
+      onDiskClick(blockId);
+      // Block dragging to avoid accidental moves while building sequence
+      return;
+    }
+
     if (rollingMode && onDiskClick) {
       const block = blocks.find(b => b.id === blockId);
-      if (block?.kind === 'disk') onDiskClick(blockId);
+      if (block?.kind === 'disk') onDiskClick(block.id);
       return;
     }
     const pos = getMousePositionExact(e as any); // Simplificado para usar coordenadas base
@@ -570,12 +579,9 @@ export function CSCanvas({
         />
       )}
 
-      {knotMode && knot && (
+      {knotMode && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <KnotRenderer
-            knot={knot}
-            onSegmentClick={(idx) => onKnotSegmentClick?.(idx)}
-          />
+          <ContactPathRenderer path={knotPath} visible={true} color="#FF6B6B" width={4} />
         </g>
       )}
 
@@ -655,6 +661,7 @@ export function CSCanvas({
         const isSelected = disk.id === selectedBlockId;
         const isStart = startDiskId === disk.id;
         const isEnd = endDiskId === disk.id;
+        const isKnotSelected = knotMode && knotSequence.includes(disk.id);
         const radius = disk.visualRadius;
 
         let fill = "#89CFF0"; // Baby Blue
@@ -683,6 +690,13 @@ export function CSCanvas({
           }
         }
 
+        if (isKnotSelected) {
+          // Highlight knot sequence
+          fill = "#FF6B6B";
+          stroke = "#C0392B";
+          strokeWidth = 3;
+        }
+
         return (
           <g key={disk.id}
             onMouseDown={(e) => {
@@ -705,11 +719,11 @@ export function CSCanvas({
               // Unselected: Stroke 2 (Offset 1). Selected: Stroke 2 (Offset 1).
               // We want R_visual = r + 1.
               // So r = radius.
-              r={diskSequence.includes(disk.id) ? radius - 1 : radius}
-              fill={diskSequence.includes(disk.id) ? "#FF4500" : fill} // Highlight selection
-              fillOpacity={diskSequence.includes(disk.id) ? 0.4 : 1}
-              stroke={diskSequence.includes(disk.id) ? "#FF4500" : stroke}
-              strokeWidth={diskSequence.includes(disk.id) ? 4 : 2}
+              r={radius} // Don't shrink
+              fill={fill}
+              fillOpacity={isKnotSelected ? 0.6 : 1}
+              stroke={stroke}
+              strokeWidth={strokeWidth}
             />
             {/* Etiqueta (Índice) */}
             <text
