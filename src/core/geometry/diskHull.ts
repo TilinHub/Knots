@@ -146,8 +146,8 @@ function arcFlagsFromAngles(startAngle: number, endAngle: number) {
   // In that case, the "Shortest Path" is CW (0.1 deg).
   // We ALWAYS pick the shortest path.
 
-  const largeArcFlag = 0;
-  const sweepFlag = (diff <= Math.PI) ? 1 : 0; // 1=CCW, 0=CW
+  const largeArcFlag = 0 as 0 | 1;
+  const sweepFlag = ((diff <= Math.PI) ? 1 : 0) as 0 | 1; // 1=CCW, 0=CW
 
   return { sweepFlag, largeArcFlag };
 }
