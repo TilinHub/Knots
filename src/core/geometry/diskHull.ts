@@ -135,13 +135,20 @@ function arcFlagsFromAngles(startAngle: number, endAngle: number) {
   // And 'largeArcFlag = 0' (Short arc).
   // Calculating diff to be safe:
   let diff = endAngle - startAngle;
-  // Normalize to positive CW angle
+  // Normalize to positive CCW angle [0, 2PI)
   while (diff < 0) diff += 2 * Math.PI;
   while (diff >= 2 * Math.PI) diff -= 2 * Math.PI;
 
-  // If CW Diff > 180, then CCW Diff < 180.
-  const largeArcFlag = (diff > Math.PI ? 0 : 1) as 0 | 1;
-  const sweepFlag = 0 as 0 | 1;
+  // Convex Hull Vertex Logic:
+  // For a set of Disks (N >= 2), the bounding arc at any vertex must be <= 180 degrees.
+  // We should never draw a reflex (> 180) arc.
+  // If 'diff' (CCW angle) is > PI, it implies the points are inverted due to noise (e.g. 359.9 deg).
+  // In that case, the "Shortest Path" is CW (0.1 deg).
+  // We ALWAYS pick the shortest path.
+
+  const largeArcFlag = 0;
+  const sweepFlag = (diff <= Math.PI) ? 1 : 0; // 1=CCW, 0=CW
+
   return { sweepFlag, largeArcFlag };
 }
 
@@ -194,16 +201,18 @@ function buildHullSegmentsCCW(hullDisks: Disk[]) {
   return segments;
 }
 
+const fmt = (n: number) => n.toFixed(3);
+
 export function hullSegmentsToSvgPath(segments: HullSegment[]) {
   if (segments.length === 0) return "";
   const start = segments[0].type === 'tangent' ? segments[0].from : segments[0].startPoint;
-  const cmds: string[] = [`M ${start.x} ${start.y}`];
+  const cmds: string[] = [`M ${fmt(start.x)} ${fmt(start.y)}`];
   for (const s of segments) {
     if (s.type === "tangent") {
-      cmds.push(`L ${s.to.x} ${s.to.y}`);
+      cmds.push(`L ${fmt(s.to.x)} ${fmt(s.to.y)}`);
     } else {
       const r = s.disk.r;
-      cmds.push(`A ${r} ${r} 0 ${s.largeArcFlag as any} ${s.sweepFlag} ${s.endPoint.x} ${s.endPoint.y}`);
+      cmds.push(`A ${fmt(r)} ${fmt(r)} 0 0 ${s.sweepFlag} ${fmt(s.endPoint.x)} ${fmt(s.endPoint.y)}`);
     }
   }
   cmds.push("Z");

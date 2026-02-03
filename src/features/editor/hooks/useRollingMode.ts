@@ -126,6 +126,49 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         isAnimating: false
     }));
 
+    // Helper to find intersection angles (valid contact points)
+    const solveContactTheta = (pivot: CSDisk, rolling: CSDisk, obstacle: CSDisk): number | null => {
+        // We want to find theta such that rolling disk touches both Pivot and Obstacle.
+        // This effectively means finding the intersection of two circles:
+        // C1: Center=Pivot, Radius = R_pivot + R_rolling
+        // C2: Center=Obstacle, Radius = R_obstacle + R_rolling
+
+        const r1 = pivot.visualRadius + rolling.visualRadius;
+        const r2 = obstacle.visualRadius + rolling.visualRadius;
+
+        const dx = obstacle.center.x - pivot.center.x;
+        const dy = obstacle.center.y - pivot.center.y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+
+        // Check solvability
+        if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) return null;
+
+        // Triangle cosine rule / circle intersection math
+        const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+        const h = Math.sqrt(r1 * r1 - a * a);
+
+        // P2 = P1 + a * (P2 - P1) / d
+        const x2 = pivot.center.x + a * (dx / d);
+        const y2 = pivot.center.y + a * (dy / d);
+
+        // Intersection points
+        const tx1 = x2 + h * (dy / d);
+        const ty1 = y2 - h * (dx / d);
+
+        const tx2 = x2 - h * (dy / d);
+        const ty2 = y2 + h * (dx / d);
+
+        // We return two angles relative to Pivot center
+        const theta1 = Math.atan2(ty1 - pivot.center.y, tx1 - pivot.center.x);
+        const theta2 = Math.atan2(ty2 - pivot.center.y, tx2 - pivot.center.x);
+
+        // We return the one closest to current theta? Or just both?
+        // Let caller decide. For now, let's just picking the best later? 
+        // No, let's just helper return both candidates.
+        // Actually, let's just make this simpler: Return ALL valid thetas, caller picks closest.
+        return null; // Using internal logic in selectDisk for now.
+    };
+
     const selectDisk = (diskId: string) => {
         setState(prev => {
             // 1. Select Pivot
@@ -142,14 +185,77 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
             const pivot = diskBlocks.find(d => d.id === prev.pivotDiskId);
             const rolling = diskBlocks.find(d => d.id === diskId);
 
+            if (!pivot || !rolling) return prev;
+
             let initialTheta = 0;
-            if (pivot && rolling) {
-                const dx = rolling.center.x - pivot.center.x;
-                const dy = rolling.center.y - pivot.center.y;
-                initialTheta = Math.atan2(dy, dx);
+            const dx = rolling.center.x - pivot.center.x;
+            const dy = rolling.center.y - pivot.center.y;
+            initialTheta = Math.atan2(dy, dx);
+
+            // CHECK FOR OVERLAP ON START
+            // If the current position is valid, great.
+            // If it overlaps, we must find the nearest valid 'tangent' position to the obstacle.
+            let bestTheta = initialTheta;
+            let minDiff = Infinity;
+            let foundCollision = false;
+
+            // Collision Logic - check against ALL other disks
+            for (const other of diskBlocks) {
+                if (other.id === pivot.id || other.id === rolling.id) continue;
+
+                // Check overlap at initialTheta
+                const distDist = pivot.visualRadius + rolling.visualRadius;
+                const rollX = pivot.center.x + distDist * Math.cos(initialTheta);
+                const rollY = pivot.center.y + distDist * Math.sin(initialTheta);
+
+                const dX = rollX - other.center.x;
+                const dY = rollY - other.center.y;
+                const dist = Math.sqrt(dX * dX + dY * dY);
+                const minDist = rolling.visualRadius + other.visualRadius;
+
+                if (dist < minDist - 0.001) {
+                    foundCollision = true;
+                    // Overlap detected! Find intersection thetas
+                    // Center distance pivot-other
+                    const pdX = other.center.x - pivot.center.x;
+                    const pdY = other.center.y - pivot.center.y;
+                    const d = Math.sqrt(pdX * pdX + pdY * pdY);
+
+                    const r1 = pivot.visualRadius + rolling.visualRadius; // Pivot-Rolling dist
+                    const r2 = other.visualRadius + rolling.visualRadius; // Other-Rolling dist (contact)
+
+                    // Triangle solution
+                    if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) continue; // Unsolvable
+
+                    const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+                    const h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
+
+                    const x2 = pivot.center.x + a * (pdX / d);
+                    const y2 = pivot.center.y + a * (pdY / d);
+
+                    // Two possible positions for rolling center
+                    const rx1 = x2 + h * (pdY / d);
+                    const ry1 = y2 - h * (pdX / d);
+
+                    const rx2 = x2 - h * (pdY / d);
+                    const ry2 = y2 + h * (pdX / d);
+
+                    const t1 = Math.atan2(ry1 - pivot.center.y, rx1 - pivot.center.x);
+                    const t2 = Math.atan2(ry2 - pivot.center.y, rx2 - pivot.center.x);
+
+                    // Normalize angles to be close to initialTheta
+                    const normalize = (t: number) => Math.atan2(Math.sin(t), Math.cos(t));
+
+                    // Simple distance check on unit circle
+                    const diff1 = Math.abs(normalize(t1 - initialTheta));
+                    const diff2 = Math.abs(normalize(t2 - initialTheta));
+
+                    if (diff1 < minDiff) { minDiff = diff1; bestTheta = t1; }
+                    if (diff2 < minDiff) { minDiff = diff2; bestTheta = t2; }
+                }
             }
 
-            return { ...prev, rollingDiskId: diskId, theta: initialTheta, isAnimating: false };
+            return { ...prev, rollingDiskId: diskId, theta: foundCollision ? bestTheta : initialTheta, isAnimating: false };
         });
     };
 
