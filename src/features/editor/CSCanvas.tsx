@@ -649,22 +649,6 @@ export function CSCanvas({
             visibleTypes={dubinsVisibleTypes || new Set()}
           />
 
-          {/* Render Contacts */}
-          {contacts.map((c, i) => (
-            <g key={`contact-${i}`}
-              transform={`translate(${c.point.x}, ${c.point.y})`}
-              style={{ cursor: 'pointer' }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                // We disable manual contact point selection in favor of Disk-to-Disk selection.
-                // Keep the visual contact point for reference but no interaction for now.
-              }}
-            >
-              <circle r="6" fill="#FF8C00" stroke="white" strokeWidth="2" />
-              {/* Tangent Guide */}
-              <line x1="-10" y1="0" x2="10" y2="0" stroke="#FF8C00" strokeWidth="1" transform={`rotate(${c.tangentAngle * 180 / Math.PI})`} opacity="0.5" />
-            </g>
-          ))}
         </g>
       )}
 
