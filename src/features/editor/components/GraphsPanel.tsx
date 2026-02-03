@@ -4,6 +4,7 @@ import loadAllGraphs, { type GraphSet } from '../../../io/loadAllGraphs';
 import { type Graph } from '../../../io/parseGraph6';
 import { graphToContactScene } from '../../../core/geometry/contactLayout';
 import type { CSDisk } from '../../../core/types/cs';
+import { GraphPreview } from './GraphPreview';
 
 interface GraphsPanelProps {
     onLoadScene: (disks: CSDisk[]) => void;
@@ -13,6 +14,17 @@ export function GraphsPanel({ onLoadScene }: GraphsPanelProps) {
     const [graphSets, setGraphSets] = useState<GraphSet[]>([]);
     const [loading, setLoading] = useState(false);
     const [expandedSetLabel, setExpandedSetLabel] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const PAGE_SIZE = 40;
+
+    const handleSetExpand = (label: string) => {
+        if (expandedSetLabel === label) {
+            setExpandedSetLabel(null);
+        } else {
+            setExpandedSetLabel(label);
+            setPage(1); // Reset page on expand
+        }
+    };
 
     useEffect(() => {
         setLoading(true);
@@ -78,7 +90,7 @@ export function GraphsPanel({ onLoadScene }: GraphsPanelProps) {
                 {graphSets.map(set => (
                     <div key={set.label} style={{ background: 'var(--bg-secondary)', borderRadius: '6px', overflow: 'hidden' }}>
                         <div
-                            onClick={() => setExpandedSetLabel(expandedSetLabel === set.label ? null : set.label)}
+                            onClick={() => handleSetExpand(set.label)}
                             style={{
                                 padding: '8px 12px',
                                 cursor: 'pointer',
@@ -96,31 +108,43 @@ export function GraphsPanel({ onLoadScene }: GraphsPanelProps) {
                         </div>
 
                         {expandedSetLabel === set.label && (
-                            <div style={{ padding: '8px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
-                                {set.graphs.map((graph, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => handleApplyGraph(graph)}
-                                        title={`Grafo #${idx + 1}: ${graph.nodes.length} nodos, ${graph.edges.length} aristas`}
-                                        style={{
-                                            aspectRatio: '1',
-                                            border: '1px solid var(--border)',
-                                            background: 'var(--bg-primary)',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '10px',
-                                            color: 'var(--text-secondary)',
-                                            transition: 'all 0.2s'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
-                                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                            <div style={{ padding: '8px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+                                    {set.graphs.slice(0, page * PAGE_SIZE).map((graph, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleApplyGraph(graph)}
+                                            title={`Grafo #${idx + 1}`}
+                                            style={{
+                                                aspectRatio: '1',
+                                                border: '1px solid var(--border)',
+                                                background: 'var(--bg-primary)',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '10px',
+                                                color: 'var(--text-secondary)',
+                                                transition: 'all 0.2s',
+                                                padding: '2px'
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
+                                            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                                        >
+                                            <GraphPreview graph={graph} size={40} showEdges={true} />
+                                        </button>
+                                    ))}
+                                </div>
+                                {set.graphs.length > page * PAGE_SIZE && (
+                                    <Button
+                                        onClick={() => setPage(p => p + 1)}
+                                        variant="secondary"
+                                        style={{ width: '100%', marginTop: '8px', fontSize: '11px' }}
                                     >
-                                        #{idx + 1}
-                                    </button>
-                                ))}
+                                        Load More ({set.graphs.length - page * PAGE_SIZE} remaining)
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </div>

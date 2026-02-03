@@ -9,6 +9,9 @@ export default async function loadAllGraphs(): Promise<GraphSet[]> {
 
   const contactNumbers = [3, 4, 5, 6, 7, 8, 9, 10];
 
+  // Deduplication Set
+  const seenGraphs = new Set<string>();
+
   for (const num of contactNumbers) {
     const url = `${urlBase}graphs${num}.txt`;
     const response = await fetch(url);
@@ -17,15 +20,26 @@ export default async function loadAllGraphs(): Promise<GraphSet[]> {
       continue;
     }
     const txt = await response.text();
-    // Validate content - Graph6 files shouldn't start with <!DOCTYPE html
     if (txt.trim().startsWith("<!DOCTYPE") || txt.trim().startsWith("<html")) {
       console.warn(`Fetch returned HTML instead of data for ${url}. Path might be wrong.`);
       continue;
     }
 
     const codes = txt.split(/\s+/).filter(Boolean);
-    const graphs = codes.map(parseGraph6);
-    graphSets.push({ label: `${num} discos`, graphs });
+    const uniqueGraphs: Graph[] = [];
+
+    for (const code of codes) {
+      if (seenGraphs.has(code)) {
+        // Skip duplicate
+        continue;
+      }
+      seenGraphs.add(code);
+      uniqueGraphs.push(parseGraph6(code));
+    }
+
+    if (uniqueGraphs.length > 0) {
+      graphSets.push({ label: `${num} discos`, graphs: uniqueGraphs });
+    }
   }
 
   // extra de 8 discos
@@ -36,8 +50,15 @@ export default async function loadAllGraphs(): Promise<GraphSet[]> {
       const txt = await response.text();
       if (!txt.trim().startsWith("<!DOCTYPE") && !txt.trim().startsWith("<html")) {
         const codes = txt.split(/\s+/).filter(Boolean);
-        const graphs = codes.map(parseGraph6);
-        graphSets.push({ label: "11 que faltaban (8 discos)", graphs });
+        const uniqueGraphs: Graph[] = [];
+        for (const code of codes) {
+          if (seenGraphs.has(code)) continue;
+          seenGraphs.add(code);
+          uniqueGraphs.push(parseGraph6(code));
+        }
+        if (uniqueGraphs.length > 0) {
+          graphSets.push({ label: "11 que faltaban (8 discos)", graphs: uniqueGraphs });
+        }
       }
     }
   } catch (e) {
