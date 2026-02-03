@@ -34,6 +34,7 @@ interface CSCanvasProps {
   knotMode?: boolean;
   knotPath?: EnvelopeSegment[];
   knotSequence?: string[];
+  savedKnotPaths?: { id: string, color: string, path: EnvelopeSegment[] }[]; // [NEW]
   onKnotSegmentClick?: (index: number) => void;
   // Contact graph props
   showContactDisks?: boolean;
@@ -63,6 +64,7 @@ interface DragState {
   dragSubtype?: 'move' | 'rotate'; // NEW
   startX: number;
   startY: number;
+  hasMoved?: boolean; // [NEW] to distinguish click vs drag
 }
 
 /**
@@ -89,6 +91,7 @@ export function CSCanvas({
   knotMode = false,
   knotPath = [],
   knotSequence = [],
+  savedKnotPaths = [], // [NEW]
   onKnotSegmentClick,
   dubinsMode = false,
   dubinsPaths = [],
@@ -336,25 +339,14 @@ export function CSCanvas({
 
       // If we clicked a Disk (based on blockId and pointType passed to handleMouseDown)
       // We should trigger the Selection Logic.
-      if (blockId && pointType === 'disk') {
-        // Verify it's a disk 
-        // (handleMouseDown is called with 'disk' only from the disk render loop)
-
-        // FIX: If rolling mode is active, let the specific rolling handler below take care of it
-        // to avoid double-toggling selection.
-        if (!rollingMode) {
-          onDiskClick?.(blockId);
-        }
-        // Do NOT return here. We want to allow standard drag logic (setDragState below) to execute.
-      }
+      // If we clicked a Disk ...
+      // Logic moved to handleMouseUp to allow Click vs Drag differentiation.
     }
 
     // KNOT MODE INTERACTION
-    if (knotMode && onDiskClick && pointType === 'disk') {
-      onDiskClick(blockId);
-      // Block dragging to avoid accidental moves while building sequence
-      return;
-    }
+    // KNOT MODE INTERACTION
+    // Removed blocking code to allow dragging.
+    // Click logic moved to handleMouseUp (click vs drag detection).
 
     if (rollingMode && onDiskClick) {
       const block = blocks.find(b => b.id === blockId);
@@ -379,6 +371,7 @@ export function CSCanvas({
       pointType,
       startX: rawX, // Tracking en espacio SVG para delta directo si se prefiere, o convertir
       startY: rawY,
+      hasMoved: false, // [NEW]
     });
     onSelectBlock(blockId);
   }
@@ -512,16 +505,30 @@ export function CSCanvas({
 
       if (!checkDiskOverlap(block.id, newCenter)) {
         onUpdateBlock(block.id, { center: newCenter } as Partial<CSBlock>);
+
+        // Detect significant movement to flag as 'Drag' vs 'Click'
+        const moveDist = Math.sqrt(Math.pow(deltaSvgX, 2) + Math.pow(deltaSvgY, 2));
+        const hasMoved = dragState.hasMoved || moveDist > 2;
+
         setDragState({
           ...dragState,
           startX: svgX,
-          startY: svgY
+          startY: svgY,
+          hasMoved
         });
       }
     }
   }
 
   function handleMouseUp() {
+    if (dragState && !dragState.hasMoved && dragState.pointType === 'disk') {
+      const block = blocks.find(b => b.id === dragState.blockId);
+      // Only trigger click if block exists and is disk
+      // Handles Knot Mode, and potentially Dubins/Rolling if they use onDiskClick
+      if (block?.kind === 'disk') {
+        onDiskClick?.(block.id);
+      }
+    }
     setDragState(null);
   }
 
@@ -579,9 +586,22 @@ export function CSCanvas({
         />
       )}
 
+      {/* Saved Knots (Persistent Envelopes) */}
+      {savedKnotPaths?.map((knot) => (
+        <g key={knot.id} transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <ContactPathRenderer
+            path={knot.path}
+            visible={true}
+            color={knot.color || "#FF8C00"} // Orange
+            width={3}
+          />
+        </g>
+      ))}
+
+      {/* Current Active Knot Construction */}
       {knotMode && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <ContactPathRenderer path={knotPath} visible={true} color="#FF6B6B" width={4} />
+          <ContactPathRenderer path={knotPath} visible={true} color="#FF0000" width={4} />
         </g>
       )}
 
@@ -725,7 +745,7 @@ export function CSCanvas({
               stroke={stroke}
               strokeWidth={strokeWidth}
             />
-            {/* Etiqueta (Índice) */}
+            {/* Etiqueta (Índice) - Original */}
             <text
               x={cx}
               y={cy + radius + 20} /* Debajo del disco */
@@ -740,20 +760,48 @@ export function CSCanvas({
               {index}
             </text>
 
-            {/* Centro y Coordenadas (NUEVO) */}
-            <circle cx={cx} cy={cy} r={2} fill="black" pointerEvents="none" />
-            <text
-              x={cx}
-              y={cy + 12}
-              textAnchor="middle"
-              fontFamily="monospace"
-              fontSize="10"
-              fill="rgba(0,0,0,0.8)"
-              pointerEvents="none"
-              style={{ userSelect: 'none', textShadow: '0px 0px 2px white' }}
-            >
-              {`(${(disk.center.x / 50).toFixed(2)}, ${(disk.center.y / 50).toFixed(2)})`}
-            </text>
+            {/* Sequence Order Badge (Knot Mode) */}
+            {isKnotSelected && (
+              <text
+                x={cx}
+                y={cy}
+                dy=".3em"
+                textAnchor="middle"
+                fontFamily="Arial"
+                fontSize="16"
+                fill="white"
+                fontWeight="bold"
+                pointerEvents="none"
+                style={{
+                  userSelect: 'none',
+                  textShadow: '0px 0px 3px rgba(0,0,0,0.5)'
+                }}
+              >
+                {knotSequence
+                  .map((id, idx) => id === disk.id ? idx + 1 : -1)
+                  .filter(i => i !== -1)
+                  .join(', ')}
+              </text>
+            )}
+
+            {/* Centro y Coordenadas (NUEVO) - Hide center info if knot selected to clearer view? Or keep small? */}
+            {!isKnotSelected && (
+              <>
+                <circle cx={cx} cy={cy} r={2} fill="black" pointerEvents="none" />
+                <text
+                  x={cx}
+                  y={cy + 12}
+                  textAnchor="middle"
+                  fontFamily="monospace"
+                  fontSize="10"
+                  fill="rgba(0,0,0,0.8)"
+                  pointerEvents="none"
+                  style={{ userSelect: 'none', textShadow: '0px 0px 2px white' }}
+                >
+                  {`(${(disk.center.x / 50).toFixed(2)}, ${(disk.center.y / 50).toFixed(2)})`}
+                </text>
+              </>
+            )}
           </g>
         );
       })}

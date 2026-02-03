@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CSCanvas } from './CSCanvas';
 import { useEditorState } from './hooks/useEditorState';
 import { useRollingMode } from './hooks/useRollingMode';
 import { useKnotState } from './hooks/useKnotState';
-import { useDubinsState } from './hooks/useDubinsState'; // NEW
-import { usePersistentDubins } from './hooks/usePersistentDubins'; // NEW [PERSISTENT]
+import { useDubinsState } from './hooks/useDubinsState';
+import { usePersistentDubins } from './hooks/usePersistentDubins';
 import { EditorHeader } from './components/EditorHeader';
-import { useMemo } from 'react';
 import type { CSDisk } from '../../core/types/cs';
 import { computeDiskHull, computeHullLength, computeHullMetrics } from '../../core/geometry/diskHull';
 import { EditorSidebar } from './components/EditorSidebar';
+import { useContactGraph } from './hooks/useContactGraph';
+import { findEnvelopePath } from '../../core/geometry/contactGraph';
 
 interface EditorPageProps {
   onBackToGallery?: () => void;
@@ -34,6 +35,36 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const diskBlocks = React.useMemo(() => editorState.blocks.filter((b): b is CSDisk => b.kind === 'disk'), [editorState.blocks]);
   const knotState = useKnotState({ blocks: diskBlocks });
 
+  // Compute graph for persistent knots (shared with KnotState internally, but we need it here for saved knots)
+  const contactDisksForGraph = useMemo(() => diskBlocks.map(d => ({
+    ...d,
+    regionId: 'temp', // Added to satisfy ContactDisk interface
+    color: d.color || 'blue'
+  })), [diskBlocks]);
+
+  const graph = useContactGraph(contactDisksForGraph);
+
+  // Compute paths for saved knots
+  const savedKnotPaths = useMemo(() => {
+    const existingDiskIds = new Set(diskBlocks.map(d => d.id));
+
+    return editorState.savedKnots.map(knot => {
+      // Filter sequence to only include existing disks (Elastic band behavior)
+      const validSequence = knot.diskSequence.filter(id => existingDiskIds.has(id));
+
+      // Only try to find path if we have at least 2 disks left to form a segment
+      if (validSequence.length < 2) {
+        return { id: knot.id, color: knot.color, path: [] };
+      }
+
+      return {
+        id: knot.id,
+        color: knot.color,
+        path: findEnvelopePath(graph, validSequence)
+      };
+    });
+  }, [editorState.savedKnots, graph, diskBlocks]);
+
   // Map CSDisk to ContactDisk for Dubins logic
   const contactDisks = useMemo(() => {
     // If rolling, get the dynamic position
@@ -51,7 +82,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   }, [editorState.diskBlocks, rollingState.isActive, rollingState.rollingDiskId, rollingState.theta, rollingState.getCurrentPosition]);
 
   const dubinsState = useDubinsState(contactDisks); // Pass disks
-  const persistentDubins = usePersistentDubins(contactDisks); // [NEW]
+  const persistentDubins = usePersistentDubins(contactDisks);
 
 
   const hullMetrics = useMemo(() => {
@@ -76,7 +107,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const handleToggleKnotMode = knotState.actions.toggleMode;
 
   // 2. Event Handlers (can be simple wrappers or passed directly)
-  // handleDiskClick logic was conceptually here but passed directly below for cleaner code
 
   // 3. Render
   return (
@@ -93,8 +123,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onToggleDubinsMode={dubinsState.actions.toggleMode}
         showContactDisks={editorState.showContactDisks}
         onToggleContactDisks={() => editorActions.setShowContactDisks(!editorState.showContactDisks)}
-        showEnvelope={editorState.showEnvelope} // [NEW]
-        onToggleEnvelope={() => editorActions.setShowEnvelope(!editorState.showEnvelope)} // [NEW]
+        showEnvelope={editorState.showEnvelope}
+        onToggleEnvelope={() => editorActions.setShowEnvelope(!editorState.showEnvelope)}
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
         validation={editorState.validation}
@@ -124,22 +154,16 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             onUpdateBlock={editorActions.updateBlock}
             showGrid={editorState.showGrid}
             gridSpacing={editorState.gridSpacing}
-            // Rolling Mode Props - Optional in CSCanvas props
-            // Note: rollingMode prop might not exist on CSCanvas yet if it wasn't updated.
-            // Assuming CSCanvas accepts 'rollingMode' based on context or ignoring if handled internally via props spread
-            // For now passing them as originally intended in the refactor plan.
+            // Rolling Mode / Interaction Logic
             {...(rollingState.isActive ? {
               rollingMode: true,
               pivotDiskId: rollingState.pivotDiskId,
               rollingDiskId: rollingState.rollingDiskId,
               theta: rollingState.theta,
               showTrail: rollingState.showTrail,
-              onDiskClick: rollingState.selectDisk, // Rolling always takes precedence if active? Or handle priority.
-              // If both Dubins and Rolling are active (unlikely), we should decide priority.
-              // Assuming mutually exclusive or Rolling > Dubins.
+              onDiskClick: rollingState.selectDisk,
             } : {
-              // If Dubins is active, we want to capture clicks.
-              // If Knot Mode is active, we ALSO want to capture clicks.
+              // Click Priority: Dubins > Knot > Select
               onDiskClick: dubinsState.state.isActive
                 ? (diskId) => persistentDubins.actions.handleDiskClick(diskId)
                 : knotState.mode === 'knot'
@@ -148,15 +172,13 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             })}
 
             knotMode={knotState.mode === 'knot'}
-            // OLD: knot={knotState.knot}
-            // NEW: pass sequences/paths for rendering
             knotPath={knotState.knotPath}
             knotSequence={knotState.diskSequence}
+            savedKnotPaths={savedKnotPaths} // Pass computed persistent knots
             onKnotSegmentClick={() => { }}
 
-
             showContactDisks={editorState.showContactDisks}
-            showEnvelope={editorState.showEnvelope} // [NEW]
+            showEnvelope={editorState.showEnvelope}
 
             // Dubins
             dubinsMode={dubinsState.state.isActive}

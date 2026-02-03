@@ -10,10 +10,18 @@ interface InitialKnot {
     edges: [number, number][];
 }
 
+export interface SavedKnot {
+    id: string;
+    name: string;
+    diskSequence: string[];
+    color: string;
+}
+
 export function useEditorState(initialKnot?: InitialKnot) {
     // Data State
     const [blocks, setBlocks] = useState<CSBlock[]>([]);
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+    const [savedKnots, setSavedKnots] = useState<SavedKnot[]>([]); // [NEW]
 
     // UI State
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -21,7 +29,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const [gridSpacing, setGridSpacing] = useState(50);
     const [angleUnit, setAngleUnit] = useState<'deg' | 'rad'>('deg');
     const [showContactDisks, setShowContactDisks] = useState(false);
-    const [showEnvelope, setShowEnvelope] = useState(true); // [NEW]
+    const [showEnvelope, setShowEnvelope] = useState(true);
     const [showValidation, setShowValidation] = useState(false);
 
     // Initialize blocks from knot
@@ -61,6 +69,22 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
     // Actions
+    function addSavedKnot(diskSequence: string[]) {
+        if (diskSequence.length < 2) return;
+        const id = `knot-${Date.now()}`;
+        const newKnot: SavedKnot = {
+            id,
+            name: `Knot ${savedKnots.length + 1}`,
+            diskSequence: [...diskSequence], // storage copy
+            color: '#FF4500' // Default orange/red
+        };
+        setSavedKnots(prev => [...prev, newKnot]);
+    }
+
+    function deleteSavedKnot(id: string) {
+        setSavedKnots(prev => prev.filter(k => k.id !== id));
+    }
+
     function addSegment() {
         const id = `s${Date.now()}`;
         const newSegment: CSSegment = {
@@ -141,12 +165,13 @@ export function useEditorState(initialKnot?: InitialKnot) {
             blocks,
             selectedBlockId,
             selectedBlock,
+            savedKnots,
             sidebarOpen,
             showGrid,
             gridSpacing,
             angleUnit,
             showContactDisks,
-            showEnvelope, // [NEW]
+            showEnvelope,
             showValidation,
             nonDiskBlocks,
             diskBlocks,
@@ -156,12 +181,15 @@ export function useEditorState(initialKnot?: InitialKnot) {
         actions: {
             setBlocks,
             setSelectedBlockId,
+            setSavedKnots,
+            addSavedKnot,
+            deleteSavedKnot,
             setSidebarOpen,
             setShowGrid,
             setGridSpacing,
             setAngleUnit,
             setShowContactDisks,
-            setShowEnvelope, // [NEW]
+            setShowEnvelope,
             setShowValidation,
             addSegment,
             addArc,

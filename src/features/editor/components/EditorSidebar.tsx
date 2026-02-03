@@ -21,6 +21,7 @@ interface EditorState {
     diskBlocks: CSDisk[];
     validation: { valid: boolean; errors: any[] };
     lengthInfo: { totalLength: number };
+    savedKnots: { id: string; name: string; diskSequence: string[]; color?: string }[]; // [NEW]
 }
 
 interface EditorActions {
@@ -37,6 +38,8 @@ interface EditorActions {
     addDisk: () => void;
     deleteBlock: (id: string) => void;
     updateBlock: (id: string, updates: Partial<CSBlock>) => void;
+    addSavedKnot: (diskSequence: string[]) => void; // [NEW]
+    deleteSavedKnot: (id: string) => void; // [NEW]
 }
 
 interface RollingState {
@@ -140,14 +143,6 @@ export const EditorSidebar = ({
                         <strong>Sequence:</strong> {knotState.diskSequence.length} disks
                     </div>
 
-                    <Button
-                        onClick={knotState.actions.clearSequence}
-                        variant="secondary"
-                        style={{ width: '100%', borderColor: 'var(--accent-error)', color: 'var(--accent-error)' }}
-                        disabled={knotState.diskSequence.length === 0}
-                    >
-                        Clear Knot Sequence
-                    </Button>
 
                     {knotState.diskSequence.length > 2 && (
                         <div style={{ marginTop: '12px', padding: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', fontSize: '12px' }}>
@@ -157,6 +152,30 @@ export const EditorSidebar = ({
                             }
                         </div>
                     )}
+
+                    <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                        <Button
+                            onClick={() => {
+                                actions.addSavedKnot(knotState.diskSequence);
+                                knotState.actions.clearSequence();
+                            }}
+                            variant="primary"
+                            style={{ flex: 1 }}
+                            disabled={knotState.diskSequence.length < 2}
+                        >
+                            Save Envelope
+                        </Button>
+                        <Button
+                            onClick={knotState.actions.clearSequence}
+                            variant="secondary"
+                            style={{ width: '80px', borderColor: 'var(--accent-error)', color: 'var(--accent-error)' }}
+                            disabled={knotState.diskSequence.length === 0}
+                        >
+                            Clear
+                        </Button>
+                    </div>
+
+
                 </div>
             )}
 
@@ -247,6 +266,39 @@ export const EditorSidebar = ({
                         dubinsState.actions.setEndConfig(null);
                     }
                 }} />
+            )}
+
+            {/* SAVED KNOTS LIST (Visible in Standard & Knot Mode) */}
+            {!rollingMode && !showContactDisks && editorState.savedKnots?.length > 0 && (
+                <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
+                    <h3 style={{
+                        fontSize: 'var(--fs-caption)',
+                        fontWeight: 'var(--fw-semibold)',
+                        color: 'var(--text-secondary)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: 'var(--space-sm)'
+                    }}>
+                        Saved Envelopes
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {editorState.savedKnots.map((knot, i) => (
+                            <div key={knot.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', background: 'var(--bg-tertiary)', padding: '8px', borderRadius: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: knot.color || '#FF8C00' }}></div>
+                                    <span>{knot.name || `Knot ${i + 1}`} ({knot.diskSequence.length} disks)</span>
+                                </div>
+                                <button
+                                    onClick={() => actions.deleteSavedKnot(knot.id)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '16px', lineHeight: 1 }}
+                                    title="Delete"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             )}
 
             {/* STANDARD EDITOR TOOLS */}

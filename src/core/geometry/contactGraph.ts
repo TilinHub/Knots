@@ -397,3 +397,67 @@ export function calculateAdjacencyMatrix(disks: { center: Point2D, visualRadius:
     }
     return matrix;
 }
+
+/**
+ * Result of the Jacobian calculation.
+ * matrix: The K x 2N Jacobian matrix.
+ * contacts: Info about which pair (i, j) corresponds to each row.
+ */
+export interface JacobianResult {
+    matrix: number[][]; // K rows x 2N columns
+    contacts: { id1: string, index1: number, id2: string, index2: number }[]; // Mapping for rows
+}
+
+/**
+ * Calculates the Rigidity Matrix (Jacobian) A(c) for a set of disks.
+ * Each row corresponds to a contact constraint.
+ * Columns correspond to configuration variables (x0, y0, x1, y1, ...).
+ * 
+ * Based on Thesis Section 3.3.2:
+ * u_ij = (cj - ci) / ||cj - ci||
+ * Row k = [ ... -u_ij^x, -u_ij^y ... u_ij^x, u_ij^y ... ]
+ *           (cols for i)             (cols for j)
+ */
+export function calculateJacobianMatrix(disks: { id: string, center: Point2D, visualRadius: number }[]): JacobianResult {
+    const n = disks.length;
+    const rows: number[][] = [];
+    const contactInfo: { id1: string, index1: number, id2: string, index2: number }[] = [];
+    const TOLERANCE = 1.0; // Tolerance for contact detection (pixels)
+
+    // Build contacts
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const d1 = disks[i];
+            const d2 = disks[j];
+            const dx = d2.center.x - d1.center.x;
+            const dy = d2.center.y - d1.center.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            const touchDist = d1.visualRadius + d2.visualRadius;
+
+            if (Math.abs(dist - touchDist) < TOLERANCE && dist > 1e-9) {
+                // Contact Found
+                const u_x = dx / dist; // Unit vector x
+                const u_y = dy / dist; // Unit vector y
+
+                // Create Row of length 2N filled with 0
+                const row = new Array(2 * n).fill(0);
+
+                // Col indices for disk i: 2*i, 2*i+1
+                // Components: -u_ij
+                row[2 * i] = -u_x;
+                row[2 * i + 1] = -u_y;
+
+                // Col indices for disk j: 2*j, 2*j+1
+                // Components: +u_ij
+                row[2 * j] = u_x;
+                row[2 * j + 1] = u_y;
+
+                rows.push(row);
+                contactInfo.push({ id1: d1.id, index1: i, id2: d2.id, index2: j });
+            }
+        }
+    }
+
+    return { matrix: rows, contacts: contactInfo };
+}
