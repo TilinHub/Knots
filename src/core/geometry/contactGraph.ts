@@ -141,7 +141,7 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
 /**
  * Builds the Bounded Curvature Graph mainly by computing all valid pairwise bitangents.
  */
-export function buildBoundedCurvatureGraph(disks: ContactDisk[]): BoundedCurvatureGraph {
+export function buildBoundedCurvatureGraph(disks: ContactDisk[], checkCollisions: boolean = true): BoundedCurvatureGraph {
     const validEdges: TangentSegment[] = [];
 
     for (let i = 0; i < disks.length; i++) {
@@ -152,13 +152,15 @@ export function buildBoundedCurvatureGraph(disks: ContactDisk[]): BoundedCurvatu
             const allCandidates = [...candidates, ...reverseCandidates];
 
             for (const seg of allCandidates) {
-                // Check against ALL other disks
+                // Check against ALL other disks only if checkCollisions is true
                 let blocked = false;
-                for (let k = 0; k < disks.length; k++) {
-                    if (k === i || k === j) continue;
-                    if (intersectsDisk(seg.start, seg.end, disks[k])) {
-                        blocked = true;
-                        break;
+                if (checkCollisions) {
+                    for (let k = 0; k < disks.length; k++) {
+                        if (k === i || k === j) continue;
+                        if (intersectsDisk(seg.start, seg.end, disks[k])) {
+                            blocked = true;
+                            break;
+                        }
                     }
                 }
                 if (!blocked) {

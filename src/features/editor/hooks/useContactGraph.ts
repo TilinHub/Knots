@@ -7,7 +7,7 @@ export function useContactGraph(disks: ContactDisk[]) {
         if (!disks || disks.length < 2) {
             return { nodes: new Map(), edges: [] };
         }
-        return buildBoundedCurvatureGraph(disks);
+        return buildBoundedCurvatureGraph(disks, false);
     }, [disks]);
 
     return graph;
