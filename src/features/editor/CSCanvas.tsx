@@ -574,9 +574,13 @@ export function CSCanvas({
       {/* Grid Background */}
       {showGrid && <rect width="100%" height="100%" fill="url(#largeGrid)" />}
 
-      {/* Ejes */}
-      <line x1="0" y1={centerY} x2={width} y2={centerY} stroke="var(--border)" strokeWidth="1" />
-      <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="var(--border)" strokeWidth="1" />
+      {/* Ejes - Only show if Grid is on */}
+      {showGrid && (
+        <>
+          <line x1="0" y1={centerY} x2={width} y2={centerY} stroke="var(--border)" strokeWidth="1" />
+          <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="var(--border)" strokeWidth="1" />
+        </>
+      )}
 
       {/* BELT (Convex Hull) OR KNOT */}
       {!knotMode && hullData && showEnvelope && (

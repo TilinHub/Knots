@@ -250,7 +250,7 @@ export const EditorHeader = ({
                                 top: '100%',
                                 right: 0,
                                 marginTop: '8px',
-                                background: 'white',
+                                background: 'var(--bg-primary)',
                                 border: '1px solid var(--border)',
                                 borderRadius: '6px',
                                 padding: '8px 12px',
