@@ -36,13 +36,20 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const knotState = useKnotState({ blocks: diskBlocks });
 
   // Compute graph for persistent knots (shared with KnotState internally, but we need it here for saved knots)
-  const contactDisksForGraph = useMemo(() => diskBlocks.map(d => ({
-    id: d.id,
-    center: d.center,
-    radius: d.visualRadius, // CRITICAL FIX: Use visual radius for envelope calculation!
-    regionId: 'temp',
-    color: d.color || 'blue'
-  })), [diskBlocks]);
+  const contactDisksForGraph = useMemo(() => {
+    // If rolling, get the dynamic position
+    const rollingPos = rollingState.isActive ? rollingState.getCurrentPosition() : null;
+
+    return diskBlocks.map(d => ({
+      id: d.id,
+      center: (rollingState.isActive && d.id === rollingState.rollingDiskId && rollingPos)
+        ? rollingPos
+        : d.center,
+      radius: d.visualRadius, // CRITICAL FIX: Use visual radius for envelope calculation!
+      regionId: 'temp',
+      color: d.color || 'blue'
+    }));
+  }, [diskBlocks, rollingState.isActive, rollingState.rollingDiskId, rollingState.theta, rollingState.getCurrentPosition]);
 
   const graph = useContactGraph(contactDisksForGraph);
 
@@ -62,7 +69,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       return {
         id: knot.id,
         color: knot.color,
-        path: findEnvelopePath(graph, validSequence, knot.chiralities).path
+        // We ignore fixed chiralities (topology) to ensure the envelope behaves like an elastic band
+        // and snaps to the optimal shape (Viterbi) even when disks move significantly.
+        path: findEnvelopePath(graph, validSequence).path
       };
     });
   }, [editorState.savedKnots, graph, diskBlocks]);

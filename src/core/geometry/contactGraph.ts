@@ -36,9 +36,14 @@ export function calculateBitangents(d1: ContactDisk, d2: ContactDisk): TangentSe
         y: c.y + r * Math.sin(angle)
     });
 
+    const EPSILON = 1e-4;
+
     // 1. Outer Tangents (LSL, RSR)
-    if (D >= Math.abs(d1.radius - d2.radius)) {
-        const gamma = Math.acos((d1.radius - d2.radius) / D);
+    if (D >= Math.abs(d1.radius - d2.radius) - EPSILON) {
+        const val = (d1.radius - d2.radius) / D;
+        const clampedVal = Math.max(-1, Math.min(1, val));
+        const gamma = Math.acos(clampedVal);
+
         if (!isNaN(gamma)) {
             // RSR: Top Tangent (alpha = phi + gamma)
             const alphaRSR = phi + gamma;
@@ -69,8 +74,11 @@ export function calculateBitangents(d1: ContactDisk, d2: ContactDisk): TangentSe
     }
 
     // 2. Inner Tangents (LSR, RSL)
-    if (D >= d1.radius + d2.radius) {
-        const beta = Math.acos((d1.radius + d2.radius) / D);
+    if (D >= d1.radius + d2.radius - EPSILON) {
+        const val = (d1.radius + d2.radius) / D;
+        const clampedVal = Math.max(-1, Math.min(1, val));
+        const beta = Math.acos(clampedVal); // Safe acos
+
         if (!isNaN(beta)) {
             // LSR (Bottom Start -> Top End)
             const alpha1LSR = phi - beta;
@@ -100,6 +108,22 @@ export function calculateBitangents(d1: ContactDisk, d2: ContactDisk): TangentSe
                 endDiskId: d2.id
             });
         }
+    }
+
+    // 3. Fallback: Deep Overlap (Virtual Edges)
+    // If no tangents found (one disk inside another), connect centers directly.
+    // This creates "Sticks" in degenerate cases but preserves connectivity so envelope doesn't disappear.
+    if (segments.length === 0) {
+        ['LSL', 'RSR', 'LSR', 'RSL'].forEach(t => {
+            segments.push({
+                type: t as TangentType,
+                start: d1.center,
+                end: d2.center,
+                length: D, // Center distance
+                startDiskId: d1.id,
+                endDiskId: d2.id
+            });
+        });
     }
 
     return segments;
