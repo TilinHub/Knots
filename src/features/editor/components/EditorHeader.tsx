@@ -31,6 +31,11 @@ interface EditorHeaderProps {
     onGridSpacingChange: (val: number) => void;
     angleUnit: 'deg' | 'rad';
     onAngleUnitChange: (unit: 'deg' | 'rad') => void;
+    // Appearance
+    diskColor?: string;
+    onDiskColorChange?: (color: string) => void;
+    envelopeColor?: string;
+    onEnvelopeColorChange?: (color: string) => void;
 }
 
 export const EditorHeader = ({
@@ -59,6 +64,10 @@ export const EditorHeader = ({
     onGridSpacingChange,
     angleUnit,
     onAngleUnitChange,
+    diskColor,
+    onDiskColorChange,
+    envelopeColor,
+    onEnvelopeColorChange,
 }: EditorHeaderProps) => {
     const [showLengthDetails, setShowLengthDetails] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -351,6 +360,57 @@ export const EditorHeader = ({
                                             {darkMode ? '🌙' : '☀️'}
                                         </div>
                                     </button>
+                                </div>
+                            </div>
+
+                            {/* Color Controls */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <div style={{ marginBottom: '8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Colors</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                                        Disks
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '4px' }}>
+                                            <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '4px',
+                                                background: diskColor || '#89CFF0',
+                                                border: '1px solid var(--border)',
+                                                position: 'relative',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <input
+                                                    type="color"
+                                                    value={diskColor || '#89CFF0'}
+                                                    onChange={(e) => onDiskColorChange?.(e.target.value)}
+                                                    style={{ position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%', cursor: 'pointer', opacity: 0 }}
+                                                />
+                                            </div>
+                                            <span style={{ fontSize: '10px', fontFamily: 'monospace', color: 'var(--text-primary)' }}>{diskColor || '#89CFF0'}</span>
+                                        </div>
+                                    </label>
+                                    <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                                        Envelope
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '4px' }}>
+                                            <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '4px',
+                                                background: envelopeColor || '#5CA0D3',
+                                                border: '1px solid var(--border)',
+                                                position: 'relative',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <input
+                                                    type="color"
+                                                    value={envelopeColor || '#5CA0D3'}
+                                                    onChange={(e) => onEnvelopeColorChange?.(e.target.value)}
+                                                    style={{ position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%', cursor: 'pointer', opacity: 0 }}
+                                                />
+                                            </div>
+                                            <span style={{ fontSize: '10px', fontFamily: 'monospace', color: 'var(--text-primary)' }}>{envelopeColor || '#5CA0D3'}</span>
+                                        </div>
+                                    </label>
                                 </div>
                             </div>
 

@@ -141,7 +141,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
             {/* 5. Quadratic (Optional) */}
             {quadratic !== undefined && (
                 <div style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                    <h3 style={{ fontSize: '14px', marginBottom: '4px' }}>Optional Quadratic Test</h3>
+                    <h3 style={{ fontSize: '14px', marginBottom: '4px' }}>Second Variation (Quadratic Stability Test)</h3>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                         Q_red(r): <strong style={{ color: 'var(--text-primary)' }}>{quadratic.toExponential(4)}</strong>
                     </div>

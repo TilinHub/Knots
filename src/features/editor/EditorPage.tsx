@@ -132,6 +132,12 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onGridSpacingChange={editorActions.setGridSpacing}
         angleUnit={editorState.angleUnit}
         onAngleUnitChange={editorActions.setAngleUnit}
+        // Appearance Controls
+        diskColor={editorState.diskColor}
+        onDiskColorChange={editorActions.setDiskColor}
+        envelopeColor={editorState.envelopeColor}
+        onEnvelopeColorChange={editorActions.setEnvelopeColor}
+
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
         validation={editorState.validation}
@@ -161,6 +167,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             onUpdateBlock={editorActions.updateBlock}
             showGrid={editorState.showGrid}
             gridSpacing={editorState.gridSpacing}
+            // Appearance
+            diskColor={editorState.diskColor}
+            envelopeColor={editorState.envelopeColor}
             // Rolling Mode / Interaction Logic
             {...(rollingState.isActive ? {
               rollingMode: true,

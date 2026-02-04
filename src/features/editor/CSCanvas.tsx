@@ -36,6 +36,9 @@ interface CSCanvasProps {
   knotSequence?: string[];
   savedKnotPaths?: { id: string, color: string, path: EnvelopeSegment[] }[]; // [NEW]
   onKnotSegmentClick?: (index: number) => void;
+  // Appearance
+  diskColor?: string;
+  envelopeColor?: string;
   // Contact graph props
   showContactDisks?: boolean;
   showEnvelope?: boolean; // [NEW]
@@ -67,6 +70,8 @@ interface DragState {
   offsetX?: number; // [NEW]
   offsetY?: number; // [NEW]
   hasMoved?: boolean; // [NEW] to distinguish click vs drag
+  lastAdded?: string; // [NEW] Track last added/visited disk in this gesture
+  pendingUndo?: boolean; // [NEW] If true, we only toggle (undo) on MouseUp if didn't move
 }
 
 /**
@@ -95,6 +100,8 @@ export function CSCanvas({
   knotSequence = [],
   savedKnotPaths = [], // [NEW]
   onKnotSegmentClick,
+  diskColor = '#89CFF0',
+  envelopeColor = '#5CA0D3',
   dubinsMode = false,
   dubinsPaths = [],
   dubinsStart = null,
@@ -355,6 +362,41 @@ export function CSCanvas({
       if (block?.kind === 'disk') onDiskClick(block.id);
       return;
     }
+
+    // KNOT MODE INTERACTION (Drag-to-Connect)
+    // Only if Shift is NOT pressed. If Shift is pressed, we fall through to standard Move logic.
+    if (knotMode && onDiskClick && !e.shiftKey) {
+      const block = blocks.find(b => b.id === blockId);
+      if (block?.kind === 'disk') {
+        const isLastInfo = knotSequence.length > 0 && knotSequence[knotSequence.length - 1] === block.id;
+
+        if (isLastInfo) {
+          // Pending Undo: Wait to see if drag or click
+          setDragState({
+            blockId: block.id,
+            pointType: 'disk',
+            startX: 0,
+            startY: 0,
+            hasMoved: false,
+            lastAdded: block.id,
+            pendingUndo: true,
+          });
+        } else {
+          // Add immediately
+          onDiskClick(block.id);
+          setDragState({
+            blockId: block.id,
+            pointType: 'disk',
+            startX: 0,
+            startY: 0,
+            hasMoved: false,
+            lastAdded: block.id,
+            pendingUndo: false,
+          });
+        }
+        return;
+      }
+    }
     const pos = getMousePositionExact(e as any); // Simplificado para usar coordenadas base
     if (!pos) return;
 
@@ -391,6 +433,25 @@ export function CSCanvas({
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
     if (!dragState) return;
+
+    // Knot Mode Dragging (Drawing)
+    // Only if we are NOT moving (offsetX is undefined for drawing)
+    if (knotMode && dragState.pointType === 'disk' && dragState.offsetX === undefined) {
+      const pos = getMousePositionExact(e);
+      if (!pos) return;
+
+      // Find hovered disk
+      const currentId = disks.find(d => {
+        const dist = Math.sqrt(Math.pow(pos.x - d.center.x, 2) + Math.pow(pos.y - d.center.y, 2));
+        return dist < d.visualRadius;
+      })?.id;
+
+      if (currentId && currentId !== dragState.lastAdded) {
+        onDiskClick?.(currentId);
+        setDragState(prev => prev ? ({ ...prev, lastAdded: currentId, pendingUndo: false }) : null);
+      }
+      return;
+    }
 
     if (dubinsMode && dragState.pointType !== 'disk') {
       // Manual Dubins Logic (Config Arrow Dragging)
@@ -525,10 +586,16 @@ export function CSCanvas({
 
   function handleMouseUp() {
     if (dragState && !dragState.hasMoved && dragState.pointType === 'disk') {
+
+      // KNOT MODE UNDO
+      if (knotMode && dragState.pendingUndo) {
+        onDiskClick?.(dragState.blockId);
+      }
+
       const block = blocks.find(b => b.id === dragState.blockId);
       // Only trigger click if block exists and is disk
-      // Handles Knot Mode, and potentially Dubins/Rolling if they use onDiskClick
-      if (block?.kind === 'disk') {
+      // Handles Knot Mode (Legacy/Fallback), and potentially Dubins/Rolling if they use onDiskClick
+      if (block?.kind === 'disk' && !knotMode) { // Prevent double trigger in Knot Mode
         onDiskClick?.(block.id);
       }
     }
@@ -586,8 +653,9 @@ export function CSCanvas({
       {!knotMode && hullData && showEnvelope && (
         <path
           d={transformPathToSVG(hullData.svgPathD)}
-          fill="rgba(137, 207, 240, 0.2)"
-          stroke="#5CA0D3"
+          fill={envelopeColor}
+          fillOpacity={0.2}
+          stroke={envelopeColor}
           strokeWidth="2"
           strokeLinejoin="round"
         />
@@ -632,7 +700,7 @@ export function CSCanvas({
               <line
                 key={`contact-${d1.id}-${d2.id}`}
                 x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke="#5CA0D3"
+                stroke={envelopeColor}
                 strokeWidth="2"
               />
             );
@@ -675,8 +743,8 @@ export function CSCanvas({
         const isKnotSelected = knotMode && knotSequence.includes(disk.id);
         const radius = disk.visualRadius;
 
-        let fill = "#89CFF0"; // Baby Blue
-        let stroke = isSelected ? "#2E6BA8" : "#5CA0D3";
+        let fill = diskColor;
+        let stroke = isSelected ? "#2E6BA8" : envelopeColor;
         let strokeWidth = 2; // User requested no thickening on selection
 
         if (rollingMode) {
@@ -702,9 +770,12 @@ export function CSCanvas({
         }
 
         if (isKnotSelected) {
-          // Highlight knot sequence
-          fill = "#FF6B6B";
-          stroke = "#C0392B";
+          // User requested same color as normal modes. 
+          // We keep fill as diskColor.
+          // We keep stroke as envelopeColor (or default).
+          // We can add a specialized stroke if needed, but user implies "same".
+          // To be safe, let's just ensure it's NOT red.
+          // Only change stroke width potentially? 
           strokeWidth = 3;
         }
 

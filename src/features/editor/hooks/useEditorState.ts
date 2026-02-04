@@ -32,6 +32,10 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const [showEnvelope, setShowEnvelope] = useState(true);
     const [showValidation, setShowValidation] = useState(false);
 
+    // Appearance State // [NEW]
+    const [diskColor, setDiskColor] = useState('#89CFF0'); // Default Baby Blue
+    const [envelopeColor, setEnvelopeColor] = useState('#5CA0D3'); // Default Blue
+
     // Initialize blocks from knot
     useEffect(() => {
         if (!initialKnot || initialKnot.id === 0) return;
@@ -177,6 +181,8 @@ export function useEditorState(initialKnot?: InitialKnot) {
             diskBlocks,
             validation,
             lengthInfo,
+            diskColor,
+            envelopeColor,
         },
         actions: {
             setBlocks,
@@ -196,6 +202,8 @@ export function useEditorState(initialKnot?: InitialKnot) {
             addDisk,
             deleteBlock,
             updateBlock,
+            setDiskColor,
+            setEnvelopeColor,
         }
     };
 }

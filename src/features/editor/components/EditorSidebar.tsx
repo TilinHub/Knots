@@ -189,11 +189,18 @@ export const EditorSidebar = ({
                             variant="secondary"
                             style={{ marginTop: '8px', width: '100%', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
                             disabled={knotState.diskSequence.length < 2 || knotState.diskSequence[0] !== knotState.diskSequence[knotState.diskSequence.length - 1]}
-                            title={knotState.diskSequence[0] !== knotState.diskSequence[knotState.diskSequence.length - 1] ? "Close the loop first" : "Analyze First Variation"}
+                            title={knotState.diskSequence[0] !== knotState.diskSequence[knotState.diskSequence.length - 1] ? "Close the loop first" : "Run Full Analysis (First & Second Variation)"}
                         >
-                            🔍 Analyze Diagram (First Variation)
+                            🔍 Analyze Diagram (Full Protocol)
                         </Button>
                     </div>
+
+                    {/* Matrix Viewer in Knot Mode */}
+                    {editorState.diskBlocks.length > 0 && (
+                        <div style={{ marginTop: '16px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                            <ContactMatrixViewer disks={editorState.diskBlocks} />
+                        </div>
+                    )}
 
 
                 </div>
