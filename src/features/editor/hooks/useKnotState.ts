@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { CSDisk } from '../../../core/types/cs';
 import { useContactGraph } from '../hooks/useContactGraph'; // We need generating graph locally if not passed
 import { findEnvelopePath, type EnvelopeSegment, buildBoundedCurvatureGraph } from '../../../core/geometry/contactGraph';
@@ -14,9 +14,9 @@ interface UseKnotStateProps {
 export function useKnotState({ blocks }: UseKnotStateProps) {
     const [mode, setMode] = useState<'hull' | 'knot'>('hull'); // 'hull' = off/hidden, 'knot' = active
     const [diskSequence, setDiskSequence] = useState<string[]>([]);
+    const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]); // LOCKED TOPOLOGY
 
     // 1. Build Graph (Memoized)
-    // We map CSDisk to ContactDisk format expected by geometry functions
     const contactDisks = useMemo(() => blocks.map(d => ({
         id: d.id,
         center: d.center,
@@ -26,34 +26,79 @@ export function useKnotState({ blocks }: UseKnotStateProps) {
 
     const graph = useMemo(() => buildBoundedCurvatureGraph(contactDisks), [contactDisks]);
 
-    // 2. Compute Path
-    const knotPath = useMemo(() => {
-        if (!graph || diskSequence.length < 2) return [];
-        return findEnvelopePath(graph, diskSequence);
-    }, [graph, diskSequence]);
+    // Cleanup sequence if disks are removed
+    useEffect(() => {
+        setDiskSequence(prev => prev.filter(id => blocks.some(b => b.id === id)));
+    }, [blocks]);
 
-    // Actions
+    // 2. Compute Path (with Tangent Locking)
+    const computationResult = useMemo(() => {
+        if (!graph || diskSequence.length < 2) return { path: [], chiralities: [] };
+
+        // IF we have a lock and it matches current sequence length, USE IT.
+        // This preserves the topology while moving disks.
+        if (chiralities.length === diskSequence.length) {
+            const constrained = findEnvelopePath(graph, diskSequence, chiralities);
+            // If valid, return it.
+            if (constrained.path.length > 0) {
+                return constrained;
+            }
+            // If invalid (broken geometry), we might want to fall back or show broken.
+            // For now, let's fall back to optimal (snap) to avoid empty screen, 
+            // OR return empty to show "impossible". 
+            // User requested "No quiero que cambie". If it cannot be maintained, 
+            // maybe snapping is better than disappearing?
+            // Let's try to maintain, if fail, fall back to optimal (re-solve).
+            // return findEnvelopePath(graph, diskSequence); 
+        }
+
+        // DEFAULT: Find Optimal Path (Viterbi)
+        // Used when adding disks or if constraints invalid
+        return findEnvelopePath(graph, diskSequence);
+    }, [graph, diskSequence, chiralities]);
+
+    // 3. Sync Locked Chiralities
+    // When the *Sequence* changes (length diff), we accept the new Optimal Chiralities as the new Lock.
+    // When *Geometry* changes (same length), we DON'T update lock (handled by useMemo above using old lock).
+    useEffect(() => {
+        if (diskSequence.length < 2) {
+            setChiralities([]);
+            return;
+        }
+
+        // Only update lock if sequence topology definition changed (length mismatch)
+        if (computationResult.chiralities.length === diskSequence.length) {
+            if (chiralities.length !== diskSequence.length) {
+                setChiralities(computationResult.chiralities);
+            }
+        }
+    }, [computationResult, diskSequence, chiralities.length]);
+
+    // Expose only the path to the UI
+    const knotPath = computationResult.path;
+
     const toggleDisk = useCallback((diskId: string) => {
         setDiskSequence(prev => {
-            // Allow repeats for knots!
-            // But maybe we want undo if clicking the *very last* one added?
             if (prev.length > 0 && prev[prev.length - 1] === diskId) {
-                // If double clicking same disk, maybe remove it?
-                // Or user wants to loop around same disk? 
-                // For "undo" feel, clicking the last added one usually removes it.
                 return prev.slice(0, -1);
             }
             return [...prev, diskId];
         });
     }, []);
 
-    const clearSequence = useCallback(() => setDiskSequence([]), []);
+    const clearSequence = useCallback(() => {
+        setDiskSequence([]);
+        setChiralities([]);
+    }, []);
 
     // Toggle Mode: Reset sequence when entering/exiting if desired
     const toggleMode = useCallback(() => {
         setMode(prev => {
             const next = prev === 'hull' ? 'knot' : 'hull';
-            if (next === 'hull') setDiskSequence([]); // Clear when exiting
+            if (next === 'hull') {
+                setDiskSequence([]);
+                setChiralities([]);
+            }
             return next;
         });
     }, []);

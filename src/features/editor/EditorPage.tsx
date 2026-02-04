@@ -60,7 +60,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       return {
         id: knot.id,
         color: knot.color,
-        path: findEnvelopePath(graph, validSequence)
+        path: findEnvelopePath(graph, validSequence).path
       };
     });
   }, [editorState.savedKnots, graph, diskBlocks]);

@@ -147,6 +147,27 @@ export const EditorSidebar = ({
                         <strong>Sequence:</strong> {knotState.diskSequence.length} disks
                     </div>
 
+                    <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <Button
+                            onClick={actions.addDisk}
+                            variant="secondary"
+                            style={{ width: '100%', fontSize: '12px' }}
+                        >
+                            + Add Disk
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                const lastDisk = editorState.diskBlocks[editorState.diskBlocks.length - 1];
+                                if (lastDisk) actions.deleteBlock(lastDisk.id);
+                            }}
+                            variant="secondary"
+                            style={{ width: '100%', fontSize: '12px', borderColor: 'var(--accent-error)', color: 'var(--accent-error)' }}
+                            disabled={editorState.diskBlocks.length === 0}
+                        >
+                            - Remove Disk
+                        </Button>
+                    </div>
+
 
                     {knotState.diskSequence.length > 2 && (
                         <div style={{ marginTop: '12px', padding: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', fontSize: '12px' }}>

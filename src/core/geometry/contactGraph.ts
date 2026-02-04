@@ -196,8 +196,104 @@ export interface ArcSegment {
 
 export type EnvelopeSegment = TangentSegment | ArcSegment;
 
-export function findEnvelopePath(graph: BoundedCurvatureGraph, diskIds: string[]): EnvelopeSegment[] {
-    if (diskIds.length < 2) return [];
+export interface EnvelopePathResult {
+    path: EnvelopeSegment[];
+    chiralities: ('L' | 'R')[];
+}
+
+export function findEnvelopePath(
+    graph: BoundedCurvatureGraph,
+    diskIds: string[],
+    fixedChiralities?: ('L' | 'R')[]
+): EnvelopePathResult { // CHANGED RETURN TYPE
+    if (diskIds.length < 2) return { path: [], chiralities: [] };
+
+    // If we have fixed chiralities, we don't need Viterbi. We just compute validity.
+    if (fixedChiralities && fixedChiralities.length === diskIds.length) {
+        const path: EnvelopeSegment[] = [];
+        const chiralities = fixedChiralities;
+
+        // Helper: Get valid edges between two disks
+        const getEdges = (id1: string, id2: string) =>
+            graph.edges.filter(e => e.startDiskId === id1 && e.endDiskId === id2);
+
+        // Helper: Calculate Arc length on disk
+        const calcArc = (d: ContactDisk, angleIn: number, angleOut: number, chirality: 'L' | 'R'): number => {
+            const PI2 = 2 * Math.PI;
+            let delta = angleOut - angleIn;
+            if (chirality === 'L') { // CCW
+                while (delta < 0) delta += PI2;
+            } else { // CW
+                while (delta > 0) delta -= PI2;
+                delta = Math.abs(delta);
+            }
+            return delta * d.radius;
+        };
+
+        for (let i = 0; i < diskIds.length - 1; i++) {
+            const uId = diskIds[i];
+            const vId = diskIds[i + 1];
+            const uDisk = graph.nodes.get(uId);
+            const vDisk = graph.nodes.get(vId);
+
+            if (!uDisk || !vDisk) return { path: [], chiralities: [] };
+
+            const currChar = fixedChiralities[i];
+            const nextChar = fixedChiralities[i + 1];
+
+            // Find matching edge
+            // e.g. L->L needs LSL, L->R needs LSR
+            // type[0] == curr, type[2] == next
+            const edges = getEdges(uId, vId);
+            const validEdge = edges.find(e =>
+                e.type[0] === currChar && e.type[2] === nextChar
+            );
+
+            if (!validEdge) {
+                // Topology is impossible in current geometry
+                return { path: [], chiralities: [] };
+            }
+
+            // ARC (Arrival at U -> Departure at U)
+            // No arc for first step unless circular? 
+            // Logic matches Viterbi backtrack: Arc connects 'incoming' to 'outgoing'.
+            if (i > 0) {
+                // We need the PREVIOUS edge to know arrival angle
+                // But in this linear loop we haven't stored it easily accessible? 
+                // Actually we have 'path'. Last element is tangent.
+                const prevTangent = path[path.length - 1] as TangentSegment;
+                if (prevTangent && prevTangent.type) { // Checks if tangent
+                    const angleIn = Math.atan2(
+                        prevTangent.end.y - uDisk.center.y,
+                        prevTangent.end.x - uDisk.center.x
+                    );
+                    const angleOut = Math.atan2(
+                        validEdge.start.y - uDisk.center.y,
+                        validEdge.start.x - uDisk.center.x
+                    );
+                    const arcLen = calcArc(uDisk, angleIn, angleOut, currChar);
+                    if (arcLen > 1e-5) {
+                        path.push({
+                            type: 'ARC',
+                            center: uDisk.center,
+                            radius: uDisk.radius,
+                            startAngle: angleIn,
+                            endAngle: angleOut,
+                            chirality: currChar,
+                            length: arcLen,
+                            diskId: uId
+                        });
+                    }
+                }
+            }
+
+            path.push(validEdge);
+        }
+
+        return { path, chiralities };
+    }
+
+    // ORIGINAL VITERBI LOGIC
 
     // State: (DiskIndex, Chirality) -> { Cost, ParentState, TangentSegments }
     // Chirality: 0 = L, 1 = R
@@ -312,7 +408,10 @@ export function findEnvelopePath(graph: BoundedCurvatureGraph, diskIds: string[]
     if (dp[len - 1][0].cost < dp[len - 1][1].cost) bestEndChirality = 0;
     else if (dp[len - 1][1].cost < Infinity) bestEndChirality = 1;
 
-    if (bestEndChirality === -1) return []; // No path found
+    if (bestEndChirality === -1) return { path: [], chiralities: [] }; // No path found
+
+    const chiralities: ('L' | 'R')[] = new Array(len);
+    chiralities[len - 1] = bestEndChirality === 0 ? 'L' : 'R';
 
     let currC = bestEndChirality as 0 | 1;
     for (let i = len - 1; i > 0; i--) { // Go back to 1
@@ -328,6 +427,9 @@ export function findEnvelopePath(graph: BoundedCurvatureGraph, diskIds: string[]
         const uId = diskIds[i - 1];
         const uDisk = graph.nodes.get(uId)!;
         const prevC = state.parent.chirality;
+
+        // Record chirality
+        chiralities[i - 1] = prevC === 0 ? 'L' : 'R';
 
         // Departure Angle (Start of current tangent)
         const angleOut = Math.atan2(
@@ -366,7 +468,7 @@ export function findEnvelopePath(graph: BoundedCurvatureGraph, diskIds: string[]
         currC = prevC;
     }
 
-    return path;
+    return { path, chiralities };
 }
 
 /**
