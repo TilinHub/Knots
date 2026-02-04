@@ -124,7 +124,8 @@ export const BlockList = ({
                                                             border: '1px solid var(--border)',
                                                             borderRadius: '6px',
                                                             fontFamily: 'var(--ff-mono)',
-                                                            background: 'white'
+                                                            background: 'var(--bg-primary)',
+                                                            color: 'var(--text-primary)',
                                                         }}
                                                     />
                                                 </div>

@@ -38,7 +38,7 @@ export default async function loadAllGraphs(): Promise<GraphSet[]> {
     }
 
     if (uniqueGraphs.length > 0) {
-      graphSets.push({ label: `${num} discos`, graphs: uniqueGraphs });
+      graphSets.push({ label: `${num} disks`, graphs: uniqueGraphs });
     }
   }
 
@@ -57,7 +57,7 @@ export default async function loadAllGraphs(): Promise<GraphSet[]> {
           uniqueGraphs.push(parseGraph6(code));
         }
         if (uniqueGraphs.length > 0) {
-          graphSets.push({ label: "11 que faltaban (8 discos)", graphs: uniqueGraphs });
+          graphSets.push({ label: "11 missing graphs (8 disks)", graphs: uniqueGraphs });
         }
       }
     }

@@ -64,6 +64,8 @@ interface DragState {
   dragSubtype?: 'move' | 'rotate'; // NEW
   startX: number;
   startY: number;
+  offsetX?: number; // [NEW]
+  offsetY?: number; // [NEW]
   hasMoved?: boolean; // [NEW] to distinguish click vs drag
 }
 
@@ -356,7 +358,16 @@ export function CSCanvas({
     const pos = getMousePositionExact(e as any); // Simplificado para usar coordenadas base
     if (!pos) return;
 
-    // ... Standard (rest of legacy logic remains) ...
+    const block = blocks.find(b => b.id === blockId);
+
+    // Calculate offset for absolute dragging
+    let offsetX = 0;
+    let offsetY = 0;
+    if (block && block.kind === 'disk' && pointType === 'disk') {
+      offsetX = pos.x - block.center.x;
+      offsetY = pos.y - block.center.y;
+    }
+
     // Necesitamos posición 'SVG' cruda para delta tracking preciso visualmente si queremos
     // pero fromSVGExact ya nos da el punto en el espacio lógico. Usaremos ese.
     // Para consistencia con lógica anterior:
@@ -371,6 +382,8 @@ export function CSCanvas({
       pointType,
       startX: rawX, // Tracking en espacio SVG para delta directo si se prefiere, o convertir
       startY: rawY,
+      offsetX,
+      offsetY,
       hasMoved: false, // [NEW]
     });
     onSelectBlock(blockId);
@@ -475,47 +488,37 @@ export function CSCanvas({
     if (rollingMode) return;
     // ... rest of standard logic ...
 
-    // Convertir a SVG coords para calcular delta en píxeles de pantalla/svg
-    const rect = svgRef.current!.getBoundingClientRect();
-    const svgX = (e.clientX - rect.left) * (width / rect.width);
-    const svgY = (e.clientY - rect.top) * (height / rect.height);
+    const pos = getMousePositionExact(e);
+    if (!pos) return;
 
     const block = blocks.find(b => b.id === dragState.blockId);
     if (!block) return;
 
-    // Diferencia en coordenadas SVG (Y hacia abajo)
-    const deltaSvgX = svgX - dragState.startX;
-    // Invertir delta Y para coordenadas cartesianas (Y hacia arriba)
-    const deltaSvgY = svgY - dragState.startY;
+    // Absolute Dragging Logic using Offset
+    if (block.kind === 'disk' && dragState.pointType === 'disk' && dragState.offsetX !== undefined && dragState.offsetY !== undefined) {
+      // pos is already in Cartesian (Logic) coordinates
+      const targetX = pos.x - dragState.offsetX;
+      const targetY = pos.y - dragState.offsetY;
 
-    // Aquí hay un truco: si movemos el mouse 10px abajo en pantalla:
-    // SVG Y aumenta 10.
-    // Cartesiano Y debe disminuir 10.
-    // toSVG(y) = cy - y.
-    // Si y decrece, toSVG(y) crece. Correcto.
-    // Entonces deltaCartesianoY = -deltaSvgY.
-    const deltaCartX = deltaSvgX;
-    const deltaCartY = -deltaSvgY;
-
-    if (block.kind === 'disk' && dragState.pointType === 'disk') {
       const newCenter = {
-        x: block.center.x + deltaCartX,
-        y: block.center.y + deltaCartY
+        x: targetX,
+        y: targetY
       };
 
       if (!checkDiskOverlap(block.id, newCenter)) {
         onUpdateBlock(block.id, { center: newCenter } as Partial<CSBlock>);
 
-        // Detect significant movement to flag as 'Drag' vs 'Click'
-        const moveDist = Math.sqrt(Math.pow(deltaSvgX, 2) + Math.pow(deltaSvgY, 2));
-        const hasMoved = dragState.hasMoved || moveDist > 2;
+        // Update hasMoved state purely based on visual distance from start
+        // We do NOT update startX/Y or offsets here, keeping them stable
+        const rect = svgRef.current!.getBoundingClientRect();
+        const svgX = (e.clientX - rect.left) * (width / rect.width);
+        const svgY = (e.clientY - rect.top) * (height / rect.height);
 
-        setDragState({
-          ...dragState,
-          startX: svgX,
-          startY: svgY,
-          hasMoved
-        });
+        const moveDist = Math.sqrt(Math.pow(svgX - dragState.startX, 2) + Math.pow(svgY - dragState.startY, 2));
+
+        if (!dragState.hasMoved && moveDist > 2) {
+          setDragState(prev => prev ? ({ ...prev, hasMoved: true }) : null);
+        }
       }
     }
   }
@@ -538,7 +541,7 @@ export function CSCanvas({
       width="100%"
       height="100%"
       viewBox={`0 0 ${width} ${height}`}
-      style={{ background: 'white', cursor: dragState ? 'grabbing' : 'default' }} // Fondo blanco limpio
+      style={{ background: 'var(--canvas-bg)', cursor: dragState ? 'grabbing' : 'default' }} // Fondo adaptable
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -559,12 +562,12 @@ export function CSCanvas({
       <defs>
         {/* Sub-grid (e.g., 20px) */}
         <pattern id="smallGrid" width={gridSpacing / 5} height={gridSpacing / 5} patternUnits="userSpaceOnUse">
-          <path d={`M ${gridSpacing / 5} 0 L 0 0 0 ${gridSpacing / 5}`} fill="none" stroke="#F5F5F5" strokeWidth="1" />
+          <path d={`M ${gridSpacing / 5} 0 L 0 0 0 ${gridSpacing / 5}`} fill="none" stroke="var(--canvas-grid)" strokeWidth="1" strokeOpacity="0.5" />
         </pattern>
         {/* Main Grid (e.g., 100px) */}
         <pattern id="largeGrid" width={gridSpacing} height={gridSpacing} patternUnits="userSpaceOnUse">
           <rect width={gridSpacing} height={gridSpacing} fill="url(#smallGrid)" />
-          <path d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`} fill="none" stroke="#E0E0E0" strokeWidth="1" />
+          <path d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`} fill="none" stroke="var(--canvas-grid)" strokeWidth="1" />
         </pattern>
       </defs>
 
@@ -572,8 +575,8 @@ export function CSCanvas({
       {showGrid && <rect width="100%" height="100%" fill="url(#largeGrid)" />}
 
       {/* Ejes */}
-      <line x1="0" y1={centerY} x2={width} y2={centerY} stroke="#ddd" strokeWidth="1" />
-      <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="#ddd" strokeWidth="1" />
+      <line x1="0" y1={centerY} x2={width} y2={centerY} stroke="var(--border)" strokeWidth="1" />
+      <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="var(--border)" strokeWidth="1" />
 
       {/* BELT (Convex Hull) OR KNOT */}
       {!knotMode && hullData && showEnvelope && (

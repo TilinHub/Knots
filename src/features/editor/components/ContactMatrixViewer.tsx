@@ -108,7 +108,7 @@ export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks 
                                         // Highlight non-zero values
                                         background: isZero ? 'var(--bg-tertiary)' : 'var(--bg-primary)',
                                         // Color logic: Red for negative, Blue for positive (if significant)
-                                        color: isZero ? 'var(--text-tertiary)' : (isNegative ? '#D32F2F' : '#1976D2'),
+                                        color: isZero ? 'var(--text-tertiary)' : (isNegative ? 'var(--accent-error)' : 'var(--accent-primary)'),
                                         fontSize: '10px',
                                         borderRadius: '2px',
                                         fontWeight: isZero ? 'normal' : 'bold',

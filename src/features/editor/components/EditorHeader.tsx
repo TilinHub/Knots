@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import Logo from '../../../assets/LOGO.png';
 
 interface EditorHeaderProps {
@@ -62,6 +62,17 @@ export const EditorHeader = ({
 }: EditorHeaderProps) => {
     const [showLengthDetails, setShowLengthDetails] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [darkMode, setDarkMode] = useState(false);
+
+    useEffect(() => {
+        if (darkMode) {
+            document.documentElement.classList.add('dark-mode');
+            document.documentElement.style.colorScheme = 'dark';
+        } else {
+            document.documentElement.classList.remove('dark-mode');
+            document.documentElement.style.colorScheme = 'light';
+        }
+    }, [darkMode]);
 
     const statusColor = validation.valid
         ? 'var(--accent-valid)'
@@ -81,7 +92,7 @@ export const EditorHeader = ({
                 justifyContent: 'space-between',
                 padding: '0 var(--space-lg)',
                 background: 'var(--bg-primary)',
-                overflow: 'hidden',
+                // overflow: 'hidden', // REMOVED to allow dropdown
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
@@ -106,12 +117,14 @@ export const EditorHeader = ({
                         ← Gallery
                     </button>
                 )}
-                {/* Logo */}
-                <img
-                    src={Logo}
-                    alt="Knots Logo"
-                    style={{ height: '68px', width: 'auto', display: 'block' }}
-                />
+                {/* Logo Wrapper for cropping */}
+                <div style={{ height: '60px', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+                    <img
+                        src={Logo}
+                        alt="Knots Logo"
+                        style={{ height: '68px', width: 'auto', display: 'block' }}
+                    />
+                </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -124,8 +137,8 @@ export const EditorHeader = ({
                             fontSize: '13px',
                             fontWeight: 500,
                             background: showEnvelope ? '#6B46C1' : 'transparent',
-                            color: showEnvelope ? 'white' : '#1D1D1F',
-                            border: `1px solid ${showEnvelope ? '#6B46C1' : '#D2D2D7'}`,
+                            color: showEnvelope ? 'white' : 'var(--text-primary)',
+                            border: `1px solid ${showEnvelope ? '#6B46C1' : 'var(--border)'}`,
                             borderRadius: '6px',
                             cursor: 'pointer',
                             transition: 'all 0.15s',
@@ -144,8 +157,8 @@ export const EditorHeader = ({
                             fontSize: '13px',
                             fontWeight: 500,
                             background: showContactDisks ? '#0071E3' : 'transparent',
-                            color: showContactDisks ? 'white' : '#1D1D1F',
-                            border: `1px solid ${showContactDisks ? '#0071E3' : '#D2D2D7'}`,
+                            color: showContactDisks ? 'white' : 'var(--text-primary)',
+                            border: `1px solid ${showContactDisks ? '#0071E3' : 'var(--border)'}`,
                             borderRadius: '6px',
                             cursor: 'pointer',
                             transition: 'all 0.15s',
@@ -301,6 +314,46 @@ export const EditorHeader = ({
                             zIndex: 100,
                             minWidth: '220px',
                         }}>
+                            {/* Appearance Controls */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Appearance</span>
+                                    <button
+                                        onClick={() => setDarkMode(!darkMode)}
+                                        style={{
+                                            width: '50px',
+                                            height: '28px',
+                                            background: darkMode ? '#32D74B' : '#E5E5EA',
+                                            borderRadius: '99px',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            position: 'relative',
+                                            transition: 'background 0.3s ease',
+                                            padding: '2px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                        }}
+                                        title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                                    >
+                                        <div style={{
+                                            width: '24px',
+                                            height: '24px',
+                                            background: 'white',
+                                            borderRadius: '50%',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                            transform: darkMode ? 'translateX(22px)' : 'translateX(0)',
+                                            transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '14px',
+                                        }}>
+                                            {darkMode ? '🌙' : '☀️'}
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* Grid Controls */}
                             <div style={{ marginBottom: '16px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>

@@ -16,8 +16,8 @@ export function CoordInput({ x, y, onChange, label, disabled }: CoordInputProps)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
       {label && (
-        <label style={{ 
-          fontSize: 'var(--fs-caption)', 
+        <label style={{
+          fontSize: 'var(--fs-caption)',
           color: 'var(--text-secondary)',
           fontWeight: 'var(--fw-medium)',
           textTransform: 'uppercase',
@@ -66,7 +66,7 @@ const inputStyle: React.CSSProperties = {
   borderRadius: '6px',
   fontFamily: 'var(--ff-mono)',
   fontSize: 'var(--fs-body)',
-  background: 'white',
+  background: 'var(--bg-primary)',
   color: 'var(--text-primary)',
   transition: 'border-color 0.15s ease',
 };

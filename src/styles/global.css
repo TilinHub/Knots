@@ -51,6 +51,27 @@
   --ff-mono: "SF Mono", "Menlo", "Consolas", "Monaco", monospace;
 }
 
+/* ===== DARK MODE ===== */
+.dark-mode {
+  /* ===== NEUTROS ===== */
+  --bg-primary: #1C1C1E;
+  --bg-secondary: #2C2C2E;
+  --bg-tertiary: #3A3A3C;
+  
+  /* ===== TEXTOS ===== */
+  --text-primary: #F5F5F7;
+  --text-secondary: #A1A1A6;
+  --text-tertiary: #86868B;
+  
+  /* ===== CANVAS ===== */
+  --canvas-bg: #121212;
+  --canvas-grid: #2C2C2E;
+  --canvas-segment: #E5E5EA; /* White-ish for lines */
+  
+  /* ===== ACENTOS ===== */
+  --border: #38383A;
+}
+
 /* ===== BASE ===== */
 html,
 body,
