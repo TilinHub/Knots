@@ -37,8 +37,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
   // Compute graph for persistent knots (shared with KnotState internally, but we need it here for saved knots)
   const contactDisksForGraph = useMemo(() => diskBlocks.map(d => ({
-    ...d,
-    regionId: 'temp', // Added to satisfy ContactDisk interface
+    id: d.id,
+    center: d.center,
+    radius: d.visualRadius, // CRITICAL FIX: Use visual radius for envelope calculation!
+    regionId: 'temp',
     color: d.color || 'blue'
   })), [diskBlocks]);
 
@@ -60,7 +62,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       return {
         id: knot.id,
         color: knot.color,
-        path: findEnvelopePath(graph, validSequence).path
+        path: findEnvelopePath(graph, validSequence, knot.chiralities).path
       };
     });
   }, [editorState.savedKnots, graph, diskBlocks]);

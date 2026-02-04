@@ -110,6 +110,7 @@ export function useKnotState({ blocks }: UseKnotStateProps) {
         mode,
         diskSequence,
         knotPath,
+        chiralities: computationResult.chiralities, // EXPOSED FOR SAVING
         actions: {
             setMode,
             toggleMode,

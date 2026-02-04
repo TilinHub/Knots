@@ -14,6 +14,7 @@ export interface SavedKnot {
     id: string;
     name: string;
     diskSequence: string[];
+    chiralities?: ('L' | 'R')[]; // [NEW] Store topology
     color: string;
 }
 
@@ -21,7 +22,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     // Data State
     const [blocks, setBlocks] = useState<CSBlock[]>([]);
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-    const [savedKnots, setSavedKnots] = useState<SavedKnot[]>([]); // [NEW]
+    const [savedKnots, setSavedKnots] = useState<SavedKnot[]>([]);
 
     // UI State
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -32,7 +33,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const [showEnvelope, setShowEnvelope] = useState(true);
     const [showValidation, setShowValidation] = useState(false);
 
-    // Appearance State // [NEW]
+    // Appearance State
     const [diskColor, setDiskColor] = useState('#89CFF0'); // Default Baby Blue
     const [envelopeColor, setEnvelopeColor] = useState('#5CA0D3'); // Default Blue
 
@@ -73,13 +74,14 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
     // Actions
-    function addSavedKnot(diskSequence: string[]) {
+    function addSavedKnot(diskSequence: string[], chiralities?: ('L' | 'R')[]) {
         if (diskSequence.length < 2) return;
         const id = `knot-${Date.now()}`;
         const newKnot: SavedKnot = {
             id,
-            name: `Knot ${savedKnots.length + 1}`,
+            name: `Knot ${savedKnots.length + 1} (${diskSequence.length} disks)`,
             diskSequence: [...diskSequence], // storage copy
+            chiralities: chiralities ? [...chiralities] : undefined, // storage copy
             color: '#FF4500' // Default orange/red
         };
         setSavedKnots(prev => [...prev, newKnot]);

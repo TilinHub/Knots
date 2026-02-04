@@ -24,7 +24,7 @@ interface EditorState {
     diskBlocks: CSDisk[];
     validation: { valid: boolean; errors: any[] };
     lengthInfo: { totalLength: number };
-    savedKnots: { id: string; name: string; diskSequence: string[]; color?: string }[]; // [NEW]
+    savedKnots: { id: string; name: string; diskSequence: string[]; color?: string; chiralities?: ('L' | 'R')[] }[]; // Updated
 }
 
 interface EditorActions {
@@ -41,8 +41,8 @@ interface EditorActions {
     addDisk: () => void;
     deleteBlock: (id: string) => void;
     updateBlock: (id: string, updates: Partial<CSBlock>) => void;
-    addSavedKnot: (diskSequence: string[]) => void; // [NEW]
-    deleteSavedKnot: (id: string) => void; // [NEW]
+    addSavedKnot: (diskSequence: string[], chiralities?: ('L' | 'R')[]) => void; // Updated
+    deleteSavedKnot: (id: string) => void;
 }
 
 interface RollingState {
@@ -70,8 +70,8 @@ interface EditorSidebarProps {
     editorState: EditorState;
     actions: EditorActions;
     dubinsState?: any;
-    knotMode?: boolean; // [NEW]
-    knotState?: any;    // [NEW]
+    knotMode?: boolean;
+    knotState?: any;
 }
 
 export const EditorSidebar = ({
@@ -181,7 +181,8 @@ export const EditorSidebar = ({
                     <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
                         <Button
                             onClick={() => {
-                                actions.addSavedKnot(knotState.diskSequence);
+                                // Pass chiralities to save the shape
+                                actions.addSavedKnot(knotState.diskSequence, knotState.chiralities);
                                 knotState.actions.clearSequence();
                             }}
                             variant="primary"

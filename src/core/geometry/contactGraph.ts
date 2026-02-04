@@ -217,14 +217,18 @@ export function findEnvelopePath(
         const getEdges = (id1: string, id2: string) =>
             graph.edges.filter(e => e.startDiskId === id1 && e.endDiskId === id2);
 
-        // Helper: Calculate Arc length on disk
-        const calcArc = (d: ContactDisk, angleIn: number, angleOut: number, chirality: 'L' | 'R'): number => {
+        // Robust Local calcArc 
+        const calcArcLocal = (d: ContactDisk, angleIn: number, angleOut: number, chirality: 'L' | 'R'): number => {
             const PI2 = 2 * Math.PI;
             let delta = angleOut - angleIn;
-            if (chirality === 'L') { // CCW
-                while (delta < 0) delta += PI2;
-            } else { // CW
-                while (delta > 0) delta -= PI2;
+            // Normalize to -PI..PI first to be safe
+            while (delta <= -Math.PI) delta += PI2;
+            while (delta > Math.PI) delta -= PI2;
+
+            if (chirality === 'L') { // CCW: Want positive angle (0..2PI)
+                if (delta <= 0) delta += PI2;
+            } else { // CW: Want negative angle (0..-2PI)
+                if (delta >= 0) delta -= PI2;
                 delta = Math.abs(delta);
             }
             return delta * d.radius;
@@ -242,37 +246,31 @@ export function findEnvelopePath(
             const nextChar = fixedChiralities[i + 1];
 
             // Find matching edge
-            // e.g. L->L needs LSL, L->R needs LSR
-            // type[0] == curr, type[2] == next
             const edges = getEdges(uId, vId);
             const validEdge = edges.find(e =>
                 e.type[0] === currChar && e.type[2] === nextChar
             );
 
             if (!validEdge) {
-                // Topology is impossible in current geometry
-                return { path: [], chiralities: [] };
+                // Topology became invalid (geometry changed too much)
+                // Fallback to Viterbi to prevent "Sticks" or empty path
+                return findEnvelopePath(graph, diskIds);
             }
 
-            // ARC (Arrival at U -> Departure at U)
-            // No arc for first step unless circular? 
-            // Logic matches Viterbi backtrack: Arc connects 'incoming' to 'outgoing'.
+            // Insert Arc on uDisk (connecting previous tangent to this one)
             if (i > 0) {
-                // We need the PREVIOUS edge to know arrival angle
-                // But in this linear loop we haven't stored it easily accessible? 
-                // Actually we have 'path'. Last element is tangent.
-                const prevTangent = path[path.length - 1] as TangentSegment;
-                if (prevTangent && prevTangent.type) { // Checks if tangent
-                    const angleIn = Math.atan2(
-                        prevTangent.end.y - uDisk.center.y,
-                        prevTangent.end.x - uDisk.center.x
-                    );
-                    const angleOut = Math.atan2(
-                        validEdge.start.y - uDisk.center.y,
-                        validEdge.start.x - uDisk.center.x
-                    );
-                    const arcLen = calcArc(uDisk, angleIn, angleOut, currChar);
-                    if (arcLen > 1e-5) {
+                const prevTangent = path[path.length - 1]; // Use last added segment
+                if (prevTangent && (prevTangent as TangentSegment).end) {
+                    const pt = prevTangent as TangentSegment;
+                    const angleIn = Math.atan2(pt.end.y - uDisk.center.y, pt.end.x - uDisk.center.x);
+                    const angleOut = Math.atan2(validEdge.start.y - uDisk.center.y, validEdge.start.x - uDisk.center.x);
+
+                    const arcLen = calcArcLocal(uDisk, angleIn, angleOut, currChar);
+
+                    // Always add arc (even if small, to maintain connectivity)
+                    // If arcLen is truly 0 (identical points), we can skip, 
+                    // but for visual "Sticks" issue, we want even small arcs.
+                    if (arcLen > 1e-9) {
                         path.push({
                             type: 'ARC',
                             center: uDisk.center,
@@ -321,14 +319,16 @@ export function findEnvelopePath(
 
     // Helper: Calculate Arc length on disk
     const calcArc = (d: ContactDisk, angleIn: number, angleOut: number, chirality: 'L' | 'R'): number => {
-        // Normalize angles
         const PI2 = 2 * Math.PI;
         let delta = angleOut - angleIn;
+        // Normalize to -PI..PI first to be safe
+        while (delta <= -Math.PI) delta += PI2;
+        while (delta > Math.PI) delta -= PI2;
 
-        if (chirality === 'L') { // CCW
-            while (delta < 0) delta += PI2;
-        } else { // CW
-            while (delta > 0) delta -= PI2;
+        if (chirality === 'L') { // CCW: Want positive angle (0..2PI)
+            if (delta <= 0) delta += PI2;
+        } else { // CW: Want negative angle (0..-2PI)
+            if (delta >= 0) delta -= PI2;
             delta = Math.abs(delta);
         }
         return delta * d.radius;
@@ -451,7 +451,7 @@ export function findEnvelopePath(
             const chirality = prevC === 0 ? 'L' : 'R';
             const arcLen = calcArc(uDisk, angleIn, angleOut, chirality);
 
-            if (arcLen > 1e-5) {
+            if (arcLen > 1e-9) {
                 path.unshift({
                     type: 'ARC',
                     center: uDisk.center,
