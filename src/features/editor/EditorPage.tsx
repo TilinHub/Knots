@@ -125,6 +125,13 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onToggleContactDisks={() => editorActions.setShowContactDisks(!editorState.showContactDisks)}
         showEnvelope={editorState.showEnvelope}
         onToggleEnvelope={() => editorActions.setShowEnvelope(!editorState.showEnvelope)}
+        // View Controls Props
+        showGrid={editorState.showGrid}
+        onToggleGrid={editorActions.setShowGrid}
+        gridSpacing={editorState.gridSpacing}
+        onGridSpacingChange={editorActions.setGridSpacing}
+        angleUnit={editorState.angleUnit}
+        onAngleUnitChange={editorActions.setAngleUnit}
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
         validation={editorState.validation}

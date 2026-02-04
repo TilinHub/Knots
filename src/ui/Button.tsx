@@ -11,10 +11,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 /**
  * Botón base con estilo minimalista Apple
  */
-export function Button({ 
-  children, 
-  onClick, 
-  variant = 'primary', 
+export function Button({
+  children,
+  onClick,
+  variant = 'primary',
   disabled = false,
   type = 'button',
   style: externalStyle,
@@ -40,21 +40,30 @@ export function Button({
 }
 
 const baseStyle: React.CSSProperties = {
-  height: '36px',
+  height: '32px', // Slightly smaller/compact
   padding: '0 16px',
   border: 'none',
-  borderRadius: '8px',
-  fontSize: 'var(--fs-body)',
-  fontWeight: 'var(--fw-medium)',
-  transition: 'opacity 0.15s ease',
+  borderRadius: '6px',
+  fontSize: '13px', // Apple apps often use 13px/14px
+  fontWeight: 500,
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  transition: 'all 0.2s ease',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  lineHeight: '1',
 };
 
 const primaryStyle: React.CSSProperties = {
-  background: 'var(--text-primary)',
+  background: '#0071E3', // Apple Blue
   color: 'white',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
 };
 
 const secondaryStyle: React.CSSProperties = {
-  background: 'var(--bg-tertiary)',
-  color: 'var(--text-primary)',
+  background: '#FFFFFF',
+  color: '#1D1D1F',
+  border: '1px solid #D2D2D7',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
 };

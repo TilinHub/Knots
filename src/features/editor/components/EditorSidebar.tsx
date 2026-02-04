@@ -1,6 +1,5 @@
 import { RollingModePanel } from './RollingModePanel';
 import { GraphsPanel } from './GraphsPanel';
-import { ViewControls } from './ViewControls';
 import { BlockList } from './BlockList';
 import { Button } from '../../../ui/Button';
 import { ContactMatrixViewer } from './ContactMatrixViewer';
@@ -235,31 +234,31 @@ export const EditorSidebar = ({
                     >
                         <h2
                             style={{
-                                fontSize: 'var(--fs-caption)',
-                                fontWeight: 'var(--fw-semibold)',
+                                fontSize: '11px',
+                                fontWeight: 600,
                                 color: 'var(--text-secondary)',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
                                 marginBottom: 'var(--space-sm)',
                             }}
                         >
-                            🔵 Grafos de Contacto
+                            🔵 Contact Graphs
                         </h2>
                         <div
                             style={{
                                 padding: 'var(--space-md)',
                                 background: 'var(--bg-secondary)',
                                 borderRadius: '8px',
-                                fontSize: 'var(--fs-body)',
+                                fontSize: '13px',
                                 color: 'var(--text-primary)',
                                 lineHeight: '1.6',
                             }}
                         >
                             <p style={{ marginBottom: 'var(--space-sm)' }}>
-                                Los <strong>discos de contacto</strong> representan las regiones vacías del diagrama del nudo.
+                                The <strong>contact disks</strong> represent the empty regions of the knot diagram.
                             </p>
-                            <p style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                                Cada disco se posiciona en el centro de una región cerrada formada por los segmentos y arcos del diagrama.
+                            <p style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                Each disk is positioned at the center of a closed region formed by the segments and arcs of the diagram.
                             </p>
                         </div>
 
@@ -269,7 +268,7 @@ export const EditorSidebar = ({
                                 variant="secondary"
                                 style={{ width: '100%' }}
                             >
-                                Ocultar Discos
+                                Hide Disks
                             </Button>
                         </div>
 
@@ -335,85 +334,32 @@ export const EditorSidebar = ({
             {
                 !rollingMode && !knotMode && !showContactDisks && (
                     <>
-                        <ViewControls
-                            showGrid={editorState.showGrid}
-                            onToggleGrid={actions.setShowGrid}
-                            gridSpacing={editorState.gridSpacing}
-                            onGridSpacingChange={actions.setGridSpacing}
-                            angleUnit={editorState.angleUnit}
-                            onAngleUnitChange={actions.setAngleUnit}
-                        />
-                        <BlockList
-                            blocks={editorState.blocks}
-                            selectedBlockId={editorState.selectedBlockId}
-                            onSelectBlock={actions.setSelectedBlockId as any} // Cast if types slightly mismatch (null vs undefined implied)
-                            onUpdateBlock={actions.updateBlock}
-                            onDeleteBlock={actions.deleteBlock}
-                        />
+                        {/* BLOCK LIST - Expands to fill space */}
+                        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                            <BlockList
+                                blocks={editorState.blocks}
+                                selectedBlockId={editorState.selectedBlockId}
+                                onSelectBlock={actions.setSelectedBlockId as any}
+                                onUpdateBlock={actions.updateBlock}
+                                onDeleteBlock={actions.deleteBlock}
+                            />
+                        </div>
 
-                        {dubinsState && (
-                            <div style={{ padding: 'var(--space-md)', marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid var(--border)' }}>
-                                <div style={{ marginBottom: '12px', fontWeight: 'bold', fontSize: 'var(--fs-caption)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>DUBINS PATHS</span>
-                                    <Button
-                                        onClick={() => {
-                                            dubinsState.actions.setStartConfig(null);
-                                            dubinsState.actions.setEndConfig(null);
-                                            // Also clear disks if logic requires (though setStartConfig(null) in proper logic should ideally clear everything, 
-                                            // or we manually clear disk IDs if we could access them. useDubinsState actions should ideally have a 'reset' method)
-                                        }}
-                                        variant="secondary"
-                                        style={{ padding: '2px 8px', fontSize: '10px' }}
-                                    >
-                                        Limpiar
-                                    </Button>
-                                </div>
-
-                                {/* Max Paths Control */}
-                                <div style={{ marginBottom: '10px' }}>
-                                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                        Caminos visibles: {dubinsState.state.maxPathsToShow}
-                                    </label>
-                                    <input
-                                        type="range"
-                                        min="1"
-                                        max="6"
-                                        step="1"
-                                        value={dubinsState.state.maxPathsToShow}
-                                        onChange={(e) => dubinsState.actions.setMaxPathsToShow(parseInt(e.target.value))}
-                                        style={{ width: '100%' }}
-                                    />
-                                </div>
-
-                                {/* Disk Selection Status (Optional but helpful) */}
-                                {(dubinsState.state.startDiskId || dubinsState.state.endDiskId) && (
-                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', background: 'var(--bg-tertiary)', padding: '8px', borderRadius: '4px' }}>
-                                        {dubinsState.state.startDiskId && <div>Start: {dubinsState.state.startDiskId}</div>}
-                                        {dubinsState.state.endDiskId && <div>End: {dubinsState.state.endDiskId}</div>}
-                                    </div>
-                                )}
-
+                        {/* Matrix Viewer - Above Add Element */}
+                        {editorState.diskBlocks.length > 0 && (
+                            <div style={{ padding: '0 var(--space-md) var(--space-md)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-md)' }}>
+                                <ContactMatrixViewer disks={editorState.diskBlocks} />
                             </div>
                         )}
 
+                        {/* Add Element - Fixed at bottom */}
                         <div style={{ padding: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>
-                            <h3 style={{ fontSize: 'var(--fs-caption)', marginBottom: '8px', color: 'var(--text-secondary)' }}>Agregar</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                                <Button onClick={actions.addSegment} variant="secondary" style={{ fontSize: 'var(--fs-caption)' }}>+ Segmento</Button>
-                                <Button onClick={actions.addArc} variant="secondary" style={{ fontSize: 'var(--fs-caption)' }}>+ Arco</Button>
-                                <Button onClick={actions.addDisk} variant="secondary" style={{ fontSize: 'var(--fs-caption)' }}>+ Disco</Button>
+                            <h3 style={{ fontSize: '11px', marginBottom: '8px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Add Element</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                                <Button onClick={actions.addDisk} variant="secondary" style={{ fontSize: '12px' }}>+ Disk</Button>
                             </div>
                         </div>
                     </>
-                )
-            }
-
-            {/* CONTACT MATRIX IN MANUAL MODE */}
-            {
-                !rollingMode && !showContactDisks && editorState.diskBlocks.length > 0 && (
-                    <div style={{ padding: '0 var(--space-md) var(--space-md)', borderTop: '1px solid var(--border)' }}>
-                        <ContactMatrixViewer disks={editorState.diskBlocks} />
-                    </div>
                 )
             }
 

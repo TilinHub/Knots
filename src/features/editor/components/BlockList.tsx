@@ -29,27 +29,27 @@ export const BlockList = ({
         >
             <h2
                 style={{
-                    fontSize: 'var(--fs-caption)',
-                    fontWeight: 'var(--fw-semibold)',
+                    fontSize: '11px',
+                    fontWeight: 600,
                     color: 'var(--text-secondary)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     marginBottom: 'var(--space-sm)',
                 }}
             >
-                Elementos ({blocks.length})
+                Elements ({blocks.length})
             </h2>
 
             {blocks.length === 0 ? (
                 <div
                     style={{
-                        fontSize: 'var(--fs-caption)',
+                        fontSize: '13px',
                         color: 'var(--text-tertiary)',
                         textAlign: 'center',
                         padding: 'var(--space-lg)',
                     }}
                 >
-                    Sin elementos aún
+                    No elements yet
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -58,12 +58,12 @@ export const BlockList = ({
                         const length = block.kind !== 'disk' ? blockLength(block) : null;
                         const displayName =
                             block.kind === 'segment'
-                                ? 'Segmento'
+                                ? 'Segment'
                                 : block.kind === 'arc'
-                                    ? 'Arco'
+                                    ? 'Arc'
                                     : block.kind === 'disk'
-                                        ? 'Disco'
-                                        : 'Elemento';
+                                        ? 'Disk'
+                                        : 'Element';
 
                         return (
                             <div
@@ -96,7 +96,7 @@ export const BlockList = ({
                                             <div style={{ marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                 <div style={{ display: 'flex', gap: '8px' }}>
                                                     <CoordInput
-                                                        label="Centro"
+                                                        label="Center"
                                                         x={block.center.x / 50}
                                                         y={block.center.y / 50}
                                                         onChange={(newX, newY) => onUpdateBlock(block.id, { center: { x: newX * 50, y: newY * 50 } })}
@@ -104,14 +104,14 @@ export const BlockList = ({
                                                 </div>
                                                 <div style={{ marginTop: '4px' }}>
                                                     <label style={{
-                                                        fontSize: 'var(--fs-caption)',
+                                                        fontSize: '11px',
                                                         color: 'var(--text-secondary)',
-                                                        fontWeight: 'var(--fw-medium)',
+                                                        fontWeight: 500,
                                                         textTransform: 'uppercase',
                                                         display: 'block',
                                                         marginBottom: '4px'
                                                     }}>
-                                                        Radio
+                                                        Radius
                                                     </label>
                                                     <input
                                                         type="number"
@@ -134,9 +134,9 @@ export const BlockList = ({
                                         <Button
                                             onClick={() => onDeleteBlock(block.id)}
                                             variant="secondary"
-                                            style={{ width: '100%', color: 'var(--accent-error)', borderColor: 'var(--border)' }}
+                                            style={{ width: '100%', color: '#FF3B30', borderColor: 'rgba(255, 59, 48, 0.2)' }}
                                         >
-                                            Eliminar
+                                            Delete
                                         </Button>
                                     </div>
                                 )}

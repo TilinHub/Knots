@@ -7,17 +7,31 @@ import type { CSDiagram } from './types';
 import type { CheckResult } from './checks';
 import type { CriticalityResult } from './criticality';
 import {
-    checkImmediateMetrics, checkCombinatorial, checkSegments, checkArcs, checkAndComputeTangents
+    checkImmediateMetrics, checkCombinatorial, checkSegments, checkArcs, checkAndComputeTangents, checkGlobalIntersections
 } from './checks';
 import { constructA, constructTc, constructL, getRoll } from './matrices';
 import { assembleFunctional, reduceFunctional } from './functional';
 import { constructGaugeBasis } from './gauge';
-import { testCriticality } from './criticality';
+import { testCriticality, evaluateQuadratic } from './criticality';
 
 export interface AnalysisReport {
+    counts: {
+        N: number;
+        E: number;
+        T: number;
+        S: number;
+        A: number;
+    };
     metrics: CheckResult[];
     combinatorial: CheckResult;
+    global: CheckResult[];
+    matrices: {
+        A_dims: string;
+        Tc_dims: string;
+        L_dims: string;
+    };
     criticality: CriticalityResult | null;
+    quadratic?: number;
     error?: string;
 }
 
@@ -27,8 +41,10 @@ export function analyzeDiagram(diagram: CSDiagram): AnalysisReport {
         const metrics = checkImmediateMetrics(diagram);
         const tangentRes = checkAndComputeTangents(diagram);
         const combinatorial = checkCombinatorial(diagram);
+
         const segmentChecks = checkSegments(diagram);
         const arcChecks = checkArcs(diagram);
+        const globalChecks = checkGlobalIntersections(diagram);
 
         // Aggregate geometric checks
         const allMetrics = [
@@ -40,8 +56,11 @@ export function analyzeDiagram(diagram: CSDiagram): AnalysisReport {
 
         if (!combinatorial.passed) {
             return {
+                counts: { N: 0, E: 0, T: 0, S: 0, A: 0 },
                 metrics: allMetrics,
                 combinatorial,
+                global: globalChecks,
+                matrices: { A_dims: '-', Tc_dims: '-', L_dims: '-' },
                 criticality: null,
                 error: "Combinatorial check failed (Graph is not a single cycle)"
             };
@@ -59,8 +78,11 @@ export function analyzeDiagram(diagram: CSDiagram): AnalysisReport {
         const hardFail = allMetrics.some(m => !m.passed);
         if (hardFail) {
             return {
+                counts: { N: 0, E: 0, T: 0, S: 0, A: 0 },
                 metrics: allMetrics,
                 combinatorial,
+                global: globalChecks,
+                matrices: { A_dims: '-', Tc_dims: '-', L_dims: '-' },
                 criticality: null,
                 error: "Geometric checks failed. Cannot proceed to Criticality."
             };
@@ -69,7 +91,7 @@ export function analyzeDiagram(diagram: CSDiagram): AnalysisReport {
         // 2. Linear Algebra
         const A = constructA(diagram);
         const Tc = constructTc(diagram, tangentRes.tangents);
-        // const L = constructL(diagram, A, Tc); // Not strictly needed for criticality if using reduced form? 
+        const L = constructL(diagram, A, Tc); // Strictly construct L per requirement
         // PDF 2.13 Reduccion: g_red = g_c - Tc^T g_w.
         // PDF 2.14 Gauge: U from Roll(c) = ker A.
         // So we need A and Tc.
@@ -85,16 +107,39 @@ export function analyzeDiagram(diagram: CSDiagram): AnalysisReport {
         // 5. Criticality
         const crit = testCriticality(gred, gauge, diagram);
 
+        // Optional Quadratic
+        let qVal: number | undefined = undefined;
+        if (crit) {
+            qVal = evaluateQuadratic(diagram, gauge, crit.r);
+        }
+
         return {
+            counts: {
+                N: diagram.disks.length,
+                E: diagram.contacts.length,
+                T: diagram.tangencies.length,
+                S: diagram.segments.length,
+                A: diagram.arcs.length
+            },
             metrics: allMetrics,
             combinatorial,
-            criticality: crit
+            global: globalChecks,
+            matrices: {
+                A_dims: `${A.rows}x${A.cols}`,
+                Tc_dims: `${Tc.rows}x${Tc.cols}`,
+                L_dims: `${L.rows}x${L.cols}`
+            },
+            criticality: crit,
+            quadratic: qVal
         };
 
     } catch (e: any) {
         return {
+            counts: { N: 0, E: 0, T: 0, S: 0, A: 0 },
             metrics: [],
             combinatorial: { passed: false, value: 0, message: "Exception" },
+            global: [],
+            matrices: { A_dims: '-', Tc_dims: '-', L_dims: '-' },
             criticality: null,
             error: e.message
         };

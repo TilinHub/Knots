@@ -73,18 +73,21 @@ export function GraphsPanel({ onLoadScene }: GraphsPanelProps) {
         }}>
             <h2
                 style={{
-                    fontSize: 'var(--fs-caption)',
-                    fontWeight: 'var(--fw-semibold)',
+                    fontSize: '11px',
+                    fontWeight: 600,
                     color: 'var(--text-secondary)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     marginBottom: 'var(--space-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
                 }}
             >
-                📚 Librería de Grafos
+                📚 Graph Library
             </h2>
 
-            {loading && <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>Cargando grafos...</div>}
+            {loading && <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Loading graphs...</div>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {graphSets.map(set => (
@@ -114,7 +117,7 @@ export function GraphsPanel({ onLoadScene }: GraphsPanelProps) {
                                         <button
                                             key={idx}
                                             onClick={() => handleApplyGraph(graph)}
-                                            title={`Grafo #${idx + 1}`}
+                                            title={`Graph #${idx + 1}`}
                                             style={{
                                                 aspectRatio: '1',
                                                 border: '1px solid var(--border)',

@@ -1,4 +1,5 @@
 import { useState, type FC } from 'react';
+import Logo from '../../../assets/LOGO.png';
 
 interface EditorHeaderProps {
     initialKnotName?: string;
@@ -23,6 +24,13 @@ interface EditorHeaderProps {
     // Envelope
     showEnvelope?: boolean; // [NEW]
     onToggleEnvelope?: () => void; // [NEW]
+    // View Controls
+    showGrid: boolean;
+    onToggleGrid: (show: boolean) => void;
+    gridSpacing: number;
+    onGridSpacingChange: (val: number) => void;
+    angleUnit: 'deg' | 'rad';
+    onAngleUnitChange: (unit: 'deg' | 'rad') => void;
 }
 
 export const EditorHeader = ({
@@ -43,22 +51,25 @@ export const EditorHeader = ({
     onToggleKnotMode,
     dubinsMode,
     onToggleDubinsMode,
-    showEnvelope = true, // [NEW] Default true
-    onToggleEnvelope, // [NEW]
+    showEnvelope = true,
+    onToggleEnvelope,
+    showGrid,
+    onToggleGrid,
+    gridSpacing,
+    onGridSpacingChange,
+    angleUnit,
+    onAngleUnitChange,
 }: EditorHeaderProps) => {
     const [showLengthDetails, setShowLengthDetails] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
-    const statusColor = nonDiskBlocksCount === 0
-        ? 'var(--text-tertiary)'
-        : validation.valid
-            ? 'var(--accent-valid)'
-            : 'var(--accent-error)';
+    const statusColor = validation.valid
+        ? 'var(--accent-valid)'
+        : 'var(--accent-error)';
 
-    const statusText = nonDiskBlocksCount === 0
-        ? 'sin bloques'
-        : validation.valid
-            ? 'cs válido'
-            : `${validation.errors.length} error${validation.errors.length !== 1 ? 'es' : ''}`;
+    const statusText = validation.valid
+        ? 'Valid CS'
+        : `${validation.errors.length} error${validation.errors.length !== 1 ? 's' : ''}`;
 
     return (
         <header
@@ -70,6 +81,7 @@ export const EditorHeader = ({
                 justifyContent: 'space-between',
                 padding: '0 var(--space-lg)',
                 background: 'var(--bg-primary)',
+                overflow: 'hidden',
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
@@ -86,70 +98,60 @@ export const EditorHeader = ({
                             color: 'var(--text-secondary)',
                             display: 'flex',
                             alignItems: 'center',
+                            justifyContent: 'center',
                             gap: '6px',
                             transition: 'all 0.15s',
                         }}
                     >
-                        ← Galería
+                        ← Gallery
                     </button>
                 )}
-                <h1
-                    style={{
-                        fontSize: 'var(--fs-header)',
-                        fontWeight: 'var(--fw-semibold)',
-                        color: 'var(--text-primary)',
-                    }}
-                >
-                    Knots
-                </h1>
-                <div
-                    style={{
-                        fontSize: 'var(--fs-caption)',
-                        color: 'var(--text-secondary)',
-                    }}
-                >
-                    {initialKnotName || 'CS Diagram Builder'}
-                </div>
+                {/* Logo */}
+                <img
+                    src={Logo}
+                    alt="Knots Logo"
+                    style={{ height: '68px', width: 'auto', display: 'block' }}
+                />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {/* ENVELOPE TOGGLE - NEW */}
                 {diskBlocksCount >= 2 && (
                     <button
                         onClick={onToggleEnvelope}
                         style={{
                             padding: '6px 12px',
-                            fontSize: 'var(--fs-caption)',
-                            fontWeight: 'var(--fw-medium)',
-                            background: showEnvelope ? '#6B46C1' : 'var(--bg-tertiary)', // Purple for envelope?
-                            color: showEnvelope ? 'white' : 'var(--text-primary)',
-                            border: `1px solid ${showEnvelope ? '#6B46C1' : 'var(--border)'}`,
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            background: showEnvelope ? '#6B46C1' : 'transparent',
+                            color: showEnvelope ? 'white' : '#1D1D1F',
+                            border: `1px solid ${showEnvelope ? '#6B46C1' : '#D2D2D7'}`,
                             borderRadius: '6px',
                             cursor: 'pointer',
                             transition: 'all 0.15s',
                         }}
-                        title={showEnvelope ? "Ocultar Envolvente" : "Mostrar Envolvente"}
+                        title={showEnvelope ? "Hide Envelope" : "Show Envelope"}
                     >
-                        🟣 Envolvente
+                        🟣 Envelope
                     </button>
                 )}
 
-                {true && ( // Always allow enabling Contact Graphs if desired, or at least diskBlocksCount >= 0
+                {true && (
                     <button
                         onClick={onToggleContactDisks}
                         style={{
                             padding: '6px 12px',
-                            fontSize: 'var(--fs-caption)',
-                            fontWeight: 'var(--fw-medium)',
-                            background: showContactDisks ? '#4A90E2' : 'var(--bg-tertiary)',
-                            color: showContactDisks ? 'white' : 'var(--text-primary)',
-                            border: `1px solid ${showContactDisks ? '#4A90E2' : 'var(--border)'}`,
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            background: showContactDisks ? '#0071E3' : 'transparent',
+                            color: showContactDisks ? 'white' : '#1D1D1F',
+                            border: `1px solid ${showContactDisks ? '#0071E3' : '#D2D2D7'}`,
                             borderRadius: '6px',
                             cursor: 'pointer',
                             transition: 'all 0.15s',
                         }}
                     >
-                        🔵 Grafos de Contacto
+                        🔵 Contact Graphs
                     </button>
                 )}
 
@@ -262,34 +264,146 @@ export const EditorHeader = ({
                     </div>
                 )}
 
-                <button
-                    onClick={onShowValidationDetails}
-                    disabled={nonDiskBlocksCount === 0}
-                    style={{
-                        fontSize: 'var(--fs-caption)',
-                        color: statusColor,
-                        fontWeight: 'var(--fw-medium)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: nonDiskBlocksCount > 0 ? 'pointer' : 'default',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        transition: 'background 0.15s',
-                    }}
-                >
-                    <span
+                {/* Settings Gear */}
+                <div style={{ position: 'relative' }}>
+                    <button
+                        onClick={() => setShowSettings(!showSettings)}
                         style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: statusColor,
+                            background: showSettings ? 'var(--bg-tertiary)' : 'none',
+                            border: '1px solid var(--border)',
+                            borderRadius: '6px',
+                            padding: '0',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            color: 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '32px',
+                            height: '32px',
+                            transition: 'all 0.15s',
                         }}
-                    />
-                    {statusText}
-                </button>
+                        title="Settings"
+                    >
+                        ⚙️
+                    </button>
+                    {showSettings && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            right: 0,
+                            marginTop: '8px',
+                            background: 'var(--bg-primary)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                            zIndex: 100,
+                            minWidth: '220px',
+                        }}>
+                            {/* Grid Controls */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Grid</span>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={showGrid}
+                                            onChange={(e) => onToggleGrid(e.target.checked)}
+                                        />
+                                        {showGrid ? 'On' : 'Off'}
+                                    </label>
+                                </div>
+                                {showGrid && (
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                                            <span>Spacing</span>
+                                            <span>{gridSpacing}px</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="20"
+                                            max="100"
+                                            step="10"
+                                            value={gridSpacing}
+                                            onChange={(e) => onGridSpacingChange(parseInt(e.target.value))}
+                                            style={{ width: '100%' }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Angle Controls */}
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Angles</span>
+                                    <div style={{ display: 'flex', background: 'var(--bg-tertiary)', borderRadius: '4px', padding: '2px' }}>
+                                        <button
+                                            onClick={() => onAngleUnitChange('deg')}
+                                            style={{
+                                                border: 'none',
+                                                background: angleUnit === 'deg' ? 'white' : 'transparent',
+                                                boxShadow: angleUnit === 'deg' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                                                borderRadius: '3px',
+                                                padding: '2px 8px',
+                                                fontSize: '11px',
+                                                cursor: 'pointer',
+                                                fontWeight: angleUnit === 'deg' ? 600 : 400,
+                                            }}
+                                        >
+                                            deg
+                                        </button>
+                                        <button
+                                            onClick={() => onAngleUnitChange('rad')}
+                                            style={{
+                                                border: 'none',
+                                                background: angleUnit === 'rad' ? 'white' : 'transparent',
+                                                boxShadow: angleUnit === 'rad' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                                                borderRadius: '3px',
+                                                padding: '2px 8px',
+                                                fontSize: '11px',
+                                                cursor: 'pointer',
+                                                fontWeight: angleUnit === 'rad' ? 600 : 400,
+                                            }}
+                                        >
+                                            rad
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {nonDiskBlocksCount > 0 && (
+                    <button
+                        onClick={onShowValidationDetails}
+                        style={{
+                            fontSize: 'var(--fs-caption)',
+                            color: statusColor,
+                            fontWeight: 'var(--fw-medium)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            transition: 'background 0.15s',
+                        }}
+                    >
+                        <span
+                            style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: statusColor,
+                            }}
+                        />
+                        {statusText}
+                    </button>
+                )}
 
                 <button
                     onClick={onToggleSidebar}

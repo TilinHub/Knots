@@ -3,18 +3,41 @@ import type { CheckResult } from './checks'; // Type-only import
 import type { CriticalityResult } from './criticality'; // Type-only import
 import { Button } from '../../../ui/Button';
 
+interface Counts { N: number; E: number; T: number; S: number; A: number; }
+interface MatrixDims { A_dims: string; Tc_dims: string; L_dims: string; }
+
+// Duplicate this here or share from analyzer.ts if exporting it?
+// To avoid conflicts, let's redefine partial interface for props
 interface AnalysisResultsPanelProps {
+    counts?: Counts;
     metrics: CheckResult[];
     combinatorial: CheckResult;
+    global?: CheckResult[];
+    matrices?: MatrixDims;
     criticality: CriticalityResult | null;
+    quadratic?: number;
     onClose: () => void;
 }
 
 export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
-    metrics, combinatorial, criticality, onClose
+    counts, metrics, combinatorial, global, matrices, criticality, quadratic, onClose
 }) => {
     const failedMetrics = metrics.filter(m => !m.passed);
-    const passedMetrics = metrics.filter(m => m.passed);
+    const failedGlobal = global ? global.filter(m => !m.passed) : [];
+
+    // Group metrics by type for clear display if needed, but list is fine.
+
+    const ResultRow = ({ label, value, passed, detail }: { label: string, value: string, passed: boolean, detail?: string }) => (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: '13px' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+            <div style={{ textAlign: 'right' }}>
+                <span style={{ color: passed ? 'var(--accent-success)' : 'var(--accent-error)', fontWeight: 'bold' }}>
+                    {value}
+                </span>
+                {detail && <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{detail}</div>}
+            </div>
+        </div>
+    );
 
     return (
         <div style={{
@@ -24,56 +47,109 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
             transform: 'translate(-50%, -50%)',
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border)',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            padding: '24px',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
             zIndex: 1000,
-            width: '400px',
-            maxWidth: '90vw',
-            maxHeight: '80vh',
-            overflowY: 'auto'
+            width: '500px',
+            maxWidth: '95vw',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            fontFamily: 'var(--font-mono)' // Use mono for data
         }}>
-            <h2 style={{ fontSize: '18px', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-                Analysis Results
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '18px', margin: 0 }}>📊 CS Diagram Analysis</h2>
+                <Button onClick={onClose} variant="secondary" style={{ padding: '4px 8px' }}>✕</Button>
+            </div>
 
-            {/* Status Summary */}
-            <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <strong>Geometric Checks:</strong>
-                    {failedMetrics.length === 0 && combinatorial.passed
-                        ? <span style={{ color: 'var(--accent-success)' }}>PASSED</span>
-                        : <span style={{ color: 'var(--accent-error)' }}>FAILED ({failedMetrics.length} errors)</span>
-                    }
+            {/* 1. Counts Table */}
+            {counts && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '20px', background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>N</div><strong>{counts.N}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|E|</div><strong>{counts.E}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|T|</div><strong>{counts.T}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|S|</div><strong>{counts.S}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|A|</div><strong>{counts.A}</strong></div>
                 </div>
+            )}
+
+            {/* 2. Checks Summary */}
+            <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Validation</h3>
+
+                <ResultRow label="Combinatorial (C0)" value={combinatorial.passed ? "PASS" : "FAIL"} passed={combinatorial.passed} detail={!combinatorial.passed ? combinatorial.message : undefined} />
+                <ResultRow
+                    label="Geometric Checks"
+                    value={failedMetrics.length === 0 ? "PASS" : `FAIL (${failedMetrics.length})`}
+                    passed={failedMetrics.length === 0}
+                />
+
                 {failedMetrics.length > 0 && (
-                    <div style={{ background: 'rgba(255,0,0,0.1)', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
+                    <div style={{ background: 'rgba(255,0,0,0.1)', padding: '8px', borderRadius: '4px', fontSize: '12px', marginTop: '4px' }}>
                         {failedMetrics.slice(0, 3).map((m, i) => (
-                            <div key={i}>• {m.message} ({m.value.toExponential(2)})</div>
+                            <div key={i}>• {m.message} (res: {m.value.toExponential(2)})</div>
                         ))}
-                        {failedMetrics.length > 3 && <div>...and {failedMetrics.length - 3} more</div>}
                     </div>
+                )}
+
+                {global && (
+                    <ResultRow
+                        label="Global Checks (G1-G3)"
+                        value={failedGlobal.length === 0 ? "PASS" : `FAIL (${failedGlobal.length})`}
+                        passed={failedGlobal.length === 0}
+                    />
                 )}
             </div>
 
-            {/* Criticality */}
-            {criticality && (
-                <div style={{ marginBottom: '20px', padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '4px' }}>
-                    <h3 style={{ fontSize: '14px', marginBottom: '8px' }}>Criticality Test</h3>
-                    <div style={{ fontSize: '13px', marginBottom: '4px' }}>
-                        Result: <strong style={{ color: criticality.isCritical ? 'var(--accent-warning)' : 'var(--accent-success)' }}>
-                            {criticality.isCritical ? 'CRITICAL' : 'NOT CRITICAL'}
-                        </strong>
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                        ||r||: {criticality.normR.toExponential(4)} <br />
-                        Ratio: {criticality.ratio.toExponential(4)}
+            {/* 3. Matrices */}
+            {matrices && (
+                <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Linear Algebra</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                        <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
+                            A: <strong>{matrices.A_dims}</strong>
+                        </div>
+                        <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
+                            Tc: <strong>{matrices.Tc_dims}</strong>
+                        </div>
+                        <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
+                            L: <strong>{matrices.L_dims}</strong>
+                        </div>
                     </div>
                 </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button onClick={onClose} variant="primary">Close</Button>
+            {/* 4. Criticality */}
+            {criticality && (
+                <div style={{ marginBottom: '20px', padding: '16px', background: criticality.isCritical ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)', borderRadius: '8px', border: `1px solid ${criticality.isCritical ? 'var(--accent-success)' : 'var(--accent-warning)'}` }}>
+                    <h3 style={{ fontSize: '14px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Criticality Test</span>
+                        <strong style={{ color: criticality.isCritical ? 'var(--accent-success)' : 'var(--accent-warning)' }}>
+                            {criticality.isCritical ? 'CRITICAL' : 'NOT CRITICAL'}
+                        </strong>
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', fontSize: '13px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>||r||</span>
+                        <span style={{ fontFamily: 'monospace' }}>{criticality.normR.toExponential(6)}</span>
+
+                        <span style={{ color: 'var(--text-secondary)' }}>Ratio</span>
+                        <span style={{ fontFamily: 'monospace' }}>{criticality.ratio.toExponential(6)}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* 5. Quadratic (Optional) */}
+            {quadratic !== undefined && (
+                <div style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
+                    <h3 style={{ fontSize: '14px', marginBottom: '4px' }}>Optional Quadratic Test</h3>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        Q_red(r): <strong style={{ color: 'var(--text-primary)' }}>{quadratic.toExponential(4)}</strong>
+                    </div>
+                </div>
+            )}
+
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button onClick={onClose} variant="primary">Close Report</Button>
             </div>
         </div>
     );

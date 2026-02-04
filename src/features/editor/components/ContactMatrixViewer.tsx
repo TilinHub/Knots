@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { CSDisk } from '../../../core/types/cs';
 import { calculateJacobianMatrix } from '../../../core/geometry/contactGraph';
 import { Button } from '../../../ui/Button';
@@ -9,6 +9,7 @@ interface ContactMatrixViewerProps {
 
 export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks }) => {
     const { matrix, contacts } = useMemo(() => calculateJacobianMatrix(disks), [disks]);
+    const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
         // Format for spreadsheet copy (tab separated)
@@ -18,6 +19,8 @@ export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks 
         ).join('\n');
 
         navigator.clipboard.writeText(`Contact Matrix A(c)\n${header}\n${rows}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     if (disks.length === 0) return null;
@@ -52,15 +55,16 @@ export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks 
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <h3 style={{
-                    fontSize: 'var(--fs-caption)',
-                    fontWeight: 'var(--fw-semibold)',
+                    fontSize: '11px',
+                    fontWeight: 600,
                     color: 'var(--text-secondary)',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
+                    margin: 0
                 }}>
                     Rigidity Matrix A(c)
                 </h3>
                 <Button variant="secondary" onClick={handleCopy} style={{ fontSize: '10px', padding: '2px 8px' }}>
-                    Copiar
+                    {copied ? 'Copied!' : 'Copy'}
                 </Button>
             </div>
 

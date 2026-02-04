@@ -26,19 +26,19 @@ export const ViewControls = ({
         >
             <h2
                 style={{
-                    fontSize: 'var(--fs-caption)',
-                    fontWeight: 'var(--fw-semibold)',
+                    fontSize: '11px',
+                    fontWeight: 600,
                     color: 'var(--text-secondary)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     marginBottom: 'var(--space-sm)',
                 }}
             >
-                Vista
+                View
             </h2>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
-                <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Grilla</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Grid</span>
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                     <input
                         type="checkbox"
@@ -46,8 +46,8 @@ export const ViewControls = ({
                         onChange={(e) => onToggleGrid(e.target.checked)}
                         style={{ marginRight: '6px' }}
                     />
-                    <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                        {showGrid ? 'Visible' : 'Oculta'}
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        {showGrid ? 'On' : 'Off'}
                     </span>
                 </label>
             </div>
@@ -56,13 +56,13 @@ export const ViewControls = ({
                 <div style={{ marginBottom: 'var(--space-sm)' }}>
                     <label
                         style={{
-                            fontSize: 'var(--fs-caption)',
+                            fontSize: '11px',
                             color: 'var(--text-secondary)',
                             display: 'block',
                             marginBottom: '4px',
                         }}
                     >
-                        Espaciado: {gridSpacing}px
+                        Spacing: {gridSpacing}px
                     </label>
                     <input
                         type="range"
@@ -77,35 +77,37 @@ export const ViewControls = ({
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Ángulos</span>
+                <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>Angles</span>
                 <div style={{ display: 'flex', gap: '4px' }}>
                     <button
                         onClick={() => onAngleUnitChange('deg')}
                         style={{
-                            padding: '4px 8px',
-                            fontSize: 'var(--fs-caption)',
-                            background: angleUnit === 'deg' ? 'var(--bg-primary)' : 'transparent',
-                            border: `1px solid ${angleUnit === 'deg' ? 'var(--border)' : 'transparent'}`,
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            background: angleUnit === 'deg' ? '#F5F5F7' : 'transparent',
+                            border: `1px solid ${angleUnit === 'deg' ? '#D2D2D7' : 'transparent'}`,
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            color: angleUnit === 'deg' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            color: angleUnit === 'deg' ? '#1D1D1F' : 'var(--text-secondary)',
+                            fontWeight: angleUnit === 'deg' ? 600 : 400
                         }}
                     >
-                        grados
+                        deg
                     </button>
                     <button
                         onClick={() => onAngleUnitChange('rad')}
                         style={{
-                            padding: '4px 8px',
-                            fontSize: 'var(--fs-caption)',
-                            background: angleUnit === 'rad' ? 'var(--bg-primary)' : 'transparent',
-                            border: `1px solid ${angleUnit === 'rad' ? 'var(--border)' : 'transparent'}`,
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            background: angleUnit === 'rad' ? '#F5F5F7' : 'transparent',
+                            border: `1px solid ${angleUnit === 'rad' ? '#D2D2D7' : 'transparent'}`,
                             borderRadius: '4px',
                             cursor: 'pointer',
-                            color: angleUnit === 'rad' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            color: angleUnit === 'rad' ? '#1D1D1F' : 'var(--text-secondary)',
+                            fontWeight: angleUnit === 'rad' ? 600 : 400
                         }}
                     >
-                        radianes
+                        rad
                     </button>
                 </div>
             </div>

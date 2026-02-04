@@ -69,9 +69,9 @@ export const RollingModePanel = ({
                     lineHeight: '1.5',
                 }}
             >
-                {!pivotDiskId && '1️⃣ Click en disco pivote (fijo)'}
-                {pivotDiskId && !rollingDiskId && '2️⃣ Click en disco rodante'}
-                {pivotDiskId && rollingDiskId && '✅ Usa controles para rodar'}
+                {!pivotDiskId && '1️⃣ Click pivot disk (fixed)'}
+                {pivotDiskId && !rollingDiskId && '2️⃣ Click rolling disk'}
+                {pivotDiskId && rollingDiskId && '✅ Use controls to roll'}
             </div>
 
             {/* Current State */}
@@ -82,7 +82,7 @@ export const RollingModePanel = ({
                     </div>
                     {rollingDiskId && (
                         <div style={{ color: 'var(--text-secondary)' }}>
-                            <strong>Rodante:</strong> {diskBlocks.find(d => d.id === rollingDiskId)?.label || rollingDiskId}
+                            <strong>Rolling:</strong> {diskBlocks.find(d => d.id === rollingDiskId)?.label || rollingDiskId}
                         </div>
                     )}
                 </div>
@@ -96,7 +96,7 @@ export const RollingModePanel = ({
                             onClick={onToggleAnimation}
                             style={{ width: '100%', background: isAnimating ? 'var(--accent-error)' : 'var(--accent-primary)' }}
                         >
-                            {isAnimating ? '⏸️ Pausar' : '▶️ Iniciar'}
+                            {isAnimating ? '⏸️ Pause' : '▶️ Start'}
                         </Button>
                     </div>
 
@@ -110,7 +110,7 @@ export const RollingModePanel = ({
                                 fontWeight: 'var(--fw-medium)',
                             }}
                         >
-                            Ángulo: {(theta % (2 * Math.PI)).toFixed(2)} rad
+                            Angle: {(theta % (2 * Math.PI)).toFixed(2)} rad
                         </label>
                         <input
                             type="range"
@@ -133,7 +133,7 @@ export const RollingModePanel = ({
                                 fontWeight: 'var(--fw-medium)',
                             }}
                         >
-                            Dirección
+                            Direction
                         </label>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <Button
@@ -141,14 +141,14 @@ export const RollingModePanel = ({
                                 variant={direction === 1 ? 'primary' : 'secondary'}
                                 style={{ flex: 1, fontSize: 'var(--fs-caption)', padding: '4px 8px' }}
                             >
-                                ↺ Antihorario
+                                ↺ CCW
                             </Button>
                             <Button
                                 onClick={() => onDirectionChange?.(-1)}
                                 variant={direction === -1 ? 'primary' : 'secondary'}
                                 style={{ flex: 1, fontSize: 'var(--fs-caption)', padding: '4px 8px' }}
                             >
-                                ↻ Horario
+                                ↻ CW
                             </Button>
                         </div>
                     </div>
@@ -163,7 +163,7 @@ export const RollingModePanel = ({
                                 fontWeight: 'var(--fw-medium)',
                             }}
                         >
-                            Velocidad: {speed.toFixed(3)}x
+                            Speed: {speed.toFixed(3)}x
                         </label>
                         <input
                             type="range"
@@ -177,7 +177,7 @@ export const RollingModePanel = ({
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Trayectoria</span>
+                        <span style={{ fontSize: 'var(--fs-body)', color: 'var(--text-primary)' }}>Trail</span>
                         <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                             <input
                                 type="checkbox"
@@ -186,7 +186,7 @@ export const RollingModePanel = ({
                                 style={{ marginRight: '6px' }}
                             />
                             <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--text-secondary)' }}>
-                                {showTrail ? 'Sí' : 'No'}
+                                {showTrail ? 'Yes' : 'No'}
                             </span>
                         </label>
                     </div>
@@ -198,14 +198,14 @@ export const RollingModePanel = ({
                             style={{ width: '100%', background: 'var(--accent-success)', border: '1px solid #1e7e34' }}
                             disabled={isAnimating}
                         >
-                            📍 Fijar posición
+                            📍 Commit Position
                         </Button>
                         <Button
                             onClick={onResetSelection}
                             variant="secondary"
                             style={{ width: '100%' }}
                         >
-                            🔄 Resetear selección
+                            🔄 Reset Selection
                         </Button>
                     </div>
                 </>

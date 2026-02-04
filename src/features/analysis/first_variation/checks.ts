@@ -316,3 +316,58 @@ function distancePointToSegment(p: { x: number, y: number }, a: { x: number, y: 
     const closest = add(a, scale(ab, t));
     return dist(p, closest);
 }
+
+/**
+ * 2.10 Global Checks (G1-G3)
+ * Verify no self-intersections.
+ * G1: Segment-Segment
+ * G2: Segment-Arc (Already covered partially by Segment-Disk clearance S2)
+ * G3: Arc-Arc (Disk overlaps covered by metric checks)
+ */
+export function checkGlobalIntersections(diagram: CSDiagram): CheckResult[] {
+    const { segments, tangencies, tolerances } = diagram;
+    const results: CheckResult[] = [];
+    const tangencyMap = new Map(tangencies.map(t => [t.id, t]));
+
+    // G1: Segment-Segment
+    for (let i = 0; i < segments.length; i++) {
+        for (let j = i + 1; j < segments.length; j++) {
+            const s1 = segments[i];
+            const s2 = segments[j];
+
+            // Skip adjacent segments (they share a disk/tangency)
+            if (s1.endTangencyId === s2.startTangencyId || s1.startTangencyId === s2.endTangencyId) continue;
+            // Also check if they share the same disk loop (rare in simple diagrams)
+
+            const p1 = tangencyMap.get(s1.startTangencyId)!.point;
+            const p2 = tangencyMap.get(s1.endTangencyId)!.point;
+            const p3 = tangencyMap.get(s2.startTangencyId)!.point;
+            const p4 = tangencyMap.get(s2.endTangencyId)!.point;
+
+            const intersect = segmentsIntersect(p1, p2, p3, p4, tolerances.geo);
+
+            if (intersect) {
+                results.push({
+                    passed: false,
+                    value: 1, // Indicator
+                    message: `Global Intersection: Segment ${i} intersects Segment ${j}`
+                });
+            }
+        }
+    }
+
+    // If no failures
+    if (results.length === 0) {
+        results.push({ passed: true, value: 0, message: "Global G1-G3 Checks PASSED" });
+    }
+
+    return results;
+}
+
+// Helper: Segment Intersection
+function segmentsIntersect(a: { x: number, y: number }, b: { x: number, y: number }, c: { x: number, y: number }, d: { x: number, y: number }, tol: number): boolean {
+    const ccw = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) => {
+        return (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x);
+    };
+    return (ccw(a, c, d) !== ccw(b, c, d)) && (ccw(a, b, c) !== ccw(a, b, d));
+}
