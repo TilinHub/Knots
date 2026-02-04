@@ -317,180 +317,222 @@ export function findEnvelopePath(
         return { path, chiralities };
     }
 
-    // ORIGINAL VITERBI LOGIC
+    // ORIGINAL VITERBI LOGIC (Enhanced with Path Finding)
 
     // State: (DiskIndex, Chirality) -> { Cost, ParentState, TangentSegments }
     // Chirality: 0 = L, 1 = R
     interface State {
         cost: number;
         parent: { chirality: 0 | 1 } | null;
-        incomingTangent: TangentSegment | null;
-        incomingArcLen: number;
+        incomingAngle: number; // Angle at which we arrived at this disk (for arc calc)
+        pathSegment: EnvelopeSegment[]; // The segment(s) connecting parent to this
     }
 
-    // Initialize DP Table: [Step][Chirality]
+    // Initialize DP Table
     const dp: State[][] = Array(diskIds.length).fill(null).map(() => [
-        { cost: Infinity, parent: null, incomingTangent: null, incomingArcLen: 0 }, // L
-        { cost: Infinity, parent: null, incomingTangent: null, incomingArcLen: 0 }  // R
+        { cost: Infinity, parent: null, incomingAngle: 0, pathSegment: [] },
+        { cost: Infinity, parent: null, incomingAngle: 0, pathSegment: [] }
     ]);
 
-    // Initial Step (Step 0)
-    // Cost is 0 for both L and R start (or strictly 0? We don't have incoming arc).
     dp[0][0].cost = 0;
     dp[0][1].cost = 0;
 
-    // Helper: Get valid edges between two disks
-    const getEdges = (id1: string, id2: string) =>
-        graph.edges.filter(e => e.startDiskId === id1 && e.endDiskId === id2);
-
-    // Helper: Calculate Arc length on disk
+    // Helper: Calculate Arc length (same robust logic)
     const calcArc = (d: ContactDisk, angleIn: number, angleOut: number, chirality: 'L' | 'R'): number => {
         const PI2 = 2 * Math.PI;
         let delta = angleOut - angleIn;
-        // Normalize to -PI..PI first to be safe
         while (delta <= -Math.PI) delta += PI2;
         while (delta > Math.PI) delta -= PI2;
-
-        if (chirality === 'L') { // CCW: Want positive angle (0..2PI)
-            if (delta <= 0) delta += PI2;
-        } else { // CW: Want negative angle (0..-2PI)
-            if (delta >= 0) delta -= PI2;
-            delta = Math.abs(delta);
-        }
+        if (chirality === 'L') { if (delta <= 0) delta += PI2; }
+        else { if (delta >= 0) delta -= PI2; delta = Math.abs(delta); }
         return delta * d.radius;
     };
+
+    // Helper: Dijkstra Shortest Path between two disks
+    // From u(uChar) to v(vChar), given arrival angle at u
+    const findShortestTransition = (
+        uId: string,
+        uChar: 0 | 1,
+        vId: string,
+        vChar: 0 | 1,
+        arrivalAngleAtU: number,
+        isFirstDisk: boolean
+    ): { cost: number, segments: EnvelopeSegment[], exitAngleAtSubPath: number } | null => {
+
+        const uDisk = graph.nodes.get(uId)!;
+        const vDisk = graph.nodes.get(vId)!;
+        const targetCharStr = vChar === 0 ? 'L' : 'R';
+        const startCharStr = uChar === 0 ? 'L' : 'R';
+
+        // Set of visited nodes: Map<diskId + chirality, {cost, parent, edge, totalPath}>
+        // Since graph is small, we can use simple Priority Queue or just Array+Sort
+        // State: { diskId, chirality, cost, segments }
+        // BUT we need to account for Arc Cost on 'u'.
+        // This makes 'u' special.
+        // We start with NO arc cost at 'u' (it's part of the path), BUT we must include it in the total.
+
+        // Let's search on the Graph.
+        // Start Nodes: All edges leaving u with type starting 'uChar'.
+        // Initial Cost = Arc(u, arrivalAngle, edge.startAngle) + Edge.Length.
+
+        interface DNode {
+            diskId: string;
+            chirality: 0 | 1; // Arrival chirality at this disk
+            cost: number;
+            path: EnvelopeSegment[];
+            arrivalAngle: number; // Angle of arrival (tangent.end)
+        }
+
+        const pq: DNode[] = [];
+        const visited = new Map<string, number>(); // key: id+char -> minCost
+
+        // Initial Expansion from U
+        const edgesFromU = graph.edges.filter(e => e.startDiskId === uId && e.type.startsWith(startCharStr));
+
+        for (const edge of edgesFromU) {
+            // Arc Cost on U
+            const departureAngle = Math.atan2(edge.start.y - uDisk.center.y, edge.start.x - uDisk.center.x);
+            const arcC = isFirstDisk ? 0 : calcArc(uDisk, arrivalAngleAtU, departureAngle, startCharStr);
+
+            const nextDiskId = edge.endDiskId;
+            const nextChar = edge.type.endsWith('L') ? 0 : 1;
+            const arrAngle = Math.atan2(edge.end.y - graph.nodes.get(nextDiskId)!.center.y, edge.end.x - graph.nodes.get(nextDiskId)!.center.x);
+
+            const cost = arcC + edge.length;
+
+            // Optimization: If edge goes to v, check if chirality matches
+            // If matches, this is a candidate path.
+            // But we push to PQ to find SHORTEST.
+
+            pq.push({
+                diskId: nextDiskId,
+                chirality: nextChar,
+                cost: cost,
+                path: (arcC > 1e-9 ? [{
+                    type: 'ARC', center: uDisk.center, radius: uDisk.radius,
+                    startAngle: arrivalAngleAtU, endAngle: departureAngle, chirality: startCharStr, length: arcC, diskId: uId
+                } as EnvelopeSegment] : []).concat([edge]),
+                arrivalAngle: arrAngle
+            });
+        }
+
+        // Dijkstra Loop
+        while (pq.length > 0) {
+            pq.sort((a, b) => a.cost - b.cost); // Simple sort
+            const curr = pq.shift()!;
+
+            // Key check
+            const key = curr.diskId + curr.chirality;
+            if (visited.has(key) && visited.get(key)! <= curr.cost) continue;
+            visited.set(key, curr.cost);
+
+            // Goal Check
+            if (curr.diskId === vId && curr.chirality === vChar) {
+                return { cost: curr.cost, segments: curr.path, exitAngleAtSubPath: curr.arrivalAngle };
+            }
+
+            const currDisk = graph.nodes.get(curr.diskId)!;
+            const currCharStr = curr.chirality === 0 ? 'L' : 'R';
+
+            // Expand
+            const edges = graph.edges.filter(e => e.startDiskId === curr.diskId && e.type.startsWith(currCharStr));
+            for (const edge of edges) {
+                const departureAngle = Math.atan2(edge.start.y - currDisk.center.y, edge.start.x - currDisk.center.x);
+                // Arc on Current Disk
+                const arcC = calcArc(currDisk, curr.arrivalAngle, departureAngle, currCharStr);
+
+                const nextCost = curr.cost + arcC + edge.length;
+                const nextDiskId = edge.endDiskId;
+                const nextChar = edge.type.endsWith('L') ? 0 : 1;
+                const arrAngle = Math.atan2(edge.end.y - graph.nodes.get(nextDiskId)!.center.y, edge.end.x - graph.nodes.get(nextDiskId)!.center.x);
+
+                const newPath = [...curr.path];
+                if (arcC > 1e-9) {
+                    newPath.push({
+                        type: 'ARC', center: currDisk.center, radius: currDisk.radius,
+                        startAngle: curr.arrivalAngle, endAngle: departureAngle, chirality: currCharStr, length: arcC, diskId: curr.diskId
+                    });
+                }
+                newPath.push(edge);
+
+                pq.push({
+                    diskId: nextDiskId,
+                    chirality: nextChar,
+                    cost: nextCost,
+                    path: newPath,
+                    arrivalAngle: arrAngle
+                });
+            }
+        }
+        return null;
+    };
+
 
     // Viterbi Forward
     for (let i = 0; i < diskIds.length - 1; i++) {
         const uId = diskIds[i];
         const vId = diskIds[i + 1];
-        const uDisk = graph.nodes.get(uId);
-        const vDisk = graph.nodes.get(vId);
+        if (!graph.nodes.get(uId) || !graph.nodes.get(vId)) continue;
 
-        if (!uDisk || !vDisk) continue;
-
-        const edges = getEdges(uId, vId);
-
-        // For each current state (L/R)
         for (let currChirality = 0; currChirality <= 1; currChirality++) {
             const currState = dp[i][currChirality];
             if (currState.cost === Infinity) continue;
 
-            const currChar = currChirality === 0 ? 'L' : 'R';
+            for (let nextChirality = 0; nextChirality <= 1; nextChirality++) {
+                // Find shortest transition
+                // This accounts for Direct Edge OR Path via intermediates
+                const result = findShortestTransition(uId, currChirality as 0 | 1, vId, nextChirality as 0 | 1, currState.incomingAngle, i === 0);
 
-            // Try to transition to next state via valid edges
-            // Edge starts with currChar?
-            // e.type: LSL -> Starts L, Ends L.
-            // LSR -> Starts L, Ends R.
-            // RSR -> Starts R, Ends R.
-            // RSL -> Starts R, Ends L.
-
-            for (const edge of edges) {
-                const edgeStartChar = edge.type[0]; // 'L' or 'R'
-                const edgeEndChar = edge.type[2]; // 'L' or 'R'
-                const nextChirality = edgeEndChar === 'L' ? 0 : 1;
-
-                // VALIDITY CHECK: Current Departure MUST match Edge Start
-                if (edgeStartChar !== currChar) continue;
-
-                // ARC COST (on current disk u)
-                // We arrived at u with some angle, now we depart with edge.start angle.
-                let arcCost = 0;
-                if (i > 0 && currState.incomingTangent) {
-                    // Angle coming in from previous tangent
-                    const angleIn = Math.atan2(
-                        currState.incomingTangent.end.y - uDisk.center.y,
-                        currState.incomingTangent.end.x - uDisk.center.x
-                    );
-                    // Angle going out to this tangent
-                    const angleOut = Math.atan2(
-                        edge.start.y - uDisk.center.y,
-                        edge.start.x - uDisk.center.x
-                    );
-                    arcCost = calcArc(uDisk, angleIn, angleOut, currChar);
-                }
-
-                // Total new cost
-                const newCost = currState.cost + arcCost + edge.length;
-
-                // Update Next State if cheaper
-                if (newCost < dp[i + 1][nextChirality].cost) {
-                    dp[i + 1][nextChirality] = {
-                        cost: newCost,
-                        parent: { chirality: currChirality as 0 | 1 },
-                        incomingTangent: edge,
-                        incomingArcLen: arcCost
-                    };
+                if (result) {
+                    const newCost = currState.cost + result.cost;
+                    if (newCost < dp[i + 1][nextChirality].cost) {
+                        dp[i + 1][nextChirality] = {
+                            cost: newCost,
+                            parent: { chirality: currChirality as 0 | 1 },
+                            incomingAngle: result.exitAngleAtSubPath,
+                            pathSegment: result.segments
+                        };
+                    }
                 }
             }
         }
     }
 
-    // Backtrack
+    // Backtrack - Simplified as segments are stored in state
     const path: EnvelopeSegment[] = [];
     const len = diskIds.length;
-    // Find best end state
     let bestEndChirality = -1;
     if (dp[len - 1][0].cost < dp[len - 1][1].cost) bestEndChirality = 0;
     else if (dp[len - 1][1].cost < Infinity) bestEndChirality = 1;
 
-    if (bestEndChirality === -1) return { path: [], chiralities: [] }; // No path found
+    if (bestEndChirality === -1) return { path: [], chiralities: [] };
 
     const chiralities: ('L' | 'R')[] = new Array(len);
     chiralities[len - 1] = bestEndChirality === 0 ? 'L' : 'R';
-
     let currC = bestEndChirality as 0 | 1;
-    for (let i = len - 1; i > 0; i--) { // Go back to 1
+
+    // Collect segments backwards
+    // dp[i+1] stores segments leading TO i+1 FROM i.
+    // So for i from len-1 down to 1:
+    // path.unshift(...dp[i][currC].pathSegment)
+
+    for (let i = len - 1; i > 0; i--) {
         const state = dp[i][currC];
-        if (!state.incomingTangent || !state.parent) break;
+        if (!state.parent) break; // Should not happen
 
-        // Add Tangent (Prepend)
-        path.unshift(state.incomingTangent);
-
-        // Add Arc (Prepend)
-        // Arc is on disk[i-1] (Previous Node)
-        // connecting state.parent.incomingTangent (or nothing) to state.incomingTangent
-        const uId = diskIds[i - 1];
-        const uDisk = graph.nodes.get(uId)!;
-        const prevC = state.parent.chirality;
-
-        // Record chirality
-        chiralities[i - 1] = prevC === 0 ? 'L' : 'R';
-
-        // Departure Angle (Start of current tangent)
-        const angleOut = Math.atan2(
-            state.incomingTangent.start.y - uDisk.center.y,
-            state.incomingTangent.start.x - uDisk.center.x
-        );
-
-        // Arrival Angle (End of previous tangent)
-        // We need to look up the previous step to get the incoming tangent
-        const prevState = dp[i - 1][prevC];
-        let angleIn = angleOut; // Default 0 len if first
-        if (i - 1 > 0 && prevState.incomingTangent) {
-            angleIn = Math.atan2(
-                prevState.incomingTangent.end.y - uDisk.center.y,
-                prevState.incomingTangent.end.x - uDisk.center.x
-            );
-
-            // Add Arc Segment
-            const chirality = prevC === 0 ? 'L' : 'R';
-            const arcLen = calcArc(uDisk, angleIn, angleOut, chirality);
-
-            if (arcLen > 1e-9) {
-                path.unshift({
-                    type: 'ARC',
-                    center: uDisk.center,
-                    radius: uDisk.radius,
-                    startAngle: angleIn,
-                    endAngle: angleOut,
-                    chirality,
-                    length: arcLen,
-                    diskId: uId
-                });
-            }
+        // Add segments in reverse order (since unshift adds to front)
+        // state.pathSegment is [Arc, Tangent, Arc, Tangent...] ordered from i-1 to i.
+        // We want to PREPEND them to global path.
+        // So we iterate state.pathSegment reversed and unshift?
+        // Or just unshift the whole block?
+        // path = [...state.pathSegment, ...path]
+        // Efficient way:
+        for (let k = state.pathSegment.length - 1; k >= 0; k--) {
+            path.unshift(state.pathSegment[k]);
         }
 
+        const prevC = state.parent.chirality;
+        chiralities[i - 1] = prevC === 0 ? 'L' : 'R';
         currC = prevC;
     }
 
