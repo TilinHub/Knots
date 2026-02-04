@@ -69,9 +69,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       return {
         id: knot.id,
         color: knot.color,
-        // We ignore fixed chiralities (topology) to ensure the envelope behaves like an elastic band
-        // and snaps to the optimal shape (Viterbi) even when disks move significantly.
-        path: findEnvelopePath(graph, validSequence).path
+        // We pass knot.chiralities to enforce the saved topology (Shape).
+        // The underlying 'findEnvelopePath' now uses Dijkstra to ensure this topology
+        // is maintained elastically (wrapping around obstacles) without breaking.
+        path: findEnvelopePath(graph, validSequence, knot.chiralities).path
       };
     });
   }, [editorState.savedKnots, graph, diskBlocks]);
