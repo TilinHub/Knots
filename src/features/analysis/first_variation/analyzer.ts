@@ -43,6 +43,10 @@ export interface AnalysisReport {
     };
     criticality: CriticalityResult | null;
     quadratic?: number;
+    instanceData?: {
+        disks: { id: number, center: { x: number, y: number } }[];
+        contacts: { diskA: number, diskB: number }[];
+    };
     error?: string;
 }
 
@@ -249,7 +253,11 @@ export function analyzeDiagram(diagram: CSDiagram): AnalysisReport {
                 checks: gauge.checks
             },
             criticality: crit,
-            quadratic: qVal
+            quadratic: qVal,
+            instanceData: {
+                disks: diagram.disks.map((d, i) => ({ id: i, center: d.center })),
+                contacts: diagram.contacts.map(c => ({ diskA: c.diskA, diskB: c.diskB }))
+            }
         };
 
     } catch (e: any) {

@@ -6,7 +6,7 @@
 import type { CSDiagram, Disk, Segment, Arc, Tangency } from './types';
 import {
     sub, norm, dot, J, calculateNormal, calculateDeltaTheta,
-    dist, add, scale
+    dist, add, scale, intersectSegmentArc, intersectArcArc, intersectSegmentSegment
 } from './geometry';
 
 export type CheckResult = {
@@ -291,12 +291,14 @@ function distancePointToSegment(p: { x: number, y: number }, a: { x: number, y: 
  * 2.10 Global Checks (G1-G3)
  * Verify no self-intersections.
  * G1: Segment-Segment
- * G2: Segment-Arc (Already covered partially by Segment-Disk clearance S2)
- * G3: Arc-Arc (Disk overlaps covered by metric checks)
+ * G2: Segment-Arc
+ * G3: Arc-Arc
  */
 export function checkGlobalIntersections(diagram: CSDiagram): CheckResult[] {
     const segments = diagram.segments || [];
+    const arcs = diagram.arcs || [];
     const tangencies = diagram.tangencies || [];
+    const disks = diagram.disks;
     const { tolerances } = diagram;
     const results: CheckResult[] = [];
     const tangencyMap = new Map(tangencies.map(t => [t.id, t]));
@@ -307,22 +309,105 @@ export function checkGlobalIntersections(diagram: CSDiagram): CheckResult[] {
             const s1 = segments[i];
             const s2 = segments[j];
 
-            // Skip adjacent segments (they share a disk/tangency)
-            if (s1.endTangencyId === s2.startTangencyId || s1.startTangencyId === s2.endTangencyId) continue;
-            // Also check if they share the same disk loop (rare in simple diagrams)
+            // Skip adjacent segments (neighbors in the cycle)
+            // G1 checks usually exclude adjacent edges because they are connected via a vertex (or arc here).
+            // Local validity of the turn is handled by Arc checks / Convexity checks.
+            const areNeighbors = (Math.abs(i - j) === 1) ||
+                (i === 0 && j === segments.length - 1 && segments.length > 2);
+
+            if (areNeighbors) continue;
 
             const p1 = tangencyMap.get(s1.startTangencyId)!.point;
             const p2 = tangencyMap.get(s1.endTangencyId)!.point;
             const p3 = tangencyMap.get(s2.startTangencyId)!.point;
             const p4 = tangencyMap.get(s2.endTangencyId)!.point;
 
-            const intersect = segmentsIntersect(p1, p2, p3, p4, tolerances.geo);
+            const intersect = intersectSegmentSegment(p1, p2, p3, p4, tolerances.geo);
 
             if (intersect) {
                 results.push({
                     passed: false,
-                    value: 1, // Indicator
-                    message: `Global Intersection: Segment ${i} intersects Segment ${j}`
+                    value: 1,
+                    message: `G1 Fail: Segments ${i}-${j} intersect`
+                });
+            }
+        }
+    }
+
+    // G2: Segment-Arc
+    for (let i = 0; i < segments.length; i++) {
+        for (let j = 0; j < arcs.length; j++) {
+            const s = segments[i];
+            const a = arcs[j];
+
+            // Skip adjacent
+            if (s.endTangencyId === a.startTangencyId || s.startTangencyId === a.endTangencyId ||
+                s.endTangencyId === a.endTangencyId || s.startTangencyId === a.startTangencyId) continue;
+            // Note: In oriented cycle, s->a or a->s. But check all connectivity just in case.
+
+            const p1 = tangencyMap.get(s.startTangencyId)!.point;
+            const p2 = tangencyMap.get(s.endTangencyId)!.point;
+
+            const disk = disks[a.diskIndex];
+            const tStart = tangencyMap.get(a.startTangencyId)!;
+            const tEnd = tangencyMap.get(a.endTangencyId)!;
+
+            // Get angles
+            const thetaStart = Math.atan2(tStart.point.y - disk.center.y, tStart.point.x - disk.center.x);
+            // thetaEnd is start + deltaTheta
+            const thetaEnd = thetaStart + a.deltaTheta;
+
+            const intersect = intersectSegmentArc(
+                p1, p2,
+                disk.center, 1,
+                thetaStart, thetaEnd,
+                tolerances.geo
+            );
+
+            if (intersect) {
+                results.push({
+                    passed: false,
+                    value: 1,
+                    message: `G2 Fail: Segment ${i} intersects Arc ${j} (Disk ${a.diskIndex})`
+                });
+            }
+        }
+    }
+
+    // G3: Arc-Arc
+    for (let i = 0; i < arcs.length; i++) {
+        for (let j = i + 1; j < arcs.length; j++) {
+            const a1 = arcs[i];
+            const a2 = arcs[j];
+
+            // Skip adjacent
+            if (a1.endTangencyId === a2.startTangencyId || a1.startTangencyId === a2.endTangencyId) continue;
+            // Also if on same disk?
+            // If on same disk, they are adjacent in sequence (or disjoint). 
+            // Overlap check handles same disk case in intersectArcArc.
+
+            const d1 = disks[a1.diskIndex];
+            const d2 = disks[a2.diskIndex];
+
+            const t1s = tangencyMap.get(a1.startTangencyId)!;
+            const th1s = Math.atan2(t1s.point.y - d1.center.y, t1s.point.x - d1.center.x);
+            const th1e = th1s + a1.deltaTheta;
+
+            const t2s = tangencyMap.get(a2.startTangencyId)!;
+            const th2s = Math.atan2(t2s.point.y - d2.center.y, t2s.point.x - d2.center.x);
+            const th2e = th2s + a2.deltaTheta;
+
+            const intersect = intersectArcArc(
+                d1.center, 1, th1s, th1e,
+                d2.center, 1, th2s, th2e,
+                tolerances.geo
+            );
+
+            if (intersect) {
+                results.push({
+                    passed: false,
+                    value: 1,
+                    message: `G3 Fail: Arc ${i} (D${a1.diskIndex}) intersects Arc ${j} (D${a2.diskIndex})`
                 });
             }
         }
@@ -336,10 +421,4 @@ export function checkGlobalIntersections(diagram: CSDiagram): CheckResult[] {
     return results;
 }
 
-// Helper: Segment Intersection
-function segmentsIntersect(a: { x: number, y: number }, b: { x: number, y: number }, c: { x: number, y: number }, d: { x: number, y: number }, tol: number): boolean {
-    const ccw = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) => {
-        return (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x);
-    };
-    return (ccw(a, c, d) !== ccw(b, c, d)) && (ccw(a, b, c) !== ccw(a, b, d));
-}
+

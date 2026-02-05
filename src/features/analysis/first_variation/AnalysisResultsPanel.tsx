@@ -35,14 +35,19 @@ interface AnalysisResultsPanelProps {
     gauge?: GaugeInfo;
     criticality: CriticalityResult | null;
     quadratic?: number;
+    instanceData?: {
+        disks: { id: number, center: { x: number, y: number } }[];
+        contacts: { diskA: number, diskB: number }[];
+    };
     onClose: () => void;
 }
 
 export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
-    counts, metrics, combinatorial, global, matrices, vectors, gauge, criticality, quadratic, onClose
+    counts, metrics, combinatorial, global, matrices, vectors, gauge, criticality, quadratic, instanceData, onClose
 }) => {
     const failedMetrics = metrics.filter(m => !m.passed);
     const failedGlobal = global ? global.filter(m => !m.passed) : [];
+    const [instanceExpanded, setInstanceExpanded] = React.useState(false);
 
     const ResultRow = ({ label, value, passed, detail }: { label: string, value: string, passed: boolean, detail?: string }) => (
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: '13px' }}>
@@ -118,6 +123,52 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                 <h2 style={{ fontSize: '18px', margin: 0 }}>📊 CS Diagram Analysis (Protocol)</h2>
                 <Button onClick={onClose} variant="secondary" style={{ padding: '4px 8px' }}>✕</Button>
             </div>
+
+            {/* 0. Instance Data (Extended) */}
+            {instanceData && (
+                <div style={{ marginBottom: '20px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div
+                        onClick={() => setInstanceExpanded(!instanceExpanded)}
+                        style={{
+                            padding: '10px 12px',
+                            background: 'var(--bg-tertiary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '13px',
+                            fontWeight: 'bold',
+                            color: 'var(--text-secondary)'
+                        }}
+                    >
+                        <span>Instance Data (N={instanceData.disks.length}, |E|={instanceData.contacts.length})</span>
+                        <span>{instanceExpanded ? '▼' : '▶'}</span>
+                    </div>
+
+                    {instanceExpanded && (
+                        <div style={{ padding: '12px', background: 'var(--bg-secondary)', fontSize: '12px' }}>
+                            <div style={{ marginBottom: '12px' }}>
+                                <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>Centers ($c_i$)</strong>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '4px' }}>
+                                    {instanceData.disks.map(d => (
+                                        <div key={d.id} style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                                            {d.id}: ({d.center.x.toFixed(4)}, {d.center.y.toFixed(4)})
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>Contacts ($\mathcal{E}$)</strong>
+                                <div style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                                    {instanceData.contacts.length > 0
+                                        ? instanceData.contacts.map((c, i) => `{${c.diskA},${c.diskB}}`).join(', ')
+                                        : "None"}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* 1. Counts Table */}
             {counts && (
