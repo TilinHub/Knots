@@ -66,6 +66,36 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
         </div>
     );
 
+    const DetailedResultRow = ({ label, failedItems }: { label: string, failedItems: CheckResult[] }) => {
+        const [expanded, setExpanded] = React.useState(false);
+        const passed = failedItems.length === 0;
+
+        return (
+            <div style={{ borderBottom: '1px solid var(--border)', padding: '4px 0' }}>
+                <div
+                    style={{ display: 'flex', justifyContent: 'space-between', cursor: passed ? 'default' : 'pointer', fontSize: '13px', alignItems: 'center' }}
+                    onClick={() => !passed && setExpanded(!expanded)}
+                >
+                    <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                    <div style={{ textAlign: 'right' }}>
+                        <span style={{ color: passed ? 'var(--accent-success)' : 'var(--accent-error)', fontWeight: 'bold' }}>
+                            {passed ? "PASS" : `FAIL (${failedItems.length})`} <span style={{ fontSize: '10px', verticalAlign: 'middle' }}>{!passed && (expanded ? '▼' : '▶')}</span>
+                        </span>
+                    </div>
+                </div>
+                {expanded && !passed && (
+                    <div style={{ background: 'rgba(255,0,0,0.05)', padding: '8px', marginTop: '4px', borderRadius: '4px', fontSize: '12px' }}>
+                        {failedItems.map((m, i) => (
+                            <div key={i} style={{ marginBottom: '4px', color: 'var(--accent-error)' }}>
+                                • {m.message} {m.value > 0 && <span style={{ opacity: 0.7 }}>(val: {m.value.toExponential(2)})</span>}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div style={{
             position: 'fixed',
@@ -105,25 +135,16 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                 <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Validation</h3>
 
                 <ResultRow label="Combinatorial (C0)" value={combinatorial.passed ? "PASS" : "FAIL"} passed={combinatorial.passed} detail={!combinatorial.passed ? combinatorial.message : undefined} />
-                <ResultRow
+
+                <DetailedResultRow
                     label="Geometric Checks (S1-S2, A1-A3)"
-                    value={failedMetrics.length === 0 ? "PASS" : `FAIL (${failedMetrics.length})`}
-                    passed={failedMetrics.length === 0}
+                    failedItems={failedMetrics}
                 />
 
-                {failedMetrics.length > 0 && (
-                    <div style={{ background: 'rgba(255,0,0,0.1)', padding: '8px', borderRadius: '4px', fontSize: '12px', marginTop: '4px' }}>
-                        {failedMetrics.slice(0, 3).map((m, i) => (
-                            <div key={i}>• {m.message} (res: {m.value.toExponential(2)})</div>
-                        ))}
-                    </div>
-                )}
-
                 {global && (
-                    <ResultRow
+                    <DetailedResultRow
                         label="Global Checks (G1-G3)"
-                        value={failedGlobal.length === 0 ? "PASS" : `FAIL (${failedGlobal.length})`}
-                        passed={failedGlobal.length === 0}
+                        failedItems={failedGlobal}
                     />
                 )}
             </div>

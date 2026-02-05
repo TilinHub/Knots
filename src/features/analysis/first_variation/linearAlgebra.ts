@@ -12,8 +12,11 @@ export class Matrix {
         this.rows = rows;
         this.cols = cols;
         if (data) {
-            if (data.length !== rows || data[0].length !== cols) {
-                throw new Error("Invalid data dimensions");
+            if (data.length !== rows) {
+                throw new Error("Invalid data dimensions (rows)");
+            }
+            if (rows > 0 && data[0].length !== cols) {
+                throw new Error("Invalid data dimensions (cols)");
             }
             this.data = data;
         } else {

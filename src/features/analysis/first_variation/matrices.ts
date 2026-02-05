@@ -14,7 +14,8 @@ import { checkAndComputeTangents } from './checks';
  * Cols: 2N (centers)
  */
 export function constructA(diagram: CSDiagram): Matrix {
-    const { disks, contacts } = diagram;
+    const { disks } = diagram;
+    const contacts = diagram.contacts || [];
     const N = disks.length;
     const A = Matrix.zeros(contacts.length, 2 * N);
 
@@ -51,7 +52,8 @@ export function constructA(diagram: CSDiagram): Matrix {
  * Cols: 2N (centers)
  */
 export function constructTc(diagram: CSDiagram, tangentsMap?: Record<string, { x: number, y: number }>): Matrix {
-    const { disks, tangencies } = diagram;
+    const { disks } = diagram;
+    const tangencies = diagram.tangencies || [];
     const N = disks.length;
     const Tc = Matrix.zeros(tangencies.length, 2 * N);
 
@@ -84,8 +86,8 @@ export function constructTc(diagram: CSDiagram, tangentsMap?: Record<string, { x
  * [ Tc(c)  I_|T| ]
  */
 export function constructL(diagram: CSDiagram, A: Matrix, Tc: Matrix): Matrix {
-    const numContacts = diagram.contacts.length;
-    const numTangencies = diagram.tangencies.length;
+    const numContacts = diagram.contacts?.length || 0;
+    const numTangencies = diagram.tangencies?.length || 0;
     const N = diagram.disks.length;
 
     const totalRows = numContacts + numTangencies;
@@ -134,6 +136,6 @@ export function constructTw(diagram: CSDiagram): Matrix {
     // Tw is the block associated with the tangency variations in the L matrix.
     // In the current formulation (L = [[A, 0], [Tc, I]]), Tw corresponds to the Identity block I_|T|.
     // Dimensions: |T| x |T|
-    const numTangencies = diagram.tangencies.length;
+    const numTangencies = diagram.tangencies?.length || 0;
     return Matrix.identity(numTangencies);
 }
