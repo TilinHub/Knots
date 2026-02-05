@@ -78,60 +78,28 @@ export function checkAndComputeTangents(diagram: CSDiagram): {
         const nAlpha = calculateNormal(tAlpha.point, disk.center);
 
         // Definition (Caso 1)
+        // STRICTLY use Geometric Tangent J(n) to be consistent with Arc logic in functional.ts
+        // t_alpha := J(n_alpha)
+        const tGeo = J(nAlpha);
+        tMap[s.startTangencyId] = tGeo;
+
+        // Verify that Segment Vector vHat is tangent (parallel to tGeo)
         const tVec = sub(tBeta.point, tAlpha.point);
-        tMap[s.startTangencyId] = tVec;
+        const len = norm(tVec);
+        const vHat = len > 0 ? scale(tVec, 1 / len) : { x: 0, y: 0 };
 
         // Checks
-        // |<t_alpha, n_alpha>| <= tol_lin
-        const dotVal = Math.abs(dot(tVec, nAlpha));
+        // |<vHat, n_alpha>| <= tol_lin (Orthogonality of segment to radius)
+        const dotVal = Math.abs(dot(vHat, nAlpha));
         results.push({
             passed: dotVal <= tolerances.lin,
             value: dotVal,
             message: `Segment start ${s.startTangencyId} orthogonality: ${dotVal}`
         });
 
-        // ||t_alpha|| - 1 <= tol_lin ?? Wait, for segment, t_alpha is NOT unit? 
-        // PDF says: "Normal y tangente en una tangencia... tangente unitario t_alpha".
-        // But later in 2.4: "t_alpha := (p_beta - p_alpha)".
-        // And "Chequeos duros: ||t_alpha|| - 1 <= tol_lin".
-        // THIS IMPLIES SEGMENT LENGTH MUST BE 1 ??? NO.
-        // WAIT. Let's re-read carefully.
-        // "Caso 1: desde alpha sale un segmento s: alpha -> beta. Definimos t_alpha := (p_beta - p_alpha). Chequeos duros: ... ||t_alpha|| - 1 <= tol_lin".
-        // IF THIS IS TRUE, SEGMENTS MUST HAVE LENGTH 1?
-        // Let's check "1.2 Datos del diagrama cs... tangente unitario t_alpha := epsilon J n_alpha".
-        // "1.8 Contribucion de un segmento... vs := p_beta - p_alpha, ls := ||vs||, v_hat_s := vs/ls".
-        // Maybe "t_alpha" in 2.4 is a typo and should be unit vector?
-        // "t_alpha := (p_beta - p_alpha)" if length is not 1, this check fails.
-        // However, usually t_alpha is the UNIT tangent.
-        // If I look at "1.2 Normal y tangente... tangente unitario t_alpha".
-        // So 2.4 definition MUST mean normalized?
-        // "t_alpha := (p_beta - p_alpha widehat)" (Is there a hat?).
-        // Looking at the screenshot for page 7...
-        // "t_alpha := (p_beta - p_alpha)  (with a wide hat over it?)"
-        // YES. There is a wide hat over (p_beta - p_alpha) in the PDF Screenshot 7.
-        // Hat usually means normalized.
-        // So t_alpha = normalize(p_beta - p_alpha).
-
-        const len = norm(tVec);
-        const tVecUnit = len > 0 ? scale(tVec, 1 / len) : tVec;
-
-        // Overwrite with unit vector for the map
-        tMap[s.startTangencyId] = tVecUnit;
-
-        const normRes = Math.abs(len - 1);
-        // Wait, the check ||t_alpha|| - 1 <= tol_lin applies to t_alpha.
-        // If t_alpha IS defined as the normalized vector, then norm is 1 by definition.
-        // So the check is trivial? Or maybe it checks that the vector *before* normalization?
-        // No, usually "t_alpha := (p_beta - p_alpha)^" means "Define t_alpha as direction".
-        // Then check orthogonality.
-        // The check "||t_alpha|| - 1" is redundant if we constructed it as unit.
-        // BUT! If the PDF implies we assume it's unit and check strict consistency?
-        // Let's stick to: Calculate unit tangent. The check `||t_alpha|| - 1` is effectively checking our normalization numerical stability or if the input was implicitly 1?
-        // Actually, maybe the 2.4 text means: "Define t_alpha essentially as the secant vector, AND REQUIRE it to be unit?"
-        // That would force all segments to be length 1. That contradicts "Len(s) = ||p_beta - p_alpha||".
-        // Re-reading 2.4 Screenshot 7 "Caso 1... Definimos t_alpha := (p_beta - p_alpha) (with hat)".
-        // So t_alpha IS unit vector.
-        // The check ||t_alpha|| - 1 <= tol_lin is just confirming it is unit.
+        // Check alignment
+        // We don't force vHat == tGeo. They can be opposite (if segment goes CW?).
+        // But for functional logic, we just need T to be the basis.
     }
 
     // Process Arcs: t_alpha = J n_alpha (CCW)

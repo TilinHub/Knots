@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import type { CSDisk } from '../../../core/types/cs';
 import { calculateJacobianMatrix } from '../../../core/geometry/contactGraph';
 import { Button } from '../../../ui/Button';
+import { convertDisksToDiagram } from '../utils/diagramAdapter';
+import { analyzeDiagram } from '../../analysis/first_variation/analyzer';
 
 interface ContactMatrixViewerProps {
     disks: CSDisk[];
@@ -10,6 +12,13 @@ interface ContactMatrixViewerProps {
 export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks }) => {
     const { matrix, contacts } = useMemo(() => calculateJacobianMatrix(disks), [disks]);
     const [copied, setCopied] = useState(false);
+
+    // Criticality Analysis
+    const analysis = useMemo(() => {
+        const diagram = convertDisksToDiagram(disks);
+        if (!diagram) return null;
+        return analyzeDiagram(diagram);
+    }, [disks]);
 
     const handleCopy = () => {
         // Format for spreadsheet copy (tab separated)
@@ -25,6 +34,7 @@ export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks 
 
     if (disks.length === 0) return null;
 
+    // Loading/Error states for Matrix
     if (matrix.length === 0) {
         return (
             <div style={{
@@ -44,6 +54,12 @@ export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks 
     // Grid size calculation
     const numCols = disks.length * 2;
     const colWidth = 35; // Wider for floats
+
+    // Criticality Display Logic
+    const isCritical = analysis?.criticality?.isCritical;
+    const critRatio = analysis?.criticality?.ratio;
+    const critMessage = analysis?.criticality?.message;
+    const critStatusColor = isCritical ? 'var(--accent-success)' : (critRatio && critRatio < 0.1 ? 'var(--accent-warning)' : 'var(--accent-error)');
 
     return (
         <div style={{
@@ -127,6 +143,54 @@ export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks 
             <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-tertiary)' }}>
                 * Rows represent contact constraints (u_ij). Columns represent disk configuration (x, y).
             </div>
+
+            {/* CRITICALITY ANALYSIS SECTION */}
+            {analysis && (
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
+                    <h3 style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: 'var(--text-secondary)',
+                        textTransform: 'uppercase',
+                        margin: '0 0 8px 0'
+                    }}>
+                        Criticality Analysis (L(c))
+                    </h3>
+
+                    {analysis.error ? (
+                        <div style={{ fontSize: '11px', color: 'var(--accent-error)' }}>
+                            ⚠️ {analysis.error}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Status:</span>
+                                <span style={{
+                                    fontSize: '11px',
+                                    fontWeight: 'bold',
+                                    color: critStatusColor,
+                                    background: isCritical ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px'
+                                }}>
+                                    {isCritical ? 'CREST / CRITICAL' : 'UNSTABLE'}
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Residual Ratio:</span>
+                                <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>
+                                    {critRatio?.toExponential(2) ?? '-'}
+                                </span>
+                            </div>
+
+                            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                                {critMessage}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

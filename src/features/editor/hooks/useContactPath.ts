@@ -6,7 +6,7 @@ export function useContactPath(graph: BoundedCurvatureGraph) {
 
     const activePath: EnvelopeSegment[] = useMemo(() => {
         if (!graph || diskSequence.length < 2) return [];
-        return findEnvelopePath(graph, diskSequence);
+        return findEnvelopePath(graph, diskSequence).path;
     }, [graph, diskSequence]);
 
     const toggleDisk = (diskId: string) => {
