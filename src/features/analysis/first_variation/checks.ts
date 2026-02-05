@@ -140,7 +140,9 @@ export function checkAndComputeTangents(diagram: CSDiagram): {
  * Verify single cycle.
  */
 export function checkCombinatorial(diagram: CSDiagram): CheckResult {
-    const { segments, arcs, tangencies } = diagram;
+    const segments = diagram.segments || [];
+    const arcs = diagram.arcs || [];
+    const tangencies = diagram.tangencies || [];
 
     // Build graph
     const adj = new Map<string, string>();
@@ -293,7 +295,9 @@ function distancePointToSegment(p: { x: number, y: number }, a: { x: number, y: 
  * G3: Arc-Arc (Disk overlaps covered by metric checks)
  */
 export function checkGlobalIntersections(diagram: CSDiagram): CheckResult[] {
-    const { segments, tangencies, tolerances } = diagram;
+    const segments = diagram.segments || [];
+    const tangencies = diagram.tangencies || [];
+    const { tolerances } = diagram;
     const results: CheckResult[] = [];
     const tangencyMap = new Map(tangencies.map(t => [t.id, t]));
 

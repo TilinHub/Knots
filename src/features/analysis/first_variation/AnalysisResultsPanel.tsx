@@ -3,29 +3,46 @@ import type { CheckResult } from './checks'; // Type-only import
 import type { CriticalityResult } from './criticality'; // Type-only import
 import { Button } from '../../../ui/Button';
 
-interface Counts { N: number; E: number; T: number; S: number; A: number; }
-interface MatrixDims { A_dims: string; Tc_dims: string; L_dims: string; }
+// Redefine interface to match analyzer.ts update
+interface MatrixInfo { dims: string; rank: number; }
+interface VectorInfo { dims: string; norm: number; }
+interface GaugeInfo {
+    dims: { U: string; V_Roll: string; W: string; Ug: string };
+    checks: {
+        AUc: number;
+        UtU_I: number;
+        WtW_I: number;
+        UgtW: number;
+    };
+}
 
-// Duplicate this here or share from analyzer.ts if exporting it?
-// To avoid conflicts, let's redefine partial interface for props
 interface AnalysisResultsPanelProps {
-    counts?: Counts;
+    counts?: { N: number; E: number; T: number; S: number; A: number; };
     metrics: CheckResult[];
     combinatorial: CheckResult;
     global?: CheckResult[];
-    matrices?: MatrixDims;
+    matrices?: {
+        A: MatrixInfo;
+        Tc: MatrixInfo;
+        Tw: MatrixInfo;
+        L: MatrixInfo;
+    };
+    vectors?: {
+        gc: VectorInfo;
+        gw: VectorInfo;
+        gred: VectorInfo;
+    };
+    gauge?: GaugeInfo;
     criticality: CriticalityResult | null;
     quadratic?: number;
     onClose: () => void;
 }
 
 export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
-    counts, metrics, combinatorial, global, matrices, criticality, quadratic, onClose
+    counts, metrics, combinatorial, global, matrices, vectors, gauge, criticality, quadratic, onClose
 }) => {
     const failedMetrics = metrics.filter(m => !m.passed);
     const failedGlobal = global ? global.filter(m => !m.passed) : [];
-
-    // Group metrics by type for clear display if needed, but list is fine.
 
     const ResultRow = ({ label, value, passed, detail }: { label: string, value: string, passed: boolean, detail?: string }) => (
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: '13px' }}>
@@ -36,6 +53,16 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                 </span>
                 {detail && <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{detail}</div>}
             </div>
+        </div>
+    );
+
+    const DataRow = ({ label, value, sub }: { label: string, value: string, sub?: string }) => (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: '12px' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+            <span style={{ fontFamily: 'monospace' }}>
+                {value}
+                {sub && <span style={{ color: 'var(--text-tertiary)', marginLeft: '4px' }}>{sub}</span>}
+            </span>
         </div>
     );
 
@@ -51,14 +78,14 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
             borderRadius: '12px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
             zIndex: 1000,
-            width: '500px',
+            width: '600px', // Wider to fit more data
             maxWidth: '95vw',
             maxHeight: '90vh',
             overflowY: 'auto',
-            fontFamily: 'var(--font-mono)' // Use mono for data
+            fontFamily: 'var(--font-mono)'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '18px', margin: 0 }}>📊 CS Diagram Analysis</h2>
+                <h2 style={{ fontSize: '18px', margin: 0 }}>📊 CS Diagram Analysis (Protocol)</h2>
                 <Button onClick={onClose} variant="secondary" style={{ padding: '4px 8px' }}>✕</Button>
             </div>
 
@@ -79,7 +106,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
 
                 <ResultRow label="Combinatorial (C0)" value={combinatorial.passed ? "PASS" : "FAIL"} passed={combinatorial.passed} detail={!combinatorial.passed ? combinatorial.message : undefined} />
                 <ResultRow
-                    label="Geometric Checks"
+                    label="Geometric Checks (S1-S2, A1-A3)"
                     value={failedMetrics.length === 0 ? "PASS" : `FAIL (${failedMetrics.length})`}
                     passed={failedMetrics.length === 0}
                 />
@@ -101,25 +128,60 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                 )}
             </div>
 
-            {/* 3. Matrices */}
-            {matrices && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                {/* 3. Matrices */}
+                {matrices && (
+                    <div>
+                        <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Matrices</h3>
+                        <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px' }}>
+                            <DataRow label="A(c)" value={matrices.A.dims} sub={`Rank ${matrices.A.rank}`} />
+                            <DataRow label="Tc(c)" value={matrices.Tc.dims} sub={`Rank ${matrices.Tc.rank}`} />
+                            <DataRow label="Tw(c)" value={matrices.Tw.dims} sub={`Rank ${matrices.Tw.rank}`} />
+                            <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }}></div>
+                            <DataRow label="L(c)" value={matrices.L.dims} sub={`Rank ${matrices.L.rank}`} />
+                        </div>
+                    </div>
+                )}
+
+                {/* 4. Vectors */}
+                {vectors && (
+                    <div>
+                        <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Vectors</h3>
+                        <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px' }}>
+                            <DataRow label="gc" value={`||gc|| = ${vectors.gc.norm.toExponential(4)}`} sub={vectors.gc.dims} />
+                            <DataRow label="gw" value={`||gw|| = ${vectors.gw.norm.toExponential(4)}`} sub={vectors.gw.dims} />
+                            <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }}></div>
+                            <DataRow label="gred" value={`||gred|| = ${vectors.gred.norm.toExponential(4)}`} sub={vectors.gred.dims} />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* 5. Gauge */}
+            {gauge && (
                 <div style={{ marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Linear Algebra</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                        <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
-                            A: <strong>{matrices.A_dims}</strong>
+                    <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Gauge Checking</h3>
+                    <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dimensions</div>
+                            <DataRow label="U" value={gauge.dims.U} />
+                            <DataRow label="VRoll" value={gauge.dims.V_Roll} />
+                            <DataRow label="W" value={gauge.dims.W} />
+                            <DataRow label="Ug" value={gauge.dims.Ug} />
                         </div>
-                        <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
-                            Tc: <strong>{matrices.Tc_dims}</strong>
-                        </div>
-                        <div style={{ background: 'var(--bg-primary)', padding: '8px', borderRadius: '4px', fontSize: '12px' }}>
-                            L: <strong>{matrices.L_dims}</strong>
+                        <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Residuals</div>
+                            <DataRow label="‖A U‖" value={gauge.checks.AUc.toExponential(2)} />
+                            <DataRow label="‖Uᵀ U - I‖" value={gauge.checks.UtU_I.toExponential(2)} />
+                            <DataRow label="‖Wᵀ W - I‖" value={gauge.checks.WtW_I.toExponential(2)} />
+                            <DataRow label="‖Ugᵀ W‖" value={gauge.checks.UgtW.toExponential(2)} />
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* 4. Criticality */}
+
+            {/* 6. Criticality */}
             {criticality && (
                 <div style={{ marginBottom: '20px', padding: '16px', background: criticality.isCritical ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)', borderRadius: '8px', border: `1px solid ${criticality.isCritical ? 'var(--accent-success)' : 'var(--accent-warning)'}` }}>
                     <h3 style={{ fontSize: '14px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
@@ -129,7 +191,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                         </strong>
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', fontSize: '13px' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>||r||</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>‖r‖</span>
                         <span style={{ fontFamily: 'monospace' }}>{criticality.normR.toExponential(6)}</span>
 
                         <span style={{ color: 'var(--text-secondary)' }}>Ratio</span>
@@ -138,7 +200,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                 </div>
             )}
 
-            {/* 5. Quadratic (Optional) */}
+            {/* 7. Quadratic (Optional) */}
             {quadratic !== undefined && (
                 <div style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
                     <h3 style={{ fontSize: '14px', marginBottom: '4px' }}>Second Variation (Quadratic Stability Test)</h3>

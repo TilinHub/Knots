@@ -130,3 +130,10 @@ export function getKerL(diagram: CSDiagram): Matrix {
     const L = constructL(diagram, A, Tc);
     return nullspace(L, diagram.tolerances.lin);
 }
+export function constructTw(diagram: CSDiagram): Matrix {
+    // Tw is the block associated with the tangency variations in the L matrix.
+    // In the current formulation (L = [[A, 0], [Tc, I]]), Tw corresponds to the Identity block I_|T|.
+    // Dimensions: |T| x |T|
+    const numTangencies = diagram.tangencies.length;
+    return Matrix.identity(numTangencies);
+}

@@ -345,13 +345,26 @@ export const EditorSidebar = ({
                                         <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: knot.color || '#FF8C00' }}></div>
                                         <span>{knot.name || `Knot ${i + 1}`} ({knot.diskSequence.length} disks)</span>
                                     </div>
-                                    <button
-                                        onClick={() => actions.deleteSavedKnot(knot.id)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '16px', lineHeight: 1 }}
-                                        title="Delete"
-                                    >
-                                        ×
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                        <button
+                                            onClick={() => {
+                                                const diagram = convertEditorToProtocol(editorState.diskBlocks, knot.diskSequence);
+                                                const report = analyzeDiagram(diagram);
+                                                setAnalysisReport(report);
+                                            }}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}
+                                            title="Analyze Saved Envelope"
+                                        >
+                                            🔍
+                                        </button>
+                                        <button
+                                            onClick={() => actions.deleteSavedKnot(knot.id)}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '16px', lineHeight: 1 }}
+                                            title="Delete"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -397,9 +410,15 @@ export const EditorSidebar = ({
             {
                 analysisReport && (
                     <AnalysisResultsPanel
+                        counts={analysisReport.counts}
                         metrics={analysisReport.metrics}
                         combinatorial={analysisReport.combinatorial}
+                        global={analysisReport.global}
+                        matrices={analysisReport.matrices}
+                        vectors={analysisReport.vectors}
+                        gauge={analysisReport.gauge}
                         criticality={analysisReport.criticality}
+                        quadratic={analysisReport.quadratic}
                         onClose={() => setAnalysisReport(null)}
                     />
                 )

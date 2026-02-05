@@ -242,3 +242,17 @@ export function orth(A: Matrix): Matrix {
     }
     return ThinQ;
 }
+/**
+ * Computes numerical rank using QR decomposition.
+ */
+export function rank(A: Matrix, tol: number = 1e-9): number {
+    const { R } = qr(A);
+    let r = 0;
+    const minDim = Math.min(R.rows, R.cols);
+    for (let i = 0; i < minDim; i++) {
+        if (Math.abs(R.data[i][i]) > tol) {
+            r++;
+        }
+    }
+    return r;
+}
