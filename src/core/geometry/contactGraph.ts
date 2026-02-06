@@ -163,9 +163,39 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
 }
 
 /**
+ * Checks if two line segments intersect strictly (excluding endpoints).
+ * Uses robust cross-product orientation test.
+ */
+export function intersectsSegment(p1: Point2D, p2: Point2D, q1: Point2D, q2: Point2D): boolean {
+    const orientation = (p: Point2D, q: Point2D, r: Point2D): number => {
+        const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+        if (Math.abs(val) < 1e-9) return 0; // Collinear
+        return (val > 0) ? 1 : 2; // Clockwise or Counterclockwise
+    };
+
+    const o1 = orientation(p1, p2, q1);
+    const o2 = orientation(p1, p2, q2);
+    const o3 = orientation(q1, q2, p1);
+    const o4 = orientation(q1, q2, p2);
+
+    // General case: strictly crossing
+    if (o1 !== o2 && o3 !== o4) {
+        // Exclude endpoints: if any orientation is 0, it means touching
+        if (o1 === 0 || o2 === 0 || o3 === 0 || o4 === 0) return false;
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Builds the Bounded Curvature Graph mainly by computing all valid pairwise bitangents.
  */
-export function buildBoundedCurvatureGraph(disks: ContactDisk[], checkCollisions: boolean = true): BoundedCurvatureGraph {
+export function buildBoundedCurvatureGraph(
+    disks: ContactDisk[],
+    checkCollisions: boolean = true,
+    obstacleSegments: { p1: Point2D, p2: Point2D }[] = [] // New parameter
+): BoundedCurvatureGraph {
     const validEdges: TangentSegment[] = [];
 
     for (let i = 0; i < disks.length; i++) {
@@ -184,6 +214,16 @@ export function buildBoundedCurvatureGraph(disks: ContactDisk[], checkCollisions
                         if (intersectsDisk(seg.start, seg.end, disks[k])) {
                             blocked = true;
                             break;
+                        }
+                    }
+
+                    // Check OBSTACLE SEGMENTS
+                    if (!blocked) {
+                        for (const obs of obstacleSegments) {
+                            if (intersectsSegment(seg.start, seg.end, obs.p1, obs.p2)) {
+                                blocked = true;
+                                break;
+                            }
                         }
                     }
                 }

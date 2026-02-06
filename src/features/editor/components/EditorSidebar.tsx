@@ -24,7 +24,8 @@ interface EditorState {
     diskBlocks: CSDisk[];
     validation: { valid: boolean; errors: any[] };
     lengthInfo: { totalLength: number };
-    savedKnots: { id: string; name: string; diskSequence: string[]; color?: string; chiralities?: ('L' | 'R')[] }[]; // Updated
+    savedKnots: { id: string; name: string; diskSequence: string[]; color?: string; chiralities?: ('L' | 'R')[] }[];
+    envelopeColor?: string; // [NEW]
 }
 
 interface EditorActions {
@@ -41,8 +42,9 @@ interface EditorActions {
     addDisk: () => void;
     deleteBlock: (id: string) => void;
     updateBlock: (id: string, updates: Partial<CSBlock>) => void;
-    addSavedKnot: (diskSequence: string[], chiralities?: ('L' | 'R')[]) => void; // Updated
+    addSavedKnot: (diskSequence: string[], chiralities?: ('L' | 'R')[]) => void;
     deleteSavedKnot: (id: string) => void;
+    setEnvelopeColor?: (color: string) => void;
 }
 
 interface RollingState {
@@ -147,6 +149,18 @@ export const EditorSidebar = ({
                         <strong>Sequence:</strong> {knotState.diskSequence.length} disks
                     </div>
 
+                    {/* Color Picker for Active Knot */}
+                    <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                        <label>Color:</label>
+                        <input
+                            type="color"
+                            value={editorState.envelopeColor || '#FF0000'}
+                            onChange={(e) => actions.setEnvelopeColor?.(e.target.value)}
+                            style={{ border: 'none', width: '24px', height: '24px', cursor: 'pointer', background: 'none' }}
+                        />
+                        <span style={{ color: 'var(--text-tertiary)' }}>{editorState.envelopeColor}</span>
+                    </div>
+
                     <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <Button
                             onClick={actions.addDisk}
@@ -210,8 +224,8 @@ export const EditorSidebar = ({
                             }}
                             variant="secondary"
                             style={{ marginTop: '8px', width: '100%', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
-                            disabled={knotState.diskSequence.length < 2 || knotState.diskSequence[0] !== knotState.diskSequence[knotState.diskSequence.length - 1]}
-                            title={knotState.diskSequence[0] !== knotState.diskSequence[knotState.diskSequence.length - 1] ? "Close the loop first" : "Run Full Analysis (First & Second Variation)"}
+                            disabled={knotState.diskSequence.length < 2}
+                            title={knotState.diskSequence.length < 2 ? "Add more disks" : "Run Full Analysis (First & Second Variation)"}
                         >
                             🔍 Analyze Diagram (Full Protocol)
                         </Button>

@@ -10,7 +10,7 @@ import type { CSDisk } from '../../core/types/cs';
 import { computeDiskHull, computeHullLength, computeHullMetrics } from '../../core/geometry/diskHull';
 import { EditorSidebar } from './components/EditorSidebar';
 import { useContactGraph } from './hooks/useContactGraph';
-import { findEnvelopePath } from '../../core/geometry/contactGraph';
+import { findEnvelopePath, buildBoundedCurvatureGraph } from '../../core/geometry/contactGraph';
 
 interface EditorPageProps {
   onBackToGallery?: () => void;
@@ -33,8 +33,6 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
   // Only pass disks to knot state for graph building
   const diskBlocks = React.useMemo(() => editorState.blocks.filter((b): b is CSDisk => b.kind === 'disk'), [editorState.blocks]);
-  const knotState = useKnotState({ blocks: diskBlocks });
-
   // Compute graph for persistent knots (shared with KnotState internally, but we need it here for saved knots)
   const contactDisksForGraph = useMemo(() => {
     // If rolling, get the dynamic position
@@ -53,29 +51,45 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
   const graph = useContactGraph(contactDisksForGraph);
 
-  // Compute paths for saved knots
-  const savedKnotPaths = useMemo(() => {
+  // Compute paths for saved knots with Sequential Priority (Elastic Conflict Resolution)
+  const { savedKnotPaths, accumulatedObstacles } = useMemo(() => {
     const existingDiskIds = new Set(diskBlocks.map(d => d.id));
+    const accumulated: { p1: { x: number, y: number }, p2: { x: number, y: number } }[] = [];
 
-    return editorState.savedKnots.map(knot => {
-      // Filter sequence to only include existing disks (Elastic band behavior)
+    // We need to rebuild the graph for each knot to respect previous obstacles
+    // Ideally we would optimize this, but for < 10 knots it's fast enough.
+
+    const paths = editorState.savedKnots.map(knot => {
+      // Filter sequence
       const validSequence = knot.diskSequence.filter(id => existingDiskIds.has(id));
 
-      // Only try to find path if we have at least 2 disks left to form a segment
       if (validSequence.length < 2) {
         return { id: knot.id, color: knot.color, path: [] };
       }
 
+      // Build graph respecting CURRENT obstacles
+      // We assume contactDisksForGraph is stable-ish
+      const tempGraph = buildBoundedCurvatureGraph(contactDisksForGraph, true, accumulated); // Import this function!
+
+      const result = findEnvelopePath(tempGraph, validSequence, knot.chiralities);
+
+      // Add TANGENT segments of this result to obstacles for next knots
+      result.path.forEach(seg => {
+        if ('start' in seg) { // It's a TangentSegment
+          accumulated.push({ p1: seg.start, p2: seg.end });
+        }
+      });
+
       return {
         id: knot.id,
         color: knot.color,
-        // We pass knot.chiralities to enforce the saved topology (Shape).
-        // The underlying 'findEnvelopePath' now uses Dijkstra to ensure this topology
-        // is maintained elastically (wrapping around obstacles) without breaking.
-        path: findEnvelopePath(graph, validSequence, knot.chiralities).path
+        path: result.path
       };
     });
-  }, [editorState.savedKnots, graph, diskBlocks]);
+
+    return { savedKnotPaths: paths, accumulatedObstacles: accumulated };
+  }, [editorState.savedKnots, contactDisksForGraph, diskBlocks]);
+
 
   // Map CSDisk to ContactDisk for Dubins logic
   const contactDisks = useMemo(() => {
@@ -95,6 +109,12 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
   const dubinsState = useDubinsState(contactDisks); // Pass disks
   const persistentDubins = usePersistentDubins(contactDisks);
+
+  // Active Knot State - Now receives ALL obstacles from saved knots
+  const knotState = useKnotState({
+    blocks: diskBlocks,
+    obstacleSegments: accumulatedObstacles
+  });
 
 
   const hullMetrics = useMemo(() => {

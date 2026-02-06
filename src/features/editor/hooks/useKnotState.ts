@@ -9,9 +9,10 @@ import { findEnvelopePath, type EnvelopeSegment, buildBoundedCurvatureGraph } fr
 
 interface UseKnotStateProps {
     blocks: CSDisk[]; // We need disks to build the graph
+    obstacleSegments?: { p1: { x: number, y: number }, p2: { x: number, y: number } }[]; // [NEW] Obstacles
 }
 
-export function useKnotState({ blocks }: UseKnotStateProps) {
+export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProps) {
     const [mode, setMode] = useState<'hull' | 'knot'>('hull'); // 'hull' = off/hidden, 'knot' = active
     const [diskSequence, setDiskSequence] = useState<string[]>([]);
     const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]); // LOCKED TOPOLOGY
@@ -24,7 +25,8 @@ export function useKnotState({ blocks }: UseKnotStateProps) {
         regionId: 'default'
     })), [blocks]);
 
-    const graph = useMemo(() => buildBoundedCurvatureGraph(contactDisks), [contactDisks]);
+    // Rebuild graph when obstacles or disks change
+    const graph = useMemo(() => buildBoundedCurvatureGraph(contactDisks, true, obstacleSegments), [contactDisks, obstacleSegments]);
 
     // Cleanup sequence if disks are removed
     useEffect(() => {

@@ -431,15 +431,54 @@ export function CSCanvas({
     onSelectBlock(blockId);
   }
 
+  // Helper to check trajectory collision against obstacles
+  function checkTrajectoryIntersections(p1: Point2D, p2: Point2D): Point2D | null {
+    if (!savedKnotPaths) return null;
+
+    const obstacles: { p1: Point2D, p2: Point2D }[] = [];
+    savedKnotPaths.forEach(k => {
+      k.path.forEach(seg => {
+        if ('start' in seg) {
+          obstacles.push({ p1: seg.start, p2: seg.end });
+        }
+      });
+    });
+
+    let firstHit: Point2D | null = null;
+    let minT = 1.0;
+
+    for (const obs of obstacles) {
+      const x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
+      const x3 = obs.p1.x, y3 = obs.p1.y, x4 = obs.p2.x, y4 = obs.p2.y;
+
+      const den = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+      if (Math.abs(den) < 1e-9) continue;
+
+      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / den;
+      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / den;
+
+      if (ua > 0.001 && ua < 0.999 && ub > 0.001 && ub < 0.999) {
+        if (ua < minT) {
+          minT = ua;
+          firstHit = {
+            x: x1 + ua * (x2 - x1),
+            y: y1 + ua * (y2 - y1)
+          };
+        }
+      }
+    }
+
+    return firstHit;
+  }
+
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
     if (!dragState) return;
 
-    // Knot Mode Dragging (Drawing)
-    // Only if we are NOT moving (offsetX is undefined for drawing)
-    if (knotMode && dragState.pointType === 'disk' && dragState.offsetX === undefined) {
-      const pos = getMousePositionExact(e);
-      if (!pos) return;
+    const pos = getMousePositionExact(e);
+    if (!pos) return;
 
+    // 1. Knot Mode Dragging (Drawing)
+    if (knotMode && dragState.pointType === 'disk' && dragState.offsetX === undefined) {
       // Find hovered disk
       const currentId = disks.find(d => {
         const dist = Math.sqrt(Math.pow(pos.x - d.center.x, 2) + Math.pow(pos.y - d.center.y, 2));
@@ -453,14 +492,9 @@ export function CSCanvas({
       return;
     }
 
+    // 2. Dubins Mode Logic (Restored)
     if (dubinsMode && dragState.pointType !== 'disk') {
       // Manual Dubins Logic (Config Arrow Dragging)
-      const pos = getMousePositionExact(e);
-      if (!pos) return;
-      // ... (rest of logic) ...
-
-      if (!pos) return;
-
       const currentX = pos.x;
       const currentY = pos.y;
 
@@ -516,27 +550,16 @@ export function CSCanvas({
         if (closestContact) {
           targetX = closestContact.point.x;
           targetY = closestContact.point.y;
-          // Also force orientation? User might want to adjust orientation manually, 
-          // but user request implies strict strictness.
-          // Let's snap position but let orientation be free IF dragging rotation?
-          // Wait, this is 'move' subtype. 
-          // Should we also snap theta if we snap POS?
-          // Usually yes, the contact implies a specific tangent.
-          // Let's snap theta too for convenience.
           setConfig?.({
             x: targetX,
             y: targetY,
             theta: closestContact.tangentAngle
           });
         } else {
-          // If not snapping to contact, allow free move OR block it?
-          // User said "no hacer dubins en el aire". 
-          // Maybe we only update if snapped?
-          // Or we allow free move but rely on visual feedback.
-          // Let's allow free move for now but heavy snap availability.
           setConfig?.({ ...currentConfig, x: targetX, y: targetY });
         }
       } else {
+        // Rotate
         const dx = currentX - currentConfig.x;
         const dy = currentY - currentConfig.y;
         const theta = Math.atan2(dy, dx);
@@ -547,34 +570,32 @@ export function CSCanvas({
 
 
     if (rollingMode) return;
-    // ... rest of standard logic ...
 
-    const pos = getMousePositionExact(e);
-    if (!pos) return;
-
-    const block = blocks.find(b => b.id === dragState.blockId);
+    const { blockId, pointType, offsetX, offsetY } = dragState;
+    const block = blocks.find(b => b.id === blockId);
     if (!block) return;
 
-    // Absolute Dragging Logic using Offset
-    if (block.kind === 'disk' && dragState.pointType === 'disk' && dragState.offsetX !== undefined && dragState.offsetY !== undefined) {
-      // pos is already in Cartesian (Logic) coordinates
-      const targetX = pos.x - dragState.offsetX;
-      const targetY = pos.y - dragState.offsetY;
+    // 3. Absolute Dragging Logic using Offset (Disk)
+    if (block.kind === 'disk' && pointType === 'disk' && offsetX !== undefined && offsetY !== undefined) {
+      const targetX = pos.x - offsetX;
+      const targetY = pos.y - offsetY;
 
-      const newCenter = {
-        x: targetX,
-        y: targetY
-      };
+      let newCenter = { x: targetX, y: targetY };
+      const oldCenter = block.center;
+
+      // TRAJECTORY CHECK (Drag Constraint)
+      const collision = checkTrajectoryIntersections(oldCenter, newCenter);
+      if (collision) {
+        // Clamp
+        newCenter = collision;
+      }
 
       if (!checkDiskOverlap(block.id, newCenter)) {
         onUpdateBlock(block.id, { center: newCenter } as Partial<CSBlock>);
 
-        // Update hasMoved state purely based on visual distance from start
-        // We do NOT update startX/Y or offsets here, keeping them stable
         const rect = svgRef.current!.getBoundingClientRect();
         const svgX = (e.clientX - rect.left) * (width / rect.width);
         const svgY = (e.clientY - rect.top) * (height / rect.height);
-
         const moveDist = Math.sqrt(Math.pow(svgX - dragState.startX, 2) + Math.pow(svgY - dragState.startY, 2));
 
         if (!dragState.hasMoved && moveDist > 2) {
@@ -867,6 +888,13 @@ export function CSCanvas({
           </g>
         );
       })}
+
+      {/* Current Active Knot Construction */}
+      {knotMode && (
+        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <ContactPathRenderer path={knotPath} visible={true} color="#FF0000" width={4} />
+        </g>
+      )}
 
       {/* DUBINS CANDIDATES (FRONT OF DISKS) */}
       {dubinsMode && (
