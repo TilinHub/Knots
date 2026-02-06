@@ -135,6 +135,22 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     return computeHullMetrics(hull);
   }, [editorState.diskBlocks]);
 
+  const knotMetrics = useMemo(() => {
+    if (knotState.mode !== 'knot' || !knotState.knotPath) return null;
+    let tangentLength = 0;
+    let arcLength = 0;
+    knotState.knotPath.forEach(seg => {
+      // TangentSegment types: 'LSL', 'RSR', 'LSR', 'RSL'
+      // EnvelopeSegment type: 'ARC' or TangentType
+      if (seg.type === 'ARC') {
+        arcLength += seg.length;
+      } else {
+        tangentLength += seg.length;
+      }
+    });
+    return { totalLength: tangentLength + arcLength, tangentLength, arcLength };
+  }, [knotState.mode, knotState.knotPath]);
+
   // Use simple toggle
   const handleToggleKnotMode = knotState.actions.toggleMode;
 
@@ -181,9 +197,11 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               tangentLength: persistentDubins.state.totalLength,
               arcLength: 0
             }
-            : (editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
-              ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
-              : editorState.lengthInfo)
+            : knotState.mode === 'knot' && knotMetrics
+              ? knotMetrics
+              : (editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
+                ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
+                : editorState.lengthInfo)
         }
         sidebarOpen={editorState.sidebarOpen}
         onToggleSidebar={() => editorActions.setSidebarOpen(!editorState.sidebarOpen)}

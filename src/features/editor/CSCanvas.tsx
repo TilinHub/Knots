@@ -689,7 +689,7 @@ export function CSCanvas({
             path={knot.path}
             visible={true}
             color={knot.color || "#FF8C00"} // Orange
-            width={3}
+            width={6}
           />
         </g>
       ))}
