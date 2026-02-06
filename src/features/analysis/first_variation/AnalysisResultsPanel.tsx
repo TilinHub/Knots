@@ -42,7 +42,13 @@ interface AnalysisResultsPanelProps {
     onClose: () => void;
 }
 
-const ResultRow = ({ label, value, passed, detail }: { label: string, value: string, passed: boolean, detail?: string }) => (
+const MathText = ({ children }: { children: React.ReactNode }) => (
+    <span style={{ fontFamily: '"Times New Roman", Times, serif', fontStyle: 'italic' }}>
+        {children}
+    </span>
+);
+
+const ResultRow = ({ label, value, passed, detail }: { label: React.ReactNode, value: string, passed: boolean, detail?: string }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border)', fontSize: '13px' }}>
         <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
         <div style={{ textAlign: 'right' }}>
@@ -54,7 +60,7 @@ const ResultRow = ({ label, value, passed, detail }: { label: string, value: str
     </div>
 );
 
-const DataRow = ({ label, value, sub }: { label: string, value: string, sub?: string }) => (
+const DataRow = ({ label, value, sub }: { label: React.ReactNode, value: string, sub?: string }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: '12px' }}>
         <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
         <span style={{ fontFamily: 'monospace' }}>
@@ -64,7 +70,7 @@ const DataRow = ({ label, value, sub }: { label: string, value: string, sub?: st
     </div>
 );
 
-const DetailedResultRow = ({ label, failedItems }: { label: string, failedItems: CheckResult[] }) => {
+const DetailedResultRow = ({ label, failedItems }: { label: React.ReactNode, failedItems: CheckResult[] }) => {
     const [expanded, setExpanded] = React.useState(false);
     const passed = failedItems.length === 0;
 
@@ -101,7 +107,6 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
     const failedGlobal = global ? global.filter(m => !m.passed) : [];
     const [instanceExpanded, setInstanceExpanded] = React.useState(false);
 
-
     return (
         <div style={{
             position: 'fixed',
@@ -114,7 +119,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
             borderRadius: '12px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
             zIndex: 1000,
-            width: '600px', // Wider to fit more data
+            width: '600px',
             maxWidth: '95vw',
             maxHeight: '90vh',
             overflowY: 'auto',
@@ -142,14 +147,18 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                             color: 'var(--text-secondary)'
                         }}
                     >
-                        <span>Instance Data (N={instanceData.disks.length}, |E|={instanceData.contacts.length})</span>
-                        <span>{instanceExpanded ? '▼' : '▶'}</span>
+                        <span>
+                            Table with <MathText>N, c<sub>i</sub>, ℰ, |ℰ|, |𝒯|, |𝒮|, |𝒜|</MathText>
+                        </span>
+                        <span>{instanceExpanded ? '▲' : '▼'}</span>
                     </div>
 
                     {instanceExpanded && (
                         <div style={{ padding: '12px', background: 'var(--bg-secondary)', fontSize: '12px' }}>
                             <div style={{ marginBottom: '12px' }}>
-                                <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>Centers ($c_i$)</strong>
+                                <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                                    Centers (<MathText>c<sub>i</sub></MathText>)
+                                </strong>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '4px' }}>
                                     {instanceData.disks.map(d => (
                                         <div key={d.id} style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
@@ -159,7 +168,9 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                                 </div>
                             </div>
                             <div>
-                                <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>{'Contacts ($\\mathcal{E}$)'}</strong>
+                                <strong style={{ color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                                    Contacts (<MathText>ℰ</MathText>)
+                                </strong>
                                 <div style={{ fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
                                     {instanceData.contacts.length > 0
                                         ? instanceData.contacts.map((c, i) => `{${c.diskA},${c.diskB}}`).join(', ')
@@ -174,124 +185,112 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
             {/* 1. Counts Table */}
             {counts && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '20px', background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>N</div><strong>{counts.N}</strong></div>
-                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|E|</div><strong>{counts.E}</strong></div>
-                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|T|</div><strong>{counts.T}</strong></div>
-                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|S|</div><strong>{counts.S}</strong></div>
-                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>|A|</div><strong>{counts.A}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>N</MathText></div><strong>{counts.N}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|ℰ|</MathText></div><strong>{counts.E}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|𝒯|</MathText></div><strong>{counts.T}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|𝒮|</MathText></div><strong>{counts.S}</strong></div>
+                    <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|𝒜|</MathText></div><strong>{counts.A}</strong></div>
                 </div>
             )}
 
-            {/* 2. Checks Summary */}
             <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Validation</h3>
+                <h3 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em' }}>VALIDATION</h3>
 
-                <ResultRow label="Combinatorial (C0)" value={combinatorial.passed ? "PASS" : "FAIL"} passed={combinatorial.passed} detail={!combinatorial.passed ? combinatorial.message : undefined} />
+                <ResultRow
+                    label={<span><MathText>(C0)</MathText> verificacion del ciclo orientado</span>}
+                    value={combinatorial.passed ? "PASS" : "FAIL"}
+                    passed={combinatorial.passed}
+                    detail={!combinatorial.passed ? combinatorial.message : undefined}
+                />
 
                 <DetailedResultRow
-                    label="Geometric Checks (S1-S2, A1-A3)"
+                    label={<span>Verificaciones metricas <MathText>(S1)-(S2), (A1)-(A3)</MathText></span>}
                     failedItems={failedMetrics}
                 />
 
-                {global && (
-                    <DetailedResultRow
-                        label="Global Checks (G1-G3)"
-                        failedItems={failedGlobal}
-                    />
-                )}
+                <DetailedResultRow
+                    label={<span>Chequeos globales <MathText>(G1)-(G3)</MathText></span>}
+                    failedItems={failedGlobal}
+                />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                {/* 3. Matrices */}
-                {matrices && (
+            {/* Matrices & Vectors */}
+            {matrices && vectors && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                     <div>
-                        <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Matrices</h3>
-                        <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px' }}>
-                            <DataRow label="A(c)" value={matrices.A.dims} sub={`Rank ${matrices.A.rank}`} />
-                            <DataRow label="Tc(c)" value={matrices.Tc.dims} sub={`Rank ${matrices.Tc.rank}`} />
-                            <DataRow label="Tw(c)" value={matrices.Tw.dims} sub={`Rank ${matrices.Tw.rank}`} />
-                            <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }}></div>
-                            <DataRow label="L(c)" value={matrices.L.dims} sub={`Rank ${matrices.L.rank}`} />
+                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em' }}>MATRICES</h3>
+                        <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px' }}>
+                            <DataRow label={<MathText>A(c)</MathText>} value={matrices.A.dims} sub={`Rank ${matrices.A.rank}`} />
+                            <DataRow label={<MathText>T<sub>c</sub>(c)</MathText>} value={matrices.Tc.dims} sub={`Rank ${matrices.Tc.rank}`} />
+                            <DataRow label={<MathText>T<sub>ω</sub>(c)</MathText>} value={matrices.Tw.dims} sub={`Rank ${matrices.Tw.rank}`} />
+                            <DataRow label={<MathText>L(c)</MathText>} value={matrices.L.dims} sub={`Rank ${matrices.L.rank}`} />
                         </div>
                     </div>
-                )}
-
-                {/* 4. Vectors */}
-                {vectors && (
                     <div>
-                        <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Vectors</h3>
-                        <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px' }}>
-                            <DataRow label="gc" value={`||gc|| = ${vectors.gc.norm.toExponential(4)}`} sub={vectors.gc.dims} />
-                            <DataRow label="gw" value={`||gw|| = ${vectors.gw.norm.toExponential(4)}`} sub={vectors.gw.dims} />
+                        <h3 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em' }}>VECTORS</h3>
+                        <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px' }}>
+                            <DataRow label={<MathText>g<sub>c</sub></MathText>} value={`||·|| = ${vectors.gc.norm.toExponential(4)}`} sub={vectors.gc.dims} />
+                            <DataRow label={<MathText>g<sub>ω</sub></MathText>} value={`||·|| = ${vectors.gw.norm.toExponential(4)}`} sub={vectors.gw.dims} />
                             <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }}></div>
-                            <DataRow label="gred" value={`||gred|| = ${vectors.gred.norm.toExponential(4)}`} sub={vectors.gred.dims} />
+                            <DataRow label={<MathText>g<sub>red</sub></MathText>} value={`||·|| = ${vectors.gred.norm.toExponential(4)}`} sub={vectors.gred.dims} />
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
-            {/* 5. Gauge */}
-            {
-                gauge && (
-                    <div style={{ marginBottom: '20px' }}>
-                        <h3 style={{ fontSize: '14px', marginBottom: '8px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Gauge Checking</h3>
-                        <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <div>
-                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dimensions</div>
-                                <DataRow label="U" value={gauge.dims.U} />
-                                <DataRow label="VRoll" value={gauge.dims.V_Roll} />
-                                <DataRow label="W" value={gauge.dims.W} />
-                                <DataRow label="Ug" value={gauge.dims.Ug} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Residuals</div>
-                                <DataRow label="‖A U‖" value={gauge.checks.AUc.toExponential(2)} />
-                                <DataRow label="‖Uᵀ U - I‖" value={gauge.checks.UtU_I.toExponential(2)} />
-                                <DataRow label="‖Wᵀ W - I‖" value={gauge.checks.WtW_I.toExponential(2)} />
-                                <DataRow label="‖Ugᵀ W‖" value={gauge.checks.UgtW.toExponential(2)} />
-                            </div>
+            {/* Gauge */}
+            {gauge && (
+                <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em' }}>GAUGE CHECKING</h3>
+                    <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dimensions</div>
+                            <DataRow label={<MathText>U</MathText>} value={gauge.dims.U} />
+                            <DataRow label={<MathText>V<sub>Roll</sub></MathText>} value={gauge.dims.V_Roll} />
+                            <DataRow label={<MathText>W</MathText>} value={gauge.dims.W} />
+                            <DataRow label={<MathText>U<sub>g</sub></MathText>} value={gauge.dims.Ug} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Residuals</div>
+                            <DataRow label={<MathText>||A U||</MathText>} value={gauge.checks.AUc.toExponential(2)} />
+                            <DataRow label={<MathText>||U<sup>T</sup>U - I||</MathText>} value={gauge.checks.UtU_I.toExponential(2)} />
+                            <DataRow label={<MathText>||W<sup>T</sup>W - I||</MathText>} value={gauge.checks.WtW_I.toExponential(2)} />
+                            <DataRow label={<MathText>||U<sub>g</sub><sup>T</sup>W||</MathText>} value={gauge.checks.UgtW.toExponential(2)} />
                         </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
+            {/* Criticality */}
+            {criticality && (
+                <div style={{ background: 'rgba(255,0,0,0.05)', padding: '16px', borderRadius: '8px', marginTop: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <h4 style={{ margin: 0, fontSize: '14px' }}>
+                            Criticidad: <MathText>r = U<sub>g</sub><sup>T</sup> g<sub>red</sub></MathText>
+                        </h4>
+                        <span style={{ fontWeight: 'bold' }}>{criticality.isCritical ? "CRITICAL" : "NOT CRITICAL"}</span>
+                    </div>
+                    <div style={{ fontFamily: 'monospace', fontSize: '13px' }}>
+                        <div><MathText>||r||</MathText> &nbsp;&nbsp; {criticality.normR.toExponential(6)}</div>
+                        <div>Ratio &nbsp; {criticality.ratio.toExponential(6)}</div>
+                    </div>
 
-            {/* 6. Criticality */}
-            {
-                criticality && (
-                    <div style={{ marginBottom: '20px', padding: '16px', background: criticality.isCritical ? 'rgba(74, 222, 128, 0.1)' : 'rgba(248, 113, 113, 0.1)', borderRadius: '8px', border: `1px solid ${criticality.isCritical ? 'var(--accent-success)' : 'var(--accent-warning)'}` }}>
-                        <h3 style={{ fontSize: '14px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Criticality Test</span>
-                            <strong style={{ color: criticality.isCritical ? 'var(--accent-success)' : 'var(--accent-warning)' }}>
-                                {criticality.isCritical ? 'CRITICAL' : 'NOT CRITICAL'}
+                    {quadratic !== undefined && (
+                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+                            <strong style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+                                (Opcional) Evaluacion de <MathText>Q<sub>red</sub></MathText>
                             </strong>
-                        </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', fontSize: '13px' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>‖r‖</span>
-                            <span style={{ fontFamily: 'monospace' }}>{criticality.normR.toExponential(6)}</span>
-
-                            <span style={{ color: 'var(--text-secondary)' }}>Ratio</span>
-                            <span style={{ fontFamily: 'monospace' }}>{criticality.ratio.toExponential(6)}</span>
+                            <div style={{ fontFamily: 'monospace' }}>
+                                <MathText>Q<sub>red</sub>(r)</MathText>: {quadratic.toExponential(4)}
+                            </div>
                         </div>
-                    </div>
-                )
-            }
-
-            {/* 7. Quadratic (Optional) */}
-            {
-                quadratic !== undefined && (
-                    <div style={{ padding: '12px', background: 'var(--bg-tertiary)', borderRadius: '8px' }}>
-                        <h3 style={{ fontSize: '14px', marginBottom: '4px' }}>Second Variation (Quadratic Stability Test)</h3>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            Q_red(r): <strong style={{ color: 'var(--text-primary)' }}>{quadratic.toExponential(4)}</strong>
-                        </div>
-                    </div>
-                )
-            }
+                    )}
+                </div>
+            )}
 
             <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
                 <Button onClick={onClose} variant="primary">Close Report</Button>
             </div>
-        </div >
+        </div>
     );
 };

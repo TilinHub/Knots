@@ -393,7 +393,7 @@ export const EditorSidebar = ({
                                     <div style={{ display: 'flex', gap: '4px' }}>
                                         <button
                                             onClick={() => {
-                                                const diagram = convertEditorToProtocol(editorState.diskBlocks, knot.diskSequence);
+                                                const diagram = convertEditorToProtocol(editorState.diskBlocks, knot.diskSequence, { tolerance: 1e-4, chiralities: knot.chiralities });
                                                 const report = analyzeDiagram(diagram);
                                                 setAnalysisReport(report);
                                             }}
