@@ -409,6 +409,30 @@ export function findEnvelopePath(
             path.push(...result.segments);
             currentArrivalAngle = result.exitAngleAtSubPath;
         }
+
+        // [FIX] Inject Closing Arc if loop is physically closed
+        if (path.length > 0 && diskIds[0] === diskIds[diskIds.length - 1]) {
+            const firstSeg = path[0];
+            const lastSeg = path[path.length - 1];
+            // Ensure they are tangents (should be for first/last in standard flow)
+            if (firstSeg.type !== 'ARC' && lastSeg.type !== 'ARC') {
+                const center = graph.nodes.get(diskIds[0])!.center;
+                const radius = graph.nodes.get(diskIds[0])!.radius;
+                const chirality = fixedChiralities[fixedChiralities.length - 1]; // Use last state
+
+                const startAngle = Math.atan2(lastSeg.end.y - center.y, lastSeg.end.x - center.x);
+                const endAngle = Math.atan2(firstSeg.start.y - center.y, firstSeg.start.x - center.x);
+                const charStr = chirality === 'L' ? 'L' : 'R';
+
+                const len = calcArc({ center, radius } as any, startAngle, endAngle, charStr);
+                if (len > 1e-4) {
+                    path.push({
+                        type: 'ARC', center, radius, startAngle, endAngle, chirality: charStr, length: len, diskId: diskIds[0]
+                    });
+                }
+            }
+        }
+
         return { path, chiralities: fixedChiralities };
     }
 
@@ -465,6 +489,28 @@ export function findEnvelopePath(
         const prevC = state.parent.chirality;
         chiralities[i - 1] = prevC === 0 ? 'L' : 'R';
         currC = prevC;
+    }
+
+    // [FIX] Inject Closing Arc if loop is physically closed (Viterbi Mode)
+    if (path.length > 0 && diskIds[0] === diskIds[diskIds.length - 1]) {
+        const firstSeg = path[0];
+        const lastSeg = path[path.length - 1];
+        if (firstSeg.type !== 'ARC' && lastSeg.type !== 'ARC') {
+            const center = graph.nodes.get(diskIds[0])!.center;
+            const radius = graph.nodes.get(diskIds[0])!.radius;
+            const chirality = chiralities[chiralities.length - 1];
+
+            const startAngle = Math.atan2(lastSeg.end.y - center.y, lastSeg.end.x - center.x);
+            const endAngle = Math.atan2(firstSeg.start.y - center.y, firstSeg.start.x - center.x);
+            const charStr = chirality === 'L' ? 'L' : 'R'; // Viterbi ensures valid char in array
+
+            const len = calcArc({ center, radius } as any, startAngle, endAngle, charStr);
+            if (len > 1e-4) {
+                path.push({
+                    type: 'ARC', center, radius, startAngle, endAngle, chirality: charStr, length: len, diskId: diskIds[0]
+                });
+            }
+        }
     }
 
     return { path, chiralities };

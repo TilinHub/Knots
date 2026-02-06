@@ -697,7 +697,7 @@ export function CSCanvas({
       {/* Current Active Knot Construction */}
       {knotMode && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <ContactPathRenderer path={knotPath} visible={true} color="#FF0000" width={4} />
+          <ContactPathRenderer path={knotPath} visible={true} color={envelopeColor || "#FF0000"} width={4} />
         </g>
       )}
 
@@ -778,6 +778,11 @@ export function CSCanvas({
             stroke = "#FF8C00";
             strokeWidth = 3;
           }
+        } else if (knotMode && knotSequence.length > 0 && knotSequence[0] === disk.id) {
+          // Highlight Start Disk in Knot Mode to help closing the loop
+          fill = "rgba(50, 205, 50, 0.2)"; // Subtle Green
+          stroke = "#32CD32"; // Lime Green
+          strokeWidth = 3;
         } else if (dubinsMode) {
           if (isStart) {
             fill = "rgba(100, 255, 100, 0.6)";

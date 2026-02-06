@@ -187,7 +187,7 @@ export const EditorSidebar = ({
                         <div style={{ marginTop: '12px', padding: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', fontSize: '12px' }}>
                             {knotState.diskSequence[0] === knotState.diskSequence[knotState.diskSequence.length - 1]
                                 ? "✅ Loop Closed"
-                                : "⚠️ Loop Open (Click first disk to close)"
+                                : "⚠️ Loop Open (Click the green start disk to close)"
                             }
                         </div>
                     )}
