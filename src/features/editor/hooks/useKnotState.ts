@@ -16,6 +16,7 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
     const [mode, setMode] = useState<'hull' | 'knot'>('hull'); // 'hull' = off/hidden, 'knot' = active
     const [diskSequence, setDiskSequence] = useState<string[]>([]);
     const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]); // LOCKED TOPOLOGY
+    const [connectionStrategy, setConnectionStrategy] = useState<'auto' | 'outer' | 'inner'>('auto'); // [NEW]
 
     // 1. Build Graph (Memoized)
     const contactDisks = useMemo(() => blocks.map(d => ({
@@ -40,24 +41,17 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         // IF we have a lock and it matches current sequence length, USE IT.
         // This preserves the topology while moving disks.
         if (chiralities.length === diskSequence.length) {
-            const constrained = findEnvelopePath(graph, diskSequence, chiralities);
+            const constrained = findEnvelopePath(graph, diskSequence, chiralities, connectionStrategy); // Pass strategy
             // If valid, return it.
             if (constrained.path.length > 0) {
                 return constrained;
             }
-            // If invalid (broken geometry), we might want to fall back or show broken.
-            // For now, let's fall back to optimal (snap) to avoid empty screen, 
-            // OR return empty to show "impossible". 
-            // User requested "No quiero que cambie". If it cannot be maintained, 
-            // maybe snapping is better than disappearing?
-            // Let's try to maintain, if fail, fall back to optimal (re-solve).
-            // return findEnvelopePath(graph, diskSequence); 
         }
 
         // DEFAULT: Find Optimal Path (Viterbi)
         // Used when adding disks or if constraints invalid
-        return findEnvelopePath(graph, diskSequence);
-    }, [graph, diskSequence, chiralities]);
+        return findEnvelopePath(graph, diskSequence, undefined, connectionStrategy); // Pass strategy
+    }, [graph, diskSequence, chiralities, connectionStrategy]); // Add dependency
 
     // 3. Sync Locked Chiralities
     // When the *Sequence* changes (length diff), we accept the new Optimal Chiralities as the new Lock.
@@ -113,13 +107,15 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         diskSequence,
         knotPath,
         chiralities: computationResult.chiralities, // EXPOSED FOR SAVING
+        connectionStrategy, // [NEW]
         actions: {
             setMode,
             toggleMode,
             toggleDisk,
             clearSequence,
             applyTwist,
-            applyPoke
+            applyPoke,
+            setConnectionStrategy, // [NEW]
         }
     };
 }

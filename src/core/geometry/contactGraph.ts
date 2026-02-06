@@ -267,10 +267,13 @@ export interface EnvelopePathResult {
     chiralities: ('L' | 'R')[];
 }
 
+export type ConnectionStrategy = 'auto' | 'outer' | 'inner'; // [NEW]
+
 export function findEnvelopePath(
     graph: BoundedCurvatureGraph,
     diskIds: string[],
-    fixedChiralities?: ('L' | 'R')[]
+    fixedChiralities?: ('L' | 'R')[],
+    strategy: ConnectionStrategy = 'auto' // [NEW]
 ): EnvelopePathResult { // CHANGED RETURN TYPE
     if (diskIds.length < 2) return { path: [], chiralities: [] };
 
@@ -315,13 +318,21 @@ export function findEnvelopePath(
             const departureAngle = Math.atan2(edge.start.y - uDisk.center.y, edge.start.x - uDisk.center.x);
             const arcC = isFirstDisk ? 0 : calcArc(uDisk, arrivalAngleAtU, departureAngle, startCharStr);
 
+            // [NEW] Strategy Penalty
+            let penalty = 0;
+            if (strategy === 'outer') {
+                if (edge.type === 'LSR' || edge.type === 'RSL') penalty = 10000; // Penalize Crossing
+            } else if (strategy === 'inner') {
+                if (edge.type === 'LSL' || edge.type === 'RSR') penalty = 10000; // Penalize Straight
+            } // 'auto' has no penalty
+
             const nextDiskId = edge.endDiskId;
             const nextChar = edge.type.endsWith('L') ? 0 : 1;
             const nextDisk = graph.nodes.get(nextDiskId);
             if (!nextDisk) continue;
 
             const arrAngle = Math.atan2(edge.end.y - nextDisk.center.y, edge.end.x - nextDisk.center.x);
-            const cost = arcC + edge.length;
+            const cost = arcC + edge.length + penalty; // Add penalty to cost
 
             pq.push({
                 diskId: nextDiskId,
@@ -355,7 +366,15 @@ export function findEnvelopePath(
                 const departureAngle = Math.atan2(edge.start.y - currDisk.center.y, edge.start.x - currDisk.center.x);
                 const arcC = calcArc(currDisk, curr.arrivalAngle, departureAngle, currCharStr);
 
-                const nextCost = curr.cost + arcC + edge.length;
+                // [NEW] Strategy Penalty
+                let penalty = 0;
+                if (strategy === 'outer') {
+                    if (edge.type === 'LSR' || edge.type === 'RSL') penalty = 10000;
+                } else if (strategy === 'inner') {
+                    if (edge.type === 'LSL' || edge.type === 'RSR') penalty = 10000;
+                }
+
+                const nextCost = curr.cost + arcC + edge.length + penalty;
                 const nextDiskId = edge.endDiskId;
                 const nextChar = edge.type.endsWith('L') ? 0 : 1;
                 const nextDisk = graph.nodes.get(nextDiskId);
@@ -403,7 +422,7 @@ export function findEnvelopePath(
 
             if (!result) {
                 // Topology invalid/impossible -> Fallback to Viterbi (drop chirals)
-                return findEnvelopePath(graph, diskIds);
+                return findEnvelopePath(graph, diskIds, undefined, strategy);
             }
 
             path.push(...result.segments);
