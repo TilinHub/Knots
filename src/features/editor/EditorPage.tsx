@@ -30,6 +30,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // 1. Logic & State (Custom Hooks)
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
+  // New Catalog Mode
+  const [catalogMode, setCatalogMode] = React.useState(false);
 
   // Only pass disks to knot state for graph building
   const diskBlocks = React.useMemo(() => editorState.blocks.filter((b): b is CSDisk => b.kind === 'disk'), [editorState.blocks]);
@@ -173,6 +175,15 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onToggleContactDisks={() => editorActions.setShowContactDisks(!editorState.showContactDisks)}
         showEnvelope={editorState.showEnvelope}
         onToggleEnvelope={() => editorActions.setShowEnvelope(!editorState.showEnvelope)}
+        // Catalog Mode
+        catalogMode={catalogMode}
+        onToggleCatalogMode={() => {
+          const newState = !catalogMode;
+          setCatalogMode(newState);
+          if (newState) {
+            editorActions.setSidebarOpen(true);
+          }
+        }}
         // View Controls Props
         showGrid={editorState.showGrid}
         onToggleGrid={editorActions.setShowGrid}
@@ -272,6 +283,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
           knotState={knotState}
           editorState={editorState}
           actions={editorActions}
+          catalogMode={catalogMode}
         />
       </div>
 

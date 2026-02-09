@@ -112,6 +112,7 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
             setMode,
             toggleMode,
             toggleDisk,
+            setSequence: setDiskSequence, // [NEW] Expose direct setter
             clearSequence,
             applyTwist,
             applyPoke,

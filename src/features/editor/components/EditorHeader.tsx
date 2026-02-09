@@ -36,7 +36,11 @@ interface EditorHeaderProps {
     onDiskColorChange?: (color: string) => void;
     envelopeColor?: string;
     onEnvelopeColorChange?: (color: string) => void;
+    // Catalog
+    catalogMode?: boolean;
+    onToggleCatalogMode?: () => void;
 }
+
 
 export const EditorHeader = ({
     initialKnotName,
@@ -68,6 +72,8 @@ export const EditorHeader = ({
     onDiskColorChange,
     envelopeColor,
     onEnvelopeColorChange,
+    catalogMode,
+    onToggleCatalogMode,
 }: EditorHeaderProps) => {
     const [showLengthDetails, setShowLengthDetails] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -234,6 +240,25 @@ export const EditorHeader = ({
                         🎡 Rolling Mode
                     </button>
                 )}
+
+                {/* CATALOG MODE BUTTON */}
+                <button
+                    onClick={onToggleCatalogMode}
+                    style={{
+                        padding: '6px 12px',
+                        fontSize: 'var(--fs-caption)',
+                        fontWeight: 'var(--fw-medium)',
+                        background: catalogMode ? 'var(--accent-secondary)' : 'var(--bg-tertiary)',
+                        color: catalogMode ? 'white' : 'var(--text-primary)',
+                        border: `1px solid ${catalogMode ? 'var(--accent-secondary)' : 'var(--border)'}`,
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                    }}
+                    title="Knot Catalog"
+                >
+                    📚 Catalog
+                </button>
 
                 {((validation.valid && nonDiskBlocksCount > 0) || (diskBlocksCount >= 2 && !showContactDisks)) && (
                     <div style={{ position: 'relative' }}>

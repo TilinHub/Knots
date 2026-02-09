@@ -1,5 +1,6 @@
 import { RollingModePanel } from './RollingModePanel';
 import { GraphsPanel } from './GraphsPanel';
+import { CatalogPanel } from '../../catalog/CatalogPanel';
 import { BlockList } from './BlockList';
 import { Button } from '../../../ui/Button';
 import { ContactMatrixViewer } from './ContactMatrixViewer';
@@ -74,6 +75,7 @@ interface EditorSidebarProps {
     dubinsState?: any;
     knotMode?: boolean;
     knotState?: any;
+    catalogMode?: boolean;
 }
 
 export const EditorSidebar = ({
@@ -85,6 +87,7 @@ export const EditorSidebar = ({
     dubinsState,
     knotMode = false,
     knotState,
+    catalogMode = false,
 }: EditorSidebarProps) => {
     if (!isOpen) return null;
 
@@ -101,6 +104,33 @@ export const EditorSidebar = ({
                 flexDirection: 'column',
             }}
         >
+            {/* CATALOG MODE PANEL */}
+            {catalogMode && (
+                <CatalogPanel onLoadEntry={(entry) => {
+                    // Load the first stable result into the editor
+                    if (entry.results.length > 0) {
+                        const res = entry.results[0];
+                        actions.setBlocks(res.finalConfig.blocks);
+                        actions.setSelectedBlockId(null);
+
+                        // We also need to set the knot sequence if we want to visualize the envelope!
+                        // The entry doesn't explicitly store the sequence string[] currently?
+                        // CatalogEntry has `initialConfig` and `results`.
+                        // We should modify CatalogEntry to strictly store the sequence.
+                        // For now, let's assume simple sequence "d0", "d1"... based on blocks?
+                        // Or try to detect it again.
+
+                        // Better: Just load the blocks for now. The user can use Knot Mode to recreate it?
+                        // Ideally we pass the sequence.
+                        // I will update catalogTypes.ts to include `diskSequence`.
+
+                        if (entry.diskSequence && knotState?.actions?.setSequence) {
+                            knotState.actions.setSequence(entry.diskSequence);
+                        }
+                    }
+                }} />
+            )}
+
             {/* ROLLING MODE PANEL */}
             {rollingMode && (
                 <RollingModePanel
