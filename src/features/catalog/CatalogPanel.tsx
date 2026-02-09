@@ -28,26 +28,35 @@ export function CatalogPanel({ onLoadEntry }: CatalogPanelProps) {
         return groups;
     }, [entries]);
 
-    // Load from localStorage on mount
+    // Load from localStorage on mount or PRELOAD
     useEffect(() => {
         try {
-            const saved = localStorage.getItem('knotCatalog');
+            const saved = localStorage.getItem('knotCatalog_v2'); // New key to force refresh
             if (saved) {
                 const parsed = JSON.parse(saved);
                 setEntries(parsed);
-                // Auto-expand if we have data
-                setExpandedGroup(3);
                 setGenerationStatus('idle');
+            } else {
+                // If nothing saved, load PRELOADED and save
+                import('./preloaded').then(mod => {
+                    const params = mod.PRELOADED_CATALOG;
+                    if (params.length > 0) {
+                        setEntries(params);
+                        setExpandedGroup(3); // Auto open
+                    }
+                });
             }
         } catch (e) {
             console.error("Failed to load catalog", e);
+            // Fallback clear
+            localStorage.removeItem('knotCatalog_v2');
         }
     }, []);
 
     // Save to localStorage whenever entries change (debounced or on completion)
     useEffect(() => {
-        if (entries.length > 0 && generationStatus === 'idle') {
-            localStorage.setItem('knotCatalog', JSON.stringify(entries));
+        if (entries.length > 0) {
+            localStorage.setItem('knotCatalog_v2', JSON.stringify(entries));
         }
     }, [entries, generationStatus]);
 
@@ -201,8 +210,10 @@ export function CatalogPanel({ onLoadEntry }: CatalogPanelProps) {
                                                         // For now, we reuse the initial config blocks if we can't easily reconstruct sequence?
                                                         // Wait, results[0].finalConfig is just CSBlock[].
                                                         // We assume standard sequence for simple rendering (0-1-2...) or we need to store it.
+                                                        // We assume standard sequence for simple rendering (0-1-2...) or we need to store it.
                                                         // Let's pass undefined seq for now (just disks) or try to find cycle.
                                                         diskSequence={entry.diskSequence}
+                                                        chiralities={entry.results[0].chiralities}
                                                     />
                                                 ) : (
                                                     <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#ccc' }}>

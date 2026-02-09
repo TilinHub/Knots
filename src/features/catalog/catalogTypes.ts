@@ -11,6 +11,7 @@ export interface StabilityResult {
     pathLength: number;
     stepsTaken: number;
     status: StabilityStatus;
+    chiralities?: ('L' | 'R')[]; // [NEW] Store exact topology
 }
 
 export interface CatalogEntry {

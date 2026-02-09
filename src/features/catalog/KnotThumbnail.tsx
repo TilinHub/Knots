@@ -9,6 +9,7 @@ interface KnotThumbnailProps {
     size?: number;
     showEnvelope?: boolean;
     diskSequence?: string[]; // If provided, reconstructs envelope
+    chiralities?: ('L' | 'R')[]; // [NEW] Exact topology
 }
 
 // Helper to draw disk - Modified to be very subtle or invisible for "Knot" look
@@ -31,7 +32,7 @@ function drawDisk(ctx: CanvasRenderingContext2D, disk: CSDisk & { color?: string
     */
 }
 
-export function KnotThumbnail({ disks, size = 100, showEnvelope = true, diskSequence }: KnotThumbnailProps) {
+export function KnotThumbnail({ disks, size = 100, showEnvelope = true, diskSequence, chiralities }: KnotThumbnailProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -89,7 +90,10 @@ export function KnotThumbnail({ disks, size = 100, showEnvelope = true, diskSequ
                     color: 'blue'
                 }));
                 const graph = buildBoundedCurvatureGraph(contactDisks, true);
-                const pathRes = findEnvelopePath(graph, diskSequence);
+
+                // [FIX] Use passed chiralities to enforce exact shape?
+                // If chiralities are provided, we should use them.
+                const pathRes = findEnvelopePath(graph, diskSequence, chiralities || undefined);
 
                 // Use EXACT path rendering (segments)
                 ctx.beginPath();
@@ -134,7 +138,7 @@ export function KnotThumbnail({ disks, size = 100, showEnvelope = true, diskSequ
 
         ctx.restore();
 
-    }, [disks, size, showEnvelope, diskSequence]);
+    }, [disks, size, showEnvelope, diskSequence, chiralities]);
 
     return (
         <canvas
