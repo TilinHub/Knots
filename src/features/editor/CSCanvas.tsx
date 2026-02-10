@@ -34,8 +34,10 @@ interface CSCanvasProps {
   knotMode?: boolean;
   knotPath?: EnvelopeSegment[];
   knotSequence?: string[];
+  anchorSequence?: { x: number, y: number }[]; // [NEW]
   savedKnotPaths?: { id: string, color: string, path: EnvelopeSegment[] }[]; // [NEW]
   onKnotSegmentClick?: (index: number) => void;
+  onKnotPointClick?: (diskId: string, point: Point2D) => void; // [NEW]
   // Appearance
   diskColor?: string;
   envelopeColor?: string;
@@ -98,8 +100,10 @@ export function CSCanvas({
   knotMode = false,
   knotPath = [],
   knotSequence = [],
+  anchorSequence = [], // [NEW] Debug
   savedKnotPaths = [], // [NEW]
   onKnotSegmentClick,
+  onKnotPointClick, // [NEW]
   diskColor = '#89CFF0',
   envelopeColor = '#5CA0D3',
   dubinsMode = false,
@@ -798,11 +802,6 @@ export function CSCanvas({
         if (isKnotSelected) {
           // User requested same color as normal modes. 
           // We keep fill as diskColor.
-          // We keep stroke as envelopeColor (or default).
-          // We can add a specialized stroke if needed, but user implies "same".
-          // To be safe, let's just ensure it's NOT red.
-          // Only change stroke width potentially? 
-          strokeWidth = 3;
         }
 
         return (
@@ -894,6 +893,39 @@ export function CSCanvas({
         );
       })}
 
+      {/* [NEW] Knot Mode Anchors (Rendered on top of everything) */}
+      {knotMode && disks.map(disk => {
+        const r = disk.visualRadius;
+        const { x, y } = disk.center;
+        // 4 Anchors: N, S, E, W
+        const anchors = [
+          { x: x, y: y + r }, // N
+          { x: x, y: y - r }, // S
+          { x: x + r, y: y }, // E
+          { x: x - r, y: y }, // W
+        ];
+        return anchors.map((p, i) => {
+          const [sx, sy] = toSVG(p.x, p.y);
+          return (
+            <circle
+              key={`${disk.id}-anchor-${i}`}
+              cx={sx} cy={sy}
+              r={5}
+              fill="#FF4500" // Red-Orange
+              stroke="white"
+              strokeWidth={1.5}
+              cursor="pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onKnotPointClick?.(disk.id, { x: p.x, y: p.y });
+              }}
+            />
+          );
+        });
+      })}
+
+
       {/* Current Active Knot Construction */}
       {knotMode && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
@@ -912,6 +944,22 @@ export function CSCanvas({
           />
         </g>
       )}
+
+      {/* [NEW] DEBUG: Render Selected Anchor Points (Purple) */}
+      {knotMode && anchorSequence?.map((p, i) => {
+        const [cx, cy] = toSVG(p.x, p.y);
+        return (
+          <circle
+            key={`debug-anchor-${i}`}
+            cx={cx} cy={cy}
+            r={6}
+            fill="#8A2BE2" // BlueViolet / Purple
+            stroke="white"
+            strokeWidth={2}
+            pointerEvents="none"
+          />
+        );
+      })}
 
       {/* Resto de bloques (Segmentos/Arcos) si existen */}
       {nonDiskBlocks.map((block) => (

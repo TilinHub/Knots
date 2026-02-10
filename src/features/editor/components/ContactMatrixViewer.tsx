@@ -10,7 +10,17 @@ interface ContactMatrixViewerProps {
 }
 
 export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks }) => {
-    const { matrix, contacts } = useMemo(() => calculateJacobianMatrix(disks), [disks]);
+    const { matrix, contacts } = useMemo(() => {
+        // Map CSDisk to ContactDisk (ensure regionId exists)
+        const contactDisks = disks.map(d => ({
+            id: d.id,
+            center: d.center,
+            radius: d.visualRadius, // Use visual radius for contact!
+            regionId: 'default',
+            color: d.color
+        }));
+        return calculateJacobianMatrix(contactDisks);
+    }, [disks]);
     const [copied, setCopied] = useState(false);
 
     // Criticality Analysis

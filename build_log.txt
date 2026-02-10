@@ -1,0 +1,7 @@
+
+> knots@0.0.0 build
+> tsc -b && vite build
+
+src/core/geometry/contactGraph.ts(503,50): error TS2339: Property 'path' does not exist on type 'never'.
+src/features/editor/components/ContactMatrixViewer.tsx(13,72): error TS2345: Argument of type 'CSDisk[]' is not assignable to parameter of type 'ContactDisk[]'.
+  Property 'regionId' is missing in type 'CSDisk' but required in type 'ContactDisk'.

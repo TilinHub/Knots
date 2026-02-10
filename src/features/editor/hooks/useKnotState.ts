@@ -1,22 +1,28 @@
+
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { CSDisk } from '../../../core/types/cs';
-import { useContactGraph } from '../hooks/useContactGraph'; // We need generating graph locally if not passed
-import { findEnvelopePath, type EnvelopeSegment, buildBoundedCurvatureGraph } from '../../../core/geometry/contactGraph';
-// Note: We need a way to get the ContactGraph inside here.
-// Instead of complex dependency injection, we will ask for 'blocks' (passed in props)
-// and build the graph internally like useContactPath does, or accept 'contactGraph' in arguments.
-// To keep it simple and self-contained as requested, we'll derive it.
+import { findEnvelopePathFromPoints, type EnvelopePathResult } from '../../../core/geometry/contactGraph';
 
 interface UseKnotStateProps {
     blocks: CSDisk[]; // We need disks to build the graph
     obstacleSegments?: { p1: { x: number, y: number }, p2: { x: number, y: number } }[]; // [NEW] Obstacles
 }
 
+interface DynamicAnchor {
+    diskId: string;
+    angle: number; // Angle relative to disk center
+}
+
 export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProps) {
     const [mode, setMode] = useState<'hull' | 'knot'>('hull'); // 'hull' = off/hidden, 'knot' = active
     const [diskSequence, setDiskSequence] = useState<string[]>([]);
-    const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]); // LOCKED TOPOLOGY
-    const [connectionStrategy, setConnectionStrategy] = useState<'auto' | 'outer' | 'inner'>('auto'); // [NEW]
+
+    // [NEW] Dynamic Anchors (Stored as relative angles)
+    const [anchorSequence, setAnchorSequence] = useState<DynamicAnchor[]>([]);
+
+    // Legacy/Derivative
+    const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]);
+    const [lastAnchorPoint, setLastAnchorPoint] = useState<{ x: number, y: number } | null>(null);
 
     // 1. Build Graph (Memoized)
     const contactDisks = useMemo(() => blocks.map(d => ({
@@ -26,98 +32,91 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         regionId: 'default'
     })), [blocks]);
 
-    // Rebuild graph when obstacles or disks change
-    const graph = useMemo(() => buildBoundedCurvatureGraph(contactDisks, true, obstacleSegments), [contactDisks, obstacleSegments]);
-
     // Cleanup sequence if disks are removed
     useEffect(() => {
         setDiskSequence(prev => prev.filter(id => blocks.some(b => b.id === id)));
+        setAnchorSequence(prev => prev.filter(a => blocks.some(b => b.id === a.diskId)));
     }, [blocks]);
 
-    // 2. Compute Path (with Tangent Locking)
-    const computationResult = useMemo(() => {
-        if (!graph || diskSequence.length < 2) return { path: [], chiralities: [] };
+    // [NEW] Recalculate Absolute Positions (Reactive to blocks moving)
+    const currentAnchors = useMemo(() => {
+        return anchorSequence.map(anchor => {
+            const disk = blocks.find(b => b.id === anchor.diskId);
+            if (!disk) return { x: 0, y: 0 }; // Should be cleaned up by effect
+            return {
+                x: disk.center.x + disk.visualRadius * Math.cos(anchor.angle),
+                y: disk.center.y + disk.visualRadius * Math.sin(anchor.angle)
+            };
+        });
+    }, [anchorSequence, blocks]);
 
-        // IF we have a lock and it matches current sequence length, USE IT.
-        // This preserves the topology while moving disks.
-        if (chiralities.length === diskSequence.length) {
-            const constrained = findEnvelopePath(graph, diskSequence, chiralities, connectionStrategy); // Pass strategy
-            // If valid, return it.
-            if (constrained.path.length > 0) {
-                return constrained;
-            }
-        }
+    // 2. Compute Path (Strict Point-to-Point)
+    const computationResult: EnvelopePathResult = useMemo(() => {
+        if (currentAnchors.length < 2) return { path: [], chiralities: [] };
 
-        // DEFAULT: Find Optimal Path (Viterbi)
-        // Used when adding disks or if constraints invalid
-        return findEnvelopePath(graph, diskSequence, undefined, connectionStrategy); // Pass strategy
-    }, [graph, diskSequence, chiralities, connectionStrategy]); // Add dependency
+        // Use the DYNAMICALLY updated positions
+        return findEnvelopePathFromPoints(currentAnchors, contactDisks);
+    }, [currentAnchors, contactDisks]);
 
-    // 3. Sync Locked Chiralities
-    // When the *Sequence* changes (length diff), we accept the new Optimal Chiralities as the new Lock.
-    // When *Geometry* changes (same length), we DON'T update lock (handled by useMemo above using old lock).
-    useEffect(() => {
-        if (diskSequence.length < 2) {
-            setChiralities([]);
-            return;
-        }
-
-        // Only update lock if sequence topology definition changed (length mismatch)
-        if (computationResult.chiralities.length === diskSequence.length) {
-            if (chiralities.length !== diskSequence.length) {
-                setChiralities(computationResult.chiralities);
-            }
-        }
-    }, [computationResult, diskSequence, chiralities.length]);
-
-    // Expose only the path to the UI
+    // Actions
     const knotPath = computationResult.path;
 
     const toggleDisk = useCallback((diskId: string) => {
         setDiskSequence(prev => {
             if (prev.length > 0 && prev[prev.length - 1] === diskId) {
+                // Remove last
+                setLastAnchorPoint(null);
+                setAnchorSequence(prevA => prevA.slice(0, -1));
+                setChiralities(prevC => prevC.slice(0, -1));
                 return prev.slice(0, -1);
             }
             return [...prev, diskId];
         });
     }, []);
 
+    const toggleMode = useCallback(() => {
+        setMode(prev => prev === 'hull' ? 'knot' : 'hull');
+    }, []);
+
     const clearSequence = useCallback(() => {
         setDiskSequence([]);
         setChiralities([]);
+        setAnchorSequence([]);
+        setLastAnchorPoint(null);
     }, []);
 
-    // Toggle Mode: Reset sequence when entering/exiting if desired
-    const toggleMode = useCallback(() => {
-        setMode(prev => {
-            const next = prev === 'hull' ? 'knot' : 'hull';
-            if (next === 'hull') {
-                setDiskSequence([]);
-                setChiralities([]);
-            }
-            return next;
-        });
-    }, []);
+    // Point-based extension (Strict Point-to-Point)
+    const extendSequenceWithPoint = useCallback((diskId: string, point: { x: number, y: number }) => {
+        // Find disk to calculate angle
+        const disk = blocks.find(b => b.id === diskId);
+        if (!disk) return;
 
-    const applyTwist = () => { }; // Legacy placeholder
-    const applyPoke = () => { }; // Legacy placeholder
+        const angle = Math.atan2(point.y - disk.center.y, point.x - disk.center.x);
+
+        setAnchorSequence(prev => [
+            ...prev,
+            { diskId, angle }
+        ]);
+
+        // We still track diskSequence for metadata/UI feedback
+        setDiskSequence(prev => [...prev, diskId]);
+
+        setLastAnchorPoint(point); // This might be slightly off if disk moves immediately, but acts as "last click"
+    }, [blocks]);
 
     return {
         mode,
         diskSequence,
         knotPath,
-        chiralities: computationResult.chiralities, // EXPOSED FOR SAVING
-        connectionStrategy, // [NEW]
+        chiralities: computationResult.chiralities,
+        anchorSequence: currentAnchors, // Expose ABSOLUTE positions for rendering
         actions: {
             setMode,
             toggleMode,
             toggleDisk,
-            setSequence: setDiskSequence, // [NEW] Expose direct setter
+            setSequence: setDiskSequence,
             clearSequence,
-            applyTwist,
-            applyPoke,
-            setConnectionStrategy, // [NEW]
+            extendSequenceWithPoint
         }
     };
 }
-

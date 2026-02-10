@@ -301,8 +301,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             knotMode={knotState.mode === 'knot'}
             knotPath={knotState.knotPath}
             knotSequence={knotState.diskSequence}
+            anchorSequence={knotState.anchorSequence} // [NEW] Debug Prop
             savedKnotPaths={savedKnotPaths} // Pass computed persistent knots
             onKnotSegmentClick={() => { }}
+            onKnotPointClick={knotState.actions.extendSequenceWithPoint} // [NEW] Link interaction
 
             showContactDisks={editorState.showContactDisks}
             showEnvelope={editorState.showEnvelope}

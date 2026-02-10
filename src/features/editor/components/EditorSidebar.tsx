@@ -202,36 +202,6 @@ export const EditorSidebar = ({
                         <span style={{ color: 'var(--text-tertiary)' }}>{editorState.envelopeColor}</span>
                     </div>
 
-                    {/* Connection Strategy Selector */}
-                    <div style={{ marginBottom: '16px', fontSize: '12px' }}>
-                        <label style={{ display: 'block', marginBottom: '4px', color: 'var(--text-secondary)' }}>Connection Type:</label>
-                        <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-tertiary)', padding: '2px', borderRadius: '4px' }}>
-                            {[
-                                { id: 'auto', label: 'Auto' },
-                                { id: 'outer', label: 'Outer' }, // Straight
-                                { id: 'inner', label: 'Inner' }, // Cross
-                            ].map((opt) => (
-                                <button
-                                    key={opt.id}
-                                    onClick={() => knotState.actions.setConnectionStrategy(opt.id as any)}
-                                    style={{
-                                        flex: 1,
-                                        border: 'none',
-                                        background: knotState.connectionStrategy === opt.id ? 'white' : 'transparent',
-                                        boxShadow: knotState.connectionStrategy === opt.id ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
-                                        borderRadius: '3px',
-                                        padding: '4px',
-                                        fontSize: '11px',
-                                        cursor: 'pointer',
-                                        color: knotState.connectionStrategy === opt.id ? 'black' : 'var(--text-secondary)',
-                                        fontWeight: knotState.connectionStrategy === opt.id ? 600 : 400,
-                                    }}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
 
                     <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                         <Button
