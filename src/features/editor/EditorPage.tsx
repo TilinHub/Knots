@@ -137,21 +137,65 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     return computeHullMetrics(hull);
   }, [editorState.diskBlocks]);
 
+  const lengthHelpers = useMemo(() => {
+    // [NEW] Create lookup for disk centers to calculate "Graph Length" (center-to-center)
+    const diskMap = new Map<string, { x: number, y: number }>();
+    diskBlocks.forEach(d => diskMap.set(d.id, d.center));
+
+    // Helper to calc tangent length (Graph Length)
+    const getTangentLen = (seg: any) => {
+      if (seg.type === 'ARC') return 0;
+      const c1 = diskMap.get(seg.startDiskId);
+      const c2 = diskMap.get(seg.endDiskId);
+      if (c1 && c2) {
+        return Math.sqrt(Math.pow(c2.x - c1.x, 2) + Math.pow(c2.y - c1.y, 2));
+      }
+      return seg.length; // Fallback
+    };
+    return { diskMap, getTangentLen };
+  }, [diskBlocks]);
+
+  const savedKnotsMetrics = useMemo(() => {
+    // [NEW] Calculate metrics for SAVED knots
+    return savedKnotPaths.reduce((acc, knot) => {
+      knot.path.forEach(seg => {
+        if (seg.type === 'ARC') {
+          acc.arcLength += seg.length;
+        } else {
+          acc.tangentLength += lengthHelpers.getTangentLen(seg);
+        }
+      });
+      return acc;
+    }, { tangentLength: 0, arcLength: 0 });
+  }, [savedKnotPaths, lengthHelpers]);
+
   const knotMetrics = useMemo(() => {
-    if (knotState.mode !== 'knot' || !knotState.knotPath) return null;
+    if (knotState.mode !== 'knot') return null;
+
+    // Active knot metrics
     let tangentLength = 0;
     let arcLength = 0;
-    knotState.knotPath.forEach(seg => {
-      // TangentSegment types: 'LSL', 'RSR', 'LSR', 'RSL'
-      // EnvelopeSegment type: 'ARC' or TangentType
-      if (seg.type === 'ARC') {
-        arcLength += seg.length;
-      } else {
-        tangentLength += seg.length;
-      }
-    });
-    return { totalLength: tangentLength + arcLength, tangentLength, arcLength };
-  }, [knotState.mode, knotState.knotPath]);
+
+    if (knotState.knotPath) {
+      knotState.knotPath.forEach(seg => {
+        if (seg.type === 'ARC') {
+          arcLength += seg.length;
+        } else {
+          tangentLength += lengthHelpers.getTangentLen(seg);
+        }
+      });
+    }
+
+    // Combine ACTIVE + SAVED
+    const totalTangent = tangentLength + savedKnotsMetrics.tangentLength;
+    const totalArc = arcLength + savedKnotsMetrics.arcLength;
+
+    return {
+      totalLength: totalTangent + totalArc,
+      tangentLength: totalTangent,
+      arcLength: totalArc
+    };
+  }, [knotState.mode, knotState.knotPath, savedKnotsMetrics, lengthHelpers]);
 
   // Use simple toggle
   const handleToggleKnotMode = knotState.actions.toggleMode;
@@ -210,9 +254,15 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             }
             : knotState.mode === 'knot' && knotMetrics
               ? knotMetrics
-              : (editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
-                ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
-                : editorState.lengthInfo)
+              : (savedKnotPaths.length > 0) // [NEW] Prioritize Saved Knots if they exist
+                ? {
+                  totalLength: knotMetrics?.totalLength || (savedKnotsMetrics.tangentLength + savedKnotsMetrics.arcLength),
+                  tangentLength: knotMetrics?.tangentLength || savedKnotsMetrics.tangentLength,
+                  arcLength: knotMetrics?.arcLength || savedKnotsMetrics.arcLength
+                }
+                : (editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
+                  ? { totalLength: hullMetrics.totalLength, tangentLength: hullMetrics.tangentLength, arcLength: hullMetrics.arcLength }
+                  : editorState.lengthInfo)
         }
         sidebarOpen={editorState.sidebarOpen}
         onToggleSidebar={() => editorActions.setSidebarOpen(!editorState.sidebarOpen)}

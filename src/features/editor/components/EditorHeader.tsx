@@ -1,6 +1,8 @@
 import { useState, useEffect, type FC } from 'react';
 import Logo from '../../../assets/LOGO.png';
 
+import { formatArcLength } from '../../../core/geometry/arcLength';
+
 interface EditorHeaderProps {
     initialKnotName?: string;
     onBackToGallery?: () => void;
@@ -96,6 +98,14 @@ export const EditorHeader = ({
     const statusText = validation.valid
         ? 'Valid CS'
         : `${validation.errors.length} error${validation.errors.length !== 1 ? 's' : ''}`;
+
+    // Calculate formatted lengths for display
+    const tangentLenVal = (lengthInfo.tangentLength ?? 0) / 50;
+    const arcLenVal = (lengthInfo.arcLength ?? 0) / 50;
+    const arcLenStr = formatArcLength(arcLenVal);
+    const totalLenDisplay = arcLenStr.includes('π')
+        ? `${arcLenStr} + ${tangentLenVal.toFixed(2)}`
+        : (lengthInfo.totalLength / 50).toFixed(2);
 
     return (
         <header
@@ -296,15 +306,15 @@ export const EditorHeader = ({
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                     <span>Rectas:</span>
-                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{((lengthInfo.tangentLength ?? 0) / 50).toFixed(2)}</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{tangentLenVal.toFixed(2)}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                     <span>Arcos:</span>
-                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{((lengthInfo.arcLength ?? 0) / 50).toFixed(2)}</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{arcLenStr}</span>
                                 </div>
                                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '4px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
                                     <span>Total:</span>
-                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{(lengthInfo.totalLength / 50).toFixed(2)}</span>
+                                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{totalLenDisplay}</span>
                                 </div>
                             </div>
                         )}

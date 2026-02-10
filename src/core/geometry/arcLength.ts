@@ -16,12 +16,12 @@ export function segmentLength(segment: CSSegment): number {
  */
 export function arcLength(arc: CSArc): number {
   let angleDiff = arc.endAngle - arc.startAngle;
-  
+
   // Normalizar para arcos que cruzan 0
   if (angleDiff < 0) {
     angleDiff += 2 * Math.PI;
   }
-  
+
   return arc.radius * angleDiff;
 }
 
@@ -64,7 +64,7 @@ export interface LengthInfo {
 export function getCurveLengthInfo(blocks: CSBlock[]): LengthInfo {
   // Filtrar discos antes de encontrar cadenas
   const nonDiskBlocks = blocks.filter(b => b.kind !== 'disk');
-  
+
   // Encontrar la cadena continua más larga
   const chains = findContinuousChains(nonDiskBlocks);
   const mainChain = chains.length > 0 ? chains[0] : [];
@@ -85,3 +85,37 @@ export function getCurveLengthInfo(blocks: CSBlock[]): LengthInfo {
     blockLengths,
   };
 }
+
+/**
+ * Formatea una longitud en términos de PI si es cercano a un múltiplo
+ */
+
+export function formatArcLength(len: number): string {
+  // Ajuste de PI para simplificar
+  // 1 vuelta = 2pi
+  // 1/2 vuelta = pi
+  // 1/4 vuelta = pi/2
+
+  const PI = Math.PI;
+  if (len < 0.001) return "0.00";
+
+  const k_pi = len / PI;
+  const k_pi_rounded = Math.round(k_pi);
+
+  if (Math.abs(k_pi - k_pi_rounded) < 0.05) {
+    if (k_pi_rounded === 0) return "0.00";
+    if (k_pi_rounded === 1) return "π";
+    return `${k_pi_rounded}π`;
+  }
+
+  const k_pi2 = len / (PI / 2);
+  const k_pi2_rounded = Math.round(k_pi2);
+
+  if (Math.abs(k_pi2 - k_pi2_rounded) < 0.05) {
+    if (k_pi2_rounded === 1) return "π/2";
+    return `${k_pi2_rounded}π/2`;
+  }
+
+  return len.toFixed(2);
+}
+
