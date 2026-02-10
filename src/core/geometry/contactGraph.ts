@@ -116,54 +116,50 @@ export function calculateBitangents(d1: ContactDisk, d2: ContactDisk): TangentSe
 
 /**
  * Checks if a line segment intersects a disk (strictly interior).
- * Uses distance-to-segment logic, which is more robust than quadratic limits for "inside" cases.
+ * Hybrid approach:
+ *   1. Quadratic formula: detects boundary crossings (line enters/exits disk)
+ *   2. Midpoint check: detects segments fully inside or chord-like paths
  */
 export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boolean {
     const cx = disk.center.x;
     const cy = disk.center.y;
     const r = disk.radius;
 
-    // Vector v = P2 - P1
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
-    const lenSq = dx * dx + dy * dy;
+    const fx = p1.x - cx;
+    const fy = p1.y - cy;
 
-    if (lenSq < 1e-9) {
-        // Segment is a point. Check distance to center.
-        const d2 = (p1.x - cx) ** 2 + (p1.y - cy) ** 2;
-        return d2 < (r - 0.1) ** 2;
+    const a = dx * dx + dy * dy;
+
+    if (a < 1e-9) {
+        // Zero-length segment: check if point is inside disk
+        return (fx * fx + fy * fy) < (r * 0.95) ** 2;
     }
 
-    // Projection factor t of Center onto Line P1-P2
-    // C = P1 + t * v
-    // t = ((C - P1) . v) / (v . v)
-    const t = ((cx - p1.x) * dx + (cy - p1.y) * dy) / lenSq;
+    // --- Method 1: Quadratic (Boundary Crossing) ---
+    const bCoeff = 2 * (fx * dx + fy * dy);
+    const cCoeff = (fx * fx + fy * fy) - r * r;
+    const discriminant = bCoeff * bCoeff - 4 * a * cCoeff;
 
-    // Clamp t to segment [0, 1]
-    const clampedT = Math.max(0, Math.min(1, t));
+    if (discriminant > 0) {
+        const sqrtD = Math.sqrt(discriminant);
+        const t1 = (-bCoeff - sqrtD) / (2 * a);
+        const t2 = (-bCoeff + sqrtD) / (2 * a);
 
-    // Closest point on segment
-    const closestX = p1.x + clampedT * dx;
-    const closestY = p1.y + clampedT * dy;
+        // Strictly interior crossing: t in (epsilon, 1-epsilon)
+        const eps = 0.005;
+        if ((t1 > eps && t1 < 1 - eps) || (t2 > eps && t2 < 1 - eps)) {
+            return true;
+        }
+    }
 
-    // Distance squared from Center to Closest Point
-    const distSq = (closestX - cx) ** 2 + (closestY - cy) ** 2;
-
-    // Check intersection
-    // We allow "grazing" (touching boundary) => strictly less than radius
-    // We use a tolerance (0.5 pixel) to avoid blocking valid tangents due to precision
-    const tolerance = 0.5;
-    const minAllowedDist = r - tolerance;
-
-    if (distSq < minAllowedDist * minAllowedDist) {
-        // Deep intersection
-
-        // Special case: If the intersection is ONLY at the endpoints (t=0 or t=1),
-        // and the endpoints are ON the boundary (approx radius), we allow it?
-        // NO. If t=0 (P1) is the closest point, and dist < r-tol, it means P1 is inside.
-        // If P1 is on boundary, dist ~= r. distSq >= minAllowedDist^2. It returns false.
-        // So this logic covers "endpoints on boundary" correctly (returns false).
-        // It also covers "Chord" (midpoint distance < radius) correctly (returns true).
+    // --- Method 2: Midpoint Inside Check ---
+    // Catches chords where both endpoints are on/near boundary
+    const mx = (p1.x + p2.x) / 2;
+    const my = (p1.y + p2.y) / 2;
+    const midDistSq = (mx - cx) ** 2 + (my - cy) ** 2;
+    if (midDistSq < (r * 0.95) ** 2) {
         return true;
     }
 
@@ -334,7 +330,8 @@ export function findEnvelopePathFromPoints(
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         // [FIX] If point is practically ON the surface (or inside), handle gracefully
-        if (Math.abs(dist - d.radius) < 1.0) {
+        // Tolerance is proportional to radius (5%)
+        if (Math.abs(dist - d.radius) < d.radius * 0.05) {
             // Point is on surface. The "tangent" is the point itself (length 0)
             // We need to return valid nodes so the graph algorithm can "enter" the disk here.
             return [
@@ -345,17 +342,22 @@ export function findEnvelopePathFromPoints(
 
         if (dist < d.radius) return []; // Generic inside case (deeply inside)
 
+        // phi = angle FROM P TO disk center
         const phi = Math.atan2(dy, dx);
-        const alpha = Math.asin(d.radius / dist);
+        // gamma = half-angle between the two tangent lines (from P)
+        const gamma = Math.acos(Math.min(1, d.radius / dist));
 
-        const gamma = Math.acos(d.radius / dist);
+        // [CRITICAL FIX] Tangent points on the circle are measured from the CENTER.
+        // Direction from center back to P = phi + π
+        // Tangent points deviate ±gamma from this "back" direction.
+        const backAngle = phi + Math.PI;
 
-        // T1 (Right/CW?): phi - gamma
-        const ang1 = phi - gamma;
+        // T1 (Right/CW): backAngle + gamma
+        const ang1 = backAngle + gamma;
         const pt1 = { x: d.center.x + d.radius * Math.cos(ang1), y: d.center.y + d.radius * Math.sin(ang1) };
 
-        // T2 (Left/CCW?): phi + gamma
-        const ang2 = phi + gamma;
+        // T2 (Left/CCW): backAngle - gamma
+        const ang2 = backAngle - gamma;
         const pt2 = { x: d.center.x + d.radius * Math.cos(ang2), y: d.center.y + d.radius * Math.sin(ang2) };
 
         return [
@@ -393,8 +395,8 @@ export function findEnvelopePathFromPoints(
             const distStart = Math.sqrt(Math.pow(start.x - d.center.x, 2) + Math.pow(start.y - d.center.y, 2));
             const distEnd = Math.sqrt(Math.pow(end.x - d.center.x, 2) + Math.pow(end.y - d.center.y, 2));
 
-            if (Math.abs(distStart - d.radius) < 1.0) startDiskId = d.id;
-            if (Math.abs(distEnd - d.radius) < 1.0) endDiskId = d.id;
+            if (Math.abs(distStart - d.radius) < d.radius * 0.05) startDiskId = d.id;
+            if (Math.abs(distEnd - d.radius) < d.radius * 0.05) endDiskId = d.id;
         }
 
         if (startDiskId && endDiskId && startDiskId === endDiskId) {
@@ -429,20 +431,39 @@ export function findEnvelopePathFromPoints(
                 }
                 if (!blocked) {
                     const ang = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
-                    pq.push({
-                        id: `${d.id}:${t.type}`,
-                        cost: t.length,
-                        path: [{
-                            type: t.type === 'L' ? 'LSR' : 'RSL',
-                            start: start,
-                            end: t.pt,
-                            length: t.length,
-                            startDiskId: 'start',
-                            endDiskId: d.id
-                        } as TangentSegment],
-                        angle: ang,
-                        diskId: d.id
-                    });
+                    // Add BOTH chiralities for on-surface starts (length 0)
+                    // This ensures the algorithm can explore both L and R paths from the entry
+                    if (t.length < 1e-4) {
+                        pq.push({
+                            id: `${d.id}:L`,
+                            cost: 0,
+                            path: [],
+                            angle: ang,
+                            diskId: d.id
+                        });
+                        pq.push({
+                            id: `${d.id}:R`,
+                            cost: 0,
+                            path: [],
+                            angle: ang,
+                            diskId: d.id
+                        });
+                    } else {
+                        pq.push({
+                            id: `${d.id}:${t.type}`,
+                            cost: t.length,
+                            path: [{
+                                type: t.type === 'L' ? 'LSR' : 'RSL',
+                                start: start,
+                                end: t.pt,
+                                length: t.length,
+                                startDiskId: 'start',
+                                endDiskId: d.id
+                            } as TangentSegment],
+                            angle: ang,
+                            diskId: d.id
+                        });
+                    }
                 }
             });
         });
@@ -463,7 +484,7 @@ export function findEnvelopePathFromPoints(
 
                 // [FIX] Check if END is ON this disk (Distance approx radius)
                 const distToEnd = Math.sqrt(Math.pow(end.x - d.center.x, 2) + Math.pow(end.y - d.center.y, 2));
-                const onDiskSurface = Math.abs(distToEnd - d.radius) < 1.0; // Tolerance
+                const onDiskSurface = Math.abs(distToEnd - d.radius) < d.radius * 0.05; // Proportional tolerance
 
                 if (onDiskSurface) {
                     // Direct Arc to Goal!
@@ -577,9 +598,8 @@ export function findEnvelopePathFromPoints(
         const res = findSubPath(start, end);
         if (res) {
             fullPath.push(...res.path);
-        } else {
-            return { path: [], chiralities: [] };
         }
+        // If no valid path found, skip this segment (don't draw overlapping lines)
     }
 
     return { path: fullPath, chiralities: [] };
