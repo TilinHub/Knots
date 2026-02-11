@@ -2,18 +2,25 @@
  * Converter from Editor State to Protocol CSDiagram
  */
 
-import type { CSDisk } from '../../../core/types/cs';
+import type { CSDisk, Point2D } from '../../../core/types/cs';
 import type { CSDiagram, Disk, Contact, Tangency, Segment, Arc, Point } from './types';
 import { dist, wrap0_2pi, calculateDeltaTheta } from './geometry';
-import { buildBoundedCurvatureGraph, findEnvelopePath } from '../../../core/geometry/contactGraph';
+import { buildBoundedCurvatureGraph, findEnvelopePath, findEnvelopePathFromPoints } from '../../../core/geometry/contactGraph'; // [Updated Import]
+import type { DynamicAnchor } from '../../editor/hooks/useKnotState';
 
 // Internal types for the converter
 type DiskIdToIndex = Map<string, number>;
 
+export interface ConverterOptions {
+    tolerance: number;
+    chiralities?: ('L' | 'R')[];
+    anchorSequence?: DynamicAnchor[]; // [NEW]
+}
+
 export function convertEditorToProtocol(
     editorDisks: CSDisk[],
     sequenceIds: string[],
-    options: { tolerance: number, chiralities?: ('L' | 'R')[] } = { tolerance: 1e-4 }
+    options: ConverterOptions = { tolerance: 1e-4 }
 ): CSDiagram {
 
     // 1. Convert Disks
@@ -61,16 +68,58 @@ export function convertEditorToProtocol(
         regionId: '0'
     }));
 
-    // No collision check for analysis
-    const graph = buildBoundedCurvatureGraph(contactDisks, false);
+    // 4. Reconstruct Path
+    // [FIX] Use points-based pathfinding if anchors are available (Knot Mode)
+    // This ensures Analysis matches Editor exactly.
+    let result;
 
-    const diskIds = sequenceIds.map(id => diskIdToIndex.get(id)!.toString());
+    if (options.anchorSequence && options.anchorSequence.length >= 2) {
+        // Convert DynamicAnchors to Points
+        const anchorPoints: Point2D[] = options.anchorSequence.map(da => {
+            const disk = editorDisks.find(d => d.id === da.diskId); // Use editorDisks (unscaled) for calculation? 
+            // WAIT. findEnvelopePathFromPoints expects scaling? 
+            // The graph/disks passed to findEnvelopePaths are SCALED (R=1).
+            // So we must scale the anchors too.
+            // But DynamicAnchor uses region properties? No, it uses 'angle'.
 
-    // Process chiralities options
-    const chiralities = options.chiralities;
+            if (!disk) return { x: 0, y: 0 }; // Should not happen
 
-    // Call Geometry Core
-    const result = findEnvelopePath(graph, diskIds, chiralities);
+            // Re-calculate point position
+            // We use the SCALED disk definitions from step 1.
+            const scaledCenter = diskIdToIndex.has(da.diskId)
+                ? disks[diskIdToIndex.get(da.diskId)!].center
+                : { x: 0, y: 0 };
+
+            return {
+                x: scaledCenter.x + 1 * Math.cos(da.angle), // R=1
+                y: scaledCenter.y + 1 * Math.sin(da.angle)
+            };
+        });
+
+        const contactDisks = disks.map(d => ({
+            id: d.index.toString(),
+            center: d.center,
+            radius: 1,
+            regionId: '0'
+        }));
+
+        result = findEnvelopePathFromPoints(anchorPoints, contactDisks);
+
+    } else {
+        // Fallback or Legacy (Sequence only)
+        const diskIds = sequenceIds.map(id => diskIdToIndex.get(id)!.toString());
+        const chiralities = options.chiralities;
+
+        const contactDisks = disks.map(d => ({
+            id: d.index.toString(),
+            center: d.center,
+            radius: 1,
+            regionId: '0'
+        }));
+        const graph = buildBoundedCurvatureGraph(contactDisks, false);
+
+        result = findEnvelopePath(graph, diskIds, chiralities);
+    }
 
     const tangencies: Tangency[] = [];
     const segments: Segment[] = [];

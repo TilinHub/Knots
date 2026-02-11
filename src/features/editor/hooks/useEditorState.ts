@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { CSBlock, CSDisk, CSArc, CSSegment } from '../../../core/types/cs';
 import { validateContinuity } from '../../../core/validation/continuity';
 import { getCurveLengthInfo, blockLength } from '../../../core/geometry/arcLength';
+import type { DynamicAnchor } from './useKnotState';
 
 interface InitialKnot {
     id: number;
@@ -14,7 +15,9 @@ export interface SavedKnot {
     id: string;
     name: string;
     diskSequence: string[];
-    chiralities?: ('L' | 'R')[]; // [NEW] Store topology
+    anchorSequence?: DynamicAnchor[]; // [NEW] Store exact anchor points
+    chiralities?: ('L' | 'R')[];
+    frozenPath?: any[]; // [NEW] Frozen path segments at save time (immutable)
     color: string;
 }
 
@@ -22,7 +25,26 @@ export function useEditorState(initialKnot?: InitialKnot) {
     // Data State
     const [blocks, setBlocks] = useState<CSBlock[]>([]);
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-    const [savedKnots, setSavedKnots] = useState<SavedKnot[]>([]);
+
+    // [FIX] Initialize from localStorage if available
+    const [savedKnots, setSavedKnots] = useState<SavedKnot[]>(() => {
+        try {
+            const stored = localStorage.getItem('knots_saved_envelopes');
+            return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            console.error("Failed to load saved knots:", e);
+            return [];
+        }
+    });
+
+    // [FIX] Persist changes to localStorage
+    useEffect(() => {
+        try {
+            localStorage.setItem('knots_saved_envelopes', JSON.stringify(savedKnots));
+        } catch (e) {
+            console.error("Failed to save knots:", e);
+        }
+    }, [savedKnots]);
 
     // UI State
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -74,15 +96,76 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
     // Actions
-    function addSavedKnot(diskSequence: string[], chiralities?: ('L' | 'R')[]) {
+    function addSavedKnot(diskSequence: string[], chiralities?: ('L' | 'R')[], anchorSequence?: DynamicAnchor[], frozenPath?: any[]) {
         if (diskSequence.length < 2) return;
         const id = `knot-${Date.now()}`;
+
+        // Enrich path with relative angles for elastic reconstruction
+        let enrichedPath: any[] | undefined;
+        if (frozenPath) {
+            // Build disk position lookup from current blocks
+            const diskLookup = new Map<string, { center: { x: number, y: number }, radius: number }>();
+            blocks.forEach(b => {
+                if (b.kind === 'disk') {
+                    diskLookup.set(b.id, { center: (b as any).center, radius: (b as any).visualRadius });
+                }
+            });
+
+            // Helper: find which disk a point is on (by proximity)
+            const findDiskForPoint = (pt: { x: number, y: number }): { diskId: string, disk: { center: { x: number, y: number }, radius: number } } | null => {
+                for (const [id, d] of diskLookup) {
+                    const dist = Math.sqrt(Math.pow(pt.x - d.center.x, 2) + Math.pow(pt.y - d.center.y, 2));
+                    if (Math.abs(dist - d.radius) < d.radius * 0.15) { // 15% tolerance
+                        return { diskId: id, disk: d };
+                    }
+                }
+                return null;
+            };
+
+            enrichedPath = frozenPath.map((seg: any) => {
+                if (seg.type === 'ARC') {
+                    // ARCs already have startAngle/endAngle/diskId — keep as-is
+                    return { ...seg };
+                } else {
+                    // TANGENT: compute _startAngle and _endAngle relative to their disks
+                    const enriched = { ...seg };
+
+                    // Try direct lookup first, then proximity search
+                    let sDisk = diskLookup.get(seg.startDiskId);
+                    let sId = seg.startDiskId;
+                    if (!sDisk && seg.start) {
+                        const found = findDiskForPoint(seg.start);
+                        if (found) { sDisk = found.disk; sId = found.diskId; }
+                    }
+
+                    let eDisk = diskLookup.get(seg.endDiskId);
+                    let eId = seg.endDiskId;
+                    if (!eDisk && seg.end) {
+                        const found = findDiskForPoint(seg.end);
+                        if (found) { eDisk = found.disk; eId = found.diskId; }
+                    }
+
+                    if (sDisk) {
+                        enriched._startAngle = Math.atan2(seg.start.y - sDisk.center.y, seg.start.x - sDisk.center.x);
+                        enriched._startDiskId = sId; // Resolved disk ID
+                    }
+                    if (eDisk) {
+                        enriched._endAngle = Math.atan2(seg.end.y - eDisk.center.y, seg.end.x - eDisk.center.x);
+                        enriched._endDiskId = eId; // Resolved disk ID
+                    }
+                    return enriched;
+                }
+            });
+        }
+
         const newKnot: SavedKnot = {
             id,
             name: `Knot ${savedKnots.length + 1} (${diskSequence.length} disks)`,
-            diskSequence: [...diskSequence], // storage copy
-            chiralities: chiralities ? [...chiralities] : undefined, // storage copy
-            color: '#FF4500' // Default orange/red
+            diskSequence: [...diskSequence],
+            chiralities: chiralities ? [...chiralities] : undefined,
+            anchorSequence: anchorSequence ? [...anchorSequence] : undefined,
+            frozenPath: enrichedPath ? JSON.parse(JSON.stringify(enrichedPath)) : undefined,
+            color: '#FF4500'
         };
         setSavedKnots(prev => [...prev, newKnot]);
     }

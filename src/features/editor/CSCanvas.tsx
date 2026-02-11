@@ -27,14 +27,16 @@ interface CSCanvasProps {
   rollingMode?: boolean;
   pivotDiskId?: string | null;
   rollingDiskId?: string | null;
-  theta?: number;
+  theta?: number; // [RESTORED]
   showTrail?: boolean;
   onDiskClick?: (diskId: string) => void;
   // Knot props
-  knotMode?: boolean;
-  knotPath?: EnvelopeSegment[];
-  knotSequence?: string[];
-  anchorSequence?: { x: number, y: number }[]; // [NEW]
+  knotMode?: boolean; // [RESTORED] Fallback
+  knotPath?: EnvelopeSegment[]; // [RESTORED] Fallback
+  knotSequence?: string[]; // [RESTORED] Fallback
+  anchorSequence?: { x: number, y: number }[] | any[]; // [RESTORED] Fallback + DynamicAnchor support
+
+  knotState?: any; // [NEW] Pass full state
   savedKnotPaths?: { id: string, color: string, path: EnvelopeSegment[] }[]; // [NEW]
   onKnotSegmentClick?: (index: number) => void;
   onKnotPointClick?: (diskId: string, point: Point2D) => void; // [NEW]
@@ -97,10 +99,7 @@ export function CSCanvas({
   onDiskClick,
   showContactDisks = false,
   showEnvelope = true, // [NEW] Default true
-  knotMode = false,
-  knotPath = [],
-  knotSequence = [],
-  anchorSequence = [], // [NEW] Debug
+  knotState,
   savedKnotPaths = [], // [NEW]
   onKnotSegmentClick,
   onKnotPointClick, // [NEW]
@@ -116,11 +115,26 @@ export function CSCanvas({
   onSetDubinsStart,
   onSetDubinsEnd,
   persistentDubinsState,
-  persistentDubinsActions
+  persistentDubinsActions,
+  ...props // Capture other props for fallback
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
   const [dragState, setDragState] = React.useState<DragState | null>(null);
   const [trailPoints, setTrailPoints] = React.useState<Point2D[]>([]);
+
+  // [FIX] Derive knot variables from knotState object, OR fallback to props
+  const {
+    mode: knotModeStringArg,
+    diskSequence: knotSequenceArg,
+    knotPath: knotPathArg,
+    anchorPoints: anchorPointsArg,
+    actions: knotActions
+  } = knotState || {};
+
+  const knotMode = knotState ? (knotModeStringArg === 'knot') : (props.knotMode ?? false);
+  const knotPath = knotState ? knotPathArg : (props.knotPath || []);
+  const knotSequence = knotState ? knotSequenceArg : (props.knotSequence || []);
+  const anchorPoints = knotState ? anchorPointsArg : (props.anchorSequence || []);
 
   const centerX = width / 2;
   const centerY = height / 2;
@@ -367,8 +381,9 @@ export function CSCanvas({
       return;
     }
 
-    // KNOT MODE INTERACTION (Drag-to-Connect)
-    // Only if Shift is NOT pressed. If Shift is pressed, we fall through to standard Move logic.
+    // KNOT MODE INTERACTION (Drag-to-Connect) - DISABLED
+    // We only want points to construct the knot, not the disk body.
+    /*
     if (knotMode && onDiskClick && !e.shiftKey) {
       const block = blocks.find(b => b.id === blockId);
       if (block?.kind === 'disk') {
@@ -401,6 +416,7 @@ export function CSCanvas({
         return;
       }
     }
+    */
     const pos = getMousePositionExact(e as any); // Simplificado para usar coordenadas base
     if (!pos) return;
 
@@ -481,8 +497,8 @@ export function CSCanvas({
     const pos = getMousePositionExact(e);
     if (!pos) return;
 
-    // 1. Knot Mode Dragging (Drawing)
-    if (knotMode && dragState.pointType === 'disk' && dragState.offsetX === undefined) {
+    // 1. Knot Mode Dragging (Drawing) - UNLESS SHIFT IS PRESSED (Shift = Move Disk)
+    if (knotMode && !e.shiftKey && dragState.pointType === 'disk' && dragState.offsetX === undefined) {
       // Find hovered disk
       const currentId = disks.find(d => {
         const dist = Math.sqrt(Math.pow(pos.x - d.center.x, 2) + Math.pow(pos.y - d.center.y, 2));
@@ -581,6 +597,10 @@ export function CSCanvas({
 
     // 3. Absolute Dragging Logic using Offset (Disk)
     if (block.kind === 'disk' && pointType === 'disk' && offsetX !== undefined && offsetY !== undefined) {
+
+      // [FIX] Prevent dragging in Knot Mode (unless Shift is held)
+      if (knotMode && !e.shiftKey) return;
+
       const targetX = pos.x - offsetX;
       const targetY = pos.y - offsetY;
 
@@ -625,6 +645,14 @@ export function CSCanvas({
       }
     }
     setDragState(null);
+  }
+
+  // Helper inside component to access toSVG
+  function describeArc(disk: CSDisk, arc: any): string {
+    const [startX, startY] = toSVG(arc.start.x, arc.start.y);
+    const [endX, endY] = toSVG(arc.end.x, arc.end.y);
+    // Fallback to straight line for now to ensure build passes and "Save" visualization works at least as lines
+    return `M ${startX} ${startY} L ${endX} ${endY}`;
   }
 
   return (
@@ -673,6 +701,7 @@ export function CSCanvas({
           <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="var(--border)" strokeWidth="1" />
         </>
       )}
+
 
       {/* BELT (Convex Hull) OR KNOT */}
       {!knotMode && hullData && showEnvelope && (
@@ -865,8 +894,8 @@ export function CSCanvas({
                 }}
               >
                 {knotSequence
-                  .map((id, idx) => id === disk.id ? idx + 1 : -1)
-                  .filter(i => i !== -1)
+                  .map((id: string, idx: number) => id === disk.id ? idx + 1 : -1)
+                  .filter((i: number) => i !== -1)
                   .join(', ')}
               </text>
             )}
@@ -946,7 +975,7 @@ export function CSCanvas({
       )}
 
       {/* [NEW] DEBUG: Render Selected Anchor Points (Purple) */}
-      {knotMode && anchorSequence?.map((p, i) => {
+      {knotMode && anchorPoints?.map((p: any, i: number) => {
         const [cx, cy] = toSVG(p.x, p.y);
         return (
           <circle

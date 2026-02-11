@@ -8,7 +8,7 @@ interface UseKnotStateProps {
     obstacleSegments?: { p1: { x: number, y: number }, p2: { x: number, y: number } }[]; // [NEW] Obstacles
 }
 
-interface DynamicAnchor {
+export interface DynamicAnchor {
     diskId: string;
     angle: number; // Angle relative to disk center
 }
@@ -109,13 +109,16 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         diskSequence,
         knotPath,
         chiralities: computationResult.chiralities,
-        anchorSequence: currentAnchors, // Expose ABSOLUTE positions for rendering
+        anchorPoints: currentAnchors, // [RENAMED] Absolute points for rendering
+        anchorSequence, // [NEW] Raw dynamic anchors for persistence
         actions: {
             setMode,
             toggleMode,
             toggleDisk,
             setSequence: setDiskSequence,
             clearSequence,
+            // [NEW] Allow setting anchors directly (for loading)
+            setAnchorSequence,
             extendSequenceWithPoint
         }
     };

@@ -43,7 +43,7 @@ interface EditorActions {
     addDisk: () => void;
     deleteBlock: (id: string) => void;
     updateBlock: (id: string, updates: Partial<CSBlock>) => void;
-    addSavedKnot: (diskSequence: string[], chiralities?: ('L' | 'R')[]) => void;
+    addSavedKnot: (diskSequence: string[], chiralities?: ('L' | 'R')[], anchorSequence?: any[]) => void;
     deleteSavedKnot: (id: string) => void;
     setEnvelopeColor?: (color: string) => void;
 }
@@ -237,8 +237,13 @@ export const EditorSidebar = ({
                     <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
                         <Button
                             onClick={() => {
-                                // Pass chiralities to save the shape
-                                actions.addSavedKnot(knotState.diskSequence, knotState.chiralities);
+                                // Save with frozen path - the knotPath is the EXACT geometry computed now
+                                (actions.addSavedKnot as any)(
+                                    knotState.diskSequence,
+                                    knotState.chiralities,
+                                    knotState.anchorSequence,
+                                    knotState.knotPath // Freeze the actual path geometry
+                                );
                                 knotState.actions.clearSequence();
                             }}
                             variant="primary"
@@ -260,7 +265,11 @@ export const EditorSidebar = ({
                     <div>
                         <Button
                             onClick={() => {
-                                const diagram = convertEditorToProtocol(editorState.diskBlocks, knotState.diskSequence);
+                                const diagram = convertEditorToProtocol(editorState.diskBlocks, knotState.diskSequence, {
+                                    tolerance: 1e-4,
+                                    chiralities: knotState.chiralities,
+                                    anchorSequence: knotState.anchorSequence // [NEW]
+                                });
                                 const report = analyzeDiagram(diagram);
                                 setAnalysisReport(report);
                             }}

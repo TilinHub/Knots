@@ -10,7 +10,7 @@ import type { CSDisk } from '../../core/types/cs';
 import { computeDiskHull, computeHullLength, computeHullMetrics } from '../../core/geometry/diskHull';
 import { EditorSidebar } from './components/EditorSidebar';
 import { useContactGraph } from './hooks/useContactGraph';
-import { findEnvelopePath, buildBoundedCurvatureGraph } from '../../core/geometry/contactGraph';
+import { findEnvelopePath, findEnvelopePathFromPoints, buildBoundedCurvatureGraph } from '../../core/geometry/contactGraph';
 
 interface EditorPageProps {
   onBackToGallery?: () => void;
@@ -53,40 +53,149 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
   const graph = useContactGraph(contactDisksForGraph);
 
-  // Compute paths for saved knots with Sequential Priority (Elastic Conflict Resolution)
+  // Compute paths for saved knots — elastic: follows disk movements, preserves topology
   const { savedKnotPaths, accumulatedObstacles } = useMemo(() => {
-    const existingDiskIds = new Set(diskBlocks.map(d => d.id));
     const accumulated: { p1: { x: number, y: number }, p2: { x: number, y: number } }[] = [];
 
-    // We need to rebuild the graph for each knot to respect previous obstacles
-    // Ideally we would optimize this, but for < 10 knots it's fast enough.
+    // Build a lookup map for current disk positions
+    const diskLookup = new Map<string, { center: { x: number, y: number }, radius: number }>();
+    diskBlocks.forEach(d => diskLookup.set(d.id, { center: d.center, radius: d.visualRadius }));
 
     const paths = editorState.savedKnots.map(knot => {
-      // Filter sequence
-      const validSequence = knot.diskSequence.filter(id => existingDiskIds.has(id));
+      // Use frozenPath for topology-preserving elastic reconstruction
+      const frozen = (knot as any).frozenPath;
+      if (frozen && frozen.length > 0) {
+        // Build a full graph (no collision filtering) to get ALL tangent lines for current positions
+        const fullGraph = buildBoundedCurvatureGraph(contactDisksForGraph, false);
 
-      if (validSequence.length < 2) {
-        return { id: knot.id, color: knot.color, path: [] };
+        // Deep copy for reconstruction
+        const reconstructed: any[] = frozen.map((s: any) => ({ ...s }));
+
+        // --- Pass 1: Recalculate TANGENT segments ---
+        for (let i = 0; i < reconstructed.length; i++) {
+          const seg = reconstructed[i];
+          if (seg.type === 'ARC') continue;
+
+          // Only do graph lookup for REAL disk-to-disk tangents
+          // (original IDs must both exist in the disk lookup, not 'start'/'end'/'point')
+          const origStartIsRealDisk = diskLookup.has(seg.startDiskId);
+          const origEndIsRealDisk = diskLookup.has(seg.endDiskId);
+
+          if (origStartIsRealDisk && origEndIsRealDisk) {
+            // Real disk-to-disk: find matching bitangent edge in current graph
+            const match = fullGraph.edges.find((e: any) =>
+              e.startDiskId === seg.startDiskId && e.endDiskId === seg.endDiskId && e.type === seg.type
+            );
+            if (match) {
+              reconstructed[i] = { ...seg, start: match.start, end: match.end, length: match.length };
+            }
+          } else {
+            // Point-to-disk or direct line: reconstruct from relative angles
+            const sId = seg._startDiskId || seg.startDiskId;
+            const eId = seg._endDiskId || seg.endDiskId;
+            const sDisk = diskLookup.get(sId);
+            const eDisk = diskLookup.get(eId);
+
+            const newStart = sDisk && seg._startAngle !== undefined
+              ? {
+                x: sDisk.center.x + sDisk.radius * Math.cos(seg._startAngle),
+                y: sDisk.center.y + sDisk.radius * Math.sin(seg._startAngle)
+              }
+              : seg.start;
+            const newEnd = eDisk && seg._endAngle !== undefined
+              ? {
+                x: eDisk.center.x + eDisk.radius * Math.cos(seg._endAngle),
+                y: eDisk.center.y + eDisk.radius * Math.sin(seg._endAngle)
+              }
+              : seg.end;
+
+            const dx = newEnd.x - newStart.x;
+            const dy = newEnd.y - newStart.y;
+            reconstructed[i] = { ...seg, start: newStart, end: newEnd, length: Math.sqrt(dx * dx + dy * dy) };
+          }
+        }
+
+        // --- Pass 2: Refit ARC segments between consecutive tangent endpoints ---
+        for (let i = 0; i < reconstructed.length; i++) {
+          const seg = reconstructed[i];
+          if (seg.type !== 'ARC') continue;
+
+          const disk = diskLookup.get(seg.diskId);
+          if (!disk) continue;
+
+          let startAngle = seg.startAngle;
+          let endAngle = seg.endAngle;
+
+          // Arc start = arrival point of previous tangent (its 'end' point on this disk)
+          if (i > 0 && 'end' in reconstructed[i - 1]) {
+            const prevEnd = reconstructed[i - 1].end;
+            startAngle = Math.atan2(prevEnd.y - disk.center.y, prevEnd.x - disk.center.x);
+          }
+
+          // Arc end = departure point of next tangent (its 'start' point on this disk)
+          if (i < reconstructed.length - 1 && 'start' in reconstructed[i + 1]) {
+            const nextStart = reconstructed[i + 1].start;
+            endAngle = Math.atan2(nextStart.y - disk.center.y, nextStart.x - disk.center.x);
+          }
+
+          // Use shortest arc (same as pathfinder's calcShortArc)
+          const PI2 = 2 * Math.PI;
+          let deltaL = endAngle - startAngle;
+          while (deltaL <= 0) deltaL += PI2;        // L (CCW) arc: positive delta
+          let deltaR = startAngle - endAngle;
+          while (deltaR <= 0) deltaR += PI2;        // R (CW) arc: positive delta
+
+          const useL = deltaL <= deltaR;
+          const arcLen = useL ? deltaL : deltaR;
+          const chirality = useL ? 'L' : 'R';
+
+          reconstructed[i] = {
+            ...seg,
+            center: disk.center,
+            radius: disk.radius,
+            startAngle,
+            endAngle,
+            chirality,
+            length: arcLen * disk.radius
+          };
+        }
+
+        reconstructed.forEach((seg: any) => {
+          if ('start' in seg) accumulated.push({ p1: seg.start, p2: seg.end });
+        });
+        return { id: knot.id, color: knot.color, path: reconstructed };
       }
 
-      // Build graph respecting CURRENT obstacles
-      // We assume contactDisksForGraph is stable-ish
-      const tempGraph = buildBoundedCurvatureGraph(contactDisksForGraph, true, accumulated); // Import this function!
+      // Fallback: use anchorSequence + pathfinder (for knots saved without frozenPath)
+      if (knot.anchorSequence && knot.anchorSequence.length >= 2) {
+        const absolutePoints = knot.anchorSequence.map((anchor: any) => {
+          const disk = diskBlocks.find(b => b.id === anchor.diskId);
+          if (!disk) return null;
+          return {
+            x: disk.center.x + disk.visualRadius * Math.cos(anchor.angle),
+            y: disk.center.y + disk.visualRadius * Math.sin(anchor.angle)
+          };
+        }).filter(Boolean) as { x: number, y: number }[];
 
-      const result = findEnvelopePath(tempGraph, validSequence, knot.chiralities);
-
-      // Add TANGENT segments of this result to obstacles for next knots
-      result.path.forEach(seg => {
-        if ('start' in seg) { // It's a TangentSegment
-          accumulated.push({ p1: seg.start, p2: seg.end });
+        if (absolutePoints.length >= 2) {
+          const result = findEnvelopePathFromPoints(absolutePoints, contactDisksForGraph);
+          result.path.forEach((seg: any) => {
+            if ('start' in seg) accumulated.push({ p1: seg.start, p2: seg.end });
+          });
+          return { id: knot.id, color: knot.color, path: result.path };
         }
-      });
+      }
 
-      return {
-        id: knot.id,
-        color: knot.color,
-        path: result.path
-      };
+      // Legacy fallback
+      const existingDiskIds = new Set(diskBlocks.map(d => d.id));
+      const validSequence = knot.diskSequence.filter((id: string) => existingDiskIds.has(id));
+      if (validSequence.length < 2) return { id: knot.id, color: knot.color, path: [] };
+      const tempGraph = buildBoundedCurvatureGraph(contactDisksForGraph, true, accumulated);
+      const result = findEnvelopePath(tempGraph, validSequence, knot.chiralities);
+      result.path.forEach((seg: any) => {
+        if ('start' in seg) accumulated.push({ p1: seg.start, p2: seg.end });
+      });
+      return { id: knot.id, color: knot.color, path: result.path };
     });
 
     return { savedKnotPaths: paths, accumulatedObstacles: accumulated };
@@ -158,7 +267,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const savedKnotsMetrics = useMemo(() => {
     // [NEW] Calculate metrics for SAVED knots
     return savedKnotPaths.reduce((acc, knot) => {
-      knot.path.forEach(seg => {
+      knot.path.forEach((seg: any) => {
         if (seg.type === 'ARC') {
           acc.arcLength += seg.length;
         } else {
@@ -298,10 +407,11 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
                   : undefined
             })}
 
+            knotState={knotState} // [NEW] Pass the full state object!
             knotMode={knotState.mode === 'knot'}
             knotPath={knotState.knotPath}
             knotSequence={knotState.diskSequence}
-            anchorSequence={knotState.anchorSequence} // [NEW] Debug Prop
+            anchorSequence={knotState.anchorPoints} // [FIX] Use calculated points, NOT dynamic anchors!
             savedKnotPaths={savedKnotPaths} // Pass computed persistent knots
             onKnotSegmentClick={() => { }}
             onKnotPointClick={knotState.actions.extendSequenceWithPoint} // [NEW] Link interaction
