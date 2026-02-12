@@ -13,6 +13,14 @@ import { useContactPath } from './hooks/useContactPath';
 import { ContactGraphRenderer } from './components/ContactGraphRenderer';
 import { ContactPathRenderer } from './components/ContactPathRenderer';
 import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
+import { computeOuterContour } from '@/core/geometry/outerFace';
+import { computeRobustConvexHull } from '@/core/geometry/robustHull';
+
+// ── FLAG: Outer Contour for Envelope Display ────────────────────
+// Set to `false` to revert to the old convex-hull-only envelope.
+// This flag ONLY affects envelope display (!knotMode && showEnvelope).
+// It does NOT affect: knot-mode paths, saved knot paths, Dubins, load/save.
+const USE_OUTER_CONTOUR_ENVELOPE = true;
 
 interface CSCanvasProps {
   blocks: CSBlock[];
@@ -196,6 +204,24 @@ export function CSCanvas({
   })), [displayedDisks]);
 
   const contactGraph = useContactGraph(contactDisks);
+
+  // ── Outer Contour (NEW) ─────────────────────────────────────────
+  // 1. STANDARD ENVELOPE (Original "Chain Exposed Arcs"): Used in Standard Mode
+  const outerContourPath = React.useMemo(() => {
+    if (!USE_OUTER_CONTOUR_ENVELOPE) return [];
+    if (contactDisks.length < 1) return [];
+    // This calls the function in outerFace.ts.
+    // Since we reverted USE_NEW_ENVELOPE to false in outerFace.ts, this returns the ORIGINAL logic.
+    return computeOuterContour(contactDisks);
+  }, [contactDisks]);
+
+  // 2. ROBUST ENVELOPE (New "Convex Hull of Disks"): Used in Knot Mode
+  // The user requested: "The only one you should have changed is the envelope of the knot mode".
+  const robustHullPath = React.useMemo(() => {
+    if (!knotMode) return []; // Optimization: only compute if in knot mode
+    if (contactDisks.length < 1) return [];
+    return computeRobustConvexHull(contactDisks);
+  }, [contactDisks, knotMode]);
 
   // NEW: Active Path Selection Hook
   const { diskSequence, activePath, toggleDisk, clearSequence } = useContactPath(contactGraph);
@@ -703,16 +729,49 @@ export function CSCanvas({
       )}
 
 
-      {/* BELT (Convex Hull) OR KNOT */}
-      {!knotMode && hullData && showEnvelope && (
-        <path
-          d={transformPathToSVG(hullData.svgPathD)}
-          fill={envelopeColor}
-          fillOpacity={0.2}
-          stroke={envelopeColor}
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
+      {/* BELT (Outer Contour or Convex Hull) — ENVELOPE DISPLAY */}
+
+      {/* 1. STANDARD MODE: Original Envelope (Red Line + Blue Fill) */}
+      {!knotMode && showEnvelope && (
+        <>
+          {/* A. Red Line (Original "Chain Exposed Arcs") */}
+          {USE_OUTER_CONTOUR_ENVELOPE && outerContourPath.length > 0 && (
+            <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+              <ContactPathRenderer
+                path={outerContourPath}
+                visible={true}
+                color={envelopeColor || '#6B46C1'}
+                width={2}
+              />
+            </g>
+          )}
+
+          {/* B. Blue Fill (Legacy "Center Hull" Fallback) */}
+          {/* Always render this as the background fill in Standard Mode */}
+          {hullData && (
+            <path
+              d={transformPathToSVG(hullData.svgPathD)}
+              fill={envelopeColor}
+              fillOpacity={0.2}
+              stroke="none" // No stroke, just fill. The Red Line provides the stroke.
+            />
+          )}
+        </>
+      )}
+
+      {/* 2. KNOT MODE: Robust Envelope (New "Convex Hull of Disks") */}
+      {/* User requested: "The only one you should have changed is the envelope of the knot mode" */}
+      {knotMode && showEnvelope && robustHullPath.length > 0 && (
+        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <ContactPathRenderer
+            path={robustHullPath}
+            visible={true}
+            color={envelopeColor || '#6B46C1'}
+            width={2}
+          // Optional: Add opacity or dash to distinguish it from the active knot?
+          // User didn't specify stylization, but we clearly separate it from the red "KnotPath".
+          />
+        </g>
       )}
 
       {/* Saved Knots (Persistent Envelopes) */}

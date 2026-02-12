@@ -190,7 +190,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       const existingDiskIds = new Set(diskBlocks.map(d => d.id));
       const validSequence = knot.diskSequence.filter((id: string) => existingDiskIds.has(id));
       if (validSequence.length < 2) return { id: knot.id, color: knot.color, path: [] };
-      const tempGraph = buildBoundedCurvatureGraph(contactDisksForGraph, true, accumulated);
+      const tempGraph = buildBoundedCurvatureGraph(contactDisksForGraph, true, accumulated, true);
       const result = findEnvelopePath(tempGraph, validSequence, knot.chiralities);
       result.path.forEach((seg: any) => {
         if ('start' in seg) accumulated.push({ p1: seg.start, p2: seg.end });

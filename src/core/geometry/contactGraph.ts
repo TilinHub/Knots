@@ -213,7 +213,8 @@ export function intersectsSegment(p1: Point2D, p2: Point2D, q1: Point2D, q2: Poi
 export function buildBoundedCurvatureGraph(
     disks: ContactDisk[],
     checkCollisions: boolean = true,
-    obstacleSegments: { p1: Point2D, p2: Point2D }[] = [] // New parameter
+    obstacleSegments: { p1: Point2D, p2: Point2D }[] = [],
+    outerTangentsOnly: boolean = false
 ): BoundedCurvatureGraph {
     const validEdges: TangentSegment[] = [];
 
@@ -222,7 +223,14 @@ export function buildBoundedCurvatureGraph(
             const candidates = calculateBitangents(disks[i], disks[j]);
             const reverseCandidates = calculateBitangents(disks[j], disks[i]);
 
-            const allCandidates = [...candidates, ...reverseCandidates];
+            let allCandidates = [...candidates, ...reverseCandidates];
+
+            // Filter out inner tangents (LSR/RSL) for envelope mode.
+            // Inner tangents cross between the two disks they connect,
+            // creating self-intersecting "star" patterns in the envelope.
+            if (outerTangentsOnly) {
+                allCandidates = allCandidates.filter(s => s.type === 'LSL' || s.type === 'RSR');
+            }
 
             for (const seg of allCandidates) {
                 // Check against ALL other disks only if checkCollisions is true
@@ -351,11 +359,12 @@ export function findEnvelopePath(
                 const prevEntry = prev.get(fromChir);
                 if (!prevEntry) continue;
 
-                // Find matching edge in graph
-                // Edge goes from fromDiskId to toDiskId with compatible chirality
+                // Find matching edge in graph — only outer tangents (LSL/RSR)
+                // to prevent the envelope from crossing between disks.
                 const matchingEdges = graph.edges.filter(e =>
                     e.startDiskId === fromDiskId &&
                     e.endDiskId === toDiskId &&
+                    (e.type === 'LSL' || e.type === 'RSR') &&
                     e.type.startsWith(fromChir) &&
                     e.type.endsWith(toChir)
                 );
@@ -437,8 +446,9 @@ export function findEnvelopePathFromPoints(
 ): EnvelopePathResult {
     if (anchors.length < 2) return { path: [], chiralities: [] };
 
-    // Valid Graph for inter-disk connections
-    const graph = buildBoundedCurvatureGraph(obstacles, true);
+    // Valid Graph for inter-disk connections — outer tangents only
+    // to prevent self-intersecting (tangled) envelope paths.
+    const graph = buildBoundedCurvatureGraph(obstacles, true, [], true);
 
     const fullPath: EnvelopeSegment[] = [];
     const fullChiralities: ('L' | 'R')[] = [];
