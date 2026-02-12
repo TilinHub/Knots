@@ -26,7 +26,7 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     // [NEW] Lock refs for debouncing and preventing concurrent recalculations
     const recalcLockRef = useRef(false);
-    const recalcTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const recalcTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Legacy/Derivative
     const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]);
