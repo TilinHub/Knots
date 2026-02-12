@@ -11,10 +11,14 @@ import type { DubinsPath, Config } from '@/core/geometry/dubins';
 import { useContactGraph } from './hooks/useContactGraph';
 import { useContactPath } from './hooks/useContactPath';
 import { ContactGraphRenderer } from './components/ContactGraphRenderer';
-import { ContactPathRenderer } from './components/ContactPathRenderer';
+import { ContactPathRenderer } from './components/ContactPathRenderer'; // Still used for activePath
+import { KnotLayer } from '@/renderer/layers/KnotLayer';
+import { DubinsLayer } from '@/renderer/layers/DubinsLayer';
+import { StandardLayer } from '@/renderer/layers/StandardLayer';
 import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
 import { computeOuterContour } from '@/core/geometry/outerFace';
 import { computeRobustConvexHull } from '@/core/geometry/robustHull';
+import { findEnvelopePathFromPoints, findEnvelopePath, buildBoundedCurvatureGraph } from '@/core/geometry/contactGraph';
 
 // ── FLAG: Outer Contour for Envelope Display ────────────────────
 // Set to `false` to revert to the old convex-hull-only envelope.
@@ -136,11 +140,13 @@ export function CSCanvas({
     diskSequence: knotSequenceArg,
     knotPath: knotPathArg,
     anchorPoints: anchorPointsArg,
+    anchorSequence: rawAnchorSequence, // [NEW] Get raw anchors (diskId, angle)
+    chiralities: knotChiralities, // [NEW] Get chiralities for topology
     actions: knotActions
   } = knotState || {};
 
   const knotMode = knotState ? (knotModeStringArg === 'knot') : (props.knotMode ?? false);
-  const knotPath = knotState ? knotPathArg : (props.knotPath || []);
+  const staticKnotPath = knotState ? knotPathArg : (props.knotPath || []);
   const knotSequence = knotState ? knotSequenceArg : (props.knotSequence || []);
   const anchorPoints = knotState ? anchorPointsArg : (props.anchorSequence || []);
 
@@ -205,23 +211,77 @@ export function CSCanvas({
 
   const contactGraph = useContactGraph(contactDisks);
 
-  // ── Outer Contour (NEW) ─────────────────────────────────────────
-  // 1. STANDARD ENVELOPE (Original "Chain Exposed Arcs"): Used in Standard Mode
-  const outerContourPath = React.useMemo(() => {
-    if (!USE_OUTER_CONTOUR_ENVELOPE) return [];
-    if (contactDisks.length < 1) return [];
-    // This calls the function in outerFace.ts.
-    // Since we reverted USE_NEW_ENVELOPE to false in outerFace.ts, this returns the ORIGINAL logic.
-    return computeOuterContour(contactDisks);
-  }, [contactDisks]);
+  // DYNAMIC KNOT PATH for Rolling Mode
+  // If we are rolling, the parent's knotPath is stale (based on static blocks).
+  // We must recompute it using the *displayed* disks (which have the rolling position).
+  const knotPath = React.useMemo(() => {
+    if (rollingMode && knotMode) {
 
-  // 2. ROBUST ENVELOPE (New "Convex Hull of Disks"): Used in Knot Mode
-  // The user requested: "The only one you should have changed is the envelope of the knot mode".
-  const robustHullPath = React.useMemo(() => {
-    if (!knotMode) return []; // Optimization: only compute if in knot mode
-    if (contactDisks.length < 1) return [];
-    return computeRobustConvexHull(contactDisks);
-  }, [contactDisks, knotMode]);
+      // 1. Priority: True Elastic Envelope (Sequence + Chirality)
+      // This respects the topology (L/R sequence) but re-solves the geometry continuously.
+      // This is the "Rubber Band" behavior described in contact compass theory.
+      if (knotSequence && knotSequence.length >= 2 && knotChiralities && knotChiralities.length > 0) {
+        try {
+          // Build a fresh graph from the CURRENT (rolling) disk positions
+          const graph = buildBoundedCurvatureGraph(contactDisks, true, [], false);
+
+          // Solve for the path using the saved sequence and chiralities
+          const result = findEnvelopePath(graph, knotSequence, knotChiralities);
+
+          if (result.path && result.path.length > 0) {
+            return result.path;
+          }
+        } catch (e) {
+          console.warn("Elastic Envelope calculation failed", e);
+          // Fallback to point-based if topological solver fails
+        }
+      }
+
+      // 2. Fallback: Use Raw Anchors (DiskID + Angle) to handle Rolling Rotation (Material Point)
+      if (rawAnchorSequence && Array.isArray(rawAnchorSequence) && rawAnchorSequence.length > 0) {
+        try {
+          const dynamicPoints = rawAnchorSequence.map((anchor: any) => {
+            const disk = displayedDisks.find(d => d.id === anchor.diskId);
+            if (!disk) return { x: 0, y: 0 };
+
+            let effectiveAngle = anchor.angle;
+            // If this is the rolling disk, add spin
+            if (anchor.diskId === rollingDiskId && rollingDiskPosition) {
+              effectiveAngle += rollingDiskPosition.spinAngle;
+            }
+
+            return {
+              x: disk.center.x + disk.visualRadius * Math.cos(effectiveAngle),
+              y: disk.center.y + disk.visualRadius * Math.sin(effectiveAngle)
+            };
+          });
+
+          const result = findEnvelopePathFromPoints(dynamicPoints, contactDisks);
+          return result.path;
+        } catch (e) {
+          console.warn("Failed to recompute dynamic knot path from raw anchors", e);
+        }
+      }
+
+      // 3. Fallback: Use static anchor points (only handles translation if anchors were updated, which they aren't)
+      if (anchorPoints && anchorPoints.length > 0) {
+        try {
+          const result = findEnvelopePathFromPoints(anchorPoints, contactDisks);
+          return result.path;
+        } catch (e) {
+          console.warn("Failed to recompute dynamic knot path from static points", e);
+          return staticKnotPath;
+        }
+      }
+    }
+    return staticKnotPath;
+  }, [rollingMode, knotMode, knotSequence, knotChiralities, rawAnchorSequence, anchorPoints, contactDisks, staticKnotPath, displayedDisks, rollingDiskId, rollingDiskPosition]);
+
+  // ── LAYERS LOGIC ────────────────────────────────────────────────
+  // Replaced manual computation with Layers (render-time or internal).
+  // Standard Envelope -> StandardLayer (uses EditorEnvelopeComputer)
+  // Knot Envelope -> KnotLayer (uses KnotEnvelopeComputer)
+
 
   // NEW: Active Path Selection Hook
   const { diskSequence, activePath, toggleDisk, clearSequence } = useContactPath(contactGraph);
@@ -731,67 +791,32 @@ export function CSCanvas({
 
       {/* BELT (Outer Contour or Convex Hull) — ENVELOPE DISPLAY */}
 
-      {/* 1. STANDARD MODE: Original Envelope (Red Line + Blue Fill) */}
-      {!knotMode && showEnvelope && (
-        <>
-          {/* A. Red Line (Original "Chain Exposed Arcs") */}
-          {USE_OUTER_CONTOUR_ENVELOPE && outerContourPath.length > 0 && (
-            <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-              <ContactPathRenderer
-                path={outerContourPath}
-                visible={true}
-                color={envelopeColor || '#6B46C1'}
-                width={2}
-              />
-            </g>
-          )}
+      {/* LAYERS */}
 
-          {/* B. Blue Fill (Legacy "Center Hull" Fallback) */}
-          {/* Always render this as the background fill in Standard Mode */}
-          {hullData && (
-            <path
-              d={transformPathToSVG(hullData.svgPathD)}
-              fill={envelopeColor}
-              fillOpacity={0.2}
-              stroke="none" // No stroke, just fill. The Red Line provides the stroke.
-            />
-          )}
-        </>
-      )}
+      {/* 1. Standard Envelope (Editor Mode) */}
+      <StandardLayer
+        visible={true}
+        blocks={blocks}
+        showEnvelope={showEnvelope}
+        envelopeColor={envelopeColor}
+        knotMode={knotMode}
+        context={{ width, height }}
+      />
 
-      {/* 2. KNOT MODE: Robust Envelope (New "Convex Hull of Disks") */}
-      {/* User requested: "The only one you should have changed is the envelope of the knot mode" */}
-      {knotMode && showEnvelope && robustHullPath.length > 0 && (
-        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <ContactPathRenderer
-            path={robustHullPath}
-            visible={true}
-            color={envelopeColor || '#6B46C1'}
-            width={2}
-          // Optional: Add opacity or dash to distinguish it from the active knot?
-          // User didn't specify stylization, but we clearly separate it from the red "KnotPath".
-          />
-        </g>
-      )}
+      {/* 2. Knot Layer (Envelope + Path) */}
+      <KnotLayer
+        visible={true}
+        blocks={blocks}
+        knotPath={knotPath}
+        anchorPoints={anchorPoints}
+        showEnvelope={showEnvelope}
+        envelopeColor={envelopeColor}
+        knotMode={knotMode}
+        onKnotPointClick={onKnotPointClick}
+        savedKnotPaths={savedKnotPaths}
+        context={{ width, height }} // If needed
+      />
 
-      {/* Saved Knots (Persistent Envelopes) */}
-      {savedKnotPaths?.map((knot) => (
-        <g key={knot.id} transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <ContactPathRenderer
-            path={knot.path}
-            visible={true}
-            color={knot.color || "#FF8C00"} // Orange
-            width={6}
-          />
-        </g>
-      ))}
-
-      {/* Current Active Knot Construction */}
-      {knotMode && (
-        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <ContactPathRenderer path={knotPath} visible={true} color={envelopeColor || "#FF0000"} width={4} />
-        </g>
-      )}
 
       {/* Contact Graph Overlay (Global Tangent Network) - HIDDEN BY DEFAULT (Too messy) */}
       <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
@@ -822,23 +847,19 @@ export function CSCanvas({
         })
       )}
 
-      {dubinsMode && (
-        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          {/* 1. Selected Paths (Behind) */}
-          <DubinsRenderer
-            selectedPaths={persistentDubinsState?.visibleSelectedPaths}
-          // Pass empty candidates here to avoid duplication
-          />
-          {/* Legacy Support if needed */}
-          <DubinsRenderer
-            paths={dubinsPaths || []}
-            startConfig={dubinsStart || null}
-            endConfig={dubinsEnd || null}
-            visibleTypes={dubinsVisibleTypes || new Set()}
-          />
-
-        </g>
-      )}
+      {/* 3. Dubins Layer (Background) */}
+      <DubinsLayer
+        visible={true}
+        plane="background"
+        dubinsMode={dubinsMode}
+        persistentDubinsState={persistentDubinsState}
+        persistentDubinsActions={persistentDubinsActions}
+        dubinsPaths={dubinsPaths}
+        dubinsStart={dubinsStart}
+        dubinsEnd={dubinsEnd}
+        dubinsVisibleTypes={dubinsVisibleTypes}
+        blocks={blocks}
+      />
 
       {/* Discos */}
       {disks.map((disk, index) => {
@@ -1021,17 +1042,19 @@ export function CSCanvas({
         </g>
       )}
 
-      {/* DUBINS CANDIDATES (FRONT OF DISKS) */}
-      {dubinsMode && (
-        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <DubinsRenderer
-            candidates={persistentDubinsState?.candidates}
-            onPathClick={persistentDubinsActions?.handlePathClick}
-            hoverPathType={persistentDubinsState?.hoverPathType}
-            onPathHover={persistentDubinsActions?.setHoverPathType}
-          />
-        </g>
-      )}
+      {/* 4. Dubins Layer (Foreground Candidates) */}
+      <DubinsLayer
+        visible={true}
+        plane="foreground"
+        dubinsMode={dubinsMode}
+        persistentDubinsState={persistentDubinsState}
+        persistentDubinsActions={persistentDubinsActions}
+        dubinsPaths={dubinsPaths}
+        dubinsStart={dubinsStart}
+        dubinsEnd={dubinsEnd}
+        dubinsVisibleTypes={dubinsVisibleTypes}
+        blocks={blocks}
+      />
 
       {/* [NEW] DEBUG: Render Selected Anchor Points (Purple) */}
       {knotMode && anchorPoints?.map((p: any, i: number) => {

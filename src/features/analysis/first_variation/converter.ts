@@ -6,7 +6,7 @@ import type { CSDisk, Point2D } from '../../../core/types/cs';
 import type { CSDiagram, Disk, Contact, Tangency, Segment, Arc, Point } from './types';
 import { dist, wrap0_2pi, calculateDeltaTheta } from './geometry';
 import { buildBoundedCurvatureGraph, findEnvelopePath, findEnvelopePathFromPoints } from '../../../core/geometry/contactGraph'; // [Updated Import]
-import type { DynamicAnchor } from '../../editor/hooks/useKnotState';
+import type { DynamicAnchor } from '../../knot/logic/useKnotState';
 
 // Internal types for the converter
 type DiskIdToIndex = Map<string, number>;

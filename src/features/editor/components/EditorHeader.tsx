@@ -154,25 +154,25 @@ export const EditorHeader = ({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {/* ENVELOPE TOGGLE - NEW */}
-                {diskBlocksCount >= 2 && (
-                    <button
-                        onClick={onToggleEnvelope}
-                        style={{
-                            padding: '6px 12px',
-                            fontSize: '13px',
-                            fontWeight: 500,
-                            background: showEnvelope ? '#6B46C1' : 'transparent',
-                            color: showEnvelope ? 'white' : 'var(--text-primary)',
-                            border: `1px solid ${showEnvelope ? '#6B46C1' : 'var(--border)'}`,
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                        }}
-                        title={showEnvelope ? "Hide Envelope" : "Show Envelope"}
-                    >
-                        🟣 Envelope
-                    </button>
-                )}
+                <button
+                    onClick={onToggleEnvelope}
+                    disabled={diskBlocksCount < 2}
+                    style={{
+                        padding: '6px 12px',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        background: showEnvelope ? '#6B46C1' : 'transparent',
+                        color: showEnvelope ? 'white' : 'var(--text-primary)',
+                        border: `1px solid ${showEnvelope ? '#6B46C1' : 'var(--border)'}`,
+                        borderRadius: '6px',
+                        cursor: diskBlocksCount < 2 ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s',
+                        opacity: diskBlocksCount < 2 ? 0.5 : 1,
+                    }}
+                    title={showEnvelope ? "Hide Envelope" : "Show Envelope"}
+                >
+                    🟣 Envelope
+                </button>
 
                 {true && (
                     <button
@@ -194,62 +194,60 @@ export const EditorHeader = ({
                 )}
 
 
-                {diskBlocksCount >= 2 && !showContactDisks && (
-                    <button
-                        onClick={onToggleKnotMode}
-                        style={{
-                            padding: '6px 12px',
-                            fontSize: 'var(--fs-caption)',
-                            fontWeight: 'var(--fw-medium)',
-                            background: knotMode ? '#FF6B6B' : 'var(--bg-tertiary)',
-                            color: knotMode ? 'white' : 'var(--text-primary)',
-                            border: `1px solid ${knotMode ? '#FF6B6B' : 'var(--border)'}`,
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                        }}
-                    >
-                        🪢 Knot Mode
-                    </button>
-                )}
+                <button
+                    onClick={onToggleKnotMode}
+                    disabled={diskBlocksCount < 2}
+                    style={{
+                        padding: '6px 12px',
+                        fontSize: 'var(--fs-caption)',
+                        fontWeight: 'var(--fw-medium)',
+                        background: knotMode ? '#FF6B6B' : 'var(--bg-tertiary)',
+                        color: knotMode ? 'white' : 'var(--text-primary)',
+                        border: `1px solid ${knotMode ? '#FF6B6B' : 'var(--border)'}`,
+                        borderRadius: '6px',
+                        cursor: diskBlocksCount < 2 ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s',
+                        opacity: diskBlocksCount < 2 ? 0.5 : 1,
+                    }}
+                >
+                    🪢 Knot Mode
+                </button>
 
-                {!showContactDisks && !knotMode && !rollingMode && (
-                    <button
-                        onClick={onToggleDubinsMode}
-                        style={{
-                            padding: '6px 12px',
-                            fontSize: 'var(--fs-caption)',
-                            fontWeight: 'var(--fw-medium)',
-                            background: dubinsMode ? '#4ECDC4' : 'var(--bg-tertiary)',
-                            color: dubinsMode ? 'white' : 'var(--text-primary)',
-                            border: `1px solid ${dubinsMode ? '#4ECDC4' : 'var(--border)'}`,
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                        }}
-                    >
-                        🚗 Dubins
-                    </button>
-                )}
+                <button
+                    onClick={onToggleDubinsMode}
+                    style={{
+                        padding: '6px 12px',
+                        fontSize: 'var(--fs-caption)',
+                        fontWeight: 'var(--fw-medium)',
+                        background: dubinsMode ? '#4ECDC4' : 'var(--bg-tertiary)',
+                        color: dubinsMode ? 'white' : 'var(--text-primary)',
+                        border: `1px solid ${dubinsMode ? '#4ECDC4' : 'var(--border)'}`,
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                    }}
+                >
+                    🚗 Dubins
+                </button>
 
-                {diskBlocksCount >= 2 && !showContactDisks && !knotMode && (
-                    <button
-                        onClick={onToggleRollingMode}
-                        style={{
-                            padding: '6px 12px',
-                            fontSize: 'var(--fs-caption)',
-                            fontWeight: 'var(--fw-medium)',
-                            background: rollingMode ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
-                            color: rollingMode ? 'white' : 'var(--text-primary)',
-                            border: `1px solid ${rollingMode ? 'var(--accent-primary)' : 'var(--border)'}`,
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                        }}
-                    >
-                        🎡 Rolling Mode
-                    </button>
-                )}
+                <button
+                    onClick={onToggleRollingMode}
+                    disabled={diskBlocksCount < 2}
+                    style={{
+                        padding: '6px 12px',
+                        fontSize: 'var(--fs-caption)',
+                        fontWeight: 'var(--fw-medium)',
+                        background: rollingMode ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+                        color: rollingMode ? 'white' : 'var(--text-primary)',
+                        border: `1px solid ${rollingMode ? 'var(--accent-primary)' : 'var(--border)'}`,
+                        borderRadius: '6px',
+                        cursor: diskBlocksCount < 2 ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s',
+                        opacity: diskBlocksCount < 2 ? 0.5 : 1,
+                    }}
+                >
+                    🎡 Rolling Mode
+                </button>
 
                 {/* CATALOG MODE BUTTON */}
                 <button

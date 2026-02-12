@@ -19,7 +19,7 @@ interface RollingModePanelProps {
     onCommitPosition?: () => void;
 }
 
-export const RollingModePanel = ({
+export const RollingPanel = ({
     pivotDiskId,
     rollingDiskId,
     theta,

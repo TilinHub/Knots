@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { CSCanvas } from './CSCanvas';
 import { useEditorState } from './hooks/useEditorState';
-import { useRollingMode } from './hooks/useRollingMode';
-import { useKnotState } from './hooks/useKnotState';
-import { useDubinsState } from './hooks/useDubinsState';
+import { useRollingMode } from '../rolling/logic/useRollingMode';
+import { useKnotState } from '../knot/logic/useKnotState';
+import { useDubinsState } from '../dubins/logic/useDubinsState';
 import { usePersistentDubins } from './hooks/usePersistentDubins';
 import { EditorHeader } from './components/EditorHeader';
 import type { CSDisk } from '../../core/types/cs';
