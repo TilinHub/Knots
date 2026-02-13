@@ -1,4 +1,5 @@
 import React from 'react';
+import { Logger } from '@/core/utils/Logger';
 import type { CSBlock, CSDisk, Point2D, CSArc } from '@/core/types/cs';
 import { findAllCrossings, findDiskContacts, type DiskContact } from '@/core/geometry/intersections';
 import { detectRegionsWithDisks } from '@/core/algorithms/regionDetection';
@@ -41,7 +42,7 @@ interface CSCanvasProps {
   rollingDiskId?: string | null;
   theta?: number; // [RESTORED]
   showTrail?: boolean;
-  onDiskClick?: (diskId: string) => void;
+  onDiskClick?: (diskId: string, point?: Point2D) => void;
   // Knot props
   knotMode?: boolean; // [RESTORED] Fallback
   knotPath?: EnvelopeSegment[]; // [RESTORED] Fallback
@@ -68,6 +69,8 @@ interface CSCanvasProps {
   endDiskId?: string | null;
   onSetDubinsStart?: (c: Config | null) => void;
   onSetDubinsEnd?: (c: Config | null) => void;
+  // Flexible Envelope (Rolling Mode)
+  currentPath?: DubinsPath | null; // [NEW] Path from Angular Range Dubins
   // Persistent Dubins
   persistentDubinsState?: any; // Avoiding circular dependency hell by using any or creating shared type. 
   // Ideally "PersistentDubinsState" but it is exported from a hook. 
@@ -126,6 +129,7 @@ export function CSCanvas({
   endDiskId,
   onSetDubinsStart,
   onSetDubinsEnd,
+  currentPath = null, // [NEW]
   persistentDubinsState,
   persistentDubinsActions,
   ...props // Capture other props for fallback
@@ -233,7 +237,7 @@ export function CSCanvas({
             return result.path;
           }
         } catch (e) {
-          console.warn("Elastic Envelope calculation failed", e);
+          Logger.warn('CSCanvas', 'Elastic Envelope calculation failed', e);
           // Fallback to point-based if topological solver fails
         }
       }
@@ -260,7 +264,7 @@ export function CSCanvas({
           const result = findEnvelopePathFromPoints(dynamicPoints, contactDisks);
           return result.path;
         } catch (e) {
-          console.warn("Failed to recompute dynamic knot path from raw anchors", e);
+          Logger.warn('CSCanvas', 'Failed to recompute dynamic knot path from raw anchors', e);
         }
       }
 
@@ -270,7 +274,7 @@ export function CSCanvas({
           const result = findEnvelopePathFromPoints(anchorPoints, contactDisks);
           return result.path;
         } catch (e) {
-          console.warn("Failed to recompute dynamic knot path from static points", e);
+          Logger.warn('CSCanvas', 'Failed to recompute dynamic knot path from static points', e);
           return staticKnotPath;
         }
       }
@@ -464,7 +468,10 @@ export function CSCanvas({
 
     if (rollingMode && onDiskClick) {
       const block = blocks.find(b => b.id === blockId);
-      if (block?.kind === 'disk') onDiskClick(block.id);
+      if (block?.kind === 'disk') {
+        const pos = getMousePositionExact(e as any);
+        onDiskClick(block.id, pos || undefined);
+      }
       return;
     }
 
@@ -539,6 +546,7 @@ export function CSCanvas({
 
     // [FIX] Freeze Knot Envelope during drag
     if (knotActions?.setDragging) {
+      Logger.debug('CSCanvas', 'Drag Start', { blockId, pointType });
       knotActions.setDragging(true);
     }
   }
@@ -598,7 +606,7 @@ export function CSCanvas({
       })?.id;
 
       if (currentId && currentId !== dragState.lastAdded) {
-        onDiskClick?.(currentId);
+        onDiskClick?.(currentId, pos || undefined);
         setDragState(prev => prev ? ({ ...prev, lastAdded: currentId, pendingUndo: false }) : null);
       }
       return;
@@ -740,6 +748,7 @@ export function CSCanvas({
 
     // [FIX] Unfreeze Knot Envelope
     if (knotActions?.setDragging) {
+      Logger.debug('CSCanvas', 'Drag End', { blockId: dragState?.blockId });
       knotActions.setDragging(false);
     }
   }
@@ -814,7 +823,7 @@ export function CSCanvas({
         context={{ width, height }}
       />
 
-      {/* 2. Knot Layer (Envelope + Path) */}
+      {/* 2. Knot Layer (Active Envelope) */}
       <KnotLayer
         visible={true}
         blocks={blocks}
@@ -822,13 +831,42 @@ export function CSCanvas({
         knotSequence={knotSequence} // [NEW]
         knotChiralities={knotChiralities} // [NEW]
         anchorPoints={anchorPoints}
-        showEnvelope={showEnvelope}
+        showEnvelope={showEnvelope && (!knotState?.flexibleKnotPaths || knotState.flexibleKnotPaths.length === 0)} // [MOD] Hide legacy if flexible exists
         envelopeColor={envelopeColor}
         knotMode={knotMode}
         onKnotPointClick={onKnotPointClick}
         savedKnotPaths={savedKnotPaths}
         context={{ width, height }} // If needed
       />
+
+      {/* [NEW] Flexible Knot Envelope (Dubins) */}
+      {knotMode && knotState?.flexibleKnotPaths && knotState.flexibleKnotPaths.length > 0 && showEnvelope && (
+        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <DubinsRenderer
+            paths={knotState.flexibleKnotPaths}
+            // Use same color as envelope? DubinsRenderer uses path type colors by default usually?
+            // If DubinsRenderer doesn't accept color override, we might need to style it.
+            // But DubinsRenderer usually renders based on Type.
+            // Wait, Knot Envelope should be uniform color (e.g. Blue/Orange).
+            // Let's see if DubinsRenderer accepts visual override.
+            // Typically it uses standard colors.
+            // If the user wants "Envelope Color", we might need to modify DubinsRenderer or wrap it.
+            // For now, let's just render it. The "Orange" lines in screenshot suggest default or specific styling.
+            overrideColor={envelopeColor}
+            width={4} // Thicker for envelope
+          />
+        </g>
+      )}
+
+      {/* ROLLING MODE PATH (Flexible Envelope) [NEW] */}
+      {rollingMode && currentPath && (
+        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+          <DubinsRenderer
+            paths={[currentPath]}
+            visibleTypes={new Set([currentPath.type])}
+          />
+        </g>
+      )}
 
 
       {/* Contact Graph Overlay (Global Tangent Network) - HIDDEN BY DEFAULT (Too messy) */}

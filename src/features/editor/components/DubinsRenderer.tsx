@@ -7,6 +7,8 @@ interface DubinsRendererProps {
     startConfig?: Config | null;
     endConfig?: Config | null;
     visibleTypes?: Set<string>;
+    overrideColor?: string; // [NEW] Allow manual color override
+    width?: number; // [NEW] Allow manual width
 
     // New Interactive Props
     candidates?: DubinsPath[];
@@ -30,6 +32,8 @@ export function DubinsRenderer({
     candidates = [],
     selectedPaths = [],
     visibleTypes,
+    overrideColor,
+    width,
     onPathClick,
     hoverPathType,
     onPathHover
@@ -155,8 +159,8 @@ export function DubinsRenderer({
                         <path
                             d={d}
                             fill="none"
-                            stroke={PathColors[path.type] || '#333'}
-                            strokeWidth="3"
+                            stroke={overrideColor || PathColors[path.type]}
+                            strokeWidth={width || 3}
                             strokeOpacity={0.8}
                         />
                     </g>

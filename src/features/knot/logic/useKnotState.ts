@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Logger } from '../../../core/utils/Logger';
 import type { CSDisk } from '../../../core/types/cs';
-import { findEnvelopePathFromPoints, type EnvelopePathResult, buildBoundedCurvatureGraph, findEnvelopePath } from '../../../core/geometry/contactGraph';
+import { findEnvelopePathFromPoints, type EnvelopePathResult, buildBoundedCurvatureGraph, findEnvelopePath, type EnvelopeSegment } from '../../../core/geometry/contactGraph';
 import { validateNoSelfIntersection, validateNoObstacleIntersection } from '../../../core/validation/envelopeValidator';
+import { EnvelopePathCalculator } from '../../dubins/logic/EnvelopePathCalculator';
+import type { DubinsPath } from '../../../core/geometry/dubins'; // Fixed import
 
 interface UseKnotStateProps {
     blocks: CSDisk[]; // We need disks to build the graph
@@ -22,7 +25,6 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     // [FIX] Freeze anchors during drag to prevent deformation
     const [isDragging, setIsDragging] = useState(false);
-    const prevAnchorsRef = React.useRef<{ x: number, y: number }[]>([]);
 
     // [NEW] Lock refs for debouncing and preventing concurrent recalculations
     const recalcLockRef = useRef(false);
@@ -42,44 +44,93 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     // Cleanup sequence if disks are removed
     useEffect(() => {
-        setDiskSequence(prev => prev.filter(id => blocks.some(b => b.id === id)));
+        setDiskSequence(prev => {
+            const next = prev.filter(id => blocks.some(b => b.id === id));
+            if (next.length !== prev.length) {
+                Logger.info('KnotState', 'Cleaned up disk sequence', { removed: prev.length - next.length });
+            }
+            return next;
+        });
         setAnchorSequence(prev => prev.filter(a => blocks.some(b => b.id === a.diskId)));
     }, [blocks]);
 
     // [NEW] Recalculate Absolute Positions (Reactive to blocks moving)
     const currentAnchors = useMemo(() => {
-        // [FIX] If dragging and we have previous valid anchors, freeze them
-        if (isDragging && prevAnchorsRef.current.length > 0) {
-            return prevAnchorsRef.current;
-        }
-
-        const newAnchors = anchorSequence.map(anchor => {
+        // Always update anchors to follow disks (Elastic Behavior)
+        return anchorSequence.map(anchor => {
             const disk = blocks.find(b => b.id === anchor.diskId);
-            if (!disk) return { x: 0, y: 0 }; // Should be cleaned up by effect
+            if (!disk) return { x: 0, y: 0 };
             return {
                 x: disk.center.x + disk.visualRadius * Math.cos(anchor.angle),
                 y: disk.center.y + disk.visualRadius * Math.sin(anchor.angle)
             };
         });
+    }, [anchorSequence, blocks]);
 
-        // Update cache
-        prevAnchorsRef.current = newAnchors;
-        return newAnchors;
-    }, [anchorSequence, blocks, isDragging]);
-
-    // 2. Compute Path (Strict Point-to-Point)
-    const computationResult: EnvelopePathResult = useMemo(() => {
+    // 2. Compute Path (Flexible Envelope + Legacy Fallback)
+    const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
         if (currentAnchors.length < 2) return { path: [], chiralities: [] };
 
-        // Use the DYNAMICALLY updated positions
-        return findEnvelopePathFromPoints(currentAnchors, contactDisks);
-    }, [currentAnchors, contactDisks]);
+        // A. Legacy Path (for validation/compatibility)
+        // Use the DYNAMICALLY updated positions or just points
+        const legacyResult = findEnvelopePathFromPoints(currentAnchors, contactDisks);
+
+        // B. Flexible Dubins Path (for rendering)
+        // We need chiralities that match the "Natural" path found by the legacy solver.
+        // If we just use default 'L', we might force a loop where a crossing was intended.
+
+        const derivedChiralities = new Map<string, 'L' | 'R'>();
+
+        legacyResult.path.forEach(seg => {
+            // Type assertion to handle 'type' discriminator safely
+            const s = seg as any;
+            if (s.type === 'ARC') {
+                if (s.diskId) derivedChiralities.set(s.diskId, s.chirality);
+            } else if (['LSL', 'LSR', 'RSL', 'RSR'].includes(s.type)) {
+                // Tangent Segment
+                const type = s.type as string; // e.g. 'LSL'
+                if (s.startDiskId && s.startDiskId !== 'point' && s.startDiskId !== 'start') {
+                    derivedChiralities.set(s.startDiskId, type.charAt(0) as 'L' | 'R');
+                }
+                if (s.endDiskId && s.endDiskId !== 'point' && s.endDiskId !== 'end') {
+                    derivedChiralities.set(s.endDiskId, type.charAt(2) as 'L' | 'R');
+                }
+            }
+        });
+
+        let dubinsPaths: DubinsPath[] = [];
+
+        if (diskSequence.length >= 2) { // Changed from activeDisks.length to diskSequence.length
+            const calculator = new EnvelopePathCalculator();
+
+            // Use DERIVED chiralities, falling back to state or 'L'
+            const fullChiralities = diskSequence.map((id, i) => {
+                // Priority: Derived > State > Default 'L'
+                if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
+                return (chiralities[i] || 'L');
+            });
+
+            dubinsPaths = calculator.calculateKnotPath(
+                blocks,
+                diskSequence,
+                fullChiralities,
+                true // Closed
+            );
+        }
+
+        Logger.debug('KnotState', 'Computed Flexible Envelope', { legacyLen: legacyResult.path.length, dubinsLen: dubinsPaths.length });
+
+        return {
+            ...legacyResult,
+            dubinsPaths
+        };
+    }, [currentAnchors, contactDisks, blocks, diskSequence, chiralities]);
 
     // 3. Validation
     const validation = useMemo(() => {
         if (!computationResult.path || computationResult.path.length < 3) return { valid: true };
 
-        // Check self-intersection
+        // Check self-intersection (on legacy path)
         const selfCheck = validateNoSelfIntersection(computationResult.path);
         if (!selfCheck.valid) return selfCheck;
 
@@ -100,98 +151,106 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         // GUARDS: Condiciones para NO ejecutar
         if (isDragging) return;
         if (diskSequence.length < 2) return;
-        
+
         const pathIsEmpty = computationResult.path.length === 0;
         const pathIsTooShort = computationResult.path.length < diskSequence.length - 1;
-        
+
         if (!pathIsEmpty && !pathIsTooShort) return;
         if (recalcLockRef.current) {
-            console.log('⏸️ Recálculo bloqueado - lock activo');
+            Logger.debug('KnotState', 'Recalc locked');
             return;
         }
-        
-        console.warn('⚠️ PATH INVÁLIDO DETECTADO');
-        console.log('  📊 Estado:', {
+
+        // Only warn/correct if LEGACY path is broken. 
+        // If Dubins path works, maybe we don't care? 
+        // But anchorSequence is derived from path? No, anchorSequence DRIVES the path.
+
+        Logger.warn('KnotState', 'Invalid Path Detected - Triggering Auto-Correction', {
             diskSeqLen: diskSequence.length,
             pathLen: computationResult.path.length,
             anchorsCount: anchorSequence.length
         });
-        
+
         // Activar lock ANTES de cualquier modificación de estado
         recalcLockRef.current = true;
-        
+
         try {
             const graph = buildBoundedCurvatureGraph(contactDisks, true, [], true);
-            
-            console.log('  🔗 Grafo:', { nodes: graph.nodes.size, edges: graph.edges.length });
-            
+
             if (graph.edges.length === 0) {
-                console.error('  ❌ Grafo vacío - discos muy separados o sin tangentes válidas');
+                Logger.error('KnotState', 'Auto-Correction Failed: Empty Graph');
                 return;
             }
-            
+
             const elasticResult = findEnvelopePath(graph, diskSequence, undefined, false);
-            
-            console.log('  🎯 Elastic path:', elasticResult.path.length, 'segments');
-            
+
             if (elasticResult.path.length === 0) {
-                console.error('  ❌ Elastic solver falló - no se encontró path válido');
+                Logger.error('KnotState', 'Auto-Correction Failed: Elastic Solver found no path');
                 return;
             }
-            
+
             const newAnchors: DynamicAnchor[] = [];
             const seenDisks = new Set<string>();
-            
+
             elasticResult.path.forEach(seg => {
-                if (!('startDiskId' in seg)) return;
-                
-                const diskId = seg.startDiskId;
-                if (diskId === 'start' || diskId === 'end' || diskId === 'point') return;
+                if (!('startDiskId' in seg)) return; // Access safely?
+                // EnvelopeSegment types: Line | Arc. line has start/end. 
+                // cast to any to access startDiskId if it exists on some variant
+                const s = seg as any;
+                const diskId = s.startDiskId || s.diskId;
+
+                if (!diskId || diskId === 'start' || diskId === 'end' || diskId === 'point') return;
                 if (seenDisks.has(diskId)) return;
-                
+
                 const disk = blocks.find(b => b.id === diskId && b.kind === 'disk');
                 if (!disk) return;
-                
-                const angle = Math.atan2(seg.start.y - disk.center.y, seg.start.x - disk.center.x);
-                
+
+                // Angle from disk center to segment start
+                const startPt = s.type === 'ARC' ?
+                    { x: disk.center.x + disk.visualRadius * Math.cos(s.startAngle), y: disk.center.y + disk.visualRadius * Math.sin(s.startAngle) }
+                    : s.start;
+
+                const angle = Math.atan2(startPt.y - disk.center.y, startPt.x - disk.center.x);
+
                 newAnchors.push({ diskId, angle });
                 seenDisks.add(diskId);
             });
-            
+
             if (newAnchors.length < 2) {
-                console.error('  ❌ Insuficientes anchors extraídos:', newAnchors.length);
+                Logger.error('KnotState', 'Auto-Correction Failed: Insufficient anchors extracted', { count: newAnchors.length });
                 return;
             }
-            
-            console.log('  ✅ Topología reconstruida:', newAnchors.length, 'anchors');
+
+            Logger.info('KnotState', 'Topology Reconstructed', { anchors: newAnchors.length });
             setAnchorSequence(newAnchors);
-            
+
         } catch (error) {
-            console.error('  ❌ Error en recálculo automático:', error);
+            Logger.error('KnotState', 'Auto-Correction Error', error);
         } finally {
             // Cleanup del timeout anterior si existe
             if (recalcTimeoutRef.current) {
                 clearTimeout(recalcTimeoutRef.current);
             }
-            
+
             // Programar liberación del lock con debouncing
             recalcTimeoutRef.current = setTimeout(() => {
                 recalcLockRef.current = false;
-                console.log('  🔓 Lock liberado después de debounce');
+                Logger.debug('KnotState', 'Recalc Lock Released');
             }, 500);
         }
-        
+
         // Cleanup al desmontar
         return () => {
             if (recalcTimeoutRef.current) {
                 clearTimeout(recalcTimeoutRef.current);
             }
         };
-        
+
     }, [
         isDragging,                      // Trigger cuando termina drag
         diskSequence.length,             // Solo longitud, no array completo
-        computationResult.path.length    // Solo longitud, no path completo
+        computationResult.path.length,   // Solo longitud
+        contactDisks // dep needed
     ]);
 
     // Actions
@@ -223,6 +282,15 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     // Point-based extension (Strict Point-to-Point)
     const extendSequenceWithPoint = useCallback((diskId: string, point: { x: number, y: number }) => {
+        // Redundancy Check: Prevent infinite loops from duplicate events
+        if (lastAnchorPoint) {
+            const dist = Math.sqrt(Math.pow(point.x - lastAnchorPoint.x, 2) + Math.pow(point.y - lastAnchorPoint.y, 2));
+            if (dist < 1.0) { // 1px tolerance
+                Logger.warn('KnotState', 'Duplicate Point Extension Ignored', { diskId, point, dist });
+                return;
+            }
+        }
+
         // Find disk to calculate angle
         const disk = blocks.find(b => b.id === diskId);
         if (!disk) return;
@@ -235,10 +303,13 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         ]);
 
         // We still track diskSequence for metadata/UI feedback
-        setDiskSequence(prev => [...prev, diskId]);
+        setDiskSequence(prev => {
+            Logger.info('KnotState', 'Extended Sequence with Point', { diskId, point });
+            return [...prev, diskId];
+        });
 
         setLastAnchorPoint(point); // This might be slightly off if disk moves immediately, but acts as "last click"
-    }, [blocks]);
+    }, [blocks, lastAnchorPoint]);
 
     return {
         mode,
@@ -247,7 +318,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         chiralities: computationResult.chiralities,
         anchorPoints: currentAnchors, // [RENAMED] Absolute points for rendering
         anchorSequence, // [NEW] Raw dynamic anchors for persistence
-        validation, // [NEW] Expose validation result
+        validation, // [NEW] Expose validation result,
+        flexibleKnotPaths: computationResult.dubinsPaths, // [NEW] Expose Flexible Paths
         actions: {
             setMode,
             toggleMode,

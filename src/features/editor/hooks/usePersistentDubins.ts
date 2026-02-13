@@ -6,6 +6,8 @@ import {
     type StoredDubinsPath,
     type DubinsType
 } from '../../../core/geometry/dubins';
+import { solveAngularDubins, type DiskAnchor } from '../../../core/geometry/angularDubins';
+import { type Point2D } from '../../../core/types/cs';
 import { type ContactDisk } from '../../../core/types/contactGraph';
 import { buildBoundedCurvatureGraph } from '../../../core/geometry/contactGraph';
 import { findShortestContactPath } from '../../../core/algorithms/pathfinder';
@@ -18,6 +20,7 @@ export interface PersistentDubinsState {
     visibleSelectedPaths: DubinsPath[];
     pathCache: Map<string, DubinsPath>;
     hoverPathType: DubinsType | null;
+    totalLength: number;
 }
 
 export function usePersistentDubins(disks: ContactDisk[]) {
@@ -26,8 +29,23 @@ export function usePersistentDubins(disks: ContactDisk[]) {
     const [hoverDiskId, setHoverDiskId] = useState<string | null>(null);
     const [hoverPathType, setHoverPathType] = useState<DubinsType | null>(null);
 
+    // State for Anchors
+    const [anchorStart, setAnchorStart] = useState<DiskAnchor | null>(null);
+    const [anchorEnd, setAnchorEnd] = useState<DiskAnchor | null>(null);
+
     // 1. Calculate Candidates
     const candidates = useMemo(() => {
+        // If we have explicit anchors, use Angular Dubins
+        if (anchorStart && anchorEnd) {
+            // Pass all other disks as obstacles
+            const obstacles = disks
+                .filter(d => d.id !== anchorStart.disk.id && d.id !== anchorEnd.disk.id)
+                .map(d => ({ x: d.center.x, y: d.center.y, radius: d.radius }));
+
+            const path = solveAngularDubins(anchorStart, anchorEnd, obstacles);
+            return path ? [path] : [];
+        }
+
         if (!activeDiskId || !hoverDiskId || activeDiskId === hoverDiskId) return [];
 
         const startDisk = disks.find(d => d.id === activeDiskId);
@@ -40,8 +58,6 @@ export function usePersistentDubins(disks: ContactDisk[]) {
 
         // 1. Try Direct Geometric candidates
         let paths = calculateBitangentPaths(c1, c2);
-
-
 
         // 2. [Multi-Hop] If no direct paths, search graph
         if (paths.length === 0) {
@@ -87,7 +103,7 @@ export function usePersistentDubins(disks: ContactDisk[]) {
         }
 
         return paths;
-    }, [activeDiskId, hoverDiskId, disks, selectedPaths]);
+    }, [activeDiskId, hoverDiskId, disks, selectedPaths, anchorStart, anchorEnd]);
 
     // 2. Cache Selected Paths
     const pathCache = useMemo(() => {
@@ -114,12 +130,31 @@ export function usePersistentDubins(disks: ContactDisk[]) {
     }, [selectedPaths, disks]);
 
     // Actions
-    const handleDiskClick = (diskId: string) => {
+    const handleDiskClick = (diskId: string, point?: Point2D) => {
+        const disk = disks.find(d => d.id === diskId);
+        if (!disk) return;
+
+        // Calculate Angle
+        let angle = 0;
+        if (point) {
+            angle = Math.atan2(point.y - disk.center.y, point.x - disk.center.x);
+        }
+
+        const anchor: DiskAnchor = {
+            disk: { id: disk.id, center: disk.center, radius: disk.radius },
+            angle: angle,
+            range: 0.3 // ~17 degrees tolerance
+        };
+
         if (!activeDiskId) {
             setActiveDiskId(diskId);
+            setAnchorStart(anchor);
+            setAnchorEnd(null); // Reset end
         } else {
-            // Move focus
-            setActiveDiskId(diskId);
+            // Completing the connection
+            setHoverDiskId(diskId); // Use hover as "target"
+            setAnchorEnd(anchor);
+            // The Memo will now calculate the Angular Dubins path
         }
     };
 
@@ -149,75 +184,39 @@ export function usePersistentDubins(disks: ContactDisk[]) {
         // If compound, last segment ends at hoverDiskId.
         setActiveDiskId(hoverDiskId);
         setHoverDiskId(null);
+        setAnchorStart(anchorEnd); // Advance anchor
+        setAnchorEnd(null);
     };
 
     const clearPaths = useCallback(() => {
         setSelectedPaths([]);
         setActiveDiskId(null);
+        setAnchorStart(null);
+        setAnchorEnd(null);
     }, []);
 
     // Interactive Metrics
     const totalLength = useMemo(() => {
         let len = 0;
-        // Sum Bitangents
         pathCache.forEach(p => len += p.length);
-
-        // Add Arcs? 
-        // Logic: Path A->B ends at T_in. Path B->C starts at T_out.
-        // We need Arc(T_in, T_out) on Disk B.
-        // This requires sorting paths to form a chain.
-        // For now, let's just sum segments as requested by "Largo individual... Largo total".
-        // The user said: "Suma de Arcos + Segmentos".
-        // bitangent paths already include the start/end arcs? NO.
-        // My calculateBitangentPaths returns lengths of straight segments mostly?
-        // Let's check dubins.ts again.
-        // calculateBitangentPaths: "length: LSL_len".
-        // LSL_len is distance between tangent points. STRAIGHT LINE.
-        // So the "Arc" part (wrapping the disk) is MISSING in `DubinsPath.length` if derived from `calculateBitangentPaths`.
-        // WAIT.
-        // If I use `pathCache` which stores `DubinsPath`, and `DubinsPath` comes from `calculateBitangentPaths`.
-        // The `length` property there IS the straight line distance?
-        // Let's verify Step 108.
-        // Line 310: LSL_len = sqrt(dist).
-        // Line 314: length: LSL_len.
-        // Yes. `calculateBitangentPaths` returns ONLY the straight connection.
-
-        // The "Dubins" concept usually implies (Turn, Straight, Turn).
-        // But here we are building a customized envelope.
-        // So "Total Length" = Sum(Straight Segments) + Sum(Arcs on Disks).
-
-        // We need to compute Arcs.
-        // Ideally we form a chain.
-
         return len;
     }, [pathCache]);
 
     // Helper for rendering
     const visibleSelectedPaths = useMemo(() => {
-        // Flattened list of segments to render
         const results: DubinsPath[] = [];
 
         selectedPaths.forEach(sp => {
             const p = pathCache.get(sp.id);
 
             // 1. Initial Logic: Try to get cached geometric path
-            if (!p) {
-                // If not in cache (maybe geometry changed), re-calculate direct
-                // Or wait for effect?
-                // For robustness, let's try to calculate direct here if missing?
-                // Actually cache should be in sync. If missing, we skip or fallback.
-                return;
-            }
+            if (!p) return;
 
             // 2. Check Collision of the *original* direct path
-            // Exclude start/end disks from collision check
-            const startNodeId = sp.startDiskId || p.startDiskId; // Prefer stored
-            const endNodeId = sp.endDiskId || p.endDiskId;       // Prefer stored
+            const startNodeId = sp.startDiskId || p.startDiskId;
+            const endNodeId = sp.endDiskId || p.endDiskId;
 
-            if (!startNodeId || !endNodeId) {
-                // Should not happen for stored paths
-                return;
-            }
+            if (!startNodeId || !endNodeId) return;
 
             const activeObstacles = disks
                 .filter(d => d.id !== startNodeId && d.id !== endNodeId)
@@ -226,31 +225,14 @@ export function usePersistentDubins(disks: ContactDisk[]) {
             const isBlocked = checkPathCollision(p, activeObstacles, 1.0);
 
             if (!isBlocked) {
-                // Path is valid, use it
                 results.push(p);
             } else {
                 // 3. AUTO-REROUTE
-                // Path is blocked. Find shortest alternative through graph.
                 const graph = buildBoundedCurvatureGraph(disks);
                 const compoundPaths = findShortestContactPath(startNodeId, endNodeId, graph);
 
                 if (compoundPaths.length > 0 && compoundPaths[0].length > 0) {
-                    // Found a wrapping path
-                    // Use the segments
-                    // Verify collision for segments?
-                    // They are generated from valid edges, but dynamic collision check again?
-                    // pathfinder uses graph which assumes static state.
-                    // But disks are dynamic? 
-                    // 'buildBoundedCurvatureGraph' USES current disk positions (disks arg).
-                    // So the graph is fresh. The path is valid by definition of the graph.
-
                     results.push(...compoundPaths[0]);
-                } else {
-                    // No path found (isolated?), fallback to showing collision or hide
-                    // User requirement: "Never return null or silent failure"
-                    // But if graph is disconnected?
-                    // We can show the colliding path with a visual cue?
-                    // For now, hide if truly impossible, but Dijkstra usually finds something if reachable.
                 }
             }
         });
@@ -264,7 +246,7 @@ export function usePersistentDubins(disks: ContactDisk[]) {
             hoverDiskId,
             candidates,
             selectedPaths,
-            visibleSelectedPaths, // NEW (Hydrated geometry for renderer)
+            visibleSelectedPaths,
             pathCache,
             hoverPathType,
             totalLength

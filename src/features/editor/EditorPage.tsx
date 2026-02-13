@@ -321,10 +321,11 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
               theta: rollingState.theta,
               showTrail: rollingState.showTrail,
               onDiskClick: rollingState.selectDisk,
+              currentPath: rollingState.currentPath, // [NEW] Pass computed path
             } : {
               // Click Priority: Dubins > Knot > Select
               onDiskClick: dubinsState.state.isActive
-                ? (diskId) => persistentDubins.actions.handleDiskClick(diskId)
+                ? (diskId, point) => persistentDubins.actions.handleDiskClick(diskId, point)
                 : knotState.mode === 'knot'
                   ? knotState.actions.toggleDisk
                   : undefined

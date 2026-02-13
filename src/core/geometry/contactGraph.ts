@@ -1,4 +1,5 @@
 
+import { Logger } from '../../core/utils/Logger';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 
@@ -216,6 +217,7 @@ export function buildBoundedCurvatureGraph(
     obstacleSegments: { p1: Point2D, p2: Point2D }[] = [],
     outerTangentsOnly: boolean = false
 ): BoundedCurvatureGraph {
+    Logger.debug('ContactGraph', 'Building Bounded Curvature Graph', { disksCount: disks.length, checkCollisions, outerTangentsOnly });
     const validEdges: TangentSegment[] = [];
 
     for (let i = 0; i < disks.length; i++) {
@@ -266,6 +268,8 @@ export function buildBoundedCurvatureGraph(
 
     const nodeMap = new Map<string, ContactDisk>();
     disks.forEach(d => nodeMap.set(d.id, d));
+
+    Logger.debug('ContactGraph', 'Graph Built', { nodes: nodeMap.size, edges: validEdges.length });
 
     return {
         nodes: nodeMap,
@@ -323,6 +327,7 @@ export function findEnvelopePath(
     fixedChiralities?: ('L' | 'R')[],
     strictChirality: boolean = true
 ): EnvelopePathResult {
+    Logger.debug('ContactGraph', 'Finding Envelope Path', { diskIds, fixedChiralities, strictChirality });
     if (diskIds.length < 2) return { path: [], chiralities: [] };
 
     const states: ('L' | 'R')[] = ['L', 'R'];
@@ -433,7 +438,12 @@ export function findEnvelopePath(
         }
     }
 
-    if (!bestFinal) return { path: [], chiralities: [] };
+    if (!bestFinal) {
+        Logger.warn('ContactGraph', 'No valid envelope path found');
+        return { path: [], chiralities: [] };
+    }
+
+    Logger.debug('ContactGraph', 'Envelope Path Found', { cost: bestFinal.cost, pathLength: bestFinal.path.length });
     return { path: bestFinal.path, chiralities: [] };
 }
 

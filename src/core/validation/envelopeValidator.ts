@@ -1,3 +1,4 @@
+import { Logger } from '../../core/utils/Logger';
 import type { EnvelopeSegment, ArcSegment, TangentSegment } from '../geometry/contactGraph';
 import type { Point2D, CSArc, CSSegment } from '../types/cs';
 
@@ -21,6 +22,7 @@ export function validateNoSelfIntersection(path: EnvelopeSegment[]): { valid: bo
             const seg2 = path[j];
 
             if (segmentsIntersect(seg1, seg2)) {
+                Logger.warn('Validator', `Self-intersection detected`, { segment1: i, segment2: j });
                 return { valid: false, error: `Self-intersection between segment ${i} and ${j}` };
             }
         }
@@ -53,6 +55,7 @@ export function validateNoObstacleIntersection(
             };
 
             if (segmentsIntersect(seg, obsSeg)) {
+                Logger.warn('Validator', `Obstacle intersection detected`, { segment: i, obstacle: k });
                 return { valid: false, error: `Intersection with obstacle ${k} at segment ${i}` };
             }
         }

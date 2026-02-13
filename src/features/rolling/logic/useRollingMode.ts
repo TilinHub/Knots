@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { CSBlock, CSDisk } from '../../../core/types/cs';
+import { EnvelopePathCalculator } from '../../dubins/logic/EnvelopePathCalculator';
+import type { DubinsPath } from '../../../core/geometry/dubins';
 
 interface UseRollingModeProps {
     blocks: CSBlock[];
@@ -14,6 +16,7 @@ interface RollingState {
     direction: 1 | -1; // 1 = CCW (Antihoraria), -1 = CW (Horaria)
     isAnimating: boolean;
     showTrail: boolean;
+    currentPath: DubinsPath | null; // NEW: The optimal path found
 }
 
 export function useRollingMode({ blocks }: UseRollingModeProps) {
@@ -27,10 +30,14 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         direction: 1,
         isAnimating: false,
         showTrail: true,
+        currentPath: null,
     });
 
     const requestRef = useRef<number | undefined>(undefined);
     const diskBlocks = blocks.filter((b): b is CSDisk => b.kind === 'disk');
+
+    // Path Calculator
+    const pathCalculator = useMemo(() => new EnvelopePathCalculator(), []);
 
     // Collision Logic (Pure function within hook scope)
     const checkCollision = useCallback((currentTheta: number, pivotId: string, rollingId: string): CSDisk | null => {
@@ -62,6 +69,38 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         }
         return null;
     }, [diskBlocks]);
+
+    // Update Path when theta changes
+    useEffect(() => {
+        if (!state.pivotDiskId || !state.rollingDiskId) {
+            if (state.currentPath) setState(prev => ({ ...prev, currentPath: null }));
+            return;
+        }
+
+        const pivot = diskBlocks.find(d => d.id === state.pivotDiskId);
+        const rolling = diskBlocks.find(d => d.id === state.rollingDiskId);
+
+        if (!pivot || !rolling) return;
+
+        // Calculate Position of Rolling Disk at current theta
+        const dist = pivot.visualRadius + rolling.visualRadius;
+        const rollingCenter = {
+            x: pivot.center.x + dist * Math.cos(state.theta),
+            y: pivot.center.y + dist * Math.sin(state.theta),
+        };
+
+        // Create a temporary "Ghost" disk for path calculation
+        const ghostRolling: CSDisk = {
+            ...rolling,
+            center: rollingCenter
+        };
+
+        // Compute path from Pivot -> Ghost Rolling
+        const path = pathCalculator.computeConnection(pivot, ghostRolling);
+
+        setState(prev => ({ ...prev, currentPath: path }));
+
+    }, [state.theta, state.pivotDiskId, state.rollingDiskId, diskBlocks, pathCalculator]);
 
     // Animation Loop using requestAnimationFrame
     const animate = useCallback(() => {
@@ -123,61 +162,19 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         pivotDiskId: prev.isActive ? null : prev.pivotDiskId,
         rollingDiskId: prev.isActive ? null : prev.rollingDiskId,
         theta: 0,
-        isAnimating: false
+        isAnimating: false,
+        currentPath: null
     }));
-
-    // Helper to find intersection angles (valid contact points)
-    const solveContactTheta = (pivot: CSDisk, rolling: CSDisk, obstacle: CSDisk): number | null => {
-        // We want to find theta such that rolling disk touches both Pivot and Obstacle.
-        // This effectively means finding the intersection of two circles:
-        // C1: Center=Pivot, Radius = R_pivot + R_rolling
-        // C2: Center=Obstacle, Radius = R_obstacle + R_rolling
-
-        const r1 = pivot.visualRadius + rolling.visualRadius;
-        const r2 = obstacle.visualRadius + rolling.visualRadius;
-
-        const dx = obstacle.center.x - pivot.center.x;
-        const dy = obstacle.center.y - pivot.center.y;
-        const d = Math.sqrt(dx * dx + dy * dy);
-
-        // Check solvability
-        if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) return null;
-
-        // Triangle cosine rule / circle intersection math
-        const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
-        const h = Math.sqrt(r1 * r1 - a * a);
-
-        // P2 = P1 + a * (P2 - P1) / d
-        const x2 = pivot.center.x + a * (dx / d);
-        const y2 = pivot.center.y + a * (dy / d);
-
-        // Intersection points
-        const tx1 = x2 + h * (dy / d);
-        const ty1 = y2 - h * (dx / d);
-
-        const tx2 = x2 - h * (dy / d);
-        const ty2 = y2 + h * (dx / d);
-
-        // We return two angles relative to Pivot center
-        const theta1 = Math.atan2(ty1 - pivot.center.y, tx1 - pivot.center.x);
-        const theta2 = Math.atan2(ty2 - pivot.center.y, tx2 - pivot.center.x);
-
-        // We return the one closest to current theta? Or just both?
-        // Let caller decide. For now, let's just picking the best later? 
-        // No, let's just helper return both candidates.
-        // Actually, let's just make this simpler: Return ALL valid thetas, caller picks closest.
-        return null; // Using internal logic in selectDisk for now.
-    };
 
     const selectDisk = (diskId: string) => {
         setState(prev => {
             // 1. Select Pivot
             if (!prev.pivotDiskId) {
-                return { ...prev, pivotDiskId: diskId, rollingDiskId: null, theta: 0, isAnimating: false };
+                return { ...prev, pivotDiskId: diskId, rollingDiskId: null, theta: 0, isAnimating: false, currentPath: null };
             }
             // 2. Deselect Pivot
             if (prev.pivotDiskId === diskId) {
-                return { ...prev, pivotDiskId: null, rollingDiskId: null, theta: 0, isAnimating: false };
+                return { ...prev, pivotDiskId: null, rollingDiskId: null, theta: 0, isAnimating: false, currentPath: null };
             }
 
             // 3. Select Rolling (or change Rolling)
@@ -295,7 +292,8 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         pivotDiskId: null,
         rollingDiskId: null,
         theta: 0,
-        isAnimating: false
+        isAnimating: false,
+        currentPath: null
     }));
 
     return {
@@ -308,6 +306,7 @@ export function useRollingMode({ blocks }: UseRollingModeProps) {
         direction: state.direction,
         isAnimating: state.isAnimating,
         showTrail: state.showTrail,
+        currentPath: state.currentPath, // NEW
 
         // Actions
         toggleMode,

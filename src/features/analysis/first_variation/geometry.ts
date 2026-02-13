@@ -1,3 +1,5 @@
+import { Logger } from '../../../core/utils/Logger';
+
 /**
  * Geometric Utilities for CS Diagram Protocol
  */
@@ -165,10 +167,11 @@ export function intersectSegmentArc(
         return isAngleInInterval(theta, thetaStart, thetaEnd, tolerance);
     };
 
-    if (checkIntersection(t1)) return true;
-    if (checkIntersection(t2)) return true;
-
-    return false;
+    const hasIntersection = checkIntersection(t1) || checkIntersection(t2);
+    if (hasIntersection) {
+        Logger.warn('Geometry', 'G2 Intersection Detected', { pA, pB, C, R, thetaStart, thetaEnd });
+    }
+    return hasIntersection;
 }
 
 /**
@@ -203,12 +206,24 @@ export function intersectArcArc(
         };
 
         // 1. Check endpoints of Arc1 inside Arc2
-        if (strictInterval(th1_s, th2_s, th2_e)) return true;
-        if (strictInterval(th1_e, th2_s, th2_e)) return true;
+        if (strictInterval(th1_s, th2_s, th2_e)) {
+            Logger.warn('Geometry', 'G3 Concentric Intersection (Arc1 inside Arc2)');
+            return true;
+        }
+        if (strictInterval(th1_e, th2_s, th2_e)) {
+            Logger.warn('Geometry', 'G3 Concentric Intersection (Arc1 inside Arc2)');
+            return true;
+        }
 
         // 2. Check endpoints of Arc2 inside Arc1 (covers containment)
-        if (strictInterval(th2_s, th1_s, th1_e)) return true;
-        if (strictInterval(th2_e, th1_s, th1_e)) return true;
+        if (strictInterval(th2_s, th1_s, th1_e)) {
+            Logger.warn('Geometry', 'G3 Concentric Intersection (Arc2 inside Arc1)');
+            return true;
+        }
+        if (strictInterval(th2_e, th1_s, th1_e)) {
+            Logger.warn('Geometry', 'G3 Concentric Intersection (Arc2 inside Arc1)');
+            return true;
+        }
 
         // 3. Identical case (endpoints match)
         // If s1~s2 and e1~e2, they overlap.
@@ -216,7 +231,10 @@ export function intersectArcArc(
         const d_s1s2 = Math.min(Math.abs(wrap0_2pi(th1_s - th2_s)), Math.abs(wrap0_2pi(th2_s - th1_s)));
         const d_e1e2 = Math.min(Math.abs(wrap0_2pi(th1_e - th2_e)), Math.abs(wrap0_2pi(th2_e - th1_e)));
 
-        if (d_s1s2 < tolerance && d_e1e2 < tolerance) return true; // Identical
+        if (d_s1s2 < tolerance && d_e1e2 < tolerance) {
+            Logger.warn('Geometry', 'G3 Concentric Identity Intersection');
+            return true; // Identical
+        }
 
         // If one contains the other strictly, endpoints check covers it.
         // If they just touch (s1~e2), strictInterval returns false.
@@ -264,8 +282,14 @@ export function intersectArcArc(
         return inArc1 && inArc2;
     };
 
-    if (checkPoint(P1)) return true;
-    if (dist(P1, P2) > tolerance && checkPoint(P2)) return true;
+    if (checkPoint(P1)) {
+        Logger.warn('Geometry', 'G3 Intersection at P1', { P1, C1, C2 });
+        return true;
+    }
+    if (dist(P1, P2) > tolerance && checkPoint(P2)) {
+        Logger.warn('Geometry', 'G3 Intersection at P2', { P2, C1, C2 });
+        return true;
+    }
 
     return false;
 }
@@ -308,6 +332,8 @@ export function intersectSegmentSegment(
 
         // Check if (tMin, tMax) overlaps (0, 1) strictly
         if (tMax <= tolerance || tMin >= 1 - tolerance) return false;
+
+        Logger.warn('Geometry', 'G1 Collinear Intersection', { a, b, c, d });
         return true;
     }
 
@@ -317,5 +343,10 @@ export function intersectSegmentSegment(
     const u = cross(sub(q, p), r) / rxs;
 
     // Strict interior intersection: 0 < t < 1 and 0 < u < 1
-    return (t > tolerance && t < 1 - tolerance) && (u > tolerance && u < 1 - tolerance);
+    const intersects = (t > tolerance && t < 1 - tolerance) && (u > tolerance && u < 1 - tolerance);
+
+    if (intersects) {
+        Logger.warn('Geometry', 'G1 Intersection', { t, u, a, b, c, d });
+    }
+    return intersects;
 }
