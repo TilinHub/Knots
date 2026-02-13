@@ -1,8 +1,7 @@
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { CSDisk } from '../../../core/types/cs';
-import { findEnvelopePathFromPoints, type EnvelopePathResult } from '../../../core/geometry/contactGraph';
-
+import { findEnvelopePathFromPoints, type EnvelopePathResult, buildBoundedCurvatureGraph, findEnvelopePath } from '../../../core/geometry/contactGraph';
 import { validateNoSelfIntersection, validateNoObstacleIntersection } from '../../../core/validation/envelopeValidator';
 
 interface UseKnotStateProps {
@@ -21,6 +20,10 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     // [NEW] Dynamic Anchors (Stored as relative angles)
     const [anchorSequence, setAnchorSequence] = useState<DynamicAnchor[]>([]);
+
+    // [FIX] Freeze anchors during drag to prevent deformation
+    const [isDragging, setIsDragging] = useState(false);
+    const prevAnchorsRef = React.useRef<{ x: number, y: number }[]>([]);
 
     // Legacy/Derivative
     const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]);
@@ -42,7 +45,12 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     // [NEW] Recalculate Absolute Positions (Reactive to blocks moving)
     const currentAnchors = useMemo(() => {
-        return anchorSequence.map(anchor => {
+        // [FIX] If dragging and we have previous valid anchors, freeze them
+        if (isDragging && prevAnchorsRef.current.length > 0) {
+            return prevAnchorsRef.current;
+        }
+
+        const newAnchors = anchorSequence.map(anchor => {
             const disk = blocks.find(b => b.id === anchor.diskId);
             if (!disk) return { x: 0, y: 0 }; // Should be cleaned up by effect
             return {
@@ -50,7 +58,11 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
                 y: disk.center.y + disk.visualRadius * Math.sin(anchor.angle)
             };
         });
-    }, [anchorSequence, blocks]);
+
+        // Update cache
+        prevAnchorsRef.current = newAnchors;
+        return newAnchors;
+    }, [anchorSequence, blocks, isDragging]);
 
     // 2. Compute Path (Strict Point-to-Point)
     const computationResult: EnvelopePathResult = useMemo(() => {
@@ -76,6 +88,115 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
         return { valid: true };
     }, [computationResult.path, obstacleSegments]);
+
+    // ═══════════════════════════════════════════════════════════════
+    // AUTO-CORRECCIÓN: Recalcular topología si path se invalida
+    // ═══════════════════════════════════════════════════════════════
+
+    useEffect(() => {
+        // Solo ejecutar cuando NO estamos arrastrando y después de soltar
+        if (isDragging) return;
+
+        // Solo si hay una envolvente activa (diskSequence definido)
+        if (diskSequence.length < 2) return;
+
+        // Detectar path inválido (Empty, Short, o INVALIDO por intersección)
+        const pathIsEmpty = computationResult.path.length === 0;
+        const pathIsTooShort = computationResult.path.length < diskSequence.length - 1;
+        const pathIsInvalid = !validation.valid; // [NEW] Trigger on self-intersection
+
+        if (pathIsEmpty || pathIsTooShort || pathIsInvalid) {
+            console.warn('⚠️ ENVOLVENTE NECESITA CORRECCIÓN. Iniciando recálculo...', {
+                pathIsEmpty,
+                pathIsTooShort,
+                pathIsInvalid
+            });
+
+            try {
+                // Construir grafo con posiciones ACTUALES de discos
+                const graph = buildBoundedCurvatureGraph(
+                    contactDisks,
+                    true,   // checkCollisions = true
+                    [],     // no obstacles
+                    true    // outerTangentsOnly = true (previene auto-intersección)
+                );
+
+                console.log('  - Graph edges:', graph.edges.length);
+
+                // Resolver path usando secuencia de discos (elastic band)
+                // NO forzar chiralities para permitir adaptación
+                const elasticResult = findEnvelopePath(
+                    graph,
+                    diskSequence,
+                    undefined,  // chiralities = undefined (permitir re-solver)
+                    false       // strictChirality = false
+                );
+
+                console.log('  - Elastic path length:', elasticResult.path.length);
+
+                if (elasticResult.path.length > 0) {
+                    // ✅ Path recalculado exitosamente
+                    // Extraer nuevos anchors desde el path
+                    const newAnchors: DynamicAnchor[] = [];
+
+                    elasticResult.path.forEach((seg, idx) => {
+                        if ('startDiskId' in seg) {
+                            const diskId = seg.startDiskId;
+
+                            // Ignorar pseudo-disks
+                            if (diskId === 'start' || diskId === 'end' || diskId === 'point') {
+                                return;
+                            }
+
+                            const disk = blocks.find(b => b.id === diskId && b.kind === 'disk');
+                            if (!disk) return;
+
+                            // Calcular ángulo del punto de tangencia
+                            const angle = Math.atan2(
+                                seg.start.y - disk.center.y,
+                                seg.start.x - disk.center.x
+                            );
+
+                            // Evitar duplicados (mismo diskId consecutivo)
+                            if (newAnchors.length === 0 || newAnchors[newAnchors.length - 1].diskId !== diskId) {
+                                newAnchors.push({ diskId, angle });
+                            }
+                        }
+                    });
+
+                    if (newAnchors.length >= 2) {
+                        // [FIX] Prevent infinite loop: Check if anchors actually changed
+                        const hasChanges = newAnchors.length !== anchorSequence.length || newAnchors.some((newAnchor, i) => {
+                            const oldAnchor = anchorSequence[i];
+                            return newAnchor.diskId !== oldAnchor.diskId || Math.abs(newAnchor.angle - oldAnchor.angle) > 1e-4;
+                        });
+
+                        if (hasChanges) {
+                            console.log('✅ Topología reconstruida:', newAnchors.length, 'anchors');
+                            setAnchorSequence(newAnchors);
+                        } else {
+                            console.log('⏹️ Anchors estables - omitiendo actualización');
+                        }
+                    } else {
+                        console.error('❌ No se pudieron extraer anchors válidos del path elástico');
+                    }
+                } else {
+                    console.error('❌ Elastic solver falló - path vacío');
+                }
+
+            } catch (error) {
+                console.error('❌ Error en recálculo automático:', error);
+            }
+        }
+    }, [
+        isDragging,              // Trigger cuando termina drag
+        diskSequence,            // Trigger si secuencia cambia
+        computationResult.path,  // Trigger si path se invalida
+        contactDisks,            // Posiciones actualizadas
+        blocks,                  // Para lookups
+        anchorSequence,          // Evitar loop infinito (solo si anchorSequence es estable)
+        validation.valid         // [NEW] Trigger si la validación cambia
+    ]);
 
     // Actions
     const knotPath = computationResult.path;
@@ -139,7 +260,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
             clearSequence,
             // [NEW] Allow setting anchors directly (for loading)
             setAnchorSequence,
-            extendSequenceWithPoint
+            extendSequenceWithPoint,
+            setDragging: setIsDragging // [FIX] Expose drag control
         }
     };
 }

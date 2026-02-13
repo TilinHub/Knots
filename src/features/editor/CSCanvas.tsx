@@ -536,6 +536,11 @@ export function CSCanvas({
       hasMoved: false, // [NEW]
     });
     onSelectBlock(blockId);
+
+    // [FIX] Freeze Knot Envelope during drag
+    if (knotActions?.setDragging) {
+      knotActions.setDragging(true);
+    }
   }
 
   // Helper to check trajectory collision against obstacles
@@ -732,6 +737,11 @@ export function CSCanvas({
       }
     }
     setDragState(null);
+
+    // [FIX] Unfreeze Knot Envelope
+    if (knotActions?.setDragging) {
+      knotActions.setDragging(false);
+    }
   }
 
   // Helper inside component to access toSVG
