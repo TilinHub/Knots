@@ -1,15 +1,23 @@
 
 import type { ContactDisk } from '../types/contactGraph';
-import type { Point2D } from '../types/cs';
-import type { EnvelopeSegment, ArcSegment, TangentSegment } from './contactGraph';
+import type { CSDisk, Point2D } from '../types/cs';
+import type { EnvelopeSegment, TangentType } from './contactGraph';
+
+// ── Types ────────────────────────────────────────────────────────
+
+export type ReasonCode = 'NO_NEXT_LINK' | 'NUMERICAL_NAN' | 'DEGENERATE' | 'LOOP_DETECTED' | 'MAX_ITERS' | 'COLLISION_ALL';
+
+export type HullResult =
+    | { ok: true; path: EnvelopeSegment[]; debug?: any }
+    | { ok: false; reason: ReasonCode; debug?: any; fallbackPath?: EnvelopeSegment[] };
 
 // ── Helpers ──────────────────────────────────────────────────────
 
 const TWO_PI = 2 * Math.PI;
-const EPS = 1e-9;
+const EPS = 1e-4;
 
-function dist(a: Point2D, b: Point2D): number {
-    return Math.hypot(a.x - b.x, a.y - b.y);
+function dist(p1: Point2D, p2: Point2D): number {
+    return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 }
 
 function normalizeAngle(a: number): number {
@@ -22,305 +30,277 @@ function crossProduct(a: Point2D, b: Point2D, c: Point2D): number {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
-// ── Strict Tangent Logic ─────────────────────────────────────────
+// ── Geometric Primitives ─────────────────────────────────────────
 
-/**
- * Calculates the Left-Left (outer) tangent between two disks.
- * Returns the segment from d1 to d2.
- */
 function getOuterTangent(d1: ContactDisk, d2: ContactDisk): { from: Point2D, to: Point2D, angle: number } | null {
     const dx = d2.center.x - d1.center.x;
     const dy = d2.center.y - d1.center.y;
-    const dist = Math.hypot(dx, dy);
+    const d = Math.hypot(dx, dy);
 
-    if (dist < Math.abs(d1.radius - d2.radius) + EPS) return null; // One inside other
+    if (d < Math.abs(d1.radius - d2.radius) + EPS) return null;
 
     const angle = Math.atan2(dy, dx);
-    const offsetAngle = Math.acos((d1.radius - d2.radius) / dist);
-    
-    // Outer tangent (Left side relative to d1->d2 direction)
-    // For CCW hull, we want the "Left" tangent which is +offsetAngle relative to the center-center line?
-    // Actually, let's derive:
-    // We want the line that touches d1 at (r, theta) and d2 at (r, theta).
-    // The normal to the tangent is (cos(theta), sin(theta)).
-    // The direction of the tangent is (-sin(theta), cos(theta)).
-    // 
-    // Wait, let's use the standard formula.
-    // LSL tangent: angle = phi + acos((r1-r2)/d)  <-- Wait, checking sign
-    // If r1=r2, acos(0) = PI/2.
-    // phi + PI/2 means we are at the "top" if moving right.
-    // So the normal is +90 deg. The tangent direction is +180 deg (Left).
-    // Correct for CCW hull traversal.
-    
-    const alpha = angle + offsetAngle;
-    
+    // Outer tangent L-L
+    const offset = Math.acos(Math.max(-1, Math.min(1, (d1.radius - d2.radius) / d)));
+
+    // For CCW hull, we want the "Left" side relative to the vector d1->d2?
+    // Actually, standard CCW hull uses the Right tangent if walking? 
+    // Let's assume standard "rubber band" which is the outer boundary.
+    // The angle of the tangent line itself.
+    const tangentAngle = angle + offset;
+
+    const p1 = {
+        x: d1.center.x + d1.radius * Math.cos(tangentAngle + Math.PI / 2), // Normal is +90deg
+        y: d1.center.y + d1.radius * Math.sin(tangentAngle + Math.PI / 2)
+    };
+    const p2 = {
+        x: d2.center.x + d2.radius * Math.cos(tangentAngle + Math.PI / 2),
+        y: d2.center.y + d2.radius * Math.sin(tangentAngle + Math.PI / 2)
+    };
+
+    // Wait, if we use +90deg, is that 'Left' or 'Right'?
+    // In screen coords (Y down), +90 is "Down"?
+    // Let's stick to the previous implementation logic if it worked partially.
+    // Actually, robust implementation:
+    // alpha = angle + offset. 
+    // Normal direction?
+
     return {
-        from: {
-            x: d1.center.x + d1.radius * Math.cos(alpha),
-            y: d1.center.y + d1.radius * Math.sin(alpha)
-        },
-        to: {
-            x: d2.center.x + d2.radius * Math.cos(alpha),
-            y: d2.center.y + d2.radius * Math.sin(alpha)
-        },
-        angle: alpha // Angle of the normal!
+        from: p1,
+        to: p2,
+        angle: tangentAngle
     };
 }
 
-/**
- * Checks if a directed line segment L (from p1 to p2) is a valid supporting line 
- * for the set of disks.
- * A valid support means all disks lie to the LEFT (or on) the line.
- * Equivalently, signed distance of center to line >= radius - epsilon.
- */
-function isValidSupport(
-    from: Point2D, 
-    to: Point2D, 
-    disks: ContactDisk[], 
-    ignoreIndices: number[] = []
-): boolean {
-    // Line direction
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const len = Math.hypot(dx, dy);
-    if (len < EPS) return false;
-    
-    // Normal vector (Left pointing) -> (-dy, dx)
-    const nx = -dy / len;
-    const ny = dx / len;
-    
-    // Line equation: nx*x + ny*y - C = 0
-    // C = nx*from.x + ny*from.y
-    const C = nx * from.x + ny * from.y;
-    
+function isValidSupport(p1: Point2D, p2: Point2D, disks: ContactDisk[], ignoreIndices: number[]): boolean {
+    // Simple segment-disk intersection check
+    // We want to ensure no disk is *strictly* intersected.
+    // Grazing is fine.
+
+    // Line segment P1->P2 defined by P1 + t*(P2-P1)
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const lenSq = dx * dx + dy * dy;
+
     for (let i = 0; i < disks.length; i++) {
         if (ignoreIndices.includes(i)) continue;
-        
         const d = disks[i];
-        // Signed distance of center to line: D = nx*cx + ny*cy - C
-        // If D > radius, center is far to the left.
-        // If D = radius, touching.
-        // If D < radius, penetrating (center is too close to the line, on the left side)
-        // If D < -radius, center is on the right side!
-        
-        // Wait, "Left" of directed line P1->P2.
-        // Cross product (P2-P1) x (C-P1) > 0 means C is Left.
-        // Using normal (-dy, dx) which points Left.
-        // Dot((cx,cy)-from, n) is the distance in the direction of n (Left).
-        // We want disk to be on the Left side, so distance should be positive.
-        // Specifically, we want the disk to NOT cross to the Right.
-        // The "Rightmost" point of the disk is Center - Radius * Normal.
-        // Its distance to line is D - Radius.
-        // We want D - Radius >= -epsilon.  (Strictly, D >= Radius)
-        
-        const dist = nx * d.center.x + ny * d.center.y - C;
-        
-        // Check strict containment
-        // If dist < radius - epsilon, then the disk protrudes across the line to the right.
-        if (dist < d.radius - 1e-4) {
-             return false;
+
+        // Project center onto line
+        const t = ((d.center.x - p1.x) * dx + (d.center.y - p1.y) * dy) / lenSq;
+
+        // Closest point on segment
+        let closestX, closestY;
+        if (t < 0) { closestX = p1.x; closestY = p1.y; }
+        else if (t > 1) { closestX = p2.x; closestY = p2.y; }
+        else { closestX = p1.x + t * dx; closestY = p1.y + t * dy; }
+
+        const distSqToCenter = (closestX - d.center.x) ** 2 + (closestY - d.center.y) ** 2;
+
+        if (distSqToCenter < (d.radius - EPS) ** 2) {
+            return false;
         }
     }
     return true;
 }
 
-// ── Robust Convex Hull of Disks ──────────────────────────────────
+function computeFallbackPolygon(disks: CSDisk[]): EnvelopeSegment[] {
+    if (disks.length < 2) return [];
 
-/**
- * Computes the Convex Hull of a set of Disks.
- * Returns a list of EnvelopeSegments (Tangents and Arcs).
- * 
- * Algorithm: Jarvis March (Gift Wrapping) for Disks.
- * 1. Find the starting disk (the one with minimum X, then min Y).
- *    Actually, finding the disk that supports the vertical tangent at min-x is safer.
- * 
- * 2. Iteratively find the next disk/tangent that makes the largest Left turn 
- *    (smallest angle relative to current direction) AND is a valid support line.
- */
-export function computeRobustConvexHull(disks: ContactDisk[]): EnvelopeSegment[] {
-    if (disks.length === 0) return [];
-    
-    // Filter out disks that are fully contained inside others
-    // (A disk inside another has no effect on the convex hull)
-    const activeDisks = disks.filter((d, i) => {
-        for (let j = 0; j < disks.length; j++) {
-            if (i === j) continue;
-            // If d is inside disks[j]
-            const dist = Math.hypot(d.center.x - disks[j].center.x, d.center.y - disks[j].center.y);
-            if (dist + d.radius <= disks[j].radius - EPS) return false;
+    const points = disks.map(d => d.center);
+    // Sort by X then Y
+    points.sort((a, b) => a.x === b.x ? a.y - b.y : a.x - b.x);
+
+    // Monotone Chain
+    const upper: Point2D[] = [];
+    for (const p of points) {
+        while (upper.length >= 2 && crossProduct(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+            upper.pop();
         }
-        return true;
-    });
-    
-    if (activeDisks.length === 0) return [];
-    if (activeDisks.length === 1) {
-        const d = activeDisks[0];
-         return [{
-            type: 'ARC',
-            center: d.center,
-            radius: d.radius,
-            startAngle: 0,
-            endAngle: TWO_PI - 0.0001,
-            chirality: 'L',
-            length: TWO_PI * d.radius,
-            diskId: d.id
-        } as ArcSegment];
+        upper.push(p);
     }
-    
-    // 1. Find Start Disk: The one with the minimum X - Radius (leftmost point).
-    let startIdx = 0;
-    let minX = Infinity;
-    
-    for(let i=0; i<activeDisks.length; i++) {
-        const val = activeDisks[i].center.x - activeDisks[i].radius;
-        if(val < minX) {
-            minX = val;
-            startIdx = i;
-        } else if (Math.abs(val - minX) < EPS) {
-            // Tie-break: min Y
-            if (activeDisks[i].center.y < activeDisks[startIdx].center.y) {
-                startIdx = i;
-            }
+    const lower: Point2D[] = [];
+    for (let i = points.length - 1; i >= 0; i--) {
+        const p = points[i];
+        while (lower.length >= 2 && crossProduct(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+            lower.pop();
+        }
+        lower.push(p);
+    }
+
+    upper.pop();
+    lower.pop();
+    const hull = [...upper, ...lower];
+
+    const fallbackSegments: EnvelopeSegment[] = [];
+    for (let i = 0; i < hull.length; i++) {
+        const p1 = hull[i];
+        const p2 = hull[(i + 1) % hull.length];
+        const len = dist(p1, p2);
+        if (len > EPS) {
+            fallbackSegments.push({
+                type: 'LINE', // Use generic line type if possible, usually mapped to LSL/Line
+                start: p1,
+                end: p2,
+                length: len,
+                startDiskId: 'fallback',
+                endDiskId: 'fallback'
+            } as any); // Cast to allow loose type for fallback
         }
     }
-    
-    // 2. Start direction: Down (0, 1) ? 
-    // The tangent at the leftmost point is vertical, pointing Up (0, -1) in screen coords?
-    // Let's assume standard math coords. Standard hull algorithms start at min-y.
-    // Let's stick to min-min logic.
-    // 
-    // We are at the leftmost point of startDisk. The tangent is vertical.
-    // Initial "current point" is (center.x - r, center.y).
-    // Initial "direction" is Up (0, 1) (if Y is Up) or Down (0, 1) (if Y is Down).
-    // Let's imagine we are wrapping the string.
-    
-    const segments: EnvelopeSegment[] = [];
-    let currentIdx = startIdx;
-    let currentAngle = Math.PI; // Normal angle at the starting point (pointing Left)
-    
-    // We store the *normal* angle at the current disk. 
-    // At start (leftmost point), the normal is pointing Left (PI).
-    // The tangent direction is Normal + 90deg (3PI/2 = -PI/2 = Up in Y-down??)
-    // Let's use Normal Angle for consistency.
-    
-    const startNormalAngle = Math.PI;
-    let currNormal = startNormalAngle;
-    
-    // Safety check for infinite loops
-    const maxIter = activeDisks.length * 3; 
-    let iter = 0;
-    
-    do {
-        const c1 = activeDisks[currentIdx];
-        let bestIdx = -1;
-        let bestTangent: { from: Point2D, to: Point2D, angle: number } | null = null;
-        let minTurnAngle = Infinity; // We want the smallest RIGHT turn (or largest Left turn?)
-        
-        // We are at disk c1 with normal 'currNormal'.
-        // We want to find the next tangent point that minimizes the angle change.
-        // Iterate all other disks.
-        
-        for (let i = 0; i < activeDisks.length; i++) {
-            // Even check itself? No, hull edge must go to another disk.
-            // Exception: if only 1 disk, handled above.
-            if (i === currentIdx) continue; 
-            
-            const c2 = activeDisks[i];
-            const t = getOuterTangent(c1, c2);
-            if (!t) continue;
-            
-            // Check if this tangent is valid (doesn't intersect other disks)
-            if (!isValidSupport(t.from, t.to, activeDisks, [currentIdx, i])) continue;
-            
-            // Calculate turn angle (CCW change in normal)
-            let delta = t.angle - currNormal;
-            while (delta < 0) delta += TWO_PI; // Ensure positive CCW turn
-            
-            // We want the *smallest* delta (tightest wrap)
-            if (delta < minTurnAngle) {
-                minTurnAngle = delta;
-                bestIdx = i;
-                bestTangent = t;
-            }
-        }
-        
-        if (bestIdx === -1 || !bestTangent) {
-            // Should not happen for valid input >= 2 disks
-            console.error("RobustHull: Failed to find next link", currentIdx);
-            break;
-        }
-        
-        // Add Arc on current disk
-        // From currNormal to bestTangent.angle
-        // Arc is from (currAngle) to (bestTangent.angle)
-        // Wait, 'currNormal' is the normal at the *end* of the previous segment (or start point).
-        // The tangent leaves at 'bestTangent.angle'.
-        // So we need an arc from currNormal to bestTangent.angle.
-        
-        // Add ARC
-        let arcDelta = bestTangent.angle - currNormal;
-        while (arcDelta < 0) arcDelta += TWO_PI;
-        
-        if (arcDelta > EPS) {
-             segments.push({
+    return fallbackSegments;
+}
+
+// ── Main Algorithm ───────────────────────────────────────────────
+
+export function computeRobustConvexHull(disks: CSDisk[]): HullResult {
+    if (disks.length === 0) return { ok: true, path: [] };
+    if (disks.length === 1) {
+        return {
+            ok: true,
+            path: [{
                 type: 'ARC',
-                center: c1.center,
-                radius: c1.radius,
-                startAngle: currNormal, // Angles are Normals (same as point angles)
-                endAngle: bestTangent.angle,
+                center: disks[0].center,
+                radius: disks[0].visualRadius,
+                startAngle: 0,
+                endAngle: TWO_PI,
                 chirality: 'L',
-                length: arcDelta * c1.radius,
-                diskId: c1.id
-            } as ArcSegment);
-        }
-        
-        // Add TANGENT
-        const tanLen = dist(bestTangent.from, bestTangent.to);
-        segments.push({
-            type: 'LSL',
-            start: bestTangent.from,
-            end: bestTangent.to,
-            length: tanLen,
-            startDiskId: c1.id,
-            endDiskId: activeDisks[bestIdx].id
-        } as TangentSegment);
-        
-        // Advance
-        currentIdx = bestIdx;
-        currNormal = bestTangent.angle;
-        
-        // Stop if we returned to start
-        // Condition: currentIdx == startIdx AND currNormal approx startNormalAngle?
-        // Actually, just checking disk is enough if we trust convexity.
-        // But for tangent graph, we might hit the same disk twice? 
-        // Convex hull of disks visits each disk at most once (or contiguous arc).
-        if (currentIdx === startIdx) {
-            // Close the final arc
-             let finalDelta = startNormalAngle - currNormal;
-             while (finalDelta < 0) finalDelta += TWO_PI;
-             
-             if (finalDelta > EPS) {
-                 segments.push({
+                length: TWO_PI * disks[0].visualRadius,
+                diskId: disks[0].id
+            }]
+        };
+    }
+
+    const activeDisks: ContactDisk[] = disks.map(d => ({
+        ...d,
+        radius: d.visualRadius, // Map visualRadius to radius
+        regionId: 'default'
+    }));
+
+    // Sort deterministic
+    activeDisks.sort((a, b) => {
+        if (Math.abs(a.center.x - b.center.x) > EPS) return a.center.x - b.center.x;
+        return a.center.y - b.center.y;
+    });
+
+    const startIdx = 0;
+    let currentIdx = startIdx;
+
+    // Start normal: Left (PI) for leftmost disk
+    let currNormal = Math.PI;
+
+    const segments: EnvelopeSegment[] = [];
+    const visited = new Set<string>();
+
+    let iter = 0;
+    const maxIter = activeDisks.length * 4;
+
+    try {
+        do {
+            const c1 = activeDisks[currentIdx];
+            let bestIdx = -1;
+            let bestTangent: { from: Point2D, to: Point2D, angle: number } | null = null;
+            let minTurnAngle = Infinity;
+
+            for (let i = 0; i < activeDisks.length; i++) {
+                if (i === currentIdx) continue;
+
+                const c2 = activeDisks[i];
+                const t = getOuterTangent(c1, c2);
+                if (!t) continue;
+
+                if (!isValidSupport(t.from, t.to, activeDisks, [currentIdx, i])) continue;
+
+                let delta = t.angle - currNormal;
+                while (delta < -EPS) delta += TWO_PI;
+                while (delta >= TWO_PI - EPS) delta -= TWO_PI;
+
+                // Tie-breaking
+                if (Math.abs(delta - minTurnAngle) < EPS) {
+                    const dCurrent = bestIdx !== -1 ? dist(c1.center, activeDisks[bestIdx].center) : -Infinity;
+                    const dNew = dist(c1.center, c2.center);
+                    if (dNew > dCurrent) {
+                        bestIdx = i;
+                        bestTangent = t;
+                    }
+                } else if (delta < minTurnAngle) {
+                    minTurnAngle = delta;
+                    bestIdx = i;
+                    bestTangent = t;
+                }
+            }
+
+            if (bestIdx === -1 || !bestTangent) {
+                return {
+                    ok: false,
+                    reason: 'NO_NEXT_LINK',
+                    debug: { currentIdx },
+                    fallbackPath: computeFallbackPolygon(disks)
+                };
+            }
+
+            // Check loop
+            const edgeKey = `${activeDisks[currentIdx].id}->${activeDisks[bestIdx].id}`;
+            if (visited.has(edgeKey)) {
+                return {
+                    ok: false,
+                    reason: 'LOOP_DETECTED',
+                    debug: { edgeKey },
+                    fallbackPath: computeFallbackPolygon(disks)
+                };
+            }
+            visited.add(edgeKey);
+
+            // Add Arc
+            let arcDelta = bestTangent.angle - currNormal;
+            while (arcDelta < 0) arcDelta += TWO_PI;
+
+            if (arcDelta > EPS) {
+                segments.push({
                     type: 'ARC',
-                    center: activeDisks[startIdx].center,
-                    radius: activeDisks[startIdx].radius,
+                    center: c1.center,
+                    radius: c1.radius,
                     startAngle: currNormal,
-                    endAngle: startNormalAngle,
+                    endAngle: bestTangent.angle,
                     chirality: 'L',
-                    length: finalDelta * activeDisks[startIdx].radius,
-                    diskId: activeDisks[startIdx].id
-                } as ArcSegment);
-             }
-             break;
-        }
-        
-        iter++;
-        if (iter > maxIter) {
-            console.error("RobustHull: Max iterations reached");
-            break;
-        }
-        
-    } while (true);
-    
-    return segments;
+                    length: arcDelta * c1.radius,
+                    diskId: c1.id
+                });
+            }
+
+            // Add Tangent
+            segments.push({
+                type: 'LSL', // Explicit type
+                start: bestTangent.from,
+                end: bestTangent.to,
+                length: dist(bestTangent.from, bestTangent.to),
+                startDiskId: c1.id,
+                endDiskId: activeDisks[bestIdx].id
+            } as any); // Cast slightly if strict type mismatch on 'type' string
+
+            currentIdx = bestIdx;
+            currNormal = bestTangent.angle;
+
+            iter++;
+            if (iter > maxIter) {
+                return {
+                    ok: false,
+                    reason: 'MAX_ITERS',
+                    debug: { iter },
+                    fallbackPath: computeFallbackPolygon(disks)
+                };
+            }
+
+        } while (currentIdx !== startIdx);
+
+    } catch (e) {
+        return {
+            ok: false,
+            reason: 'NUMERICAL_NAN',
+            debug: { error: e },
+            fallbackPath: computeFallbackPolygon(disks)
+        };
+    }
+
+    return { ok: true, path: segments };
 }

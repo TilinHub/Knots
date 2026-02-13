@@ -8,6 +8,8 @@ import type { CSDisk } from '../../core/types/cs';
 
 interface KnotLayerProps extends LayerProps {
     knotPath: EnvelopeSegment[];
+    knotSequence?: string[]; // [NEW]
+    knotChiralities?: string[]; // [NEW]
     anchorPoints: { x: number, y: number }[];
     showEnvelope: boolean;
     envelopeColor: string;
@@ -20,6 +22,8 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
     visible,
     blocks,
     knotPath,
+    knotSequence, // [NEW]
+    knotChiralities, // [NEW]
     anchorPoints,
     showEnvelope,
     envelopeColor,
@@ -40,7 +44,7 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
     // But KnotLayer has `if (!visible || !knotMode) return null;`
     // I will keep it strict to Knot Mode for now as per "KnotLayer".
 
-    if (!visible || !knotMode) return null;
+    if (!visible) return null;
 
     // ... (rest of filtering)
 
@@ -51,18 +55,21 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
 
     const disks = useMemo(() => blocks.filter((b): b is CSDisk => b.kind === 'disk'), [blocks]);
 
-    // 1. Compute Knot Envelope (Robust Hull) locally using Strategy
+    // 1. Compute Knot Envelope (Robust Hull OR Elastic Band)
     const computer = useMemo(() => new KnotEnvelopeComputer(), []);
     const knotEnvelopePath = useMemo(() => {
         if (!showEnvelope || disks.length === 0) return [];
-        return computer.compute(disks);
-    }, [disks, showEnvelope, computer]);
+        if (!knotMode) return [];
+
+        // Use the new topology-aware compute
+        return computer.compute(disks, knotSequence, knotChiralities);
+    }, [disks, showEnvelope, computer, knotMode, knotSequence, knotChiralities]);
 
     return (
         <BaseLayer visible={visible} zIndex={10}>
             <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-                {/* Robust Envelope (Active) */}
-                {showEnvelope && (
+                {/* Robust Envelope (Active) - Only in Knot Mode */}
+                {showEnvelope && knotMode && (
                     <PathLayer
                         path={knotEnvelopePath}
                         color={envelopeColor || '#6B46C1'}
@@ -70,7 +77,7 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
                     />
                 )}
 
-                {/* SAVED Knots */}
+                {/* SAVED Knots - Always visible if they exist */}
                 {savedKnotPaths.map(k => (
                     <PathLayer
                         key={k.id}
@@ -80,12 +87,14 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
                     />
                 ))}
 
-                {/* Active Knot Path */}
-                <PathLayer
-                    path={knotPath}
-                    color="#FF0000"
-                    width={4}
-                />
+                {/* Active Knot Path - Only in Knot Mode */}
+                {knotMode && (
+                    <PathLayer
+                        path={knotPath}
+                        color="#FF0000"
+                        width={4}
+                    />
+                )}
 
                 {/* Debug Anchors */}
                 {anchorPoints && anchorPoints.map((p, i) => (

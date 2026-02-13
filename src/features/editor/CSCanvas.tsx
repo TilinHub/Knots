@@ -226,7 +226,8 @@ export function CSCanvas({
           const graph = buildBoundedCurvatureGraph(contactDisks, true, [], false);
 
           // Solve for the path using the saved sequence and chiralities
-          const result = findEnvelopePath(graph, knotSequence, knotChiralities);
+          // Solve for the path using the saved sequence and chiralities
+          const result = findEnvelopePath(graph, knotSequence, knotChiralities, false);
 
           if (result.path && result.path.length > 0) {
             return result.path;
@@ -808,6 +809,8 @@ export function CSCanvas({
         visible={true}
         blocks={blocks}
         knotPath={knotPath}
+        knotSequence={knotSequence} // [NEW]
+        knotChiralities={knotChiralities} // [NEW]
         anchorPoints={anchorPoints}
         showEnvelope={showEnvelope}
         envelopeColor={envelopeColor}

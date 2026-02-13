@@ -320,11 +320,13 @@ const calcShortArc = (d: ContactDisk, angleIn: number, angleOut: number): { leng
 export function findEnvelopePath(
     graph: BoundedCurvatureGraph,
     diskIds: string[],
-    fixedChiralities?: ('L' | 'R')[]
+    fixedChiralities?: ('L' | 'R')[],
+    strictChirality: boolean = true
 ): EnvelopePathResult {
     if (diskIds.length < 2) return { path: [], chiralities: [] };
 
     const states: ('L' | 'R')[] = ['L', 'R'];
+    const CHIRALITY_MISMATCH_PENALTY = 10000;
 
     // dp[chirality] = { cost, path, angle }
     type DPEntry = { cost: number, path: EnvelopeSegment[], angle: number };
@@ -332,7 +334,13 @@ export function findEnvelopePath(
 
     // Initialize: Start with both chiralities at first disk, cost 0
     states.forEach(s => {
-        prev.set(s, { cost: 0, path: [], angle: 0 });
+        // If strict and mismatch, skip (unless strict=false, then penalty)
+        if (fixedChiralities && fixedChiralities[0] && fixedChiralities[0] !== s) {
+            if (strictChirality) return;
+            prev.set(s, { cost: CHIRALITY_MISMATCH_PENALTY, path: [], angle: 0 });
+        } else {
+            prev.set(s, { cost: 0, path: [], angle: 0 });
+        }
     });
 
     const chirResult: ('L' | 'R')[] = [];
@@ -346,50 +354,44 @@ export function findEnvelopePath(
 
         const next = new Map<string, DPEntry>();
 
-        // Filter: if fixed chiralities, restrict options
-        const allowedFrom = fixedChiralities && fixedChiralities[step - 1] ? [fixedChiralities[step - 1]] : states;
-        const allowedTo = fixedChiralities && fixedChiralities[step] ? [fixedChiralities[step]] : states;
+        // Soft Constraint: Iterate ALL states, apply penalty if mismatch
+        const possibleStates = states;
 
-        for (const toChir of allowedTo) {
+        for (const toChir of possibleStates) {
             let bestCost = Infinity;
             let bestPath: EnvelopeSegment[] = [];
             let bestAngle = 0;
 
-            for (const fromChir of allowedFrom) {
+            // Penalty for Arriving State Mismatch
+            let arrivalPenalty = 0;
+            if (fixedChiralities && fixedChiralities[step] && fixedChiralities[step] !== toChir) {
+                if (strictChirality) continue; // Skip in strict mode
+                arrivalPenalty = CHIRALITY_MISMATCH_PENALTY;
+            }
+
+            for (const fromChir of possibleStates) {
                 const prevEntry = prev.get(fromChir);
                 if (!prevEntry) continue;
+                if (prevEntry.cost === Infinity) continue;
 
                 // Find matching edge in graph — only outer tangents (LSL/RSR)
                 // to prevent the envelope from crossing between disks.
                 const matchingEdges = graph.edges.filter(e =>
                     e.startDiskId === fromDiskId &&
                     e.endDiskId === toDiskId &&
-                    (e.type === 'LSL' || e.type === 'RSR') &&
+                    // Allow ALL tangent types (Outer AND Inner) to support crossings/chiral swaps
                     e.type.startsWith(fromChir) &&
                     e.type.endsWith(toChir)
                 );
 
-                // Also check reverse direction edges
-                const reverseEdges = graph.edges.filter(e =>
-                    e.startDiskId === toDiskId &&
-                    e.endDiskId === fromDiskId
-                ).map(e => ({
-                    ...e,
-                    // Swap start/end
-                    start: e.end,
-                    end: e.start,
-                    startDiskId: e.startDiskId,
-                    endDiskId: e.endDiskId,
-                }));
-
-                const allEdges = [...matchingEdges];
+                const allEdges = matchingEdges;
 
                 for (const edge of allEdges) {
                     // Arc on departure disk
                     const depAngle = Math.atan2(edge.start.y - fromDisk.center.y, edge.start.x - fromDisk.center.x);
                     const arcLen = step > 1 ? calcArc(fromDisk, prevEntry.angle, depAngle, fromChir) : 0;
 
-                    const totalCost = prevEntry.cost + arcLen + edge.length;
+                    const totalCost = prevEntry.cost + arcLen + edge.length + arrivalPenalty;
                     if (totalCost < bestCost) {
                         bestCost = totalCost;
                         const newPath = [...prevEntry.path];

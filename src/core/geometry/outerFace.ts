@@ -427,7 +427,16 @@ export function computeOuterContour(disks: ContactDisk[]): EnvelopeSegment[] {
         // Option A: Robust Convex Hull of Disks
         // Guarantees no self-intersection and no interior penetration.
         // Acts as an elastic band around the entire set of disks.
-        return computeRobustConvexHull(disks);
+        const csDisks = disks.map(d => ({
+            id: d.id,
+            center: d.center,
+            visualRadius: d.radius,
+            kind: 'disk'
+        } as any)); // Cast to CSDisk
+
+        const res = computeRobustConvexHull(csDisks);
+        if (res.ok) return res.path;
+        return res.fallbackPath || [];
     }
 
     // --- Legacy Algorithm (fallback) ---

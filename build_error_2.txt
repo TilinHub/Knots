@@ -4,8 +4,8 @@
 
 [36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
 transforming...
-[32mÔ£ô[39m 44 modules transformed.
-Ô£ù Build failed in 546ms
+[32mÔ£ô[39m 43 modules transformed.
+Ô£ù Build failed in 449ms
 error during build:
 src/core/geometry/robustHull.js (10:2): Expression expected
 file: C:/Users/tomas/OneDrive/Desktop/Knots/src/core/geometry/robustHull.js:10:2

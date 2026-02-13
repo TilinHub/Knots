@@ -3,6 +3,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { CSDisk } from '../../../core/types/cs';
 import { findEnvelopePathFromPoints, type EnvelopePathResult } from '../../../core/geometry/contactGraph';
 
+import { validateNoSelfIntersection, validateNoObstacleIntersection } from '../../../core/validation/envelopeValidator';
+
 interface UseKnotStateProps {
     blocks: CSDisk[]; // We need disks to build the graph
     obstacleSegments?: { p1: { x: number, y: number }, p2: { x: number, y: number } }[]; // [NEW] Obstacles
@@ -58,6 +60,23 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         return findEnvelopePathFromPoints(currentAnchors, contactDisks);
     }, [currentAnchors, contactDisks]);
 
+    // 3. Validation
+    const validation = useMemo(() => {
+        if (!computationResult.path || computationResult.path.length < 3) return { valid: true };
+
+        // Check self-intersection
+        const selfCheck = validateNoSelfIntersection(computationResult.path);
+        if (!selfCheck.valid) return selfCheck;
+
+        // Check obstacles
+        if (obstacleSegments.length > 0) {
+            const obsCheck = validateNoObstacleIntersection(computationResult.path, obstacleSegments);
+            if (!obsCheck.valid) return obsCheck;
+        }
+
+        return { valid: true };
+    }, [computationResult.path, obstacleSegments]);
+
     // Actions
     const knotPath = computationResult.path;
 
@@ -111,6 +130,7 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         chiralities: computationResult.chiralities,
         anchorPoints: currentAnchors, // [RENAMED] Absolute points for rendering
         anchorSequence, // [NEW] Raw dynamic anchors for persistence
+        validation, // [NEW] Expose validation result
         actions: {
             setMode,
             toggleMode,
