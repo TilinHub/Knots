@@ -36,22 +36,116 @@ export class EnvelopePathCalculator {
         disks.forEach(d => diskMap.set(d.id, d));
 
         const numSegments = closed ? sequence.length : sequence.length - 1;
+        const potentialPaths: (DubinsPath | null)[] = [];
 
+        // 1. Compute all tangential connections first
         for (let i = 0; i < numSegments; i++) {
             const id1 = sequence[i];
             const id2 = sequence[(i + 1) % sequence.length];
             const disk1 = diskMap.get(id1);
             const disk2 = diskMap.get(id2);
 
-            if (!disk1 || !disk2) continue;
+            if (!disk1 || !disk2) {
+                potentialPaths.push(null);
+                continue;
+            }
 
-            // Get Chiralities
-            const c1 = chiralities[i] || 'L'; // Default Left
+            const c1 = chiralities[i] || 'L';
             const c2 = chiralities[(i + 1) % sequence.length] || 'L';
 
+            // Optimizes the connection A->B (likely a straight line if radii are equal)
             const path = this.computeConnectionWithChirality(disk1, c1, disk2, c2);
-            if (path) {
-                paths.push(path);
+            potentialPaths.push(path);
+        }
+
+        // 2. Stitch them together with Arcs
+        for (let i = 0; i < numSegments; i++) {
+            const currentPath = potentialPaths[i];
+            if (!currentPath) continue;
+
+            // Add the Connection (Tangents)
+            paths.push(currentPath);
+
+            // Now compute the ARC on the destination disk (disk2)
+            // It connects [Current Path End] -> [Next Path Start]
+
+            // Next path index
+            const nextIndex = (i + 1) % numSegments;
+            // If not closed and this is the last segment, strictly no arc needed?
+            // But if closed, we wrap around.
+            if (!closed && i === numSegments - 1) continue;
+
+            const nextPath = potentialPaths[nextIndex];
+            if (nextPath) {
+                // The disk in between is sequence[(i+1)]
+                const intermediateDiskId = sequence[(i + 1) % sequence.length];
+                const disk = diskMap.get(intermediateDiskId);
+                const chirality = chiralities[(i + 1) % sequence.length] || 'L';
+
+                if (disk) {
+                    const startAngle = currentPath.end.theta; // Arrival heading
+                    // Departure heading (nextPath.start.theta)
+                    // Note: Dubins coordinates are (x, y, theta). 
+                    // For a circle, the tangent point is at theta +/- PI/2 depending on chirality?
+                    // Wait, DubinsPath.end.theta is the heading OF THE PATH.
+                    // The contact point on the disk is what matters.
+                    // But Dubins solver ensures continuity of position.
+
+                    // We need a path that goes from currentPath.end -> nextPath.start
+                    // These should be two points ON THE SAME DISK.
+                    // We just need to draw an ARC between them.
+
+                    // Create a "Pure Arc" DubinsPath
+                    // We can fake it or use a specific format.
+                    // Let's create a custom DubinsPath that DubinsRenderer will interpret as an Arc.
+                    // Or we can assume DubinsRenderer just draws segments?
+                    // DubinsRenderer draws based on 'type' and 'params'.
+                    // If we want a pure arc, we can use a dummy type 'LSL' with length 0 straght?
+                    // Better: construct a valid single-arc path.
+
+                    // We need the arc length and direction.
+                    // Angle from Center to StartPoint
+                    const a1 = Math.atan2(currentPath.end.y - disk.center.y, currentPath.end.x - disk.center.x);
+                    // Angle from Center to EndPoint
+                    const a2 = Math.atan2(nextPath.start.y - disk.center.y, nextPath.start.x - disk.center.x);
+
+                    // Calculate Arc Length based on Chirality
+                    // L = CCW, R = CW
+                    let delta = a2 - a1;
+                    if (chirality === 'L') {
+                        while (delta < 0) delta += 2 * Math.PI;
+                    } else {
+                        while (delta > 0) delta -= 2 * Math.PI;
+                    }
+
+                    // Arc Length = |delta| * R
+                    const arcLen = Math.abs(delta) * disk.visualRadius;
+
+                    if (arcLen > 1e-4) {
+                        paths.push({
+                            type: chirality === 'L' ? 'LSL' : 'RSR', // Dummy type, but indicates curvature
+                            length: arcLen,
+                            // We can use param1 for the arc, param2=0, param3=0
+                            param1: arcLen,
+                            param2: 0,
+                            param3: 0,
+                            rho: disk.visualRadius,
+                            start: currentPath.end,
+                            end: nextPath.start,
+                            // Special flag or implicit? 
+                            // If param2 is 0, it's essentially Curve-Curve?
+                            // Actually, LSL with p=0 is L + L = valid.
+                            // But we just want ONE arc.
+                            // If we pass param1=arcLen, param2=0, param3=0, 
+                            // DubinsRenderer (LSL) draws:
+                            // 1. Arc(L, sum) ? No. 
+                            // It draws Arc(param1) -> Line(param2) -> Arc(param3).
+                            // So Arc(arcLen) -> Line(0) -> Arc(0).
+                            // This effectively draws ONE arc of length arcLen!
+                            // Perfect.
+                        });
+                    }
+                }
             }
         }
 
@@ -125,8 +219,17 @@ export class EnvelopePathCalculator {
         const start: ContactPointWithRange = { disk: { center: disk1.center, radius: disk1.visualRadius }, range: range1 };
         const end: ContactPointWithRange = { disk: { center: disk2.center, radius: disk2.visualRadius }, range: range2 };
 
+        // [FIX] Use the actual disk radius as the Dubins turning radius.
+        // This ensures the "Curve" segments of the Dubins path match the disk curvature.
+        // If disks have different radii, we use the start disk's radius as a best-effort approximation for the path model,
+        // but since we are connecting tangent-to-tangent, the critical part is leaving D1 correctly.
+        const dynamicConfig: AngularSamplingConfig = {
+            ...this.samplingConfig,
+            minRadius: disk1.visualRadius // Use visual radius of the start disk
+        };
+
         // Generate ALL candidates
-        const candidates = computeDubinsWithRanges(start, end, this.samplingConfig);
+        const candidates = computeDubinsWithRanges(start, end, dynamicConfig);
 
         // Filter by Chirality
         // We check if the Dubins Path Type starts with chiral1 and ends with chiral2.

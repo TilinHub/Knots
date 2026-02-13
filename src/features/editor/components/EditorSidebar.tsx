@@ -126,18 +126,17 @@ export const EditorSidebar = ({
                         // I will update catalogTypes.ts to include `diskSequence`.
 
                         if (entry.diskSequence && knotState?.actions?.setSequence) {
-                            // [FIX] Load Chiralities if available for exact reproduction
-                            // We need to expose setChiralities in knotState?
-                            // Or findEnvelopePath will just find the best one again.
-                            // If we want EXACT match, we need to enforce chiralities.
-                            // For now, let's just set sequence and let Editor re-solve.
-                            // The user complained about "Preview differs from Generated".
-                            // If Editor re-solves to same solution, it matches.
-                            // If Preview used passed Chiralities, and Editor re-solves to different... mismatch.
-                            // So we SHOULD pass chiralities to Editor too?
-                            // But Editor is interactive. It finds "Auto" path.
-                            // Unless we set "Fixed Topology" mode?
                             knotState.actions.setSequence(entry.diskSequence);
+
+                            // [FIX] Restore Chiralities for exact topology reproduction
+                            // We check where chiralities are stored in the entry. 
+                            // Usually in the result combinatorial data or top level?
+                            // For now, check if entry has it (needs type update maybe) or if result has it.
+                            const chiralities = (entry as any).chiralities || ((entry.results?.[0] as any)?.combinatorial?.chiralities);
+
+                            if (chiralities && Array.isArray(chiralities) && knotState.actions.setChiralities) {
+                                knotState.actions.setChiralities(chiralities);
+                            }
                         }
                     }
                 }} />

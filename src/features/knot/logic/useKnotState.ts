@@ -100,14 +100,17 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
         let dubinsPaths: DubinsPath[] = [];
 
-        if (diskSequence.length >= 2) { // Changed from activeDisks.length to diskSequence.length
+        let fullChiralities: ('L' | 'R')[] = [];
+
+        if (diskSequence.length >= 2) {
             const calculator = new EnvelopePathCalculator();
 
-            // Use DERIVED chiralities, falling back to state or 'L'
-            const fullChiralities = diskSequence.map((id, i) => {
-                // Priority: Derived > State > Default 'L'
+            // Use STATE chiralities if valid
+            fullChiralities = diskSequence.map((id, i) => {
+                // Priority: State > Derived > Default 'L'
+                if (chiralities.length === diskSequence.length) return chiralities[i];
                 if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
-                return (chiralities[i] || 'L');
+                return 'L';
             });
 
             dubinsPaths = calculator.calculateKnotPath(
@@ -122,7 +125,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
         return {
             ...legacyResult,
-            dubinsPaths
+            dubinsPaths,
+            chiralities: fullChiralities
         };
     }, [currentAnchors, contactDisks, blocks, diskSequence, chiralities]);
 
@@ -265,6 +269,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
                 setChiralities(prevC => prevC.slice(0, -1));
                 return prev.slice(0, -1);
             }
+            // Add new
+            setChiralities(prevC => [...prevC, 'L']); // Default to Left
             return [...prev, diskId];
         });
     }, []);
@@ -302,6 +308,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
             { diskId, angle }
         ]);
 
+        setChiralities(prev => [...prev, 'L']); // Default to Left
+
         // We still track diskSequence for metadata/UI feedback
         setDiskSequence(prev => {
             Logger.info('KnotState', 'Extended Sequence with Point', { diskId, point });
@@ -329,7 +337,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
             // [NEW] Allow setting anchors directly (for loading)
             setAnchorSequence,
             extendSequenceWithPoint,
-            setDragging: setIsDragging // [FIX] Expose drag control
+            setDragging: setIsDragging, // [FIX] Expose drag control
+            setChiralities // [NEW] Allow setting chiralities directly
         }
     };
 }
