@@ -76,7 +76,8 @@ export function calculateBitangents(d1: ContactDisk, d2: ContactDisk): TangentSe
     }
 
     // 2. Inner Tangents (LSR, RSL)
-    if (D >= d1.radius + d2.radius - EPSILON) {
+    // [FIX] Relaxed check to allow inner tangents even if disks overlap slightly.
+    if (D > 1e-9) {
         const val = (d1.radius + d2.radius) / D;
         const clampedVal = Math.max(-1, Math.min(1, val));
         const beta = Math.acos(clampedVal); // Safe acos
@@ -452,341 +453,340 @@ export function findEnvelopePath(
 // POINT-TO-POINT PATHFINDING (STRICT PHYSICS)
 // ------------------------------------------------------------------
 
+// Helper: Check if an arc on 'disk' is blocked by any 'other' disk in 'obstacles'
+function isArcBlocked(
+    disk: ContactDisk,
+    startAng: number,
+    endAng: number,
+    chirality: 'L' | 'R',
+    obstacles: ContactDisk[]
+): boolean {
+    const PI2 = 2 * Math.PI;
+    const norm = (a: number) => (a % PI2 + PI2) % PI2;
+
+    // Define Target Interval [a1, a2] in CCW direction
+    let a1 = norm(startAng);
+    let a2 = norm(endAng);
+
+    if (chirality === 'R') {
+        // CW from start to end is CCW from end to start
+        const temp = a1; a1 = a2; a2 = temp;
+    }
+
+    const sweep = (a2 - a1 + PI2) % PI2; // Length of arc
+
+    for (const other of obstacles) {
+        if (other.id === disk.id) continue;
+
+        // 1. Quick Disjoint Check
+        const dx = other.center.x - disk.center.x;
+        const dy = other.center.y - disk.center.y;
+        const d2 = dx * dx + dy * dy;
+        const rSum = disk.radius + other.radius;
+        if (d2 >= rSum * rSum - 1e-6) continue; // No overlap
+
+        // 2. Overlap detected.
+        const d = Math.sqrt(d2);
+        if (d + other.radius <= disk.radius) return true;
+        if (d + disk.radius <= other.radius) return true;
+
+        const phi = Math.atan2(dy, dx);
+        const cosGamma = (disk.radius ** 2 + d2 - other.radius ** 2) / (2 * disk.radius * d);
+
+        if (Math.abs(cosGamma) >= 1) continue;
+        const gamma = Math.acos(cosGamma);
+
+        const b1 = norm(phi - gamma);
+        const b2 = norm(phi + gamma);
+
+        const isAngleIn = (ang: number, s: number, e: number) => {
+            const da = (ang - s + PI2) % PI2;
+            const ds = (e - s + PI2) % PI2;
+            return da <= ds;
+        }
+
+        if (isAngleIn(b1, a1, a2)) return true;
+        if (isAngleIn(b2, a1, a2)) return true;
+        if (isAngleIn(a1, b1, b2)) return true;
+        if (isAngleIn(a2, b1, b2)) return true;
+    }
+    return false;
+}
+
+function intersectsAnyDiskStrict(p1: Point2D, p2: Point2D, disks: ContactDisk[], ignoreId1?: string, ignoreId2?: string): boolean {
+    for (const d of disks) {
+        if (d.id === ignoreId1 || d.id === ignoreId2) continue;
+        if (intersectsDisk(p1, p2, d)) return true;
+    }
+    return false;
+}
+
+function chooseShortestValidPath(candidates: { path: EnvelopeSegment[], length: number, curtis: string }[]): { path: EnvelopeSegment[], length: number } | null {
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => a.length - b.length);
+    return candidates[0];
+}
+
+function findSubPathGraph(
+    start: Point2D,
+    end: Point2D,
+    obstacles: ContactDisk[],
+    graph: BoundedCurvatureGraph,
+    diskMap: Map<string, ContactDisk>
+): EnvelopeSegment[] | null {
+
+    const getPointToDiskTangents = (p: Point2D, d: ContactDisk): { type: 'L' | 'R', pt: Point2D, length: number }[] => {
+        const dx = d.center.x - p.x;
+        const dy = d.center.y - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (Math.abs(dist - d.radius) < d.radius * 0.01) {
+            return [{ type: 'R', pt: p, length: 0 }, { type: 'L', pt: p, length: 0 }];
+        }
+        if (dist < d.radius) return [];
+
+        const phi = Math.atan2(dy, dx);
+        const gamma = Math.acos(Math.min(1, d.radius / dist));
+        const backAngle = phi + Math.PI;
+
+        const pt1 = { x: d.center.x + d.radius * Math.cos(backAngle + gamma), y: d.center.y + d.radius * Math.sin(backAngle + gamma) };
+        const pt2 = { x: d.center.x + d.radius * Math.cos(backAngle - gamma), y: d.center.y + d.radius * Math.sin(backAngle - gamma) };
+
+        return [
+            { type: 'R', pt: pt1, length: Math.sqrt((pt1.x - p.x) ** 2 + (pt1.y - p.y) ** 2) },
+            { type: 'L', pt: pt2, length: Math.sqrt((pt2.x - p.x) ** 2 + (pt2.y - p.y) ** 2) }
+        ];
+    };
+
+    interface SearchNode {
+        id: string;
+        cost: number;
+        path: EnvelopeSegment[];
+        angle: number;
+        diskId?: string;
+    }
+
+    const pq: SearchNode[] = [];
+    const visited = new Map<string, number>();
+
+    obstacles.forEach(d => {
+        const tangents = getPointToDiskTangents(start, d);
+        tangents.forEach(t => {
+            if (!intersectsAnyDiskStrict(start, t.pt, obstacles, d.id)) {
+                const ang = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
+                if (t.length < 1e-4) {
+                    pq.push({ id: `${d.id}:L`, cost: 0, path: [], angle: ang, diskId: d.id });
+                    pq.push({ id: `${d.id}:R`, cost: 0, path: [], angle: ang, diskId: d.id });
+                } else {
+                    pq.push({
+                        id: `${d.id}:${t.type}`,
+                        cost: t.length,
+                        path: [{ type: t.type === 'L' ? 'LSR' : 'RSL', start: start, end: t.pt, length: t.length, startDiskId: 'point', endDiskId: d.id } as TangentSegment],
+                        angle: ang,
+                        diskId: d.id
+                    });
+                }
+            }
+        });
+    });
+
+    let bestEnd: SearchNode | null = null;
+    let minCost = Infinity;
+
+    while (pq.length > 0) {
+        pq.sort((a, b) => a.cost - b.cost);
+        const curr = pq.shift()!;
+
+        if (visited.has(curr.id) && visited.get(curr.id)! <= curr.cost) continue;
+        visited.set(curr.id, curr.cost);
+
+        if (curr.diskId) {
+            const d = diskMap.get(curr.diskId)!;
+            const distToEnd = Math.sqrt((end.x - d.center.x) ** 2 + (end.y - d.center.y) ** 2);
+            const onEndDisk = Math.abs(distToEnd - d.radius) < d.radius * 0.05;
+
+            if (onEndDisk) {
+                const exitAng = Math.atan2(end.y - d.center.y, end.x - d.center.x);
+                const shortArc = calcShortArc(d, curr.angle, exitAng);
+                if (!isArcBlocked(d, curr.angle, exitAng, shortArc.chirality, obstacles)) {
+                    const total = curr.cost + shortArc.length;
+                    if (total < minCost) {
+                        minCost = total;
+                        const p = [...curr.path];
+                        if (shortArc.length > 1e-4) {
+                            p.push({ type: 'ARC', center: d.center, radius: d.radius, startAngle: curr.angle, endAngle: exitAng, chirality: shortArc.chirality, length: shortArc.length, diskId: d.id });
+                        }
+                        bestEnd = { id: 'END', cost: total, path: p, angle: 0 };
+                    }
+                }
+            } else {
+                const exitTangents = getPointToDiskTangents(end, d);
+                exitTangents.forEach(t => {
+                    const exitAng = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
+                    const shortArc = calcShortArc(d, curr.angle, exitAng);
+                    if (!isArcBlocked(d, curr.angle, exitAng, shortArc.chirality, obstacles)) {
+                        if (!intersectsAnyDiskStrict(t.pt, end, obstacles, d.id)) {
+                            const total = curr.cost + shortArc.length + t.length;
+                            if (total < minCost) {
+                                minCost = total;
+                                const p = [...curr.path];
+                                if (shortArc.length > 1e-4) p.push({ type: 'ARC', center: d.center, radius: d.radius, startAngle: curr.angle, endAngle: exitAng, chirality: shortArc.chirality, length: shortArc.length, diskId: d.id });
+                                p.push({ type: 'LSR', start: t.pt, end: end, length: t.length, startDiskId: d.id, endDiskId: 'end' });
+                                bestEnd = { id: 'END', cost: total, path: p, angle: 0 };
+                            }
+                        }
+                    }
+                });
+            }
+
+            const edges = graph.edges.filter(e => e.startDiskId === curr.diskId);
+            for (const edge of edges) {
+                const nextId = edge.endDiskId;
+                const nextDisk = diskMap.get(nextId);
+                if (!nextDisk) continue;
+
+                const depAng = Math.atan2(edge.start.y - d.center.y, edge.start.x - d.center.x);
+                const shortArc = calcShortArc(d, curr.angle, depAng);
+
+                if (!isArcBlocked(d, curr.angle, depAng, shortArc.chirality, obstacles)) {
+                    const arrAng = Math.atan2(edge.end.y - nextDisk.center.y, edge.end.x - nextDisk.center.x);
+                    const newCost = curr.cost + shortArc.length + edge.length;
+                    const nextChar = edge.type.endsWith('L') ? 'L' : 'R';
+                    const nextNodeId = `${nextId}:${nextChar}`;
+                    if (!visited.has(nextNodeId) || visited.get(nextNodeId)! > newCost) {
+                        const p = [...curr.path];
+                        if (shortArc.length > 1e-4) p.push({ type: 'ARC', center: d.center, radius: d.radius, startAngle: curr.angle, endAngle: depAng, chirality: shortArc.chirality, length: shortArc.length, diskId: d.id });
+                        p.push(edge);
+                        pq.push({ id: nextNodeId, cost: newCost, path: p, angle: arrAng, diskId: nextId });
+                    }
+                }
+            }
+        }
+    }
+
+    return bestEnd ? bestEnd.path : null;
+}
+
 export function findEnvelopePathFromPoints(
     anchors: Point2D[],
     obstacles: ContactDisk[]
 ): EnvelopePathResult {
     if (anchors.length < 2) return { path: [], chiralities: [] };
 
-    // Valid Graph for inter-disk connections — outer tangents only
-    // to prevent self-intersecting (tangled) envelope paths.
-    const graph = buildBoundedCurvatureGraph(obstacles, true, [], true);
-
     const fullPath: EnvelopeSegment[] = [];
-    const fullChiralities: ('L' | 'R')[] = [];
 
-    // Map disks for easier access
     const diskMap = new Map<string, ContactDisk>();
     obstacles.forEach(d => diskMap.set(d.id, d));
 
-    // Helper: Point-to-Disk Tangents (Return [L, R] candidates)
-    // Returns segments from Point -> Disk Tangent Point
-    const getPointToDiskTangents = (p: Point2D, d: ContactDisk, isStart: boolean): { type: 'L' | 'R', pt: Point2D, length: number }[] => {
-        const dx = d.center.x - p.x;
-        const dy = d.center.y - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        // [FIX] If point is practically ON the surface (or inside), handle gracefully
-        // Tolerance reduced to 1% to prevent misidentifying near-misses as on-surface
-        if (Math.abs(dist - d.radius) < d.radius * 0.01) {
-            // Point is on surface. The "tangent" is the point itself (length 0)
-            // We need to return valid nodes so the graph algorithm can "enter" the disk here.
-            return [
-                { type: 'R', pt: p, length: 0 },
-                { type: 'L', pt: p, length: 0 }
-            ];
-        }
-
-        if (dist < d.radius) return []; // Generic inside case (deeply inside)
-
-        // phi = angle FROM P TO disk center
-        const phi = Math.atan2(dy, dx);
-        // gamma = half-angle between the two tangent lines (from P)
-        const gamma = Math.acos(Math.min(1, d.radius / dist));
-
-        // [CRITICAL FIX] Tangent points on the circle are measured from the CENTER.
-        // Direction from center back to P = phi + π
-        // Tangent points deviate ±gamma from this "back" direction.
-        const backAngle = phi + Math.PI;
-
-        // T1 (Right/CW): backAngle + gamma
-        const ang1 = backAngle + gamma;
-        const pt1 = { x: d.center.x + d.radius * Math.cos(ang1), y: d.center.y + d.radius * Math.sin(ang1) };
-
-        // T2 (Left/CCW): backAngle - gamma
-        const ang2 = backAngle - gamma;
-        const pt2 = { x: d.center.x + d.radius * Math.cos(ang2), y: d.center.y + d.radius * Math.sin(ang2) };
-
-        return [
-            { type: 'R', pt: pt1, length: Math.sqrt(Math.pow(pt1.x - p.x, 2) + Math.pow(pt1.y - p.y, 2)) },
-            { type: 'L', pt: pt2, length: Math.sqrt(Math.pow(pt2.x - p.x, 2) + Math.pow(pt2.y - p.y, 2)) }
-        ];
-    };
-
-    interface SearchNode {
-        id: string; // 'START' | 'diskId:L' | 'diskId:R'
-        cost: number;
-        path: EnvelopeSegment[];
-        angle: number; // Arrival angle at this node (for Arcs)
-        diskId?: string; // If on disk
-    }
-
-    // Helper: Dijkstra for Point -> Point
-    const findSubPath = (start: Point2D, end: Point2D): EnvelopePathResult | null => {
-        const pq: SearchNode[] = [];
-        const visited = new Map<string, number>();
-
-        // Check direct line first!
-        let lineBlocked = false;
-
-        // [FIX] Explicitly check if START and END are on the SAME disk.
-        // If so, a straight line is a chord (cutting through), so it's BLOCKED.
-        // We want an ARC (handled by Dijkstra below).
-        let startDiskId: string | null = null;
-        let endDiskId: string | null = null;
-
+    const findDisk = (p: Point2D): ContactDisk | null => {
         for (const d of obstacles) {
-            if (intersectsDisk(start, end, d)) { lineBlocked = true; }
-
-            // Check if points are on this disk
-            const distStart = Math.sqrt(Math.pow(start.x - d.center.x, 2) + Math.pow(start.y - d.center.y, 2));
-            const distEnd = Math.sqrt(Math.pow(end.x - d.center.x, 2) + Math.pow(end.y - d.center.y, 2));
-
-            if (Math.abs(distStart - d.radius) < d.radius * 0.05) startDiskId = d.id;
-            if (Math.abs(distEnd - d.radius) < d.radius * 0.05) endDiskId = d.id;
-        }
-
-        if (startDiskId && endDiskId && startDiskId === endDiskId) {
-            // Both on same disk -> Force Arc (block line)
-            // Unless they are very close? No, strictly elastic means arc.
-            lineBlocked = true;
-        }
-
-        if (!lineBlocked) {
-            return {
-                path: [{
-                    type: 'LSR',
-                    start,
-                    end,
-                    length: Math.sqrt(Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)),
-                    startDiskId: 'point',
-                    endDiskId: 'point'
-                }],
-                chiralities: []
-            };
-        }
-
-        // Add edges from START to all Disks
-        obstacles.forEach(d => {
-            const tangents = getPointToDiskTangents(start, d, true);
-            tangents.forEach(t => {
-                let blocked = false;
-                // Segment start -> t.pt
-                if (obstacles && obstacles.length > 0) {
-                    // Log to see if blocked
-                    // console.log(`Checking tangent from ${start.x},${start.y} to ${t.pt.x},${t.pt.y} against ${d.id}`);
-                }
-                for (const obs of obstacles) {
-                    if (obs.id === d.id) continue;
-
-                    // [FIX] Robust Start Disk Exit Check
-                    // If 'start' is on 'obs', ensure we are leaving it 'outwards'
-                    // This prevents 'intersectsDisk' from falsely flagging tangent departures as collisions
-                    const distStart = Math.sqrt(Math.pow(start.x - obs.center.x, 2) + Math.pow(start.y - obs.center.y, 2));
-                    if (Math.abs(distStart - obs.radius) < obs.radius * 0.05) {
-                        // Normal at start
-                        const nx = (start.x - obs.center.x) / distStart;
-                        const ny = (start.y - obs.center.y) / distStart;
-                        // Direction of path
-                        const dx = t.pt.x - start.x;
-                        const dy = t.pt.y - start.y;
-                        const len = Math.sqrt(dx * dx + dy * dy);
-                        // Dot product (cosine of angle between Normal and Path)
-                        // If >= 0, we are going Out or Tangent.
-                        // If < 0, we are going In (cutting chord).
-                        if (len > 1e-6) {
-                            const dot = (nx * dx + ny * dy) / len;
-                            // Allow strictly outward or tangent (dot >= -epsilon)
-                            // 1e-4 is safer than 0.01
-                            if (dot >= -1e-4) continue;
-                        }
-                    }
-
-                    if (intersectsDisk(start, t.pt, obs)) {
-                        blocked = true; break;
-                    }
-                }
-                if (!blocked) {
-                    const ang = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
-                    // Add BOTH chiralities for on-surface starts (length 0)
-                    // This ensures the algorithm can explore both L and R paths from the entry
-                    if (t.length < 1e-4) {
-                        pq.push({
-                            id: `${d.id}:L`,
-                            cost: 0,
-                            path: [],
-                            angle: ang,
-                            diskId: d.id
-                        });
-                        pq.push({
-                            id: `${d.id}:R`,
-                            cost: 0,
-                            path: [],
-                            angle: ang,
-                            diskId: d.id
-                        });
-                    } else {
-                        pq.push({
-                            id: `${d.id}:${t.type}`,
-                            cost: t.length,
-                            path: [{
-                                type: t.type === 'L' ? 'LSR' : 'RSL',
-                                start: start,
-                                end: t.pt,
-                                length: t.length,
-                                startDiskId: 'start',
-                                endDiskId: d.id
-                            } as TangentSegment],
-                            angle: ang,
-                            diskId: d.id
-                        });
-                    }
-                }
-            });
-        });
-
-        let bestEndNode: SearchNode | null = null;
-        let minCost = Infinity;
-
-        while (pq.length > 0) {
-            pq.sort((a, b) => a.cost - b.cost);
-            const curr = pq.shift()!;
-
-            if (visited.has(curr.id) && visited.get(curr.id)! <= curr.cost) continue;
-            visited.set(curr.id, curr.cost);
-
-            // Try reaching END from this Disk Node
-            if (curr.diskId) {
-                const d = diskMap.get(curr.diskId)!;
-
-                // [FIX] Check if END is ON this disk (Distance approx radius)
-                const distToEnd = Math.sqrt(Math.pow(end.x - d.center.x, 2) + Math.pow(end.y - d.center.y, 2));
-                const onDiskSurface = Math.abs(distToEnd - d.radius) < d.radius * 0.05; // Proportional tolerance
-
-                if (onDiskSurface) {
-                    // Direct Arc to Goal! Always use shortest arc.
-                    const exitAng = Math.atan2(end.y - d.center.y, end.x - d.center.x);
-                    const shortArc = calcShortArc(d, curr.angle, exitAng);
-                    const totalCost = curr.cost + shortArc.length;
-                    if (totalCost < minCost) {
-                        minCost = totalCost;
-                        const path = [...curr.path];
-                        if (shortArc.length > 1e-4) {
-                            path.push({
-                                type: 'ARC', center: d.center, radius: d.radius,
-                                startAngle: curr.angle, endAngle: exitAng, chirality: shortArc.chirality, length: shortArc.length, diskId: d.id
-                            });
-                        }
-                        bestEndNode = { id: 'END', cost: totalCost, path, angle: 0 };
-                    }
-                } else {
-                    // Standard Tangent Approach (Off-disk target)
-                    const exitTangents = getPointToDiskTangents(end, d, false);
-                    exitTangents.forEach(t => {
-                        const exitAng = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
-                        // Use SHORTEST arc from entry to exit point
-                        const shortArc = calcShortArc(d, curr.angle, exitAng);
-
-                        // Check blockers for the Line part (t.pt -> end)
-                        let blocked = false;
-                        for (const obs of obstacles) {
-                            if (obs.id === d.id) continue;
-
-                            const distStart = Math.sqrt(Math.pow(t.pt.x - obs.center.x, 2) + Math.pow(t.pt.y - obs.center.y, 2));
-                            if (Math.abs(distStart - obs.radius) < obs.radius * 0.05) {
-                                const nx = (t.pt.x - obs.center.x) / distStart;
-                                const ny = (t.pt.y - obs.center.y) / distStart;
-                                const dx = end.x - t.pt.x;
-                                const dy = end.y - t.pt.y;
-                                const len = Math.sqrt(dx * dx + dy * dy);
-                                if (len > 1e-6) {
-                                    const dot = (nx * dx + ny * dy) / len;
-                                    if (dot >= -0.01) continue;
-                                }
-                            }
-
-                            if (intersectsDisk(t.pt, end, obs)) { blocked = true; break; }
-                        }
-
-                        if (!blocked) {
-                            const totalCost = curr.cost + shortArc.length + t.length;
-                            if (totalCost < minCost) {
-                                minCost = totalCost;
-                                const path = [...curr.path];
-                                if (shortArc.length > 1e-4) {
-                                    path.push({
-                                        type: 'ARC', center: d.center, radius: d.radius,
-                                        startAngle: curr.angle, endAngle: exitAng, chirality: shortArc.chirality, length: shortArc.length, diskId: d.id
-                                    });
-                                }
-                                path.push({
-                                    type: 'LSR', start: t.pt, end: end, length: t.length, startDiskId: d.id, endDiskId: 'end'
-                                });
-                                bestEndNode = { id: 'END', cost: totalCost, path, angle: 0 };
-                            }
-                        }
-                    });
-                }
-            }
-
-            // EXPAND TO NEIGHBOR DISKS (Graph Edges)
-            if (curr.diskId) {
-                const uId = curr.diskId;
-                const uChar = curr.id.endsWith('L') ? 'L' : 'R';
-
-                // [FIX] Explore ALL edges from this disk, not just chirality-matching.
-                // Use shortest arc for transit cost.
-                const edges = graph.edges.filter(e => e.startDiskId === uId);
-
-                for (const edge of edges) {
-                    const nextDiskId = edge.endDiskId;
-                    const nextDisk = diskMap.get(nextDiskId);
-                    if (!nextDisk) continue;
-
-                    const depAngle = Math.atan2(edge.start.y - diskMap.get(uId)!.center.y, edge.start.x - diskMap.get(uId)!.center.x);
-                    const shortArc = calcShortArc(diskMap.get(uId)!, curr.angle, depAngle);
-                    const arcLen = shortArc.length;
-
-                    const newCost = curr.cost + arcLen + edge.length;
-                    const nextChar = edge.type.endsWith('L') ? 'L' : 'R';
-                    const nextNodeId = `${nextDiskId}:${nextChar}`;
-
-                    const arrAngle = Math.atan2(edge.end.y - nextDisk.center.y, edge.end.x - nextDisk.center.x);
-
-                    if (!visited.has(nextNodeId) || visited.get(nextNodeId)! > newCost) {
-                        const newPath = [...curr.path];
-                        if (arcLen > 1e-4) {
-                            newPath.push({
-                                type: 'ARC', center: diskMap.get(uId)!.center, radius: diskMap.get(uId)!.radius,
-                                startAngle: curr.angle, endAngle: depAngle, chirality: shortArc.chirality, length: arcLen, diskId: uId
-                            });
-                        }
-                        newPath.push(edge);
-
-                        pq.push({
-                            id: nextNodeId,
-                            cost: newCost,
-                            path: newPath,
-                            angle: arrAngle,
-                            diskId: nextDiskId
-                        });
-                    }
-                }
+            if (Math.abs(Math.sqrt((p.x - d.center.x) ** 2 + (p.y - d.center.y) ** 2) - d.radius) < d.radius * 0.05) {
+                return d;
             }
         }
-
-        return bestEndNode ? { path: (bestEndNode as SearchNode).path, chiralities: [] } : null;
+        return null;
     };
+
+    // [FIX] outerTangentsOnly = FALSE (Internal tangents allowed for crossings)
+    const graph = buildBoundedCurvatureGraph(obstacles, true, [], false);
 
     for (let i = 0; i < anchors.length - 1; i++) {
         const start = anchors[i];
         const end = anchors[i + 1];
 
-        const res = findSubPath(start, end);
-        if (res) {
-            fullPath.push(...res.path);
+        const startDisk = findDisk(start);
+        const endDisk = findDisk(end);
+
+        const candidates: { path: EnvelopeSegment[], length: number, curtis: string }[] = [];
+
+        // Candidate A: ARC (Same Disk)
+        if (startDisk && endDisk && startDisk.id === endDisk.id) {
+            const disk = startDisk;
+            const ang1 = Math.atan2(start.y - disk.center.y, start.x - disk.center.x);
+            const ang2 = Math.atan2(end.y - disk.center.y, end.x - disk.center.x);
+
+            if (!isArcBlocked(disk, ang1, ang2, 'R', obstacles)) {
+                const cw = calcArc(disk, ang1, ang2, 'R');
+                candidates.push({
+                    path: [{ type: 'ARC', center: disk.center, radius: disk.radius, startAngle: ang1, endAngle: ang2, chirality: 'R', length: cw, diskId: disk.id }],
+                    length: cw,
+                    curtis: 'ARC-CW'
+                });
+            }
+
+            if (!isArcBlocked(disk, ang1, ang2, 'L', obstacles)) {
+                const ccw = calcArc(disk, ang1, ang2, 'L');
+                candidates.push({
+                    path: [{ type: 'ARC', center: disk.center, radius: disk.radius, startAngle: ang1, endAngle: ang2, chirality: 'L', length: ccw, diskId: disk.id }],
+                    length: ccw,
+                    curtis: 'ARC-CCW'
+                });
+            }
         }
-        // If no valid path found, skip this segment (don't draw overlapping lines)
+
+        // Candidate B: DIRECT LINE
+        const dist = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
+        let lineBlocked = false;
+
+        // 1. Check Collisions with OTHER disks
+        if (intersectsAnyDiskStrict(start, end, obstacles, startDisk?.id, endDisk?.id)) {
+            lineBlocked = true;
+        }
+
+        // 2. Check Valid Departure (Normal check)
+        if (!lineBlocked && dist > 1e-6) {
+            const dirX = (end.x - start.x) / dist;
+            const dirY = (end.y - start.y) / dist;
+
+            if (startDisk) {
+                const nx = (start.x - startDisk.center.x) / startDisk.radius;
+                const ny = (start.y - startDisk.center.y) / startDisk.radius;
+                // Must go OUT or TANGENT
+                if (nx * dirX + ny * dirY < -0.01) lineBlocked = true;
+            }
+
+            if (endDisk && !lineBlocked) {
+                const nx = (end.x - endDisk.center.x) / endDisk.radius;
+                const ny = (end.y - endDisk.center.y) / endDisk.radius;
+                // Must arrive from OUTSIDE
+                if (nx * dirX + ny * dirY > 0.01) lineBlocked = true;
+            }
+        }
+
+        if (!lineBlocked) {
+            candidates.push({
+                path: [{
+                    type: 'LSR',
+                    start,
+                    end,
+                    length: dist,
+                    startDiskId: startDisk ? startDisk.id : 'point',
+                    endDiskId: endDisk ? endDisk.id : 'point'
+                }],
+                length: dist,
+                curtis: 'LINE'
+            });
+        }
+
+        // Candidate C: GRAPH SEARCH
+        const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap);
+        if (graphPath) {
+            const len = graphPath.reduce((sum, s) => sum + s.length, 0);
+            candidates.push({
+                path: graphPath,
+                length: len,
+                curtis: 'GRAPH'
+            });
+        }
+
+        const best = chooseShortestValidPath(candidates);
+
+        if (best) {
+            fullPath.push(...best.path);
+        } else {
+            // Fallback
+            fullPath.push({ type: 'LSR', start, end, length: dist, startDiskId: startDisk ? startDisk.id : 'point', endDiskId: endDisk ? endDisk.id : 'point' });
+        }
     }
 
     return { path: fullPath, chiralities: [] };
