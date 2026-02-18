@@ -1,104 +1,163 @@
-# 🪢 Knots - Contact Graph & CS Diagram Builder
+# Knots
 
-**Knots** es una herramienta interactiva avanzada para la visualización, análisis y construcción de **Grafos de Contacto**, **Diagramas CS** y trayectorias de **Dubins** en entornos restringidos. Diseñado para investigación matemática y exploración topológica.
+> Interactive visualization platform for Contact Graph theory, CS Diagrams, Dubins paths, and topological knot analysis.
 
-🌐 **Demo en vivo**: [https://tilinhub.github.io/Knots/](https://tilinhub.github.io/Knots/)
+**Live Demo** → [tilinhub.github.io/Knots](https://tilinhub.github.io/Knots/)
 
----
-
-## ✨ Características Principales
-
-### 🔵 Grafos de Contacto y Matrices
-- **Construcción de Grafos**: Visualiza discos de contacto que representan regiones vacías en un diagrama de nudo.
-- **Matriz de Contacto**:
-    - Cálculo en tiempo real de la **Matriz de Adyacencia** (N x N).
-    - Visualización interactiva (`1` = contacto, `0` = separado).
-    - Actualización dinámica durante el movimiento o rodadura de discos.
-    - Exportación rápida al portapapeles.
-
-### 🎢 Rolling Mode Interactiva
-Simula la rodadura de un disco a lo largo del "envelope" formado por otros discos:
-- **Envolvente Dinámica**: El cinturón convexo (Convex Hull) se recalcula y ajusta en tiempo real mientras el disco rueda.
-- **Feedback Inmediato**: La matriz de contacto se actualiza instantáneamente para reflejar los cambios de topología al rodar.
-- **Controles Precisos**: Ajuste de ángulo, velocidad y dirección de rodadura.
-- **Visualización de Trayectoria**: Traza la cicloide/roulette generada por el centro del disco.
-
-### 🚗 Trayectorias de Dubins en Grafos
-- **Cálculo de Caminos**: Encuentra caminos óptimos (tangentes bitangentes) entre discos.
-- **Desglose de Longitud**:
-    - **Total**: Suma exacta de segmentos y arcos.
-    - **Rectas**: Longitud de los tramos rectos tangenciales.
-    - **Arcos**: Longitud de los tramos curvos sobre los discos.
-- **Navegación**: Sistema robusto para moverse entre configuraciones a través del grafo de contacto.
-
-### 📐 Editor de Precisión
-- **Unidades Lógicas**: Sistema de coordenadas escalado donde **50px = 1 unidad lógica (u)**.
-    - *Ejemplo*: Un disco de radio 50px se muestra como radio `1.00 u`.
-- **Información Detallada**:
-    - Visualización de coordenadas centros `(x, y)` en unidades lógicas.
-    - Longitudes de arco y cuerda precisas.
-- **Herramientas de Dibujo**:
-    - Segmentos, Arcos y Discos.
-    - Validación de continuidad geométrica (C0).
-    - Detección de intersecciones.
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white&style=flat-square)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white&style=flat-square)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white&style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
 ---
 
-## 🚀 Guía Rápida
+## Overview
 
-### 1. Grafos de Contacto
-1. Activa **"🔵 Grafos de Contacto"** en la barra superior.
-2. Añade discos usando el botón `+ Disco` o utiliza la **Galería de Grafos** predefinidos.
-3. Observa la **Matriz de Contacto** en el panel lateral, que muestra qué discos se tocan.
+**Knots** is a research-grade web application for constructing and analyzing mathematical structures that arise in knot theory and combinatorial geometry. It provides an interactive canvas for working with disk contact graphs, envelope computation, Dubins path optimization, and rolling disk simulations — all rendered in real-time via SVG.
 
-### 2. Rolling Mode
-1. Selecciona **"🎡 Rolling Mode"**.
-2. Elige un **Pivote** (disco de soporte) y un **Rodante** (disco que se mueve).
-3. Usa los controles para rodar el disco.
-4. Nota como la curva azul claro (**Envolvente**) se estira y adapta para envolver la nueva configuración dinámicamente.
-
-### 3. Editor Manual
-- **Arrastrar**: Mueve discos y puntos de control libremente.
-- **Panel Lateral**: Edita coordenadas numéricas exactas si necesitas precisión matemática.
-- **Matriz en Edición**: La matriz de contacto también es visible al editar manualmente para guiarte en la colocación de discos tangentes.
+The project targets researchers and students working at the intersection of topology, computational geometry, and graph theory.
 
 ---
 
-## 🧮 Conceptos Técnicos
+## Features
 
-### Escala de Unidades
-Para facilitar la visualización matemática sin perder fidelidad en pantalla:
-- **Factor de Escala**: `50 píxeles = 1 unidad`.
-- Todas las etiquetas de longitud (L), coordenadas (x,y) y radios se muestran en estas **unidades lógicas (u)**.
+### Contact Graph Editor
+- Place and drag disks on an infinite canvas; tangency relationships are detected automatically.
+- Real-time **adjacency matrix** \(A\) where:
+  \[A_{ij} = \begin{cases} 1 & \text{if } d(c_i, c_j) \approx r_i + r_j \\ 0 & \text{otherwise} \end{cases}\]
+- One-click matrix export to clipboard.
+- Load predefined graphs from the built-in **Graph Catalog** (graph6 format via `loadAllGraphs`).
 
-### Matriz de Adyacencia
-La aplicación calcula una matriz simétrica $A$ donde:
-$$A_{ij} = \begin{cases} 1 & \text{si } d(C_i, C_j) \approx R_i + R_j \\ 0 & \text{en otro caso} \end{cases}$$
-Utiliza una tolerancia ajustada para manejar la precisión de punto flotante en la interacción visual.
+### Knot Mode
+- Define a disk sequence with explicit chiralities to describe a knot diagram.
+- **Elastic band envelope** follows the knot topology: the boundary slides along disk tangents rather than being pinned to anchor points.
+- Automatic fallback to robust convex hull when the topology is underdetermined.
+- Envelope computed by `KnotEnvelopeComputer`, which implements the shared `EnvelopeComputer` interface.
+
+### Rolling Mode
+- Simulate a disk rolling along the envelope formed by a set of support disks.
+- Dynamic recomputation of the convex hull and contact matrix at every step.
+- Trace the **roulette/cycloid** path generated by the rolling disk center.
+- Precise angular controls: angle, speed, and rolling direction.
+
+### Dubins Paths
+- Compute optimal bitangent paths between disks using angular Dubins geometry.
+- Length breakdown: total, straight segments, and arc contributions.
+- Navigate between configurations through the contact graph.
+
+### Precision Editor
+- Coordinate system: **50 px = 1 logical unit (u)**.
+- Numeric coordinate panel for exact placement.
+- Geometric continuity validation (C0), arc length, and chord length display.
+- Intersection detection between path segments.
 
 ---
 
-## 🛠️ Tecnologías
+## Architecture
 
-- **React 18** + **TypeScript**: Core de la aplicación.
-- **SVG Interactiva**: Motor de renderizado vectorial de alto rendimiento.
-- **Algoritmos Geométricos**: Implementación personalizada para *Convex Hulls*, *Dubins Paths* y *Contact Graphs*.
+The codebase follows a strict **layered architecture** with zero UI dependencies in the core layer.
 
----
+```
+src/
+├── app/                    # React entry, routing, app wiring
+├── core/                   # Pure logic — no React, no DOM
+│   ├── geometry/           # Computational geometry
+│   │   ├── dubins/         # Dubins path engine (dubins.ts, angularDubins.ts)
+│   │   ├── contactGraph.ts # Bounded-curvature graph & envelope path finder
+│   │   ├── EnvelopeComputer.ts  # Shared interface for envelope strategies
+│   │   ├── ElasticEnvelope.ts   # Elastic band implementation
+│   │   ├── CSEnvelope.ts        # CS diagram envelope
+│   │   ├── robustHull.ts        # Robust convex hull fallback
+│   │   ├── collision.ts         # Disk collision detection
+│   │   ├── regionDetection.ts   # Topological region detection
+│   │   └── rolling.ts           # Rolling disk geometry
+│   ├── math/               # Mathematical classes
+│   │   ├── DubinsPath.ts   # Dubins path class
+│   │   ├── KnotLengthCalculator.ts
+│   │   └── arc.ts
+│   ├── algorithms/         # Graph algorithms (pathfinder)
+│   ├── model/              # Domain entities and scene model
+│   ├── types/              # Shared TypeScript types (CSDisk, etc.)
+│   └── utils/
+├── features/               # UI features (each owns components + logic)
+│   ├── knot/               # Knot mode (KnotEnvelopeComputer)
+│   ├── dubins/             # Dubins mode
+│   ├── rolling/            # Rolling mode
+│   ├── catalog/            # Graph catalog browser
+│   ├── gallery/            # Saved configurations gallery
+│   ├── analysis/           # Graph analysis tools
+│   └── editor/             # Precision editor
+├── renderer/               # SVG/Canvas rendering layers
+│   └── layers/             # BaseLayer, KnotLayer, DubinsLayer, StandardLayer
+├── io/                     # Graph parsing (graph6, loadAllGraphs)
+├── ui/                     # Reusable primitive components
+└── styles/                 # Global CSS
 
-## 📦 Instalación y Desarrollo
-
-```bash
-# Instalar dependencias
-npm install
-
-# Iniciar servidor de desarrollo
-npm run dev
-
-# Construir para producción
-npm run build
+tests/                      # Mirrors src/core/ structure
+├── core/
+│   ├── geometry/           # Geometry tests + envelope regression
+│   └── math/               # DubinsPath unit tests
 ```
 
+**Key architectural rule:** `core/` has zero imports from `features/`, `renderer/`, or `ui/`. Data flows strictly downward.
+
 ---
 
-**Licencia MIT** - Desarrollado por [TilinHub](https://github.com/TilinHub)
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | React 19 + TypeScript 5.9 |
+| Bundler | Vite 7 |
+| Rendering | SVG (custom layers) |
+| Graph visualization | vis-network / vis-data |
+| Linting | ESLint 9 + typescript-eslint |
+| Formatting | Prettier 3 |
+| CI / Deploy | GitHub Actions → GitHub Pages |
+
+---
+
+## Getting Started
+
+**Requirements:** Node.js ≥ 18
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Type-check
+npm run typecheck
+
+# Lint
+npm run lint
+
+# Production build
+npm run build
+
+# Run all checks (format + lint + typecheck + build)
+npm run check
+```
+
+The app will be available at `http://localhost:5173`.
+
+---
+
+## Mathematical Background
+
+### Contact Graphs
+A **contact graph** of a disk packing is the graph \(G = (V, E)\) where each vertex represents a disk and each edge represents a tangency between two disks. This project focuses on disk packings arising from knot diagrams, where each disk corresponds to a region bounded by the knot.
+
+### Dubins Paths
+A **Dubins path** is the shortest curve connecting two oriented points in the plane, constrained to a minimum turning radius. The engine here extends classical Dubins to operate on disk sequences, computing optimal bitangent trajectories through the contact graph.
+
+### Elastic Band Envelope
+The envelope of a disk configuration is computed as a closed curve that slides along outer tangent lines between consecutive disks in a sequence, respecting chirality constraints. The `KnotEnvelopeComputer` implements this strategy with a robust fallback to convex hull when the topology is underdetermined.
+
+---
+
+## License
+
+MIT © [TilinHub](https://github.com/TilinHub)
