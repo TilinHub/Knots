@@ -59,58 +59,178 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // ── Geometric Reconstruction from frozenPath (tex.pdf algorithm) ──
   // For N disks: walk the saved topology, recompute each tangent/arc
   // from current disk positions using bitangent formulas.
+  // NEW: validates tangent segments against ALL disks and reroutes around obstacles.
+
+  // Helper: does line segment (ax,ay)→(bx,by) penetrate circle (cx,cy,r)?
+  function segmentHitsCircle(
+    ax: number, ay: number, bx: number, by: number,
+    cx: number, cy: number, r: number
+  ): boolean {
+    const dx = bx - ax, dy = by - ay;
+    const fx = ax - cx, fy = ay - cy;
+    const a = dx * dx + dy * dy;
+    if (a < 1e-12) return false; // Degenerate segment
+    const b = 2 * (fx * dx + fy * dy);
+    const c = fx * fx + fy * fy - r * r;
+    const disc = b * b - 4 * a * c;
+    if (disc < 0) return false; // No intersection
+    const sqrtDisc = Math.sqrt(disc);
+    const t1 = (-b - sqrtDisc) / (2 * a);
+    const t2 = (-b + sqrtDisc) / (2 * a);
+    // Chord must be inside the segment (not just touching endpoints)
+    const EPS = 0.05;
+    if (t1 > EPS && t1 < 1 - EPS) return true;
+    if (t2 > EPS && t2 < 1 - EPS) return true;
+    // Also check if a significant chord exists inside the segment
+    const tEnter = Math.max(t1, EPS);
+    const tExit = Math.min(t2, 1 - EPS);
+    return tEnter < tExit;
+  }
+
+  // Find the CLOSEST blocking disk for a tangent segment
+  function findBlockingDisk(
+    tangent: any,
+    diskLookup: Map<string, { center: { x: number, y: number }, radius: number }>
+  ): string | null {
+    const startId = tangent.startDiskId || tangent._startDiskId;
+    const endId = tangent.endDiskId || tangent._endDiskId;
+    if (!tangent.start || !tangent.end) return null;
+
+    let closestId: string | null = null;
+    let closestT = Infinity;
+
+    for (const [id, disk] of diskLookup) {
+      if (id === startId || id === endId) continue;
+      if (segmentHitsCircle(
+        tangent.start.x, tangent.start.y,
+        tangent.end.x, tangent.end.y,
+        disk.center.x, disk.center.y, disk.radius
+      )) {
+        // Compute t-parameter of closest approach
+        const dx = tangent.end.x - tangent.start.x;
+        const dy = tangent.end.y - tangent.start.y;
+        const fx = tangent.start.x - disk.center.x;
+        const fy = tangent.start.y - disk.center.y;
+        const t = -(fx * dx + fy * dy) / (dx * dx + dy * dy);
+        if (t < closestT) {
+          closestT = t;
+          closestId = id;
+        }
+      }
+    }
+    return closestId;
+  }
+
+  // Reroute a tangent around a blocking disk → [tangent1, arc, tangent2]
+  function rerouteAroundDisk(
+    tangent: any,
+    blockingId: string,
+    diskLookup: Map<string, { center: { x: number, y: number }, radius: number }>,
+    depth: number = 0
+  ): any[] {
+    if (depth > 3) return [tangent]; // Prevent infinite recursion
+
+    const startId = tangent.startDiskId || tangent._startDiskId;
+    const endId = tangent.endDiskId || tangent._endDiskId;
+    const d1 = diskLookup.get(startId);
+    const dObs = diskLookup.get(blockingId);
+    const d2 = diskLookup.get(endId);
+    if (!d1 || !dObs || !d2) return [tangent];
+
+    // Compute bitangents from startDisk→obstacle and obstacle→endDisk
+    const d1c = { id: startId, center: d1.center, radius: d1.radius, regionId: '', color: '' };
+    const dObsc = { id: blockingId, center: dObs.center, radius: dObs.radius, regionId: '', color: '' };
+    const d2c = { id: endId, center: d2.center, radius: d2.radius, regionId: '', color: '' };
+
+    const tangents1 = calculateBitangents(d1c, dObsc);
+    const tangents2 = calculateBitangents(dObsc, d2c);
+
+    // Find the best valid pair (shortest total path that doesn't itself cross any disk)
+    let bestResult: any[] | null = null;
+    let bestLength = Infinity;
+
+    for (const t1 of tangents1) {
+      for (const t2 of tangents2) {
+        // Compute arc angles on obstacle disk
+        const a1 = Math.atan2(t1.end.y - dObs.center.y, t1.end.x - dObs.center.x);
+        const a2 = Math.atan2(t2.start.y - dObs.center.y, t2.start.x - dObs.center.x);
+
+        // Compute both arc directions
+        let deltaL = a2 - a1;
+        while (deltaL <= 0) deltaL += 2 * Math.PI;
+        let deltaR = a1 - a2;
+        while (deltaR <= 0) deltaR += 2 * Math.PI;
+
+        // Use the SHORTER arc (elastic band takes the shortest path around)
+        const chirality = deltaL < deltaR ? 'L' : 'R';
+        const arcLen = Math.min(deltaL, deltaR) * dObs.radius;
+        const totalLen = (t1.length || 0) + arcLen + (t2.length || 0);
+
+        if (totalLen < bestLength) {
+          // Check that the new tangent segments don't cross the obstacle disk
+          const t1blocks = findBlockingDisk(t1, diskLookup);
+          const t2blocks = findBlockingDisk(t2, diskLookup);
+
+          let segments: any[] = [];
+
+          // Recursively reroute if these sub-tangents also cross disks
+          if (t1blocks) {
+            segments.push(...rerouteAroundDisk(t1, t1blocks, diskLookup, depth + 1));
+          } else {
+            segments.push(t1);
+          }
+
+          segments.push({
+            type: 'ARC',
+            center: dObs.center,
+            radius: dObs.radius,
+            startAngle: a1,
+            endAngle: a2,
+            chirality,
+            length: arcLen,
+            diskId: blockingId
+          });
+
+          if (t2blocks) {
+            segments.push(...rerouteAroundDisk(t2, t2blocks, diskLookup, depth + 1));
+          } else {
+            segments.push(t2);
+          }
+
+          bestLength = totalLen;
+          bestResult = segments;
+        }
+      }
+    }
+
+    return bestResult || [tangent];
+  }
+
   function reconstructFromFrozenPath(
     frozenPath: any[],
     diskLookup: Map<string, { center: { x: number, y: number }, radius: number }>
   ): any[] {
-    const result: any[] = [];
-
-    // Separate tangent segments for recomputation
-    // Strategy: recompute TANGENT segments from current positions,
-    // then fill in ARC segments between consecutive tangents.
-    const tangentIndices: number[] = [];
-    const arcIndices: number[] = [];
-
-    frozenPath.forEach((seg, i) => {
-      if (seg.type === 'ARC') {
-        arcIndices.push(i);
-      } else {
-        tangentIndices.push(i);
-      }
-    });
-
     // Step 1: Recompute each TANGENT segment from current disk positions
-    const recomputed: (any | null)[] = frozenPath.map((seg, i) => {
+    const recomputed: (any | null)[] = frozenPath.map((seg) => {
       if (seg.type === 'ARC') return null; // Will fill later
 
-      // Get current disk positions
       const startDiskId = seg._startDiskId || seg.startDiskId;
       const endDiskId = seg._endDiskId || seg.endDiskId;
       const d1Data = diskLookup.get(startDiskId);
       const d2Data = diskLookup.get(endDiskId);
 
-      if (!d1Data || !d2Data) {
-        // Disk not found — return original segment (detached)
-        return { ...seg };
-      }
+      if (!d1Data || !d2Data) return { ...seg };
 
-      // Build ContactDisk objects for calculateBitangents
       const d1 = { id: startDiskId, center: d1Data.center, radius: d1Data.radius, regionId: '', color: '' };
       const d2 = { id: endDiskId, center: d2Data.center, radius: d2Data.radius, regionId: '', color: '' };
 
-      // Calculate all 4 bitangents between these two disks
       const tangents = calculateBitangents(d1, d2);
-
-      // Pick the tangent matching the stored type
-      const tangentType = seg.type; // LSL, RSR, LSR, RSL
+      const tangentType = seg.type;
       const match = tangents.find((t: { type: string }) => t.type === tangentType);
 
-      if (match) {
-        return { ...match }; // New tangent with updated positions
-      }
+      if (match) return { ...match };
 
-      // If exact type not found (e.g. disks too close for inner tangents),
-      // use the stored angles to project onto current disk positions
+      // Fallback: project using stored angles
       if (seg._startAngle !== undefined && seg._endAngle !== undefined) {
         return {
           ...seg,
@@ -122,99 +242,95 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             x: d2Data.center.x + d2Data.radius * Math.cos(seg._endAngle),
             y: d2Data.center.y + d2Data.radius * Math.sin(seg._endAngle)
           },
-          length: 0 // Will be recomputed
+          length: 0
         };
       }
 
-      return { ...seg }; // Last resort: return as-is
+      return { ...seg };
     });
 
-    // Step 2: Build final path by interleaving tangents and arcs
-    // For closed envelopes, the last arc wraps to connect with the first tangent.
-    const n = frozenPath.length;
-
-    // Helper: find the nearest recomputed tangent BEFORE index i (with wraparound)
-    function findPrevTangent(idx: number): any | null {
-      for (let j = 1; j <= n; j++) {
-        const k = (idx - j + n) % n;
-        if (recomputed[k]) return recomputed[k];
-      }
-      return null;
-    }
-
-    // Helper: find the nearest recomputed tangent AFTER index i (with wraparound)
-    function findNextTangent(idx: number): any | null {
-      for (let j = 1; j <= n; j++) {
-        const k = (idx + j) % n;
-        if (recomputed[k]) return recomputed[k];
-      }
-      return null;
-    }
-
-    for (let i = 0; i < n; i++) {
+    // Step 1.5: Validate tangents → reroute any that cross a disk
+    // This produces an EXPANDED path (tangents that cross disks become [t1, arc, t2])
+    const expandedPath: any[] = [];
+    for (let i = 0; i < frozenPath.length; i++) {
       const seg = frozenPath[i];
+      if (seg.type === 'ARC') {
+        expandedPath.push({ ...seg, _originalIndex: i }); // Keep original ARC info
+      } else {
+        const recomp = recomputed[i];
+        if (!recomp) continue;
+
+        const blockingId = findBlockingDisk(recomp, diskLookup);
+        if (blockingId) {
+          // Reroute around the blocking disk
+          const rerouted = rerouteAroundDisk(recomp, blockingId, diskLookup);
+          expandedPath.push(...rerouted);
+        } else {
+          expandedPath.push(recomp);
+        }
+      }
+    }
+
+    // Step 2: Build final path — recalculate arcs between tangents
+    const result: any[] = [];
+    const nn = expandedPath.length;
+
+    // Helper: find nearest tangent BEFORE index (with wraparound)
+    function findPrevTangent(idx: number): any | null {
+      for (let j = 1; j <= nn; j++) {
+        const k = (idx - j + nn) % nn;
+        if (expandedPath[k].type !== 'ARC') return expandedPath[k];
+      }
+      return null;
+    }
+
+    // Helper: find nearest tangent AFTER index (with wraparound)
+    function findNextTangent(idx: number): any | null {
+      for (let j = 1; j <= nn; j++) {
+        const k = (idx + j) % nn;
+        if (expandedPath[k].type !== 'ARC') return expandedPath[k];
+      }
+      return null;
+    }
+
+    for (let i = 0; i < nn; i++) {
+      const seg = expandedPath[i];
 
       if (seg.type !== 'ARC') {
-        // Tangent segment — use recomputed version
-        const recomp = recomputed[i];
-        if (recomp) {
-          result.push(recomp);
-        }
+        result.push(seg);
       } else {
-        // ARC segment — recompute from current disk position
         const diskId = seg.diskId;
         const diskData = diskLookup.get(diskId);
-
-        if (!diskData) {
-          result.push({ ...seg }); // Disk not found, use original
-          continue;
-        }
+        if (!diskData) { result.push({ ...seg }); continue; }
 
         let startAngle = seg.startAngle;
         let endAngle = seg.endAngle;
 
-        // Previous tangent endpoint → arc start angle
-        const prevTangent = findPrevTangent(i);
-        if (prevTangent) {
-          // The previous tangent arrives at this disk
-          if (prevTangent.endDiskId === diskId && prevTangent.end) {
-            startAngle = Math.atan2(
-              prevTangent.end.y - diskData.center.y,
-              prevTangent.end.x - diskData.center.x
-            );
-          } else if (prevTangent.startDiskId === diskId && prevTangent.start) {
-            startAngle = Math.atan2(
-              prevTangent.start.y - diskData.center.y,
-              prevTangent.start.x - diskData.center.x
-            );
+        // Previous tangent → arc start
+        const prev = findPrevTangent(i);
+        if (prev) {
+          if (prev.endDiskId === diskId && prev.end) {
+            startAngle = Math.atan2(prev.end.y - diskData.center.y, prev.end.x - diskData.center.x);
+          } else if (prev.startDiskId === diskId && prev.start) {
+            startAngle = Math.atan2(prev.start.y - diskData.center.y, prev.start.x - diskData.center.x);
           }
         }
 
-        // Next tangent startpoint → arc end angle
-        const nextTangent = findNextTangent(i);
-        if (nextTangent) {
-          // The next tangent departs from this disk
-          if (nextTangent.startDiskId === diskId && nextTangent.start) {
-            endAngle = Math.atan2(
-              nextTangent.start.y - diskData.center.y,
-              nextTangent.start.x - diskData.center.x
-            );
-          } else if (nextTangent.endDiskId === diskId && nextTangent.end) {
-            endAngle = Math.atan2(
-              nextTangent.end.y - diskData.center.y,
-              nextTangent.end.x - diskData.center.x
-            );
+        // Next tangent → arc end
+        const next = findNextTangent(i);
+        if (next) {
+          if (next.startDiskId === diskId && next.start) {
+            endAngle = Math.atan2(next.start.y - diskData.center.y, next.start.x - diskData.center.x);
+          } else if (next.endDiskId === diskId && next.end) {
+            endAngle = Math.atan2(next.end.y - diskData.center.y, next.end.x - diskData.center.x);
           }
         }
 
-        // Compute arc length preserving chirality
         const PI2 = 2 * Math.PI;
         let delta = endAngle - startAngle;
         if (seg.chirality === 'L') {
-          // CCW: delta must be positive
           while (delta <= 0) delta += PI2;
         } else {
-          // CW: delta must be negative
           while (delta >= 0) delta -= PI2;
           delta = Math.abs(delta);
         }
