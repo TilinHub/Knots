@@ -116,8 +116,8 @@ export class Matrix {
 export function qr(A: Matrix): { Q: Matrix, R: Matrix } {
     const m = A.rows;
     const n = A.cols;
-    let Q = Matrix.identity(m);
-    let R = new Matrix(m, n, A.data.map(r => [...r])); // Copy A
+    const Q = Matrix.identity(m);
+    const R = new Matrix(m, n, A.data.map(r => [...r])); // Copy A
 
     const numHouseholder = Math.min(m - 1, n);
 

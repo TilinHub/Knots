@@ -2,8 +2,8 @@ import type {
     BoundedCurvatureGraph,
     TangentSegment
 } from '../geometry/contactGraph';
-import type { ContactDisk } from '../types/contactGraph'; // Correct import
 import type { DubinsPath } from '../geometry/dubins';
+import type { ContactDisk } from '../types/contactGraph'; // Correct import
 
 /**
  * Interface for a multi-hop Dubins path (sequence of segments)

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { ContactDisk, Region } from '../../core/types/contactGraph';
 
 interface ContactDisksProps {

@@ -16,8 +16,8 @@
  */
 
 import type { Point2D } from '../types/cs';
-import type { EnvelopeSegment, ArcSegment, TangentSegment, TangentType } from './contactGraph';
 import { Logger } from '../utils/Logger';
+import type { ArcSegment, EnvelopeSegment, TangentSegment, TangentType } from './contactGraph';
 
 // ── Types ─────────────────────────────────────────────────────────
 

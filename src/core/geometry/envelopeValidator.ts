@@ -13,9 +13,9 @@
  *   runRegressionSuite();
  */
 
-import type { EnvelopeSegment, TangentSegment, ArcSegment } from './contactGraph';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
+import type { ArcSegment,EnvelopeSegment, TangentSegment } from './contactGraph';
 import { computeOuterContour } from './outerFace';
 
 // ── Segment-Segment intersection (strict interior, no endpoints) ──

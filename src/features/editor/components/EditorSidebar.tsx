@@ -1,16 +1,17 @@
-import { RollingPanel } from '../../rolling/components/RollingPanel';
-import { KnotPanel } from '../../knot/components/KnotPanel';
-import { GraphsPanel } from './GraphsPanel';
-import { CatalogPanel } from '../../catalog/CatalogPanel';
-import { BlockList } from './BlockList';
-import { Button } from '../../../ui/Button';
-import { ContactMatrixViewer } from './ContactMatrixViewer';
-import type { CSBlock, CSDisk } from '../../../core/types/cs';
 import type React from 'react';
 import { useState } from 'react';
+
+import type { CSBlock, CSDisk } from '../../../core/types/cs';
+import { Button } from '../../../ui/Button';
 import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
-import { analyzeDiagram, type AnalysisReport } from '../../analysis/first_variation/analyzer';
+import { type AnalysisReport,analyzeDiagram } from '../../analysis/first_variation/analyzer';
 import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
+import { CatalogPanel } from '../../catalog/CatalogPanel';
+import { KnotPanel } from '../../knot/components/KnotPanel';
+import { RollingPanel } from '../../rolling/components/RollingPanel';
+import { BlockList } from './BlockList';
+import { ContactMatrixViewer } from './ContactMatrixViewer';
+import { GraphsPanel } from './GraphsPanel';
 
 interface EditorState {
     blocks: CSBlock[];

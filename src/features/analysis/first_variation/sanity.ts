@@ -4,13 +4,13 @@
  * Implements a "Stadium" curve around two touching disks.
  */
 
-import type { CSDiagram, Tolerances } from './types';
-import { checkImmediateMetrics, checkAndComputeTangents, checkCombinatorial, checkSegments, checkArcs } from './checks';
-import { constructA, constructTc, constructL, getRoll } from './matrices';
-import { constructGaugeBasis } from './gauge';
+import { checkAndComputeTangents, checkArcs,checkCombinatorial, checkImmediateMetrics, checkSegments } from './checks';
+import { evaluateQuadratic,testCriticality } from './criticality';
 import { assembleFunctional, reduceFunctional } from './functional';
-import { testCriticality, evaluateQuadratic } from './criticality';
+import { constructGaugeBasis } from './gauge';
 import { Matrix } from './linearAlgebra';
+import { constructA, constructL, constructTc, getRoll } from './matrices';
+import type { CSDiagram, Tolerances } from './types';
 
 function runSanityCheck() {
     console.log("=== RUNNING SANITY CHECK (Stadium Example) ===");

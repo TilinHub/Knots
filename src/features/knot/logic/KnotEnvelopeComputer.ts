@@ -1,8 +1,8 @@
-import type { CSDisk } from '../../../core/types/cs';
 import type { EnvelopeSegment } from '../../../core/geometry/contactGraph';
+import { buildBoundedCurvatureGraph,findEnvelopePath } from '../../../core/geometry/contactGraph';
 import type { EnvelopeComputer } from '../../../core/geometry/EnvelopeComputer';
 import { computeRobustConvexHull } from '../../../core/geometry/robustHull';
-import { findEnvelopePath, buildBoundedCurvatureGraph } from '../../../core/geometry/contactGraph';
+import type { CSDisk } from '../../../core/types/cs';
 
 /**
  * Computes the "Robust" envelope for Knot Mode.

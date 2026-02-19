@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
 import { ContactPathRenderer } from '@/features/editor/components/ContactPathRenderer';
 

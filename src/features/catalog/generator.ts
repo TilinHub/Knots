@@ -1,10 +1,11 @@
 
-import loadAllGraphs from '@/io/loadAllGraphs';
 import { graphToContactScene } from '@/core/geometry/contactLayout';
-import { getPeripheralDisks, findHamiltonianCycle } from './graphUtils';
-import { rollDiskToMinimum, calculateEnergy, type RollingStepResult } from '@/features/analysis/first_variation/gradientDescent';
-import type { CatalogEntry, StabilityResult } from './catalogTypes';
 import type { CSDisk } from '@/core/types/cs';
+import { calculateEnergy, rollDiskToMinimum, type RollingStepResult } from '@/features/analysis/first_variation/gradientDescent';
+import loadAllGraphs from '@/io/loadAllGraphs';
+
+import type { CatalogEntry, StabilityResult } from './catalogTypes';
+import { findHamiltonianCycle,getPeripheralDisks } from './graphUtils';
 
 export class CatalogGenerator {
     private stopRequested = false;

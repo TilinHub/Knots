@@ -1,4 +1,4 @@
-import type { CSBlock, CSSegment, CSArc } from '../types/cs';
+import type { CSArc,CSBlock, CSSegment } from '../types/cs';
 import { findContinuousChains } from '../validation/continuity';
 
 /**

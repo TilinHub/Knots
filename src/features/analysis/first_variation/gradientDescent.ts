@@ -1,7 +1,7 @@
 
-import type { CSDisk, CSDiagram } from '../../../core/types/cs';
+import { buildBoundedCurvatureGraph, type EnvelopePathResult,findEnvelopePath } from '../../../core/geometry/contactGraph';
 import { calculateRollingPosition, findNextCollision } from '../../../core/geometry/rolling';
-import { buildBoundedCurvatureGraph, findEnvelopePath, type EnvelopePathResult } from '../../../core/geometry/contactGraph';
+import type { CSDiagram,CSDisk } from '../../../core/types/cs';
 
 /**
  * Calculates the "Energy" of the configuration, defined as the length of the envelope
@@ -62,14 +62,14 @@ export function rollDiskToMinimum(
         throw new Error("Disk not found");
     }
 
-    let currentDisks = disks.map(d => ({ ...d })); // Clone
-    let pivot = currentDisks[pivotIdx];
-    let rolling = currentDisks[rollingIdx];
-    let others = currentDisks.filter(d => d.id !== rollingId && d.id !== pivotId);
+    const currentDisks = disks.map(d => ({ ...d })); // Clone
+    const pivot = currentDisks[pivotIdx];
+    const rolling = currentDisks[rollingIdx];
+    const others = currentDisks.filter(d => d.id !== rollingId && d.id !== pivotId);
 
     // Initial State
-    let currentTheta = Math.atan2(rolling.center.y - pivot.center.y, rolling.center.x - pivot.center.x);
-    let currentEnergy = calculateEnergy(currentDisks, diskSequence);
+    const currentTheta = Math.atan2(rolling.center.y - pivot.center.y, rolling.center.x - pivot.center.x);
+    const currentEnergy = calculateEnergy(currentDisks, diskSequence);
 
     // Find limit in the chosen direction
     const collision = findNextCollision(pivot, rolling, others, currentTheta, direction);
@@ -92,7 +92,7 @@ export function rollDiskToMinimum(
         // Linear interpolate angles? 
         // Problem: Cyclic angles.
         // It's easier to work with angular displacement.
-        let delta = limitTheta - currentTheta;
+        const delta = limitTheta - currentTheta;
         // Normalize delta to be consistent with direction
         // If direction is 1, delta should be positive (or handle wrap)
         // Actually findNextCollision return absolute theta.

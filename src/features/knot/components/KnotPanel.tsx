@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+
 import { Button } from '../../../ui/Button';
-import { ContactMatrixViewer } from '../../editor/components/ContactMatrixViewer';
-import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
-import { analyzeDiagram, type AnalysisReport } from '../../analysis/first_variation/analyzer';
 import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
+import { type AnalysisReport,analyzeDiagram } from '../../analysis/first_variation/analyzer';
+import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
+import { ContactMatrixViewer } from '../../editor/components/ContactMatrixViewer';
 
 interface KnotPanelProps {
     knotState: any;

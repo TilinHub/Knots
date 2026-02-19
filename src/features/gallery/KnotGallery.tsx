@@ -1,4 +1,5 @@
 import React from 'react';
+
 import KnotThumbnail from '../../ui/KnotThumbnail';
 
 // Ejemplos de nudos predefinidos

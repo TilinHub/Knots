@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Button } from '../../../ui/Button';
-import loadAllGraphs, { type GraphSet } from '../../../io/loadAllGraphs';
-import { type Graph } from '../../../io/parseGraph6';
+import { useEffect,useState } from 'react';
+
 import { graphToContactScene } from '../../../core/geometry/contactLayout';
 import type { CSDisk } from '../../../core/types/cs';
+import loadAllGraphs, { type GraphSet } from '../../../io/loadAllGraphs';
+import { type Graph } from '../../../io/parseGraph6';
+import { Button } from '../../../ui/Button';
 import { GraphPreview } from './GraphPreview';
 
 interface GraphsPanelProps {

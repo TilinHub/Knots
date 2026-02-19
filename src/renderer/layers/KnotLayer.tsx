@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { BaseLayer } from './BaseLayer';
-import type { LayerProps } from '../types/Layer';
-import { PathLayer } from './PathLayer';
-import { KnotEnvelopeComputer } from '../../features/knot/logic/KnotEnvelopeComputer';
+
 import type { EnvelopeSegment } from '../../core/geometry/contactGraph'; // Correct import?
 import type { CSDisk } from '../../core/types/cs';
+import { KnotEnvelopeComputer } from '../../features/knot/logic/KnotEnvelopeComputer';
+import type { LayerProps } from '../types/Layer';
+import { BaseLayer } from './BaseLayer';
+import { PathLayer } from './PathLayer';
 
 interface KnotLayerProps extends LayerProps {
     knotPath: EnvelopeSegment[];

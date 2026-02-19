@@ -101,7 +101,7 @@ export function findNextCollision(
 
         for (const targetTheta of angles) {
             // Calculate angular distance in the direction of rolling
-            let diff = direction * (targetTheta - currentTheta);
+            const diff = direction * (targetTheta - currentTheta);
 
             // Normalize diff to [0, 2PI)
             // If direction is 1 (CCW), we want positive diff (0 to 2PI)

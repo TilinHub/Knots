@@ -1,25 +1,27 @@
 import React from 'react';
-import { Logger } from '@/core/utils/Logger';
-import type { CSBlock, CSDisk, Point2D, CSArc } from '@/core/types/cs';
-import { findAllCrossings, findDiskContacts, type DiskContact } from '@/core/geometry/intersections';
-import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
+
+import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
+import { buildBoundedCurvatureGraph,findEnvelopePath, findEnvelopePathFromPoints } from '@/core/geometry/contactGraph';
 import { type Disk } from '@/core/geometry/diskHull';
-import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
-import { KnotRenderer } from './components/KnotRenderer';
+import type { Config,DubinsPath } from '@/core/geometry/dubins';
+import { type DiskContact,findAllCrossings, findDiskContacts } from '@/core/geometry/intersections';
+import { computeOuterContour } from '@/core/geometry/outerFace';
+import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
+import { computeRobustConvexHull } from '@/core/geometry/robustHull';
+import type { CSArc,CSBlock, CSDisk, Point2D } from '@/core/types/cs';
 import type { KnotDiagram } from '@/core/types/knot';
-import { DubinsRenderer } from './components/DubinsRenderer';
-import type { DubinsPath, Config } from '@/core/geometry/dubins';
-import { useContactGraph } from './hooks/useContactGraph';
-import { useContactPath } from './hooks/useContactPath';
+import { Logger } from '@/core/utils/Logger';
+import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
+import { DubinsLayer } from '@/renderer/layers/DubinsLayer';
+import { KnotLayer } from '@/renderer/layers/KnotLayer';
+import { StandardLayer } from '@/renderer/layers/StandardLayer';
+
 import { ContactGraphRenderer } from './components/ContactGraphRenderer';
 import { ContactPathRenderer } from './components/ContactPathRenderer'; // Still used for activePath
-import { KnotLayer } from '@/renderer/layers/KnotLayer';
-import { DubinsLayer } from '@/renderer/layers/DubinsLayer';
-import { StandardLayer } from '@/renderer/layers/StandardLayer';
-import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
-import { computeOuterContour } from '@/core/geometry/outerFace';
-import { computeRobustConvexHull } from '@/core/geometry/robustHull';
-import { findEnvelopePathFromPoints, findEnvelopePath, buildBoundedCurvatureGraph } from '@/core/geometry/contactGraph';
+import { DubinsRenderer } from './components/DubinsRenderer';
+import { KnotRenderer } from './components/KnotRenderer';
+import { useContactGraph } from './hooks/useContactGraph';
+import { useContactPath } from './hooks/useContactPath';
 
 // ── FLAG: Outer Contour for Envelope Display ────────────────────
 // Set to `false` to revert to the old convex-hull-only envelope.

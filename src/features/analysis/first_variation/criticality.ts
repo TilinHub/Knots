@@ -3,12 +3,12 @@
  * Sections 2.15, 2.16
  */
 
-import type { CSDiagram } from './types';
-import { Matrix } from './linearAlgebra';
-import type { GaugeResult } from './gauge';
 import { checkAndComputeTangents } from './checks';
-import { sub, norm, scale, normalize, dot } from './geometry';
+import type { GaugeResult } from './gauge';
+import { dot,norm, normalize, scale, sub } from './geometry';
+import { Matrix } from './linearAlgebra';
 import { constructTc } from './matrices';
+import type { CSDiagram } from './types';
 
 export type CriticalityResult = {
     r: Matrix;

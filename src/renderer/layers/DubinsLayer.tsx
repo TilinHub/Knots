@@ -1,7 +1,8 @@
 import React from 'react';
-import { BaseLayer } from './BaseLayer';
-import type { LayerProps } from '../types/Layer';
+
 import { DubinsRenderer } from '../../features/editor/components/DubinsRenderer';
+import type { LayerProps } from '../types/Layer';
+import { BaseLayer } from './BaseLayer';
 
 interface DubinsLayerProps extends LayerProps {
     dubinsMode: boolean;

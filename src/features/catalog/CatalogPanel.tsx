@@ -1,8 +1,10 @@
 
-import { useState, useRef, useMemo, useEffect } from 'react';
-import { CatalogGenerator } from './generator';
-import type { CatalogEntry } from './catalogTypes';
+import { useEffect,useMemo, useRef, useState } from 'react';
+
 import { Button } from '@/ui/Button';
+
+import type { CatalogEntry } from './catalogTypes';
+import { CatalogGenerator } from './generator';
 import { KnotThumbnail } from './KnotThumbnail';
 
 interface CatalogPanelProps {

@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { BaseLayer } from './BaseLayer';
-import type { LayerProps } from '../types/Layer';
-import { PathLayer } from './PathLayer';
-import { EditorEnvelopeComputer } from '../../features/editor/logic/EditorEnvelopeComputer';
+
+import { computeDiskHull,type DiskHull } from '../../core/geometry/diskHull';
 import type { CSDisk } from '../../core/types/cs';
-import { type DiskHull, computeDiskHull } from '../../core/geometry/diskHull';
+import { EditorEnvelopeComputer } from '../../features/editor/logic/EditorEnvelopeComputer';
+import type { LayerProps } from '../types/Layer';
+import { BaseLayer } from './BaseLayer';
+import { PathLayer } from './PathLayer';
 
 interface StandardLayerProps extends LayerProps {
     showEnvelope: boolean;

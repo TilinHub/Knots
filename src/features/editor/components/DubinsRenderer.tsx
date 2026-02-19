@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { type DubinsPath, type Config, sampleDubinsPath } from '@/core/geometry/dubins';
+
+import { type Config, type DubinsPath, sampleDubinsPath } from '@/core/geometry/dubins';
 
 interface DubinsRendererProps {
     // Legacy / candidates

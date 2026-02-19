@@ -1,6 +1,6 @@
-import { useState, useEffect, type FC } from 'react';
-import Logo from '../../../assets/LOGO.png';
+import { type FC,useEffect, useState } from 'react';
 
+import Logo from '../../../assets/LOGO.png';
 import { formatArcLength } from '../../../core/geometry/arcLength';
 
 interface EditorHeaderProps {

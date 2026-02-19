@@ -1,6 +1,6 @@
-import { createInitialScene } from "../model/scene";
-import type { Scene, Point, Primitive, Segment } from "../model/entities";
 import type { Graph } from "../../io/parseGraph6";
+import type { Point, Primitive, Scene, Segment } from "../model/entities";
+import { createInitialScene } from "../model/scene";
 
 type Vec2 = { x: number; y: number };
 

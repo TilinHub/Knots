@@ -1,7 +1,8 @@
-import { useEffect, useRef, useMemo, useCallback } from 'react';
-import { SmoothCSEnvelope, type Circle } from '../../../core/geometry/CSEnvelope';
-import { EnvelopeRenderer, type EnvelopeRenderOptions } from '../../../renderer/EnvelopeRenderer';
+import { useCallback,useEffect, useMemo, useRef } from 'react';
+
+import { type Circle,SmoothCSEnvelope } from '../../../core/geometry/CSEnvelope';
 import type { Point2D } from '../../../core/types/cs';
+import { EnvelopeRenderer, type EnvelopeRenderOptions } from '../../../renderer/EnvelopeRenderer';
 
 interface UseInteractiveEnvelopeOptions {
   smoothness?: number;

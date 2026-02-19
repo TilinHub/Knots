@@ -1,7 +1,7 @@
-import type { CSDisk } from '../../../core/types/cs';
-import type { CSDiagram, Tangency, Segment, Arc, Contact, Tolerances } from '../../analysis/first_variation/types';
 import { computeDiskHull, type HullSegment } from '../../../core/geometry/diskHull';
+import type { CSDisk } from '../../../core/types/cs';
 import { dist } from '../../analysis/first_variation/geometry';
+import type { Arc, Contact, CSDiagram, Segment, Tangency, Tolerances } from '../../analysis/first_variation/types';
 
 /**
  * Converts a set of visual Disks into a rigorous CSDiagram using the Convex Hull

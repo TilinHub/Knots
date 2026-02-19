@@ -3,11 +3,11 @@
  * Use strictly the formulas from Instrucciones.pdf
  */
 
-import type { CSDiagram, Disk, Segment, Arc, Tangency } from './types';
 import {
-    sub, norm, dot, J, calculateNormal, calculateDeltaTheta,
-    dist, add, scale, intersectSegmentArc, intersectArcArc, intersectSegmentSegment
-} from './geometry';
+add, calculateDeltaTheta,
+calculateNormal,     dist, dot, intersectArcArc, intersectSegmentArc, intersectSegmentSegment,
+J, norm, scale,     sub} from './geometry';
+import type { Arc, CSDiagram, Disk, Segment, Tangency } from './types';
 
 export type CheckResult = {
     passed: boolean;

@@ -1,15 +1,15 @@
-import type { CSDiagram } from './types';
 import type { CheckResult } from './checks';
-import type { CriticalityResult } from './criticality';
 import {
-    checkImmediateMetrics, checkCombinatorial, checkSegments, checkArcs, checkAndComputeTangents, checkGlobalIntersections
-} from './checks';
-import { constructA, constructTc, constructL, constructTw, getRoll } from './matrices';
+checkAndComputeTangents, checkArcs, checkCombinatorial, checkGlobalIntersections,
+    checkImmediateMetrics, checkSegments} from './checks';
+import type { CriticalityResult } from './criticality';
+import { evaluateQuadratic,testCriticality } from './criticality';
 import { assembleFunctional, reduceFunctional } from './functional';
 import { constructGaugeBasis } from './gauge';
-import { testCriticality, evaluateQuadratic } from './criticality';
+import { calculateNormal, dot,J } from './geometry';
 import { rank } from './linearAlgebra';
-import { calculateNormal, J, dot } from './geometry';
+import { constructA, constructL, constructTc, constructTw, getRoll } from './matrices';
+import type { CSDiagram } from './types';
 
 export interface AnalysisReport {
     counts: {

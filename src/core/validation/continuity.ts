@@ -2,7 +2,7 @@
  * Validación de continuidad posicional y tangencial para diagramas CS
  */
 
-import type { CSBlock, ValidationResult, Point2D } from '../types/cs';
+import type { CSBlock, Point2D,ValidationResult } from '../types/cs';
 
 // Tolerancia para comparaciones numéricas (2px para snap y errores de redondeo)
 const EPSILON = 2.0;

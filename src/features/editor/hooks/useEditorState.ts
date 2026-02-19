@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
-import type { CSBlock, CSDisk, CSArc, CSSegment } from '../../../core/types/cs';
+import { useEffect,useMemo, useState } from 'react';
+
+import { blockLength,getCurveLengthInfo } from '../../../core/geometry/arcLength';
+import type { CSArc, CSBlock, CSDisk, CSSegment } from '../../../core/types/cs';
 import { validateContinuity } from '../../../core/validation/continuity';
-import { getCurveLengthInfo, blockLength } from '../../../core/geometry/arcLength';
 import type { DynamicAnchor } from '../../knot/logic/useKnotState';
 
 interface InitialKnot {

@@ -3,9 +3,9 @@
  * Section 2.14
  */
 
-import type { CSDiagram } from './types';
-import { Matrix, qr, orth } from './linearAlgebra';
+import { Matrix, orth,qr } from './linearAlgebra';
 import { constructA } from './matrices';
+import type { CSDiagram } from './types';
 
 /**
  * Movimientos rigidos en el espacio ambiente V

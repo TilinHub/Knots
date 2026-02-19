@@ -3,10 +3,10 @@
  * Section 2.13
  */
 
-import type { CSDiagram, Disk } from './types';
-import { Matrix } from './linearAlgebra';
-import { sub, norm, scale, dot } from './geometry';
 import { checkAndComputeTangents } from './checks';
+import { dot,norm, scale, sub } from './geometry';
+import { Matrix } from './linearAlgebra';
+import type { CSDiagram, Disk } from './types';
 
 /**
  * 2.13 Ensamble mecanico de Phi

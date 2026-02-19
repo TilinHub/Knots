@@ -1,4 +1,4 @@
-import type { DubinsPath, Obstacle, Point, Config } from './dubins';
+import type { Config,DubinsPath, Obstacle, Point } from './dubins';
 
 const EPSILON = 1e-5;
 
@@ -14,7 +14,7 @@ function normalizeAngle(theta: number): number {
 function isAngleInArc(angle: number, startAngle: number, endAngle: number, isCCW: boolean): boolean {
     const a = normalizeAngle(angle);
     const s = normalizeAngle(startAngle);
-    let e = normalizeAngle(endAngle);
+    const e = normalizeAngle(endAngle);
 
     if (Math.abs(s - e) < EPSILON) return false; // Empty arc
 

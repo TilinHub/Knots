@@ -1,16 +1,17 @@
 import React, { useMemo } from 'react';
-import { CSCanvas } from './CSCanvas';
-import { useEditorState } from './hooks/useEditorState';
-import { useRollingMode } from '../rolling/logic/useRollingMode';
-import { useKnotState } from '../knot/logic/useKnotState';
-import { useDubinsState } from '../dubins/logic/useDubinsState';
-import { usePersistentDubins } from './hooks/usePersistentDubins';
-import { EditorHeader } from './components/EditorHeader';
-import type { CSDisk } from '../../core/types/cs';
+
+import { buildBoundedCurvatureGraph,findEnvelopePath, findEnvelopePathFromPoints } from '../../core/geometry/contactGraph';
 import { computeDiskHull, computeHullLength, computeHullMetrics } from '../../core/geometry/diskHull';
+import type { CSDisk } from '../../core/types/cs';
+import { useDubinsState } from '../dubins/logic/useDubinsState';
+import { useKnotState } from '../knot/logic/useKnotState';
+import { useRollingMode } from '../rolling/logic/useRollingMode';
+import { EditorHeader } from './components/EditorHeader';
 import { EditorSidebar } from './components/EditorSidebar';
+import { CSCanvas } from './CSCanvas';
 import { useContactGraph } from './hooks/useContactGraph';
-import { findEnvelopePath, findEnvelopePathFromPoints, buildBoundedCurvatureGraph } from '../../core/geometry/contactGraph';
+import { useEditorState } from './hooks/useEditorState';
+import { usePersistentDubins } from './hooks/usePersistentDubins';
 
 interface EditorPageProps {
   onBackToGallery?: () => void;

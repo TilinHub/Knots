@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { KnotDiagram, Point3D } from '@/core/types/knot';
 
 interface KnotRendererProps {

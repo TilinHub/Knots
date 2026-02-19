@@ -1,9 +1,7 @@
 import { Logger } from '../../../core/utils/Logger';
-
 /**
  * Geometric Utilities for CS Diagram Protocol
  */
-
 import type { Point, Vector } from './types';
 
 // See PDF Section 1.2 "Convencion de rotacion 90"
@@ -103,7 +101,7 @@ export function normalize(v: Vector): Vector {
  */
 export function isAngleInInterval(theta: number, start: number, end: number, tolerance: number = 1e-9): boolean {
     const twoPi = 2 * Math.PI;
-    let s = wrap0_2pi(start);
+    const s = wrap0_2pi(start);
     let e = wrap0_2pi(end);
     let t = wrap0_2pi(theta);
 
@@ -200,8 +198,8 @@ export function intersectArcArc(
         // Helper to check strict interior
         const strictInterval = (t: number, s: number, e: number) => {
             // shift t relative to s
-            let t_rel = wrap0_2pi(t - s);
-            let e_rel = wrap0_2pi(e - s);
+            const t_rel = wrap0_2pi(t - s);
+            const e_rel = wrap0_2pi(e - s);
             return t_rel > tolerance && t_rel < e_rel - tolerance;
         };
 
@@ -271,8 +269,8 @@ export function intersectArcArc(
         // So we use strict interval check
 
         const strictInterval = (t: number, s: number, e: number) => {
-            let t_rel = wrap0_2pi(t - s);
-            let e_rel = wrap0_2pi(e - s);
+            const t_rel = wrap0_2pi(t - s);
+            const e_rel = wrap0_2pi(e - s);
             return t_rel > tolerance && t_rel < e_rel - tolerance;
         };
 

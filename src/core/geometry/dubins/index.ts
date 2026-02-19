@@ -1,4 +1,2 @@
-export * from './dubins';
 export * from './angularDubins';
-export * from './knotLength';
-export * from './examples';
+export * from './dubins';

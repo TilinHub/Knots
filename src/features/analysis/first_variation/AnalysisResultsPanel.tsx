@@ -1,7 +1,8 @@
 import React from 'react';
+
+import { Button } from '../../../ui/Button';
 import type { CheckResult } from './checks'; // Type-only import
 import type { CriticalityResult } from './criticality'; // Type-only import
-import { Button } from '../../../ui/Button';
 
 // Redefine interface to match analyzer.ts update
 interface MatrixInfo { dims: string; rank: number; }

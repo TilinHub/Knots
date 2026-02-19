@@ -1,6 +1,6 @@
 
-import type { CSDisk } from '../../../core/types/cs';
 import type { DubinsPath } from '../../../core/geometry/dubins';
+import type { CSDisk } from '../../../core/types/cs';
 
 /**
  * State of the Elastic Band on a single disk.
@@ -128,7 +128,7 @@ export class ElasticBandSolver {
             if (!closed && i === sequence.length - 2) continue; // Check logic
 
             // Calculate Arc Length
-            let delta = stateNext.thetaOut - stateNext.thetaIn;
+            const delta = stateNext.thetaOut - stateNext.thetaIn;
             // Normalize delta to match chirality direction
             // If L (CCW), delta should be positive? 
             // Our relaxation logic effectively unwraps theta, so (out - in) should naturally be the correct signed angle.
@@ -221,7 +221,7 @@ export class ElasticBandSolver {
         // Crucial: Maintain Winding (Unwrapping).
         // Ensure thetaOut is "after" thetaIn relative to chirality.
 
-        let newIn = idealIn;
+        const newIn = idealIn;
         let newOut = idealOut;
 
         // Unwrap checks

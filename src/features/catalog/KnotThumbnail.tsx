@@ -1,8 +1,9 @@
-import { useRef, useEffect } from 'react';
+import { useEffect,useRef } from 'react';
+
+import { buildBoundedCurvatureGraph,findEnvelopePath } from '@/core/geometry/contactGraph';
+import { SmoothCSEnvelope } from '@/core/geometry/CSEnvelope';
 import type { CSDisk } from '@/core/types/cs';
 import { EnvelopeRenderer } from '@/renderer/EnvelopeRenderer';
-import { SmoothCSEnvelope } from '@/core/geometry/CSEnvelope';
-import { findEnvelopePath, buildBoundedCurvatureGraph } from '@/core/geometry/contactGraph';
 
 interface KnotThumbnailProps {
     disks: CSDisk[];

@@ -4,8 +4,8 @@
  * Estos ejemplos demuestran las condiciones geométricas necesarias
  * para cada tipo de path según la clasificación de Dubins (1957)
  */
-import type { DubinsPath } from '../../core/math/DubinsPath';
-import type { Pose2D } from '../../core/math/DubinsPath';
+import type { DubinsPath } from '../../../../src/core/math/DubinsPath';
+import type { Pose2D } from '../../../../src/core/math/DubinsPath';
 
 /**
  * Configuraciones de ejemplo que garantizan cada tipo de Dubins path

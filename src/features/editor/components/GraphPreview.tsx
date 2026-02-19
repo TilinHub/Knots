@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import type { Graph } from '../../../io/parseGraph6';
+
 import { graphToContactScene } from '../../../core/geometry/contactLayout';
+import type { Graph } from '../../../io/parseGraph6';
 
 interface GraphPreviewProps {
     graph: Graph;

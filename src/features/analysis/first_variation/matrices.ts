@@ -3,10 +3,10 @@
  * Sections 2.7, 2.8, 2.9
  */
 
-import type { CSDiagram } from './types';
-import { Matrix, nullspace } from './linearAlgebra';
-import { sub, normalize, calculateNormal, calculateArcTangent, dist } from './geometry';
 import { checkAndComputeTangents } from './checks';
+import { calculateArcTangent, calculateNormal, dist,normalize, sub } from './geometry';
+import { Matrix, nullspace } from './linearAlgebra';
+import type { CSDiagram } from './types';
 
 /**
  * 2.7 Construccion de A(c)

@@ -1,6 +1,6 @@
 import { Logger } from '../../core/utils/Logger';
-import type { EnvelopeSegment, ArcSegment, TangentSegment } from '../geometry/contactGraph';
-import type { Point2D, CSArc, CSSegment } from '../types/cs';
+import type { ArcSegment, EnvelopeSegment, TangentSegment } from '../geometry/contactGraph';
+import type { CSArc, CSSegment,Point2D } from '../types/cs';
 
 const EPSILON = 1e-4; // Slightly loose for floating point noise
 

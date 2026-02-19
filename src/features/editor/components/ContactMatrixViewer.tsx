@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import type { CSDisk } from '../../../core/types/cs';
+
 import { calculateJacobianMatrix } from '../../../core/geometry/contactGraph';
+import type { CSDisk } from '../../../core/types/cs';
 import { Button } from '../../../ui/Button';
-import { convertDisksToDiagram } from '../utils/diagramAdapter';
 import { analyzeDiagram } from '../../analysis/first_variation/analyzer';
+import { convertDisksToDiagram } from '../utils/diagramAdapter';
 
 interface ContactMatrixViewerProps {
     disks: CSDisk[];

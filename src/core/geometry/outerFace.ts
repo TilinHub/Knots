@@ -17,7 +17,7 @@
 
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
-import type { EnvelopeSegment, ArcSegment, TangentSegment } from './contactGraph';
+import type { ArcSegment, EnvelopeSegment, TangentSegment } from './contactGraph';
 
 // ── Helpers ──────────────────────────────────────────────────────
 

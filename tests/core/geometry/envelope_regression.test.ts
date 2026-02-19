@@ -1,12 +1,13 @@
 
-import { computeRobustConvexHull } from '../src/core/geometry/robustHull';
-import { CSDisk } from '../src/core/types/cs';
+import { computeRobustConvexHull } from '../../../src/core/geometry/robustHull';
+import { CSDisk } from '../../../src/core/types/cs';
 
 // Mock CSDisk factory
 const createDisk = (id: string, x: number, y: number, r: number): CSDisk => ({
     id,
     center: { x, y },
     visualRadius: r,
+    radius: r,
     kind: 'disk',
 });
 
@@ -33,14 +34,8 @@ try {
             console.error("FAILURE: Result not ok", result);
             process.exit(1);
         }
-    } else {
-        // Legacy return type (array)
-        if (Array.isArray(result) && result.length > 0) {
-            console.log("SUCCESS: Path found (Legacy Array)");
-        } else {
-            console.error("FAILURE: Empty array returned");
-            process.exit(1);
-        }
+
+
     }
 
 } catch (e) {

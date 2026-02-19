@@ -2,11 +2,11 @@
  * Converter from Editor State to Protocol CSDiagram
  */
 
-import type { CSDisk, Point2D } from '../../../core/types/cs';
-import type { CSDiagram, Disk, Contact, Tangency, Segment, Arc, Point } from './types';
-import { dist, wrap0_2pi, calculateDeltaTheta } from './geometry';
 import { buildBoundedCurvatureGraph, findEnvelopePath, findEnvelopePathFromPoints } from '../../../core/geometry/contactGraph'; // [Updated Import]
+import type { CSDisk, Point2D } from '../../../core/types/cs';
 import type { DynamicAnchor } from '../../knot/logic/useKnotState';
+import { calculateDeltaTheta,dist, wrap0_2pi } from './geometry';
+import type { Arc, Contact, CSDiagram, Disk, Point,Segment, Tangency } from './types';
 
 // Internal types for the converter
 type DiskIdToIndex = Map<string, number>;
