@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { CSBlock, CSDisk } from '../../../core/types/cs';
 import { Button } from '../../../ui/Button';
 import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
-import { type AnalysisReport,analyzeDiagram } from '../../analysis/first_variation/analyzer';
+import { type AnalysisReport, analyzeDiagram } from '../../analysis/first_variation/analyzer';
 import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
 import { CatalogPanel } from '../../catalog/CatalogPanel';
 import { KnotPanel } from '../../knot/components/KnotPanel';
@@ -27,7 +27,7 @@ interface EditorState {
     diskBlocks: CSDisk[];
     validation: { valid: boolean; errors: any[] };
     lengthInfo: { totalLength: number };
-    savedKnots: { id: string; name: string; diskSequence: string[]; color?: string; chiralities?: ('L' | 'R')[] }[];
+    savedKnots: { id: string; name: string; diskSequence: string[]; color?: string; chiralities?: ('L' | 'R')[]; frozenPath?: any[] }[];
     envelopeColor?: string; // [NEW]
 }
 
@@ -299,7 +299,7 @@ export const EditorSidebar = ({
                                     <div style={{ display: 'flex', gap: '4px' }}>
                                         <button
                                             onClick={() => {
-                                                const diagram = convertEditorToProtocol(editorState.diskBlocks, knot.diskSequence, { tolerance: 1e-4, chiralities: knot.chiralities });
+                                                const diagram = convertEditorToProtocol(editorState.diskBlocks, knot.diskSequence, { tolerance: 1e-4, chiralities: knot.chiralities, frozenPath: knot.frozenPath });
                                                 const report = analyzeDiagram(diagram);
                                                 setAnalysisReport(report);
                                             }}

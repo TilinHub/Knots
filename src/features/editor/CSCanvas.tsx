@@ -362,14 +362,14 @@ export function CSCanvas({
 
       const minDistance = currentR + otherR;
 
-      // Strict overlap check (no -1 tolerance)
+      // Strict overlap check
       if (distance < minDistance) {
         // Unsticking logic: Allow moving away if already overlapping
         const oldDx = current.center.x - other.center.x;
         const oldDy = current.center.y - other.center.y;
         const oldDistance = Math.sqrt(oldDx * oldDx + oldDy * oldDy);
 
-        // If we were strictly inside (bad state) and we are improving (moving out), allow it.
+        // Only allow if we were already too close AND we are strictly moving outward
         if (oldDistance < minDistance && distance > oldDistance) {
           continue;
         }

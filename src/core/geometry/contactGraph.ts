@@ -859,8 +859,10 @@ export function calculateJacobianMatrix(disks: ContactDisk[]): { matrix: number[
             const dist = Math.sqrt(dx * dx + dy * dy);
             const rSum = d1.radius + d2.radius;
 
-            // Tolerance for contact (Relaxed to 0.1 to match visual "Penny Graph" threshold better)
-            if (Math.abs(dist - rSum) < 0.1 || dist < rSum) { // Overlap or touching
+            // Tolerance for contact — proportional to sum of radii to work at any scale
+            // (e.g. visualRadius=50 → tolerance=1.0; radius=1 → tolerance=0.02)
+            const contactTolerance = rSum * 0.01;
+            if (Math.abs(dist - rSum) < contactTolerance || dist < rSum) { // Overlap or touching
                 // Determine contact point and normal
                 const normal = { x: dx / dist, y: dy / dist };
                 const point = {

@@ -61,7 +61,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // from current disk positions using bitangent formulas.
   // NEW: validates tangent segments against ALL disks and reroutes around obstacles.
 
-  // Helper: does line segment (ax,ay)→(bx,by) penetrate circle (cx,cy,r)?
+  // Helper: does line segment (ax,ay)→(bx,by) SIGNIFICANTLY penetrate circle (cx,cy,r)?
+  // Uses r * 0.8 to avoid false positives for grazing/near-miss tangents
   function segmentHitsCircle(
     ax: number, ay: number, bx: number, by: number,
     cx: number, cy: number, r: number
@@ -70,18 +71,20 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     const fx = ax - cx, fy = ay - cy;
     const a = dx * dx + dy * dy;
     if (a < 1e-12) return false; // Degenerate segment
+    // Shrink effective radius to avoid false positives for tangents
+    // that merely graze a disk boundary
+    const effectiveR = r * 0.8;
     const b = 2 * (fx * dx + fy * dy);
-    const c = fx * fx + fy * fy - r * r;
+    const c = fx * fx + fy * fy - effectiveR * effectiveR;
     const disc = b * b - 4 * a * c;
     if (disc < 0) return false; // No intersection
     const sqrtDisc = Math.sqrt(disc);
     const t1 = (-b - sqrtDisc) / (2 * a);
     const t2 = (-b + sqrtDisc) / (2 * a);
     // Chord must be inside the segment (not just touching endpoints)
-    const EPS = 0.05;
+    const EPS = 0.08;
     if (t1 > EPS && t1 < 1 - EPS) return true;
     if (t2 > EPS && t2 < 1 - EPS) return true;
-    // Also check if a significant chord exists inside the segment
     const tEnter = Math.max(t1, EPS);
     const tExit = Math.min(t2, 1 - EPS);
     return tEnter < tExit;
@@ -306,24 +309,18 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         let startAngle = seg.startAngle;
         let endAngle = seg.endAngle;
 
-        // Previous tangent → arc start
+        // Previous tangent → arc start (connect directly to adjacent tangent's endpoint)
         const prev = findPrevTangent(i);
-        if (prev) {
-          if (prev.endDiskId === diskId && prev.end) {
-            startAngle = Math.atan2(prev.end.y - diskData.center.y, prev.end.x - diskData.center.x);
-          } else if (prev.startDiskId === diskId && prev.start) {
-            startAngle = Math.atan2(prev.start.y - diskData.center.y, prev.start.x - diskData.center.x);
-          }
+        if (prev && prev.end) {
+          // Use the endpoint of the previous tangent regardless of disk ID
+          // to ensure continuity in the path
+          startAngle = Math.atan2(prev.end.y - diskData.center.y, prev.end.x - diskData.center.x);
         }
 
-        // Next tangent → arc end
+        // Next tangent → arc end (connect directly to adjacent tangent's startpoint)
         const next = findNextTangent(i);
-        if (next) {
-          if (next.startDiskId === diskId && next.start) {
-            endAngle = Math.atan2(next.start.y - diskData.center.y, next.start.x - diskData.center.x);
-          } else if (next.endDiskId === diskId && next.end) {
-            endAngle = Math.atan2(next.end.y - diskData.center.y, next.end.x - diskData.center.x);
-          }
+        if (next && next.start) {
+          endAngle = Math.atan2(next.start.y - diskData.center.y, next.start.x - diskData.center.x);
         }
 
         const PI2 = 2 * Math.PI;

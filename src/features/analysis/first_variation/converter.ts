@@ -2,11 +2,11 @@
  * Converter from Editor State to Protocol CSDiagram
  */
 
-import { buildBoundedCurvatureGraph, findEnvelopePath, findEnvelopePathFromPoints } from '../../../core/geometry/contactGraph'; // [Updated Import]
+import { buildBoundedCurvatureGraph, calculateBitangents, findEnvelopePath, findEnvelopePathFromPoints } from '../../../core/geometry/contactGraph'; // [Updated Import]
 import type { CSDisk, Point2D } from '../../../core/types/cs';
 import type { DynamicAnchor } from '../../knot/logic/useKnotState';
-import { calculateDeltaTheta,dist, wrap0_2pi } from './geometry';
-import type { Arc, Contact, CSDiagram, Disk, Point,Segment, Tangency } from './types';
+import { calculateDeltaTheta, dist, wrap0_2pi } from './geometry';
+import type { Arc, Contact, CSDiagram, Disk, Point, Segment, Tangency } from './types';
 
 // Internal types for the converter
 type DiskIdToIndex = Map<string, number>;
@@ -14,7 +14,8 @@ type DiskIdToIndex = Map<string, number>;
 export interface ConverterOptions {
     tolerance: number;
     chiralities?: ('L' | 'R')[];
-    anchorSequence?: DynamicAnchor[]; // [NEW]
+    anchorSequence?: DynamicAnchor[];
+    frozenPath?: any[];  // Saved path topology for exact reconstruction
 }
 
 export function convertEditorToProtocol(
@@ -69,56 +70,106 @@ export function convertEditorToProtocol(
     }));
 
     // 4. Reconstruct Path
-    // [FIX] Use points-based pathfinding if anchors are available (Knot Mode)
-    // This ensures Analysis matches Editor exactly.
-    let result;
+    let result: { path: any[], chiralities: ('L' | 'R')[] } | null = null;
 
-    if (options.anchorSequence && options.anchorSequence.length >= 2) {
-        // Convert DynamicAnchors to Points
+    // PRIMARY: Use frozenPath if available — reconstructs from saved topology
+    // using current disk positions at R=1 scale. This guarantees the analysis
+    // matches the displayed envelope exactly.
+    if (options.frozenPath && options.frozenPath.length > 0) {
+        const reconstructedPath: any[] = [];
+
+        for (const seg of options.frozenPath) {
+            if (seg.type === 'ARC') {
+                // Arc segment: map editor disk ID → index, use R=1 center
+                const editorDiskId = seg.diskId;
+                const diskIdx = diskIdToIndex.get(editorDiskId);
+                if (diskIdx === undefined) continue;
+
+                const disk = disks[diskIdx];
+                // Compute angular length
+                let arcLen = seg.endAngle - seg.startAngle;
+                if (seg.chirality === 'L') {
+                    while (arcLen <= 0) arcLen += 2 * Math.PI;
+                } else {
+                    while (arcLen >= 0) arcLen -= 2 * Math.PI;
+                    arcLen = Math.abs(arcLen);
+                }
+
+                reconstructedPath.push({
+                    type: 'ARC',
+                    center: disk.center,
+                    radius: 1,
+                    startAngle: seg.startAngle,
+                    endAngle: seg.endAngle,
+                    chirality: seg.chirality,
+                    length: arcLen,
+                    diskId: diskIdx.toString()
+                });
+            } else {
+                // Tangent segment: recompute bitangent of same type at R=1 scale
+                const startId = seg._startDiskId || seg.startDiskId;
+                const endId = seg._endDiskId || seg.endDiskId;
+                const startIdx = diskIdToIndex.get(startId);
+                const endIdx = diskIdToIndex.get(endId);
+                if (startIdx === undefined || endIdx === undefined) continue;
+
+                const d1 = { id: startIdx.toString(), center: disks[startIdx].center, radius: 1, regionId: '0', color: '' };
+                const d2 = { id: endIdx.toString(), center: disks[endIdx].center, radius: 1, regionId: '0', color: '' };
+
+                const tangents = calculateBitangents(d1, d2);
+                const match = tangents.find((t: any) => t.type === seg.type);
+
+                if (match) {
+                    reconstructedPath.push({
+                        ...match,
+                        startDiskId: startIdx.toString(),
+                        endDiskId: endIdx.toString()
+                    });
+                }
+            }
+        }
+
+        result = { path: reconstructedPath, chiralities: options.chiralities || [] };
+
+    } else if (options.anchorSequence && options.anchorSequence.length >= 2) {
+        // Anchors-based pathfinding (Knot Mode)
         const anchorPoints: Point2D[] = options.anchorSequence.map(da => {
-            const disk = editorDisks.find(d => d.id === da.diskId); // Use editorDisks (unscaled) for calculation? 
-            // WAIT. findEnvelopePathFromPoints expects scaling? 
-            // The graph/disks passed to findEnvelopePaths are SCALED (R=1).
-            // So we must scale the anchors too.
-            // But DynamicAnchor uses region properties? No, it uses 'angle'.
-
-            if (!disk) return { x: 0, y: 0 }; // Should not happen
-
-            // Re-calculate point position
-            // We use the SCALED disk definitions from step 1.
+            const disk = editorDisks.find(d => d.id === da.diskId);
+            if (!disk) return { x: 0, y: 0 };
             const scaledCenter = diskIdToIndex.has(da.diskId)
                 ? disks[diskIdToIndex.get(da.diskId)!].center
                 : { x: 0, y: 0 };
-
             return {
-                x: scaledCenter.x + 1 * Math.cos(da.angle), // R=1
+                x: scaledCenter.x + 1 * Math.cos(da.angle),
                 y: scaledCenter.y + 1 * Math.sin(da.angle)
             };
         });
 
-        const contactDisks = disks.map(d => ({
+        const anchorContactDisks = disks.map(d => ({
             id: d.index.toString(),
             center: d.center,
             radius: 1,
             regionId: '0'
         }));
 
-        result = findEnvelopePathFromPoints(anchorPoints, contactDisks);
+        result = findEnvelopePathFromPoints(anchorPoints, anchorContactDisks);
 
     } else {
-        // Fallback or Legacy (Sequence only)
-        const diskIds = sequenceIds.map(id => diskIdToIndex.get(id)!.toString());
+        // Fallback: solve from sequence + chiralities
+        const diskIds = sequenceIds.map(id => {
+            const idx = diskIdToIndex.get(id);
+            return idx !== undefined ? idx.toString() : '0';
+        });
         const chiralities = options.chiralities;
 
-        const contactDisks = disks.map(d => ({
+        const seqContactDisks = disks.map(d => ({
             id: d.index.toString(),
             center: d.center,
             radius: 1,
             regionId: '0'
         }));
-        const graph = buildBoundedCurvatureGraph(contactDisks, false);
-
-        result = findEnvelopePath(graph, diskIds, chiralities);
+        const graph = buildBoundedCurvatureGraph(seqContactDisks, false);
+        result = findEnvelopePath(graph, diskIds, chiralities, false);
     }
 
     const tangencies: Tangency[] = [];
