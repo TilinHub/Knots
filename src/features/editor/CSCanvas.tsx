@@ -858,6 +858,7 @@ export function CSCanvas({
         anchorPoints={anchorPoints}
         showEnvelope={showEnvelope && (!knotState?.flexibleKnotPaths || knotState.flexibleKnotPaths.length === 0)} // [MOD] Hide legacy if flexible exists
         envelopeColor={envelopeColor}
+        savedEnvelopeColor={savedEnvelopeColor} // [FIX] Pass saved color to background layer
         knotMode={knotMode}
         onKnotPointClick={onKnotPointClick}
         savedKnotPaths={savedKnotPaths}
