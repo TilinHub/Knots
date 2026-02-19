@@ -286,10 +286,10 @@ const AnalysisChecklist = ({ report }: { report: NonNullable<AnalysisResultsPane
             </ChecklistSection>
 
             <ChecklistSection title={<span>7. Criticidad y Segunda Variación</span>}>
-                <div style={{ background: report.Criticality.isCritical ? 'rgba(255,0,0,0.05)' : 'rgba(0,255,0,0.05)', padding: '12px', borderRadius: '8px' }}>
+                <div style={{ background: report.Criticality.isCritical ? 'rgba(0,255,0,0.05)' : 'rgba(255,0,0,0.05)', padding: '12px', borderRadius: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <span>Result:</span>
-                        <strong style={{ color: report.Criticality.isCritical ? 'var(--accent-error)' : 'var(--accent-success)' }}>
+                        <strong style={{ color: report.Criticality.isCritical ? 'var(--accent-success)' : 'var(--accent-error)' }}>
                             {report.Criticality.isCritical ? "CRITICAL" : "NOT CRITICAL"}
                         </strong>
                     </div>
@@ -512,12 +512,12 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
 
                     {/* Criticality */}
                     {criticality && (
-                        <div style={{ background: 'rgba(255,0,0,0.05)', padding: '16px', borderRadius: '8px', marginTop: '20px' }}>
+                        <div style={{ background: criticality.isCritical ? 'rgba(0,255,0,0.05)' : 'rgba(255,0,0,0.05)', padding: '16px', borderRadius: '8px', marginTop: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <h4 style={{ margin: 0, fontSize: '14px' }}>
                                     Criticidad: <MathText>r</MathText> <MathNum>=</MathNum> <MathText>U</MathText><MathNum><sub>g</sub><sup>T</sup></MathNum> <MathText>g</MathText><MathNum><sub>red</sub></MathNum>
                                 </h4>
-                                <span style={{ fontWeight: 'bold' }}>{criticality.isCritical ? "CRITICAL" : "NOT CRITICAL"}</span>
+                                <span style={{ fontWeight: 'bold', color: criticality.isCritical ? 'var(--accent-success)' : 'var(--accent-error)' }}>{criticality.isCritical ? "CRITICAL" : "NOT CRITICAL"}</span>
                             </div>
                             <div style={{ fontFamily: 'monospace', fontSize: '13px' }}>
                                 <div><MathNum>||</MathNum><MathText>r</MathText><MathNum>||</MathNum> &nbsp;&nbsp; {criticality.normR.toExponential(6)}</div>

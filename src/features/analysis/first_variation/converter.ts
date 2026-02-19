@@ -29,7 +29,7 @@ export function convertEditorToProtocol(
     const diskIdToIndex: DiskIdToIndex = new Map();
 
     // Scale based on first disk radius to enforce R=1
-    const refRadius = editorDisks[0]?.radius || 1;
+    const refRadius = editorDisks[0]?.visualRadius || 1;
     const scaleFactor = 1 / refRadius;
 
     editorDisks.forEach((d, i) => {
