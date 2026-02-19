@@ -157,9 +157,10 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
         const segmentLen = Math.sqrt(segmentLenSq);
         const chordLen = ((t2 - t1) * segmentLen);
 
-        // If chord is less than 1% of radius (very strict grazing)
-        // 0.1 was too large (5 units for r=50). 0.01 is 0.5 units.
-        if (chordLen < r * 0.01) {
+        // If chord is less than 15% of radius (grazing/touching)
+        // 0.01 was too strict (numerical noise rejected valid packed configurations).
+        // 0.15 allows ~0.3% overlap, sufficient for "soft" contacts.
+        if (chordLen < r * 0.15) {
             // Grazing/Touching -> Allowed
             return false;
         }

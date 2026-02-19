@@ -256,7 +256,10 @@ export function CSCanvas({
 
           // Solve for the path using the saved sequence and chiralities
           // Solve for the path using the saved sequence and chiralities
-          const result = findEnvelopePath(graph, knotSequence, knotChiralities, false);
+          // [FIX] Strict Chirality = TRUE.
+          // The envelope must behave like an elastic band that PRESERVES TOPOLOGY.
+          // It should not "snap" to a different winding just because it's shorter.
+          const result = findEnvelopePath(graph, knotSequence, knotChiralities, true);
 
           if (result.path && result.path.length > 0) {
             return result.path;
@@ -848,21 +851,21 @@ export function CSCanvas({
         context={{ width, height }}
       />
 
-      {/* 2. Knot Layer (Active Envelope) */}
+      {/* 2. Knot Layer (Background - Active Envelope only, NO saved knots) */}
       <KnotLayer
         visible={true}
         blocks={blocks}
         knotPath={knotPath}
-        knotSequence={knotSequence} // [NEW]
-        knotChiralities={knotChiralities} // [NEW]
+        knotSequence={knotSequence}
+        knotChiralities={knotChiralities}
         anchorPoints={anchorPoints}
-        showEnvelope={showEnvelope && (!knotState?.flexibleKnotPaths || knotState.flexibleKnotPaths.length === 0)} // [MOD] Hide legacy if flexible exists
+        showEnvelope={showEnvelope && (!knotState?.flexibleKnotPaths || knotState.flexibleKnotPaths.length === 0)}
         envelopeColor={envelopeColor}
-        savedEnvelopeColor={savedEnvelopeColor} // [FIX] Pass saved color to background layer
+        savedEnvelopeColor={savedEnvelopeColor}
         knotMode={knotMode}
         onKnotPointClick={onKnotPointClick}
-        savedKnotPaths={savedKnotPaths}
-        context={{ width, height }} // If needed
+        savedKnotPaths={[]}  // [FIX] No saved knots here — they render AFTER disks
+        context={{ width, height }}
       />
 
       {/* [NEW] Flexible Knot Envelope (Dubins) */}
@@ -1137,21 +1140,20 @@ export function CSCanvas({
       })}
 
 
-      {/* Current Active Knot Construction & Saved Knots */}
+      {/* Saved Knots — ALWAYS visible, rendered AFTER disks so they appear ON TOP */}
       <KnotLayer
-        visible={showEnvelope}
+        visible={true}  // [FIX] Always visible for saved knots
         blocks={blocks}
-        knotPath={knotPath}
+        knotPath={showEnvelope ? knotPath : []}  // Active path only when envelope is on
         knotSequence={knotSequence}
         knotChiralities={knotState?.chiralities}
-        anchorPoints={anchorSequence as any}
-        showEnvelope={showEnvelope} // [FIX] Add missing prop
-        // Use global envelope color (from EditorHeader settings)
+        anchorPoints={showEnvelope ? (anchorSequence as any) : []}
+        showEnvelope={showEnvelope}
         envelopeColor={envelopeColor}
-        savedEnvelopeColor={savedEnvelopeColor} // [NEW]
+        savedEnvelopeColor={savedEnvelopeColor}
         knotMode={knotMode}
         onKnotPointClick={onKnotPointClick}
-        savedKnotPaths={savedKnotPaths}
+        savedKnotPaths={savedKnotPaths}  // [FIX] Saved knots render here (on top of disks)
         context={{ width: 800, height: 600 }}
       />
 
