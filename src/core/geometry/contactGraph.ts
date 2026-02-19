@@ -753,10 +753,45 @@ export function findEnvelopePathFromPoints(
             }
         }
 
+        // Helper to determine L/R chirality of a point relative to a disk based on departure/arrival vector
+        const getChirality = (disk: ContactDisk, point: Point2D, dir: Point2D, isDeparture: boolean): 'L' | 'R' => {
+            const nx = (point.x - disk.center.x) / disk.radius;
+            const ny = (point.y - disk.center.y) / disk.radius;
+            // Cross Normal x Dir
+            const cross = nx * dir.y - ny * dir.x;
+            // Departure: Cross > 0 -> L (CCW), Cross < 0 -> R (CW)
+            // Arrival: Cross > 0 -> L (CCW), Cross < 0 -> R (CW)
+            // Note: For Arrival, the direction is "entering", so we should reverse it to check tangency *flow*?
+            // Actually, standard convention:
+            // R-tangent: moves CLOCKWISE around disk.
+            // L-tangent: moves COUNTER-CLOCKWISE around disk.
+
+            // If we depart CW (R), the tangent vector T points "right" relative to Normal N.
+            // N x T = -1 (Clockwise). So Cross < 0 => R.
+
+            return cross > 0 ? 'L' : 'R';
+        };
+
         if (!lineBlocked) {
+            const dirX = (end.x - start.x) / dist;
+            const dirY = (end.y - start.y) / dist;
+
+            let startType = 'L'; // Default if point
+            let endType = 'L';   // Default if point
+
+            if (startDisk) {
+                startType = getChirality(startDisk, start, { x: dirX, y: dirY }, true);
+            }
+            if (endDisk) {
+                // For arrival, the tangent flow matches the line direction.
+                endType = getChirality(endDisk, end, { x: dirX, y: dirY }, false);
+            }
+
+            const typeStr = `${startType}S${endType}` as TangentType;
+
             candidates.push({
                 path: [{
-                    type: 'LSR',
+                    type: typeStr,
                     start,
                     end,
                     length: dist,
@@ -784,8 +819,15 @@ export function findEnvelopePathFromPoints(
         if (best) {
             fullPath.push(...best.path);
         } else {
-            // Fallback
-            fullPath.push({ type: 'LSR', start, end, length: dist, startDiskId: startDisk ? startDisk.id : 'point', endDiskId: endDisk ? endDisk.id : 'point' });
+            // Fallback with dynamic type
+            const dirX = (end.x - start.x) / dist;
+            const dirY = (end.y - start.y) / dist;
+            let sT = 'L';
+            let eT = 'L';
+            if (startDisk) sT = ((start.x - startDisk.center.x) * dirY - (start.y - startDisk.center.y) * dirX) > 0 ? 'L' : 'R'; // Simplified inline cross
+            if (endDisk) eT = ((end.x - endDisk.center.x) * dirY - (end.y - endDisk.center.y) * dirX) > 0 ? 'L' : 'R';
+
+            fullPath.push({ type: `${sT}S${eT}` as TangentType, start, end, length: dist, startDiskId: startDisk ? startDisk.id : 'point', endDiskId: endDisk ? endDisk.id : 'point' });
         }
     }
 
@@ -816,8 +858,8 @@ export function calculateJacobianMatrix(disks: ContactDisk[]): { matrix: number[
             const dist = Math.sqrt(dx * dx + dy * dy);
             const rSum = d1.radius + d2.radius;
 
-            // Tolerance for contact
-            if (Math.abs(dist - rSum) < 1e-3 || dist < rSum) { // Overlap or touching
+            // Tolerance for contact (Relaxed to 0.1 to match visual "Penny Graph" threshold better)
+            if (Math.abs(dist - rSum) < 0.1 || dist < rSum) { // Overlap or touching
                 // Determine contact point and normal
                 const normal = { x: dx / dist, y: dy / dist };
                 const point = {

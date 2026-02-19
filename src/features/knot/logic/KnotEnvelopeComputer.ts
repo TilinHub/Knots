@@ -1,5 +1,6 @@
 import type { CSDisk } from '../../../core/types/cs';
 import type { EnvelopeSegment } from '../../../core/geometry/contactGraph';
+import type { EnvelopeComputer } from '../../../core/geometry/EnvelopeComputer';
 import { computeRobustConvexHull } from '../../../core/geometry/robustHull';
 import { findEnvelopePath, buildBoundedCurvatureGraph } from '../../../core/geometry/contactGraph';
 
@@ -7,10 +8,11 @@ import { findEnvelopePath, buildBoundedCurvatureGraph } from '../../../core/geom
  * Computes the "Robust" envelope for Knot Mode.
  * Wraps the new `computeRobustConvexHull` logic but prefers explicit topology (sequence + chiralities) if available.
  */
-export class KnotEnvelopeComputer {
+export class KnotEnvelopeComputer implements EnvelopeComputer {
     private lastGoodEnvelope: EnvelopeSegment[] = [];
 
-    compute(disks: CSDisk[], sequence?: string[], chiralities?: string[]): EnvelopeSegment[] {
+    compute(disks: CSDisk[], modeContext?: any): EnvelopeSegment[] {
+        const { sequence, chiralities } = modeContext ?? {};
         if (!disks || disks.length === 0) return [];
 
         // 1. Priority: Topology-Aware Elastic Band (if sequence exists)

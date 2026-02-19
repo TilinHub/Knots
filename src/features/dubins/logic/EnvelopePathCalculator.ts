@@ -2,7 +2,7 @@
 import type { CSDisk } from '../../../core/types/cs';
 import type { ContactGraph, DiskContact } from '../../../core/types/contactGraph';
 import type { DubinsPath } from '../../../core/geometry/dubins';
-import { type ContactPointWithRange, type AngularRange, type AngularSamplingConfig, computeDubinsWithRanges } from '../../../math/dubins/AngularRangeDubins';
+import { type ContactPointWithRange, type AngularRange, type AngularSamplingConfig, computeDubinsWithRanges } from '../../../core/geometry/dubins';
 
 export class EnvelopePathCalculator {
     private samplingConfig: AngularSamplingConfig;

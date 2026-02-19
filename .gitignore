@@ -21,4 +21,11 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+
+# Debug files
+debug_*.ts
+debug_*.py
+*.build_error.txt
+build_log.txt
+output*.txt
+debug_output.txt

@@ -65,50 +65,57 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       if (knot.chiralities && knot.chiralities.length > 0) {
         try {
           // Build graph from CURRENT positions (including rolling)
-          // [REVERT] Back to true to strict check. Use logging to find WHY it fails.
-          const graph = buildBoundedCurvatureGraph(contactDisksForGraph, true);
+          const graph = buildBoundedCurvatureGraph(contactDisksForGraph, true, [], false); // Explicitly allow inner tangents
 
-          // Solve for the path using the saved sequence and chiralities
-          const result = findEnvelopePath(graph, knot.diskSequence, knot.chiralities);
+          // A. Attempt Strict Topology (Preserve exact winding)
+          let result = findEnvelopePath(graph, knot.diskSequence, knot.chiralities, true);
+
+          // B. If strict fails, try Relaxed Topology (Preserve sequence, approximate winding)
+          if (!result.path || result.path.length === 0) {
+            console.warn(`[Reconstruct] Strict failed for Knot ${knot.id}, trying relaxed...`);
+            result = findEnvelopePath(graph, knot.diskSequence, knot.chiralities, false);
+          }
 
           if (result.path && result.path.length > 0) {
-            console.log(`[Reconstruct] SUCCESS Knot ${knot.id}: len=${result.path.length}`);
+            // console.log(`[Reconstruct] SUCCESS Knot ${knot.id}: len=${result.path.length}`);
             return { id: knot.id, color: knot.color, path: result.path };
           } else {
-            // If implicit failure (empty path), warn
             console.warn(`[Reconstruct] FAILURE Knot ${knot.id}: Empty path. Seq=${knot.diskSequence} Chiral=${knot.chiralities}`);
-            // [TODO] Fallback to lastGoodEnvelope?
           }
         } catch (e) {
           console.error(`[Reconstruct] EXCEPTION Knot ${knot.id}:`, e);
         }
       }
 
-      // 2. Fallback: use anchorSequence (Material Points)
+      // 2. Fallback: use anchorSequence (Material Points) - ONLY if Topology Failed
       if (knot.anchorSequence && knot.anchorSequence.length >= 2) {
         const absolutePoints = knot.anchorSequence.map((anchor: any) => {
           const disk = diskBlocks.find(b => b.id === anchor.diskId);
           if (!disk) return null;
 
-          // [FIX] Apply Rolling Rotation to Anchors if needed
-          // The contactDisksForGraph ALREADY has the updated center for rolling disk.
-          // But visualRadius is static.
-          // We need to match the "spinAngle" logic from CSCanvas if we want material points to rotate.
-          // However, `useEditorState` / `EditorPage` doesn't easily have `theta` or `spinAngle` access simply.
-          // Actually `rollingState` has `theta`.
-          // But simpler is to rely on Topological Reconstruction (Step 1) which avoids this.
-          // If we are here, Step 1 failed (maybe no chiralities).
+          // Check if rolling
+          let angle = anchor.angle;
+          if (rollingState.isActive && disk.id === rollingState.rollingDiskId) {
+            const pos = rollingState.getCurrentPosition();
+            if (pos && (pos as any).spinAngle) {
+              angle += (pos as any).spinAngle;
+            }
+          }
 
-          // Just use simple position mapping for now as fallback.
           return {
-            x: disk.center.x + disk.visualRadius * Math.cos(anchor.angle),
-            y: disk.center.y + disk.visualRadius * Math.sin(anchor.angle)
+            x: disk.center.x + disk.visualRadius * Math.cos(angle),
+            y: disk.center.y + disk.visualRadius * Math.sin(angle)
           };
         }).filter(Boolean) as { x: number, y: number }[];
 
         if (absolutePoints.length >= 2) {
-          const result = findEnvelopePathFromPoints(absolutePoints, contactDisksForGraph);
-          return { id: knot.id, color: knot.color, path: result.path };
+          try {
+            // Use the updated point solver
+            const result = findEnvelopePathFromPoints(absolutePoints, contactDisksForGraph);
+            return { id: knot.id, color: knot.color, path: result.path };
+          } catch (e) {
+            console.warn('[Reconstruct] Point fallback failed', e);
+          }
         }
       }
 

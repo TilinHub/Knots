@@ -107,9 +107,9 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
             // Use STATE chiralities if valid
             fullChiralities = diskSequence.map((id, i) => {
-                // Priority: State > Derived > Default 'L'
-                if (chiralities.length === diskSequence.length) return chiralities[i];
+                // Priority: Derived (Geometry) > State (User Override) > Default 'L'
                 if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
+                if (chiralities.length === diskSequence.length) return chiralities[i];
                 return 'L';
             });
 

@@ -1,8 +1,0 @@
-Hull Disks: [ '2', '0', '1' ]
-Metrics: {
-  totalLength: 22.905515321976857,
-  tangentLength: 10.339144707617685,
-  arcLength: 12.566370614359172
-}
-Tangent Length: 10.339144707617685
-Arc Length: 12.566370614359172

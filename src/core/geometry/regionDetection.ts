@@ -1,144 +1,179 @@
 import type { CSBlock, Point2D } from '../types/cs';
 import type { Region } from '../types/contactGraph';
-import { findAllCrossings } from './intersections';
 
 /**
- * Detecta regiones cerradas en un diagrama CS
- * Usa los bloques y cruces para identificar áreas encerradas
+ * Calcula el centroide de un polígono
  */
-export function detectRegions(blocks: CSBlock[]): Region[] {
-  if (blocks.length === 0) return [];
-
-  const crossings = findAllCrossings(blocks);
-  const regions: Region[] = [];
-
-  // Algoritmo simplificado: detectar regiones aproximadas
-  // En un diagrama de nudo trefoil hay 4 regiones:
-  // - 3 regiones internas (loops)
-  // - 1 región externa
-
-  // Para cada crossing, intentar construir regiones siguiendo el diagrama
-  // Este es un algoritmo simplificado que detecta regiones básicas
-
-  const bounds = getBoundingBox(blocks);
-  
-  // Crear una región central aproximada como placeholder
-  // En producción, esto requeriría un algoritmo de trazado de regiones más sofisticado
-  const centerRegion: Region = {
-    id: 'region-center',
-    boundary: [
-      { x: bounds.minX + 20, y: bounds.minY + 20 },
-      { x: bounds.maxX - 20, y: bounds.minY + 20 },
-      { x: bounds.maxX - 20, y: bounds.maxY - 20 },
-      { x: bounds.minX + 20, y: bounds.maxY - 20 },
-    ],
-    disks: [],
-  };
-
-  regions.push(centerRegion);
-
-  // Detectar regiones aproximadas basadas en la topología del nudo
-  if (blocks.length >= 3) {
-    // Para trefoil, crear 3 regiones aproximadas
-    const numRegions = Math.min(blocks.length, 4);
-    const angleStep = (2 * Math.PI) / numRegions;
-    
-    for (let i = 0; i < numRegions - 1; i++) {
-      const angle = i * angleStep;
-      const offsetX = Math.cos(angle) * 80;
-      const offsetY = Math.sin(angle) * 80;
-      
-      regions.push({
-        id: `region-${i + 1}`,
-        boundary: createCircularBoundary({ x: offsetX, y: offsetY }, 40),
-        disks: [],
-      });
-    }
-  }
-
-  return regions;
-}
-
-/**
- * Calcula el bounding box de todos los bloques
- */
-function getBoundingBox(blocks: CSBlock[]) {
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-
-  blocks.forEach(block => {
-    if (block.kind === 'segment') {
-      minX = Math.min(minX, block.p1.x, block.p2.x);
-      maxX = Math.max(maxX, block.p1.x, block.p2.x);
-      minY = Math.min(minY, block.p1.y, block.p2.y);
-      maxY = Math.max(maxY, block.p1.y, block.p2.y);
-    } else if (block.kind === 'arc') {
-      minX = Math.min(minX, block.center.x - block.radius);
-      maxX = Math.max(maxX, block.center.x + block.radius);
-      minY = Math.min(minY, block.center.y - block.radius);
-      maxY = Math.max(maxY, block.center.y + block.radius);
-    }
-  });
-
-  return { minX, maxX, minY, maxY };
-}
-
-/**
- * Crea un perímetro circular
- */
-function createCircularBoundary(center: Point2D, radius: number, points: number = 12): Point2D[] {
-  const boundary: Point2D[] = [];
-  for (let i = 0; i < points; i++) {
-    const angle = (i / points) * 2 * Math.PI;
-    boundary.push({
-      x: center.x + Math.cos(angle) * radius,
-      y: center.y + Math.sin(angle) * radius,
-    });
-  }
-  return boundary;
-}
-
-/**
- * Verifica si un punto está dentro de una región (algoritmo ray casting)
- */
-export function isPointInRegion(point: Point2D, region: Region): boolean {
-  const boundary = region.boundary;
-  let inside = false;
-
-  for (let i = 0, j = boundary.length - 1; i < boundary.length; j = i++) {
-    const xi = boundary[i].x;
-    const yi = boundary[i].y;
-    const xj = boundary[j].x;
-    const yj = boundary[j].y;
-
-    const intersect = ((yi > point.y) !== (yj > point.y)) &&
-      (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
-    
-    if (intersect) inside = !inside;
-  }
-
-  return inside;
-}
-
-/**
- * Calcula el centroide de una región
- */
-export function getRegionCentroid(region: Region): Point2D {
-  const boundary = region.boundary;
-  const n = boundary.length;
+function calculateCentroid(points: Point2D[]): Point2D {
+  if (points.length === 0) return { x: 0, y: 0 };
   
   let sumX = 0;
   let sumY = 0;
   
-  boundary.forEach(p => {
-    sumX += p.x;
-    sumY += p.y;
-  });
+  for (const point of points) {
+    sumX += point.x;
+    sumY += point.y;
+  }
   
   return {
-    x: sumX / n,
-    y: sumY / n,
+    x: sumX / points.length,
+    y: sumY / points.length
   };
+}
+
+/**
+ * Calcula el área de un polígono usando la fórmula del área del polígono
+ */
+function calculatePolygonArea(points: Point2D[]): number {
+  if (points.length < 3) return 0;
+  
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
+  }
+  
+  return Math.abs(area / 2);
+}
+
+/**
+ * Calcula el radio máximo de un disco que cabe en una región
+ */
+function calculateMaxDiskRadius(center: Point2D, boundary: Point2D[]): number {
+  let minDistance = Infinity;
+  
+  // Encontrar la distancia mínima desde el centro a cualquier punto del borde
+  for (const point of boundary) {
+    const dx = point.x - center.x;
+    const dy = point.y - center.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    minDistance = Math.min(minDistance, distance);
+  }
+  
+  // Reducir el radio en un 20% para evitar tocar los bordes
+  return minDistance * 0.8;
+}
+
+/**
+ * Extrae puntos clave de los bloques CS
+ */
+function extractPointsFromBlocks(blocks: CSBlock[]): Point2D[] {
+  const points: Point2D[] = [];
+  
+  for (const block of blocks) {
+    if (block.kind === 'segment') {
+      points.push(block.p1, block.p2);
+    } else if (block.kind === 'arc') {
+      // Para arcos, añadir puntos de inicio y fin
+      const startX = block.center.x + block.radius * Math.cos(block.startAngle);
+      const startY = block.center.y + block.radius * Math.sin(block.startAngle);
+      const endX = block.center.x + block.radius * Math.cos(block.endAngle);
+      const endY = block.center.y + block.radius * Math.sin(block.endAngle);
+      
+      points.push(
+        { x: startX, y: startY },
+        { x: endX, y: endY }
+      );
+    }
+  }
+  
+  return points;
+}
+
+/**
+ * Detecta regiones simples basadas en la geometría de los bloques
+ * (Implementación simplificada - ideal para nudos simples)
+ */
+export function detectSimpleRegions(blocks: CSBlock[]): Region[] {
+  if (blocks.length === 0) return [];
+  
+  const regions: Region[] = [];
+  const points = extractPointsFromBlocks(blocks);
+  
+  if (points.length < 3) return [];
+  
+  // Para nudos simples como el trefoil, creamos regiones manualmente
+  // basadas en los espacios entre los bloques
+  
+  // Calcular bounding box
+  const minX = Math.min(...points.map(p => p.x));
+  const maxX = Math.max(...points.map(p => p.x));
+  const minY = Math.min(...points.map(p => p.y));
+  const maxY = Math.max(...points.map(p => p.y));
+  
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const width = maxX - minX;
+  const height = maxY - minY;
+  
+  // Para el trefoil, crear 3 regiones simétricas
+  if (blocks.length >= 3) {
+    const numRegions = Math.min(blocks.length, 4);
+    
+    for (let i = 0; i < numRegions; i++) {
+      const angle = (i * 2 * Math.PI) / numRegions;
+      const distance = Math.min(width, height) * 0.3;
+      
+      const regionCenterX = centerX + Math.cos(angle) * distance;
+      const regionCenterY = centerY + Math.sin(angle) * distance;
+      
+      // Crear boundary aproximado (círculo)
+      const boundaryPoints: Point2D[] = [];
+      const boundaryRadius = distance * 0.5;
+      
+      for (let j = 0; j < 8; j++) {
+        const boundaryAngle = (j * 2 * Math.PI) / 8;
+        boundaryPoints.push({
+          x: regionCenterX + Math.cos(boundaryAngle) * boundaryRadius,
+          y: regionCenterY + Math.sin(boundaryAngle) * boundaryRadius
+        });
+      }
+      
+      regions.push({
+        id: `region-${i + 1}`,
+        boundary: boundaryPoints,
+        disks: [],
+        area: calculatePolygonArea(boundaryPoints)
+      });
+    }
+  }
+  
+  return regions;
+}
+
+/**
+ * Crea un disco de contacto para una región
+ */
+export function createContactDiskForRegion(region: Region): {
+  center: Point2D;
+  radius: number;
+} {
+  const center = calculateCentroid(region.boundary);
+  const radius = calculateMaxDiskRadius(center, region.boundary);
+  
+  return { center, radius };
+}
+
+/**
+ * Detecta regiones y crea discos de contacto automáticamente
+ */
+export function detectRegionsWithDisks(blocks: CSBlock[]): Region[] {
+  const regions = detectSimpleRegions(blocks);
+  
+  // Crear un disco por cada región
+  return regions.map(region => {
+    const { center, radius } = createContactDiskForRegion(region);
+    
+    return {
+      ...region,
+      disks: [{
+        id: `disk-${region.id}`,
+        center,
+        radius,
+        regionId: region.id,
+        color: '#4A90E2' // Azul como en tu imagen
+      }]
+    };
+  });
 }

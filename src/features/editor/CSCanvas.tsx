@@ -2,7 +2,7 @@ import React from 'react';
 import { Logger } from '@/core/utils/Logger';
 import type { CSBlock, CSDisk, Point2D, CSArc } from '@/core/types/cs';
 import { findAllCrossings, findDiskContacts, type DiskContact } from '@/core/geometry/intersections';
-import { detectRegionsWithDisks } from '@/core/algorithms/regionDetection';
+import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
 import { type Disk } from '@/core/geometry/diskHull';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
 import { KnotRenderer } from './components/KnotRenderer';
@@ -1066,21 +1066,45 @@ export function CSCanvas({
         ];
         return anchors.map((p, i) => {
           const [sx, sy] = toSVG(p.x, p.y);
+          // NEW: Hover State Local Logic (using a group to handle hover on both visual & hit target)
+          // Actually, in React tracking hover state per anchor might be overkill for state.
+          // CSS :hover works on SVG elements!
           return (
-            <circle
-              key={`${disk.id}-anchor-${i}`}
-              cx={sx} cy={sy}
-              r={5}
-              fill="#FF4500" // Red-Orange
-              stroke="white"
-              strokeWidth={1.5}
-              cursor="pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onKnotPointClick?.(disk.id, { x: p.x, y: p.y });
-              }}
-            />
+            <g key={`${disk.id}-anchor-${i}`} className="anchor-group" style={{ cursor: 'pointer' }}>
+              <style>
+                {`
+                  .anchor-group:hover .anchor-visual {
+                    r: 8px; /* Scale up on hover */
+                    stroke-width: 3px;
+                    transition: r 0.1s, stroke-width 0.1s;
+                  }
+                `}
+              </style>
+
+              {/* 1. Large Invisible Hit Target (r=20) */}
+              <circle
+                cx={sx} cy={sy}
+                r={20}
+                fill="transparent"
+                stroke="none"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onKnotPointClick?.(disk.id, { x: p.x, y: p.y });
+                }}
+              />
+
+              {/* 2. Visible Anchor Dot (r=5 -> 8 on hover) */}
+              <circle
+                className="anchor-visual"
+                cx={sx} cy={sy}
+                r={5}
+                fill="#FF4500" // Red-Orange
+                stroke="white"
+                strokeWidth={1.5}
+                pointerEvents="none" // Let clicks pass to hit target
+              />
+            </g>
           );
         });
       })}
