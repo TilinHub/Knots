@@ -1,14 +1,14 @@
 import React from 'react';
 
 import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
-import { buildBoundedCurvatureGraph,findEnvelopePath, findEnvelopePathFromPoints } from '@/core/geometry/contactGraph';
+import { buildBoundedCurvatureGraph, findEnvelopePath, findEnvelopePathFromPoints } from '@/core/geometry/contactGraph';
 import { type Disk } from '@/core/geometry/diskHull';
-import type { Config,DubinsPath } from '@/core/geometry/dubins';
-import { type DiskContact,findAllCrossings, findDiskContacts } from '@/core/geometry/intersections';
+import type { Config, DubinsPath } from '@/core/geometry/dubins';
+import { type DiskContact, findAllCrossings, findDiskContacts } from '@/core/geometry/intersections';
 import { computeOuterContour } from '@/core/geometry/outerFace';
 import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
 import { computeRobustConvexHull } from '@/core/geometry/robustHull';
-import type { CSArc,CSBlock, CSDisk, Point2D } from '@/core/types/cs';
+import type { CSArc, CSBlock, CSDisk, Point2D } from '@/core/types/cs';
 import type { KnotDiagram } from '@/core/types/knot';
 import { Logger } from '@/core/utils/Logger';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
@@ -28,6 +28,24 @@ import { useContactPath } from './hooks/useContactPath';
 // This flag ONLY affects envelope display (!knotMode && showEnvelope).
 // It does NOT affect: knot-mode paths, saved knot paths, Dubins, load/save.
 const USE_OUTER_CONTOUR_ENVELOPE = true;
+
+// Helper to darken/lighten hex color
+function adjustColor(color: string, amount: number): string {
+  if (!color) return '#000000';
+  const hex = color.replace('#', '');
+  const num = parseInt(hex, 16);
+  if (isNaN(num)) return '#000000';
+
+  let r = (num >> 16) + amount;
+  let b = ((num >> 8) & 0x00FF) + amount;
+  let g = (num & 0x0000FF) + amount;
+
+  if (r > 255) r = 255; else if (r < 0) r = 0;
+  if (b > 255) b = 255; else if (b < 0) b = 0;
+  if (g > 255) g = 255; else if (g < 0) g = 0;
+
+  return '#' + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+}
 
 interface CSCanvasProps {
   blocks: CSBlock[];
@@ -78,6 +96,7 @@ interface CSCanvasProps {
   // Ideally "PersistentDubinsState" but it is exported from a hook. 
   // Let's use any for speed or duplicate interface. Using 'any' for now to avoid circular import of hook file.
   persistentDubinsActions?: any;
+  transparentDisks?: boolean; // [NEW]
 }
 
 type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end' | 'disk';
@@ -134,6 +153,7 @@ export function CSCanvas({
   currentPath = null, // [NEW]
   persistentDubinsState,
   persistentDubinsActions,
+  transparentDisks = false, // Default false
   ...props // Capture other props for fallback
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
@@ -931,7 +951,8 @@ export function CSCanvas({
         const radius = disk.visualRadius;
 
         let fill = diskColor;
-        let stroke = isSelected ? "#2E6BA8" : envelopeColor;
+        // User requested selected disk to be darker tone of envelope (or black)
+        let stroke = isSelected ? adjustColor(envelopeColor || '#5CA0D3', -60) : envelopeColor;
         let strokeWidth = 2; // User requested no thickening on selection
 
         if (rollingMode) {
@@ -990,7 +1011,7 @@ export function CSCanvas({
               // So r = radius.
               r={radius} // Don't shrink
               fill={fill}
-              fillOpacity={isKnotSelected ? 0.6 : 1}
+              fillOpacity={transparentDisks ? 0.2 : (isKnotSelected ? 0.6 : 1)}
               stroke={stroke}
               strokeWidth={strokeWidth}
             />

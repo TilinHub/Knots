@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { computeDiskHull,type DiskHull } from '../../core/geometry/diskHull';
+import { computeDiskHull, type DiskHull } from '../../core/geometry/diskHull';
 import type { CSDisk } from '../../core/types/cs';
 import { EditorEnvelopeComputer } from '../../features/editor/logic/EditorEnvelopeComputer';
 import type { LayerProps } from '../types/Layer';
@@ -80,7 +80,7 @@ export const StandardLayer: React.FC<StandardLayerProps> = ({
                 <path
                     d={transformPathToSVG(hullData.svgPathD, centerX, centerY)}
                     fill={envelopeColor}
-                    fillOpacity={0.2}
+                    fillOpacity={0.1}
                     stroke="none"
                     style={{ pointerEvents: 'none' }}
                 />

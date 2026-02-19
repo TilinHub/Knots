@@ -19,6 +19,39 @@ interface KnotLayerProps extends LayerProps {
     savedKnotPaths?: { id: string, color: string, path: EnvelopeSegment[] }[];
 }
 
+// Helper to convert envelope segments to a single closed SVG path for filling
+function segmentsToPath(segments: EnvelopeSegment[]): string {
+    if (!segments || segments.length === 0) return '';
+
+    return segments.map((seg, i) => {
+        // Calculate start/end points
+        let startX, startY, endX, endY;
+
+        if (seg.type === 'ARC') {
+            startX = seg.center.x + seg.radius * Math.cos(seg.startAngle);
+            startY = seg.center.y + seg.radius * Math.sin(seg.startAngle);
+            endX = seg.center.x + seg.radius * Math.cos(seg.endAngle);
+            endY = seg.center.y + seg.radius * Math.sin(seg.endAngle);
+        } else {
+            startX = seg.start.x;
+            startY = seg.start.y;
+            endX = seg.end.x;
+            endY = seg.end.y;
+        }
+
+        // Move to start only for first segment
+        const move = i === 0 ? `M ${startX} ${startY}` : '';
+
+        if (seg.type === 'ARC') {
+            const largeArc = seg.length > Math.PI * seg.radius ? 1 : 0;
+            const sweep = seg.chirality === 'L' ? 1 : 0;
+            return `${move} A ${seg.radius} ${seg.radius} 0 ${largeArc} ${sweep} ${endX} ${endY}`;
+        } else {
+            return `${move} L ${endX} ${endY}`;
+        }
+    }).join(' ') + ' Z';
+}
+
 export const KnotLayer: React.FC<KnotLayerProps> = ({
     visible,
     blocks,
@@ -63,7 +96,7 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
         if (!knotMode) return [];
 
         // Use the new topology-aware compute
-        return computer.compute(disks, knotSequence, knotChiralities);
+        return computer.compute(disks, { sequence: knotSequence, chiralities: knotChiralities });
     }, [disks, showEnvelope, computer, knotMode, knotSequence, knotChiralities]);
 
     return (
@@ -71,11 +104,22 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
             <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
                 {/* Robust Envelope (Active) - Only in Knot Mode */}
                 {showEnvelope && knotMode && (
-                    <PathLayer
-                        path={knotEnvelopePath}
-                        color={envelopeColor || '#6B46C1'}
-                        width={2}
-                    />
+                    <>
+                        {/* Fill */}
+                        <path
+                            d={segmentsToPath(knotEnvelopePath)}
+                            fill={envelopeColor || '#6B46C1'}
+                            fillOpacity={0.1}
+                            stroke="none"
+                            style={{ pointerEvents: 'none' }} // Let clicks pass through
+                        />
+                        {/* Stroke */}
+                        <PathLayer
+                            path={knotEnvelopePath}
+                            color={envelopeColor || '#6B46C1'}
+                            width={2}
+                        />
+                    </>
                 )}
 
                 {/* SAVED Knots - Always visible if they exist */}

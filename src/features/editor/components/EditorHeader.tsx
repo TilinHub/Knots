@@ -1,4 +1,4 @@
-import { type FC,useEffect, useState } from 'react';
+import { type FC, useEffect, useState } from 'react';
 
 import Logo from '../../../assets/LOGO.png';
 import { formatArcLength } from '../../../core/geometry/arcLength';
@@ -41,6 +41,9 @@ interface EditorHeaderProps {
     // Catalog
     catalogMode?: boolean;
     onToggleCatalogMode?: () => void;
+    // Transparency
+    transparentDisks: boolean; // [NEW]
+    onToggleTransparentDisks: () => void; // [NEW]
 }
 
 
@@ -76,6 +79,8 @@ export const EditorHeader = ({
     onEnvelopeColorChange,
     catalogMode,
     onToggleCatalogMode,
+    transparentDisks,
+    onToggleTransparentDisks,
 }: EditorHeaderProps) => {
     const [showLengthDetails, setShowLengthDetails] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -443,6 +448,21 @@ export const EditorHeader = ({
                                             </div>
                                             <span style={{ fontSize: '10px', fontFamily: 'monospace', color: 'var(--text-primary)' }}>{envelopeColor || '#5CA0D3'}</span>
                                         </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Transparency Controls */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Transparency</span>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={transparentDisks}
+                                            onChange={onToggleTransparentDisks}
+                                        />
+                                        Disks
                                     </label>
                                 </div>
                             </div>

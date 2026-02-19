@@ -1,6 +1,6 @@
-import { useEffect,useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { blockLength,getCurveLengthInfo } from '../../../core/geometry/arcLength';
+import { blockLength, getCurveLengthInfo } from '../../../core/geometry/arcLength';
 import type { CSArc, CSBlock, CSDisk, CSSegment } from '../../../core/types/cs';
 import { validateContinuity } from '../../../core/validation/continuity';
 import type { DynamicAnchor } from '../../knot/logic/useKnotState';
@@ -59,6 +59,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     // Appearance State
     const [diskColor, setDiskColor] = useState('#89CFF0'); // Default Baby Blue
     const [envelopeColor, setEnvelopeColor] = useState('#5CA0D3'); // Default Blue
+    const [transparentDisks, setTransparentDisks] = useState(false); // [NEW] Transparency Toggle
 
     // Initialize blocks from knot
     useEffect(() => {
@@ -269,6 +270,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             lengthInfo,
             diskColor,
             envelopeColor,
+            transparentDisks,
         },
         actions: {
             setBlocks,
@@ -290,6 +292,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             updateBlock,
             setDiskColor,
             setEnvelopeColor,
+            setTransparentDisks,
         }
     };
 }

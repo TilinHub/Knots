@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { buildBoundedCurvatureGraph,findEnvelopePath, findEnvelopePathFromPoints } from '../../core/geometry/contactGraph';
+import { buildBoundedCurvatureGraph, findEnvelopePath, findEnvelopePathFromPoints } from '../../core/geometry/contactGraph';
 import { computeDiskHull, computeHullLength, computeHullMetrics } from '../../core/geometry/diskHull';
 import type { CSDisk } from '../../core/types/cs';
 import { useDubinsState } from '../dubins/logic/useDubinsState';
@@ -280,6 +280,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onDiskColorChange={editorActions.setDiskColor}
         envelopeColor={editorState.envelopeColor}
         onEnvelopeColorChange={editorActions.setEnvelopeColor}
+        // Transparency
+        transparentDisks={editorState.transparentDisks}
+        onToggleTransparentDisks={() => editorActions.setTransparentDisks(!editorState.transparentDisks)}
 
         nonDiskBlocksCount={editorState.nonDiskBlocks.length}
         diskBlocksCount={editorState.diskBlocks.length}
@@ -321,6 +324,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             // Appearance
             diskColor={editorState.diskColor}
             envelopeColor={editorState.envelopeColor}
+            transparentDisks={editorState.transparentDisks}
             // Rolling Mode / Interaction Logic
             {...(rollingState.isActive ? {
               rollingMode: true,
