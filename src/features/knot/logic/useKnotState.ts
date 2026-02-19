@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef,useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { buildBoundedCurvatureGraph, type EnvelopePathResult, type EnvelopeSegment,findEnvelopePath, findEnvelopePathFromPoints } from '../../../core/geometry/contactGraph';
+import { buildBoundedCurvatureGraph, type EnvelopePathResult, type EnvelopeSegment, findEnvelopePath, findEnvelopePathFromPoints } from '../../../core/geometry/contactGraph';
 import type { DubinsPath } from '../../../core/geometry/dubins'; // Fixed import
 import type { CSDisk } from '../../../core/types/cs';
 import { Logger } from '../../../core/utils/Logger';
-import { validateNoObstacleIntersection,validateNoSelfIntersection } from '../../../core/validation/envelopeValidator';
+import { validateNoObstacleIntersection, validateNoSelfIntersection } from '../../../core/validation/envelopeValidator';
 import { EnvelopePathCalculator } from '../../dubins/logic/EnvelopePathCalculator';
 
 interface UseKnotStateProps {
@@ -338,7 +338,7 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
             // [NEW] Allow setting anchors directly (for loading)
             setAnchorSequence,
             extendSequenceWithPoint,
-            setDragging: setIsDragging, // [FIX] Expose drag control
+            setDragging: setIsDragging,
             setChiralities // [NEW] Allow setting chiralities directly
         }
     };

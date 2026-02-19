@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { Button } from '../../../ui/Button';
 import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
-import { type AnalysisReport,analyzeDiagram } from '../../analysis/first_variation/analyzer';
+import { type AnalysisReport, analyzeDiagram } from '../../analysis/first_variation/analyzer';
 import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
 import { ContactMatrixViewer } from '../../editor/components/ContactMatrixViewer';
 
@@ -35,17 +35,7 @@ export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, ac
                 <strong>Sequence:</strong> {knotState.diskSequence.length} disks
             </div>
 
-            {/* Color Picker for Active Knot */}
-            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
-                <label>Color:</label>
-                <input
-                    type="color"
-                    value={editorState.envelopeColor || '#FF0000'}
-                    onChange={(e) => actions.setEnvelopeColor?.(e.target.value)}
-                    style={{ border: 'none', width: '24px', height: '24px', cursor: 'pointer', background: 'none' }}
-                />
-                <span style={{ color: 'var(--text-tertiary)' }}>{editorState.envelopeColor}</span>
-            </div>
+
 
 
             <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -87,7 +77,8 @@ export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, ac
                             knotState.diskSequence,
                             knotState.chiralities,
                             knotState.anchorSequence,
-                            knotState.knotPath // Freeze the actual path geometry
+                            knotState.knotPath, // Freeze the actual path geometry
+                            editorState.envelopeColor // [NEW] Save with current global color
                         );
                         knotState.actions.clearSequence();
                     }}

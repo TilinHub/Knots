@@ -13,8 +13,9 @@ interface KnotLayerProps extends LayerProps {
     knotChiralities?: string[]; // [NEW]
     anchorPoints: { x: number, y: number }[];
     showEnvelope: boolean;
-    envelopeColor: string;
-    knotMode: boolean;
+    envelopeColor?: string;
+    savedEnvelopeColor?: string; // [NEW]
+    knotMode?: boolean;
     onKnotPointClick?: (diskId: string, point: { x: number, y: number }) => void;
     savedKnotPaths?: { id: string, color: string, path: EnvelopeSegment[] }[];
 }
@@ -61,6 +62,7 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
     anchorPoints,
     showEnvelope,
     envelopeColor,
+    savedEnvelopeColor, // [NEW]
     knotMode,
     onKnotPointClick,
     context,
@@ -108,7 +110,7 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
                         {/* Fill */}
                         <path
                             d={segmentsToPath(knotEnvelopePath)}
-                            fill={envelopeColor || '#6B46C1'}
+                            fill={envelopeColor || '#5CA0D3'}
                             fillOpacity={0.1}
                             stroke="none"
                             style={{ pointerEvents: 'none' }} // Let clicks pass through
@@ -116,19 +118,22 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
                         {/* Stroke */}
                         <PathLayer
                             path={knotEnvelopePath}
-                            color={envelopeColor || '#6B46C1'}
+                            color={envelopeColor || '#5CA0D3'}
                             width={2}
                         />
                     </>
                 )}
 
-                {/* SAVED Knots - Always visible if they exist */}
                 {savedKnotPaths.map(k => (
                     <PathLayer
                         key={k.id}
                         path={k.path}
-                        color={k.color}
-                        width={3}
+                        // If savedEnvelopeColor is explicitly provided (controlled), use it.
+                        // Otherwise fall back to k.color (if saved with one) or default.
+                        // Note: savedEnvelopeColor comes from state, so it might be the default #5CA0D3 if not touched.
+                        // Use it if defined.
+                        color={savedEnvelopeColor || k.color || '#FF4500'}
+                        width={5}
                     />
                 ))}
 
@@ -137,7 +142,7 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
                     <PathLayer
                         path={knotPath}
                         color="#FF0000"
-                        width={4}
+                        width={2}
                     />
                 )}
 

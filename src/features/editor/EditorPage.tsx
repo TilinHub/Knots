@@ -280,6 +280,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         onDiskColorChange={editorActions.setDiskColor}
         envelopeColor={editorState.envelopeColor}
         onEnvelopeColorChange={editorActions.setEnvelopeColor}
+        savedEnvelopeColor={editorState.savedEnvelopeColor} // [NEW]
+        onSavedEnvelopeColorChange={editorActions.setSavedEnvelopeColor} // [NEW]
         // Transparency
         transparentDisks={editorState.transparentDisks}
         onToggleTransparentDisks={() => editorActions.setTransparentDisks(!editorState.transparentDisks)}
@@ -324,6 +326,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             // Appearance
             diskColor={editorState.diskColor}
             envelopeColor={editorState.envelopeColor}
+            savedEnvelopeColor={editorState.savedEnvelopeColor} // [NEW]
             transparentDisks={editorState.transparentDisks}
             // Rolling Mode / Interaction Logic
             {...(rollingState.isActive ? {

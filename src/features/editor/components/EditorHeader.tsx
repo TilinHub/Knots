@@ -38,6 +38,8 @@ interface EditorHeaderProps {
     onDiskColorChange?: (color: string) => void;
     envelopeColor?: string;
     onEnvelopeColorChange?: (color: string) => void;
+    savedEnvelopeColor?: string; // [NEW]
+    onSavedEnvelopeColorChange?: (color: string) => void; // [NEW]
     // Catalog
     catalogMode?: boolean;
     onToggleCatalogMode?: () => void;
@@ -77,6 +79,8 @@ export const EditorHeader = ({
     onDiskColorChange,
     envelopeColor,
     onEnvelopeColorChange,
+    savedEnvelopeColor, // [NEW]
+    onSavedEnvelopeColorChange, // [NEW]
     catalogMode,
     onToggleCatalogMode,
     transparentDisks,
@@ -447,6 +451,30 @@ export const EditorHeader = ({
                                                 />
                                             </div>
                                             <span style={{ fontSize: '10px', fontFamily: 'monospace', color: 'var(--text-primary)' }}>{envelopeColor || '#5CA0D3'}</span>
+                                        </div>
+                                    </label>
+
+                                    {/* Saved Envelope Color Picker */}
+                                    <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                                        Knot Env
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-tertiary)', padding: '4px', borderRadius: '4px' }}>
+                                            <div style={{
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '4px',
+                                                background: savedEnvelopeColor || '#5CA0D3',
+                                                border: '1px solid var(--border)',
+                                                position: 'relative',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <input
+                                                    type="color"
+                                                    value={savedEnvelopeColor || '#5CA0D3'}
+                                                    onChange={(e) => onSavedEnvelopeColorChange?.(e.target.value)}
+                                                    style={{ position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%', cursor: 'pointer', opacity: 0 }}
+                                                />
+                                            </div>
+                                            <span style={{ fontSize: '10px', fontFamily: 'monospace', color: 'var(--text-primary)' }}>{savedEnvelopeColor || '#5CA0D3'}</span>
                                         </div>
                                     </label>
                                 </div>

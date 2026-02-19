@@ -76,6 +76,7 @@ interface CSCanvasProps {
   // Appearance
   diskColor?: string;
   envelopeColor?: string;
+  savedEnvelopeColor?: string; // [NEW]
   // Contact graph props
   showContactDisks?: boolean;
   showEnvelope?: boolean; // [NEW]
@@ -139,8 +140,10 @@ export function CSCanvas({
   savedKnotPaths = [], // [NEW]
   onKnotSegmentClick,
   onKnotPointClick, // [NEW]
+  anchorSequence, // [FIX] Destructure this prop
   diskColor = '#89CFF0',
   envelopeColor = '#5CA0D3',
+  savedEnvelopeColor, // [NEW]
   dubinsMode = false,
   dubinsPaths = [],
   dubinsStart = null,
@@ -169,12 +172,12 @@ export function CSCanvas({
     anchorSequence: rawAnchorSequence, // [NEW] Get raw anchors (diskId, angle)
     chiralities: knotChiralities, // [NEW] Get chiralities for topology
     actions: knotActions
-  } = knotState || {};
+  } = (knotState as any) || {};
 
   const knotMode = knotState ? (knotModeStringArg === 'knot') : (props.knotMode ?? false);
   const staticKnotPath = knotState ? knotPathArg : (props.knotPath || []);
   const knotSequence = knotState ? knotSequenceArg : (props.knotSequence || []);
-  const anchorPoints = knotState ? anchorPointsArg : (props.anchorSequence || []);
+  const anchorPoints = knotState ? anchorPointsArg : (anchorSequence || []);
 
   const centerX = width / 2;
   const centerY = height / 2;
@@ -1133,12 +1136,23 @@ export function CSCanvas({
       })}
 
 
-      {/* Current Active Knot Construction */}
-      {knotMode && (
-        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <ContactPathRenderer path={knotPath} visible={true} color="#FF0000" width={4} />
-        </g>
-      )}
+      {/* Current Active Knot Construction & Saved Knots */}
+      <KnotLayer
+        visible={showEnvelope}
+        blocks={blocks}
+        knotPath={knotPath}
+        knotSequence={knotSequence}
+        knotChiralities={knotState?.chiralities}
+        anchorPoints={anchorSequence as any}
+        showEnvelope={showEnvelope} // [FIX] Add missing prop
+        // Use global envelope color (from EditorHeader settings)
+        envelopeColor={envelopeColor}
+        savedEnvelopeColor={savedEnvelopeColor} // [NEW]
+        knotMode={knotMode}
+        onKnotPointClick={onKnotPointClick}
+        savedKnotPaths={savedKnotPaths}
+        context={{ width: 800, height: 600 }}
+      />
 
       {/* 4. Dubins Layer (Foreground Candidates) */}
       <DubinsLayer

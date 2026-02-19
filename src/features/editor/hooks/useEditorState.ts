@@ -59,6 +59,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     // Appearance State
     const [diskColor, setDiskColor] = useState('#89CFF0'); // Default Baby Blue
     const [envelopeColor, setEnvelopeColor] = useState('#5CA0D3'); // Default Blue
+    const [savedEnvelopeColor, setSavedEnvelopeColor] = useState('#5CA0D3'); // [NEW] Separate Saved Envelope Color
     const [transparentDisks, setTransparentDisks] = useState(false); // [NEW] Transparency Toggle
 
     // Initialize blocks from knot
@@ -98,7 +99,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
     const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
     // Actions
-    function addSavedKnot(diskSequence: string[], chiralities?: ('L' | 'R')[], anchorSequence?: DynamicAnchor[], frozenPath?: any[]) {
+    function addSavedKnot(diskSequence: string[], chiralities?: ('L' | 'R')[], anchorSequence?: DynamicAnchor[], frozenPath?: any[], activeColor?: string) {
         if (diskSequence.length < 2) return;
         const id = `knot-${Date.now()}`;
 
@@ -167,7 +168,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             chiralities: chiralities ? [...chiralities] : undefined,
             anchorSequence: anchorSequence ? [...anchorSequence] : undefined,
             frozenPath: enrichedPath ? JSON.parse(JSON.stringify(enrichedPath)) : undefined,
-            color: '#FF4500'
+            color: activeColor || '#FF4500'
         };
         setSavedKnots(prev => [...prev, newKnot]);
     }
@@ -270,6 +271,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             lengthInfo,
             diskColor,
             envelopeColor,
+            savedEnvelopeColor, // [NEW]
             transparentDisks,
         },
         actions: {
@@ -292,6 +294,7 @@ export function useEditorState(initialKnot?: InitialKnot) {
             updateBlock,
             setDiskColor,
             setEnvelopeColor,
+            setSavedEnvelopeColor, // [NEW]
             setTransparentDisks,
         }
     };
