@@ -261,6 +261,24 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
     // Actions
     const knotPath = computationResult.path;
 
+    // envelopePath = knotPath + closing segment (from last anchor to first)
+    // this ensures the saved envelope is a closed loop, while the drawing UI remains open
+    const envelopePath = useMemo(() => {
+        if (knotPath.length === 0 || currentAnchors.length < 3) return knotPath; // Need at least 3 points to form a non-trivial loop
+
+        const lastAnchor = currentAnchors[currentAnchors.length - 1];
+        const firstAnchor = currentAnchors[0];
+
+        // Compute closing segment
+        // We use the same finding logic as the main path
+        const closingResult = findEnvelopePathFromPoints([lastAnchor, firstAnchor], contactDisks);
+
+        if (closingResult.path.length > 0) {
+            return [...knotPath, ...closingResult.path];
+        }
+        return knotPath;
+    }, [knotPath, currentAnchors, contactDisks]);
+
     const toggleDisk = useCallback((diskId: string) => {
         setDiskSequence(prev => {
             if (prev.length > 0 && prev[prev.length - 1] === diskId) {
@@ -324,6 +342,7 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         mode,
         diskSequence,
         knotPath,
+        envelopePath, // [NEW] Proper closed path for saving
         chiralities: computationResult.chiralities,
         anchorPoints: currentAnchors, // [RENAMED] Absolute points for rendering
         anchorSequence, // [NEW] Raw dynamic anchors for persistence

@@ -70,8 +70,25 @@ interface AnalysisResultsPanelProps {
     onClose: () => void;
 }
 
+const TEX_FONT = '"Latin Modern Math", "Computer Modern", "Times New Roman", Times, serif';
+
+// Variable usually italic in math
+const MathVar = ({ children }: { children: React.ReactNode }) => (
+    <span style={{ fontFamily: TEX_FONT, fontStyle: 'italic' }}>
+        {children}
+    </span>
+);
+
+// Numbers/Operators usually roman (upright)
+const MathNum = ({ children }: { children: React.ReactNode }) => (
+    <span style={{ fontFamily: TEX_FONT, fontStyle: 'normal' }}>
+        {children}
+    </span>
+);
+
+// Generic wrapper (defaults to italic for backward compat with simple variables)
 const MathText = ({ children }: { children: React.ReactNode }) => (
-    <span style={{ fontFamily: '"Times New Roman", Times, serif', fontStyle: 'italic' }}>
+    <span style={{ fontFamily: TEX_FONT, fontStyle: 'italic' }}>
         {children}
     </span>
 );
@@ -89,11 +106,11 @@ const ResultRow = ({ label, value, passed, detail }: { label: React.ReactNode, v
 );
 
 const DataRow = ({ label, value, sub }: { label: React.ReactNode, value: string, sub?: string }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: '12px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: '13px' }}>
         <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-        <span style={{ fontFamily: 'monospace' }}>
+        <span style={{ fontFamily: TEX_FONT }}>
             {value}
-            {sub && <span style={{ color: 'var(--text-tertiary)', marginLeft: '4px' }}>{sub}</span>}
+            {sub && <span style={{ color: 'var(--text-tertiary)', marginLeft: '6px', fontSize: '12px', fontFamily: 'var(--font-sans)' }}>{sub}</span>}
         </span>
     </div>
 );
@@ -157,7 +174,7 @@ const AnalysisChecklist = ({ report }: { report: NonNullable<AnalysisResultsPane
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
                             <th style={{ padding: '4px' }}>ID</th>
-                            <th style={{ padding: '4px' }}><MathText>c<sub>i</sub> = (x, y)</MathText></th>
+                            <th style={{ padding: '4px' }}><MathText>c<sub>i</sub></MathText> <MathNum>= (x, y)</MathNum></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -177,8 +194,8 @@ const AnalysisChecklist = ({ report }: { report: NonNullable<AnalysisResultsPane
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                            <th style={{ padding: '4px' }}>Pair <MathText>{`{i, j}`}</MathText></th>
-                            <th style={{ padding: '4px' }}>Dist check <MathText>||c<sub>i</sub> - c<sub>j</sub>|| = 2</MathText></th>
+                            <th style={{ padding: '4px' }}>Pair <MathNum>{`{i, j}`}</MathNum></th>
+                            <th style={{ padding: '4px' }}>Dist check <MathNum>||</MathNum><MathText>c<sub>i</sub></MathText><MathNum> - </MathNum><MathText>c<sub>j</sub></MathText><MathNum>|| = 2</MathNum></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -200,7 +217,7 @@ const AnalysisChecklist = ({ report }: { report: NonNullable<AnalysisResultsPane
                         <thead>
                             <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
                                 <th style={{ padding: '4px' }}><MathText>α</MathText></th>
-                                <th style={{ padding: '4px' }}><MathText>k(α)</MathText></th>
+                                <th style={{ padding: '4px' }}><MathText>k</MathText><MathNum>(α)</MathNum></th>
                                 <th style={{ padding: '4px' }}><MathText>p<sub>α</sub></MathText></th>
                                 <th style={{ padding: '4px' }}><MathText>n<sub>α</sub></MathText></th>
                                 <th style={{ padding: '4px' }}><MathText>t<sub>α</sub></MathText></th>
@@ -227,27 +244,27 @@ const AnalysisChecklist = ({ report }: { report: NonNullable<AnalysisResultsPane
                 </div>
             </ChecklistSection>
 
-            <ChecklistSection title={<span>4. Matrices (<MathText>L(c)</MathText>)</span>}>
+            <ChecklistSection title={<span>4. Matrices (<MathText>L</MathText><MathNum>(c)</MathNum>)</span>}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <DataRow label={<MathText>A(c)</MathText>} value={report.matrices.A_dims} sub={`Rank ${report.matrices.A_rank}`} />
-                    <DataRow label={<MathText>T<sub>c</sub>(c)</MathText>} value={report.matrices.Tc_dims} sub={`Rank ${report.matrices.Tc_rank}`} />
-                    <DataRow label={<MathText>T<sub>ω</sub></MathText>} value={report.matrices.Tw_dims} sub={`Rank ${report.matrices.Tw_rank}`} />
-                    <DataRow label={<MathText>L(c)</MathText>} value={report.matrices.L_dims} sub={`Rank ${report.matrices.L_rank}`} />
+                    <DataRow label={<span><MathText>A</MathText><MathNum>(c)</MathNum></span>} value={report.matrices.A_dims} sub={`Rank ${report.matrices.A_rank}`} />
+                    <DataRow label={<span><MathText>T<sub>c</sub></MathText><MathNum>(c)</MathNum></span>} value={report.matrices.Tc_dims} sub={`Rank ${report.matrices.Tc_rank}`} />
+                    <DataRow label={<span><MathText>T<sub>ω</sub></MathText><MathNum>(c)</MathNum></span>} value={report.matrices.Tw_dims} sub={`Rank ${report.matrices.Tw_rank}`} />
+                    <DataRow label={<span><MathText>L</MathText><MathNum>(c)</MathNum></span>} value={report.matrices.L_dims} sub={`Rank ${report.matrices.L_rank}`} />
                 </div>
             </ChecklistSection>
 
-            <ChecklistSection title={<span>5. Combinatoria (<MathText>𝒮, 𝒜</MathText>)</span>}>
+            <ChecklistSection title={<span>5. Combinatoria (<MathText>𝒮</MathText><MathNum>, </MathNum><MathText>𝒜</MathText>)</span>}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                     <div>
-                        <strong style={{ display: 'block', marginBottom: '4px' }}>Segmentos (<MathText>α → β</MathText>)</strong>
+                        <strong style={{ display: 'block', marginBottom: '4px' }}>Segmentos (<MathText>α</MathText> <MathNum>→</MathNum> <MathText>β</MathText>)</strong>
                         {report.S.map((s, i) => (
-                            <div key={i}><MathText>{s.alpha} → {s.beta}</MathText></div>
+                            <div key={i}><MathText>{s.alpha}</MathText> <MathNum>→</MathNum> <MathText>{s.beta}</MathText></div>
                         ))}
                     </div>
                     <div>
-                        <strong style={{ display: 'block', marginBottom: '4px' }}>Arcos (<MathText>α → β, k, σ</MathText>)</strong>
+                        <strong style={{ display: 'block', marginBottom: '4px' }}>Arcos (<MathText>α</MathText> <MathNum>→</MathNum> <MathText>β</MathText><MathNum>, </MathNum><MathText>k</MathText><MathNum>, </MathNum><MathText>σ</MathText>)</strong>
                         {report.A.map((a, i) => (
-                            <div key={i}><MathText>{a.alpha} → {a.beta}, k={a.k}, σ={a.sigma > 0 ? '+' : '-'}</MathText></div>
+                            <div key={i}><MathText>{a.alpha}</MathText> <MathNum>→</MathNum> <MathText>{a.beta}</MathText><MathNum>, k={a.k}, σ={a.sigma > 0 ? '+' : '-'}</MathNum></div>
                         ))}
                     </div>
                 </div>
@@ -380,7 +397,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                                 }}
                             >
                                 <span>
-                                    Table with <MathText>N, c<sub>i</sub>, ℰ, |ℰ|, |𝒯|, |𝒮|, |𝒜|</MathText>
+                                    Table with <MathText>N</MathText><MathNum>, </MathNum><MathText>c<sub>i</sub></MathText><MathNum>, </MathNum><MathText>ℰ</MathText><MathNum>, |</MathNum><MathText>ℰ</MathText><MathNum>|, |</MathNum><MathText>𝒯</MathText><MathNum>|, |</MathNum><MathText>𝒮</MathText><MathNum>|, |</MathNum><MathText>𝒜</MathText><MathNum>|</MathNum>
                                 </span>
                                 <span>{instanceExpanded ? '▲' : '▼'}</span>
                             </div>
@@ -418,10 +435,10 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                     {counts && (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '20px', background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
                             <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>N</MathText></div><strong>{counts.N}</strong></div>
-                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|ℰ|</MathText></div><strong>{counts.E}</strong></div>
-                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|𝒯|</MathText></div><strong>{counts.T}</strong></div>
-                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|𝒮|</MathText></div><strong>{counts.S}</strong></div>
-                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathText>|𝒜|</MathText></div><strong>{counts.A}</strong></div>
+                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathNum>|</MathNum><MathText>ℰ</MathText><MathNum>|</MathNum></div><strong>{counts.E}</strong></div>
+                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathNum>|</MathNum><MathText>𝒯</MathText><MathNum>|</MathNum></div><strong>{counts.T}</strong></div>
+                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathNum>|</MathNum><MathText>𝒮</MathText><MathNum>|</MathNum></div><strong>{counts.S}</strong></div>
+                            <div><div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}><MathNum>|</MathNum><MathText>𝒜</MathText><MathNum>|</MathNum></div><strong>{counts.A}</strong></div>
                         </div>
                     )}
 
@@ -429,19 +446,19 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                         <h3 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em' }}>VALIDATION</h3>
 
                         <ResultRow
-                            label={<span><MathText>(C0)</MathText> verificacion del ciclo orientado</span>}
+                            label={<span><MathNum>(</MathNum><MathText>C</MathText><MathNum>0)</MathNum> verificacion del ciclo orientado</span>}
                             value={combinatorial.passed ? "PASS" : "FAIL"}
                             passed={combinatorial.passed}
                             detail={!combinatorial.passed ? combinatorial.message : undefined}
                         />
 
                         <DetailedResultRow
-                            label={<span>Verificaciones metricas <MathText>(S1)-(S2), (A1)-(A3)</MathText></span>}
+                            label={<span>Verificaciones metricas <MathNum>(</MathNum><MathText>S</MathText><MathNum>1)-(</MathNum><MathText>S</MathText><MathNum>2), (</MathNum><MathText>A</MathText><MathNum>1)-(</MathNum><MathText>A</MathText><MathNum>3)</MathNum></span>}
                             failedItems={failedMetrics}
                         />
 
                         <DetailedResultRow
-                            label={<span>Chequeos globales <MathText>(G1)-(G3)</MathText></span>}
+                            label={<span>Chequeos globales <MathNum>(</MathNum><MathText>G</MathText><MathNum>1)-(</MathNum><MathText>G</MathText><MathNum>3)</MathNum></span>}
                             failedItems={failedGlobal}
                         />
                     </div>
@@ -452,10 +469,10 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                             <div>
                                 <h3 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em' }}>MATRICES</h3>
                                 <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px' }}>
-                                    <DataRow label={<MathText>A(c)</MathText>} value={matrices.A.dims} sub={`Rank ${matrices.A.rank}`} />
-                                    <DataRow label={<MathText>T<sub>c</sub>(c)</MathText>} value={matrices.Tc.dims} sub={`Rank ${matrices.Tc.rank}`} />
-                                    <DataRow label={<MathText>T<sub>ω</sub>(c)</MathText>} value={matrices.Tw.dims} sub={`Rank ${matrices.Tw.rank}`} />
-                                    <DataRow label={<MathText>L(c)</MathText>} value={matrices.L.dims} sub={`Rank ${matrices.L.rank}`} />
+                                    <DataRow label={<span><MathText>A</MathText><MathNum>(c)</MathNum></span>} value={matrices.A.dims} sub={`Rank ${matrices.A.rank}`} />
+                                    <DataRow label={<span><MathText>T<sub>c</sub></MathText><MathNum>(c)</MathNum></span>} value={matrices.Tc.dims} sub={`Rank ${matrices.Tc.rank}`} />
+                                    <DataRow label={<span><MathText>T<sub>ω</sub></MathText><MathNum>(c)</MathNum></span>} value={matrices.Tw.dims} sub={`Rank ${matrices.Tw.rank}`} />
+                                    <DataRow label={<span><MathText>L</MathText><MathNum>(c)</MathNum></span>} value={matrices.L.dims} sub={`Rank ${matrices.L.rank}`} />
                                 </div>
                             </div>
                             <div>
@@ -464,7 +481,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                                     <DataRow label={<MathText>g<sub>c</sub></MathText>} value={`||·|| = ${vectors.gc.norm.toExponential(4)}`} sub={vectors.gc.dims} />
                                     <DataRow label={<MathText>g<sub>ω</sub></MathText>} value={`||·|| = ${vectors.gw.norm.toExponential(4)}`} sub={vectors.gw.dims} />
                                     <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }}></div>
-                                    <DataRow label={<MathText>g<sub>red</sub></MathText>} value={`||·|| = ${vectors.gred.norm.toExponential(4)}`} sub={vectors.gred.dims} />
+                                    <DataRow label={<span><MathText>g</MathText><MathNum><sub>red</sub></MathNum></span>} value={`||·|| = ${vectors.gred.norm.toExponential(4)}`} sub={vectors.gred.dims} />
                                 </div>
                             </div>
                         </div>
@@ -478,16 +495,16 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                                 <div>
                                     <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dimensions</div>
                                     <DataRow label={<MathText>U</MathText>} value={gauge.dims.U} />
-                                    <DataRow label={<MathText>V<sub>Roll</sub></MathText>} value={gauge.dims.V_Roll} />
+                                    <DataRow label={<span><MathText>V</MathText><MathNum><sub>Roll</sub></MathNum></span>} value={gauge.dims.V_Roll} />
                                     <DataRow label={<MathText>W</MathText>} value={gauge.dims.W} />
-                                    <DataRow label={<MathText>U<sub>g</sub></MathText>} value={gauge.dims.Ug} />
+                                    <DataRow label={<span><MathText>U</MathText><MathNum><sub>g</sub></MathNum></span>} value={gauge.dims.Ug} />
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Residuals</div>
-                                    <DataRow label={<MathText>||A U||</MathText>} value={gauge.checks.AUc.toExponential(2)} />
-                                    <DataRow label={<MathText>||U<sup>T</sup>U - I||</MathText>} value={gauge.checks.UtU_I.toExponential(2)} />
-                                    <DataRow label={<MathText>||W<sup>T</sup>W - I||</MathText>} value={gauge.checks.WtW_I.toExponential(2)} />
-                                    <DataRow label={<MathText>||U<sub>g</sub><sup>T</sup>W||</MathText>} value={gauge.checks.UgtW.toExponential(2)} />
+                                    <DataRow label={<span><MathNum>||</MathNum><MathText>A U</MathText><MathNum>||</MathNum></span>} value={gauge.checks.AUc.toExponential(2)} />
+                                    <DataRow label={<span><MathNum>||</MathNum><MathText>U<sup>T</sup>U <MathNum>-</MathNum> I</MathText><MathNum>||</MathNum></span>} value={gauge.checks.UtU_I.toExponential(2)} />
+                                    <DataRow label={<span><MathNum>||</MathNum><MathText>W<sup>T</sup>W <MathNum>-</MathNum> I</MathText><MathNum>||</MathNum></span>} value={gauge.checks.WtW_I.toExponential(2)} />
+                                    <DataRow label={<span><MathNum>||</MathNum><MathText>U<MathNum><sub>g</sub><sup>T</sup></MathNum>W</MathText><MathNum>||</MathNum></span>} value={gauge.checks.UgtW.toExponential(2)} />
                                 </div>
                             </div>
                         </div>
@@ -498,12 +515,12 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                         <div style={{ background: 'rgba(255,0,0,0.05)', padding: '16px', borderRadius: '8px', marginTop: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <h4 style={{ margin: 0, fontSize: '14px' }}>
-                                    Criticidad: <MathText>r = U<sub>g</sub><sup>T</sup> g<sub>red</sub></MathText>
+                                    Criticidad: <MathText>r</MathText> <MathNum>=</MathNum> <MathText>U</MathText><MathNum><sub>g</sub><sup>T</sup></MathNum> <MathText>g</MathText><MathNum><sub>red</sub></MathNum>
                                 </h4>
                                 <span style={{ fontWeight: 'bold' }}>{criticality.isCritical ? "CRITICAL" : "NOT CRITICAL"}</span>
                             </div>
                             <div style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                                <div><MathText>||r||</MathText> &nbsp;&nbsp; {criticality.normR.toExponential(6)}</div>
+                                <div><MathNum>||</MathNum><MathText>r</MathText><MathNum>||</MathNum> &nbsp;&nbsp; {criticality.normR.toExponential(6)}</div>
                                 <div>Ratio &nbsp; {criticality.ratio.toExponential(6)}</div>
                             </div>
 
@@ -513,7 +530,7 @@ export const AnalysisResultsPanel: React.FC<AnalysisResultsPanelProps> = ({
                                         (Opcional) Evaluacion de <MathText>Q<sub>red</sub></MathText>
                                     </strong>
                                     <div style={{ fontFamily: 'monospace' }}>
-                                        <MathText>Q<sub>red</sub>(r)</MathText>: {quadratic.toExponential(4)}
+                                        <MathText>Q</MathText><MathNum><sub>red</sub>(</MathNum><MathText>r</MathText><MathNum>)</MathNum>: {quadratic.toExponential(4)}
                                     </div>
                                 </div>
                             )}

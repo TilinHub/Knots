@@ -72,13 +72,14 @@ export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, ac
             <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
                 <Button
                     onClick={() => {
-                        // Save with frozen path - the knotPath is the EXACT geometry computed now
+                        // Save with frozen path - use envelopePath (closed loop with arcs)
+                        // NOT knotPath (which is point-to-point without arcs)
                         (actions.addSavedKnot as any)(
                             knotState.diskSequence,
                             knotState.chiralities,
                             knotState.anchorSequence,
-                            knotState.knotPath, // Freeze the actual path geometry
-                            editorState.envelopeColor // [NEW] Save with current global color
+                            knotState.envelopePath.length > 0 ? knotState.envelopePath : knotState.knotPath,
+                            editorState.envelopeColor
                         );
                         knotState.actions.clearSequence();
                     }}
