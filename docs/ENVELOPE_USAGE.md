@@ -37,7 +37,7 @@ function MyComponent() {
     const animate = () => {
       // Limpia canvas
       ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
-      
+
       // Dibuja discos
       circles.forEach(circle => {
         ctx.beginPath();
@@ -124,7 +124,7 @@ function AdvancedComponent() {
   const handleDiskDrag = (index: number, newPos: Point2D) => {
     const updated = [...circles];
     updated[index].center = newPos;
-    
+
     // Actualización inmediata (sin debounce) para drag fluido
     envelope.updateCirclesImmediate(updated);
     setCircles(updated);
@@ -138,10 +138,10 @@ function AdvancedComponent() {
   return (
     <div>
       <canvas ref={canvasRef} width={800} height={600} />
-      <input 
-        type="range" 
-        min="10" 
-        max="100" 
+      <input
+        type="range"
+        min="10"
+        max="100"
         onChange={(e) => adjustSmoothness(Number(e.target.value))}
       />
     </div>
@@ -190,13 +190,13 @@ renderer.renderWithSparkles(Date.now(), 12); // tiempo, cantidad
 ```typescript
 function renderEnvelopeWithEffects(time: number) {
   const { renderer } = envelope;
-  
+
   // Capa 1: Halo de fondo
   renderer.renderHalo(4, 12);
-  
+
   // Capa 2: Envolvente principal animada
   renderer.renderAnimated(time, 0.25);
-  
+
   // Capa 3: Destellos
   renderer.renderWithSparkles(time, 8);
 }
@@ -263,6 +263,7 @@ const circles = [
 ### Límite Mínimo
 
 La envolvente **no puede contraerse más** cuando:
+
 - Los círculos se tocan o superponen
 - La distancia entre centros < suma de radios
 
@@ -295,7 +296,7 @@ const envelope = useInteractiveEnvelope(canvasRef, circles, {
   // o
   debounceMs: 16, // ~60fps (más fluido)
   // o
-  debounceMs: 8,  // ~120fps (ultra fluido, más CPU)
+  debounceMs: 8, // ~120fps (ultra fluido, más CPU)
 });
 ```
 
@@ -367,10 +368,10 @@ function InteractiveEnvelopeEditor() {
       const updated = prev.map(c =>
         c.id === dragging ? { ...c, center: { x, y } } : c
       );
-      
+
       // Actualización inmediata para drag fluido
       envelope.updateCirclesImmediate(updated);
-      
+
       return updated;
     });
   };
@@ -420,7 +421,7 @@ function InteractiveEnvelopeEditor() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       />
-      
+
       <div style={{ marginTop: 20 }}>
         <label>
           Suavidad: {smoothness}
@@ -456,23 +457,23 @@ export default InteractiveEnvelopeEditor;
 
 ```typescript
 class SmoothCSEnvelope {
-  constructor(circles: Circle[])
-  
+  constructor(circles: Circle[]);
+
   // Métodos principales
-  calculateEnvelope(): Point2D[]
-  updateCircles(circles: Circle[]): void
-  updateCirclesImmediate(circles: Circle[]): void
-  
+  calculateEnvelope(): Point2D[];
+  updateCircles(circles: Circle[]): void;
+  updateCirclesImmediate(circles: Circle[]): void;
+
   // Configuración
-  setSmoothness(value: number): void          // 10-100
-  setBezierTension(value: number): void       // 0-1
-  setAdaptiveSmoothing(enabled: boolean): void
-  
+  setSmoothness(value: number): void; // 10-100
+  setBezierTension(value: number): void; // 0-1
+  setAdaptiveSmoothing(enabled: boolean): void;
+
   // Getters
-  getEnvelopePoints(): Point2D[]
-  getCircleCount(): number
-  getCircles(): Circle[]
-  isEmpty(): boolean
+  getEnvelopePoints(): Point2D[];
+  getCircleCount(): number;
+  getCircles(): Circle[];
+  isEmpty(): boolean;
 }
 ```
 
@@ -483,24 +484,24 @@ class EnvelopeRenderer {
   constructor(
     ctx: CanvasRenderingContext2D,
     envelope: SmoothCSEnvelope,
-    options?: EnvelopeRenderOptions
-  )
-  
+    options?: EnvelopeRenderOptions,
+  );
+
   // Métodos de renderizado
-  render(options?: Partial<EnvelopeRenderOptions>): void
-  renderAnimated(time: number, baseOpacity?: number): void
-  renderGlow(intensity?: number): void
-  renderOutlineOnly(strokeWidth?: number, opacity?: number): void
-  renderHalo(layers?: number, maxWidth?: number): void
-  renderNeomorphic(): void
-  renderWaveEffect(time: number, waveSpeed?: number): void
-  renderWithSparkles(time: number, sparkleCount?: number): void
-  
+  render(options?: Partial<EnvelopeRenderOptions>): void;
+  renderAnimated(time: number, baseOpacity?: number): void;
+  renderGlow(intensity?: number): void;
+  renderOutlineOnly(strokeWidth?: number, opacity?: number): void;
+  renderHalo(layers?: number, maxWidth?: number): void;
+  renderNeomorphic(): void;
+  renderWaveEffect(time: number, waveSpeed?: number): void;
+  renderWithSparkles(time: number, sparkleCount?: number): void;
+
   // Configuración
-  setContext(ctx: CanvasRenderingContext2D): void
-  setEnvelope(envelope: SmoothCSEnvelope): void
-  setDefaultOptions(options: Partial<EnvelopeRenderOptions>): void
-  getOptions(): EnvelopeRenderOptions
+  setContext(ctx: CanvasRenderingContext2D): void;
+  setEnvelope(envelope: SmoothCSEnvelope): void;
+  setDefaultOptions(options: Partial<EnvelopeRenderOptions>): void;
+  getOptions(): EnvelopeRenderOptions;
 }
 ```
 
@@ -526,9 +527,9 @@ envelope.setRenderOptions({
 
 ```typescript
 const envelope = useInteractiveEnvelope(canvasRef, circles, {
-  smoothness: 30,              // Reducir
-  debounceMs: 33,              // ~30fps
-  adaptiveSmoothing: false,    // Desactivar
+  smoothness: 30, // Reducir
+  debounceMs: 33, // ~30fps
+  adaptiveSmoothing: false, // Desactivar
 });
 ```
 
@@ -545,6 +546,7 @@ envelope.render(); // Sin animación
 ## 🎉 ¡Listo!
 
 Ahora tienes una envolvente CS completamente interactiva que:
+
 - ✅ Se expande cuando separas los discos
 - ✅ Se contrae cuando los juntas
 - ✅ Es ultra suave con interpolación spline

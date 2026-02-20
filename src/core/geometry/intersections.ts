@@ -2,7 +2,7 @@
  * Detección de intersecciones (cruces) entre bloques CS
  */
 
-import type { CrossPoint, CSArc, CSBlock, CSDisk,CSSegment, Point2D } from '../types/cs';
+import type { CrossPoint, CSArc, CSBlock, CSDisk, CSSegment, Point2D } from '../types/cs';
 
 const EPSILON = 1e-6;
 
@@ -78,10 +78,12 @@ function segmentSegmentIntersection(s1: CSSegment, s2: CSSegment): Point2D[] {
 
   // Intersección dentro de ambos segmentos (excluyendo extremos)
   if (t > EPSILON && t < 1 - EPSILON && u > EPSILON && u < 1 - EPSILON) {
-    return [{
-      x: a.x + t * (b.x - a.x),
-      y: a.y + t * (b.y - a.y),
-    }];
+    return [
+      {
+        x: a.x + t * (b.x - a.x),
+        y: a.y + t * (b.y - a.y),
+      },
+    ];
   }
 
   return [];
@@ -254,7 +256,7 @@ export function findDiskContacts(disks: CSDisk[]): DiskContact[] {
           disk1Id: d1.id,
           disk2Id: d2.id,
           tangentAngle,
-          normalAngle
+          normalAngle,
         });
       }
     }

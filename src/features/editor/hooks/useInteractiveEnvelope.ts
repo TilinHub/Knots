@@ -1,6 +1,6 @@
-import { useCallback,useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { type Circle,SmoothCSEnvelope } from '../../../core/geometry/CSEnvelope';
+import { type Circle, SmoothCSEnvelope } from '../../../core/geometry/CSEnvelope';
 import type { Point2D } from '../../../core/types/cs';
 import { EnvelopeRenderer, type EnvelopeRenderOptions } from '../../../renderer/EnvelopeRenderer';
 
@@ -32,7 +32,7 @@ interface UseInteractiveEnvelopeReturn {
 export function useInteractiveEnvelope(
   canvasRef: React.RefObject<HTMLCanvasElement>,
   initialCircles: Circle[] = [],
-  options: UseInteractiveEnvelopeOptions = {}
+  options: UseInteractiveEnvelopeOptions = {},
 ): UseInteractiveEnvelopeReturn {
   const {
     smoothness = 40,
@@ -67,11 +67,7 @@ export function useInteractiveEnvelope(
     if (!ctx) return;
 
     if (!rendererRef.current) {
-      rendererRef.current = new EnvelopeRenderer(
-        ctx,
-        envelopeRef.current,
-        renderOptions
-      );
+      rendererRef.current = new EnvelopeRenderer(ctx, envelopeRef.current, renderOptions);
     } else {
       rendererRef.current.setContext(ctx);
       rendererRef.current.setEnvelope(envelopeRef.current);
@@ -97,7 +93,7 @@ export function useInteractiveEnvelope(
         }
       }, debounceMs);
     },
-    [debounceMs]
+    [debounceMs],
   );
 
   /**
@@ -120,19 +116,16 @@ export function useInteractiveEnvelope(
   /**
    * Renderiza la envolvente
    */
-  const render = useCallback(
-    (time?: number, animated: boolean = false) => {
-      if (!rendererRef.current || !envelopeRef.current) return;
-      if (envelopeRef.current.isEmpty()) return;
+  const render = useCallback((time?: number, animated: boolean = false) => {
+    if (!rendererRef.current || !envelopeRef.current) return;
+    if (envelopeRef.current.isEmpty()) return;
 
-      if (animated && time !== undefined) {
-        rendererRef.current.renderAnimated(time);
-      } else {
-        rendererRef.current.render();
-      }
-    },
-    []
-  );
+    if (animated && time !== undefined) {
+      rendererRef.current.renderAnimated(time);
+    } else {
+      rendererRef.current.render();
+    }
+  }, []);
 
   /**
    * Obtiene puntos de la envolvente
@@ -165,12 +158,9 @@ export function useInteractiveEnvelope(
   /**
    * Actualiza opciones de renderizado
    */
-  const setRenderOptions = useCallback(
-    (options: Partial<EnvelopeRenderOptions>) => {
-      rendererRef.current?.setDefaultOptions(options);
-    },
-    []
-  );
+  const setRenderOptions = useCallback((options: Partial<EnvelopeRenderOptions>) => {
+    rendererRef.current?.setDefaultOptions(options);
+  }, []);
 
   // Limpieza
   useEffect(() => {
@@ -198,10 +188,7 @@ export function useInteractiveEnvelope(
 /**
  * Hook simplificado para uso básico
  */
-export function useEnvelope(
-  canvasRef: React.RefObject<HTMLCanvasElement>,
-  circles: Circle[]
-) {
+export function useEnvelope(canvasRef: React.RefObject<HTMLCanvasElement>, circles: Circle[]) {
   const envelope = useInteractiveEnvelope(canvasRef, circles, {
     smoothness: 40,
     adaptiveSmoothing: true,
@@ -222,7 +209,7 @@ export function useEnvelope(
 export function useAnimatedEnvelope(
   canvasRef: React.RefObject<HTMLCanvasElement>,
   circles: Circle[],
-  enabled: boolean = true
+  enabled: boolean = true,
 ) {
   const envelope = useInteractiveEnvelope(canvasRef, circles, {
     smoothness: 50,

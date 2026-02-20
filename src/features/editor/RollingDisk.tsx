@@ -109,12 +109,12 @@ export function RollingDisk({
     setTrail((prev) => {
       const newTrail = [...prev, currentState.diskCenter];
       const MAX_LENGTH = 500;
-      
+
       // Si no excede el límite, devolver el array completo
       if (newTrail.length <= MAX_LENGTH) {
         return newTrail;
       }
-      
+
       // Truncar manualmente construyendo un nuevo array
       const result: Point[] = [];
       const startIdx = newTrail.length - MAX_LENGTH;

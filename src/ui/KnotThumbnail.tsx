@@ -20,40 +20,40 @@ export default function KnotThumbnail({ nodes, edges, size = 70 }: KnotThumbnail
       network = new Network(
         divRef.current,
         {
-          nodes: nodes.map(id => ({ id })),
-          edges: edges.map(([from, to]) => ({ from, to }))
+          nodes: nodes.map((id) => ({ id })),
+          edges: edges.map(([from, to]) => ({ from, to })),
         },
         {
           physics: {
             enabled: true,
             stabilization: {
               iterations: 100,
-              updateInterval: 25
-            }
+              updateInterval: 25,
+            },
           },
           height: `${size}px`,
           width: `${size}px`,
-          nodes: { 
-            shape: 'dot', 
-            size: 8, 
-            color: '#8fbfff', 
-            borderWidth: 0 
+          nodes: {
+            shape: 'dot',
+            size: 8,
+            color: '#8fbfff',
+            borderWidth: 0,
           },
-          edges: { 
-            color: '#8fbfff', 
+          edges: {
+            color: '#8fbfff',
             width: 2,
-            smooth: false
+            smooth: false,
           },
-          layout: { 
-            improvedLayout: true
+          layout: {
+            improvedLayout: true,
           },
           interaction: {
             dragNodes: false,
             dragView: false,
             selectable: false,
-            zoomView: false
-          }
-        }
+            zoomView: false,
+          },
+        },
       );
 
       const captureCanvas = () => {
@@ -88,11 +88,11 @@ export default function KnotThumbnail({ nodes, edges, size = 70 }: KnotThumbnail
     <>
       <div
         ref={divRef}
-        style={{ 
-          position: 'absolute', 
+        style={{
+          position: 'absolute',
           left: '-9999px',
           top: 0,
-          visibility: 'hidden'
+          visibility: 'hidden',
         }}
       />
       {imageUrl ? (
@@ -101,10 +101,10 @@ export default function KnotThumbnail({ nodes, edges, size = 70 }: KnotThumbnail
           alt="Knot preview"
           width={size}
           height={size}
-          style={{ 
-            display: 'block', 
+          style={{
+            display: 'block',
             borderRadius: 4,
-            backgroundColor: '#fff'
+            backgroundColor: '#fff',
           }}
         />
       ) : (
@@ -118,7 +118,7 @@ export default function KnotThumbnail({ nodes, edges, size = 70 }: KnotThumbnail
             alignItems: 'center',
             justifyContent: 'center',
             color: '#999',
-            fontSize: '12px'
+            fontSize: '12px',
           }}
         >
           Loading...

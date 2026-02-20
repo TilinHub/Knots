@@ -125,7 +125,7 @@ export function ContactDisks({
                       pointerEvents="none"
                       style={{
                         userSelect: 'none',
-                        textShadow: '0px 0px 2px rgba(0,0,0,0.8)'
+                        textShadow: '0px 0px 2px rgba(0,0,0,0.8)',
                       }}
                     >
                       {`(${disk.center.x.toFixed(2)}, ${disk.center.y.toFixed(2)})`}
@@ -169,7 +169,7 @@ export function ContactDisks({
                   stroke="rgba(255, 100, 100, 0.5)"
                   strokeWidth="2"
                   strokeDasharray="3,3"
-                />
+                />,
               );
             }
           }

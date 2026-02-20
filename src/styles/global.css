@@ -13,7 +13,9 @@
 
   /* FONT STYLES */
   --ff-sans: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  --ff-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --ff-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
 
   --fw-regular: 400;
   --fw-medium: 500;
@@ -50,7 +52,7 @@
 }
 
 /* DARK MODE OVERRIDES */
-:root[class~="dark-mode"] {
+:root[class~='dark-mode'] {
   --bg-primary: #242424;
   --bg-secondary: #2a2a2a;
   --bg-tertiary: #333333;

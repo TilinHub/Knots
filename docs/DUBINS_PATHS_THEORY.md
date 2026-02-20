@@ -32,6 +32,7 @@ TR² = {(p, v) : p ∈ R², v ∈ T_p R²}
 ```
 
 Un punto en TR² se denota como:
+
 - **(x, X)** donde x = (x₁, x₂) es la posición en R²
 - **X** es el vector tangente en x
 
@@ -39,9 +40,9 @@ En coordenadas, representamos una pose como:
 
 ```typescript
 interface Pose2D {
-  x: number;      // posición x
-  y: number;      // posición y  
-  theta: number;  // ángulo del vector tangente
+  x: number; // posición x
+  y: number; // posición y
+  theta: number; // ángulo del vector tangente
 }
 ```
 
@@ -69,6 +70,7 @@ Más específicamente, existen **6 tipos** de Dubins paths:
 - **RLR**: Right-Left-Right
 
 Donde:
+
 - **L** = arco circular a la izquierda (left)
 - **R** = arco circular a la derecha (right)
 - **S** = segmento recto (straight)
@@ -95,11 +97,13 @@ Dada una pose (x, X) ∈ TR², definimos:
 Los centros de los círculos adyacentes se calculan como (Ecuaciones 3.1-3.2 del paper):
 
 **Centro del círculo izquierdo**:
+
 ```
 c_l(x) = (x - r sin(θ), y + r cos(θ))
 ```
 
 **Centro del círculo derecho**:
+
 ```
 c_r(x) = (x + r sin(θ), y - r cos(θ))
 ```
@@ -140,10 +144,10 @@ Estas condiciones determinan qué tipos de paths son válidos:
       /|\
      / | \
     /  |  \
-   L2  S   
-  /    |    
+   L2  S
+  /    |
  ●-----+-----●
-C_l(x)       
+C_l(x)
      L1
 ```
 
@@ -151,11 +155,13 @@ C_l(x)
 
 1. Calcular centros: c_l(x) y c_l(y)
 2. Ángulo de la línea que conecta centros:
+
    ```
    θ = atan2(c_l(y).y - c_l(x).y, c_l(y).x - c_l(x).x)
    ```
 
 3. Puntos de tangencia (tangente externa):
+
    ```
    p_start = c_l(x) + r(√2/2, √2/2)  // perpendicular a θ
    p_end   = c_l(y) + r(√2/2, √2/2)
@@ -164,9 +170,7 @@ C_l(x)
 4. Longitudes:
    - **Arco 1** (L): φ₁ = mod_2π(atan2(p_start - c_l(x)) - θ_start)
      - Longitud: L₁ = r × φ₁
-   
    - **Segmento** (S): L_s = ||p_end - p_start||
-   
    - **Arco 2** (L): φ₂ = mod_2π(θ_end - atan2(p_end - c_l(y)))
      - Longitud: L₂ = r × φ₂
 
@@ -210,12 +214,14 @@ Simétrico a LSL, usando círculos derechos.
 3. **Condición**: d ≥ 2r (para que exista tangente interna)
 
 4. Ángulo y offset de tangente interna:
+
    ```
    θ = atan2(c_r(y).y - c_l(x).y, c_r(y).x - c_l(x).x)
    α = asin(2r / d)
    ```
 
 5. Puntos de tangencia:
+
    ```
    p_start = c_l(x) + r × (⊥ dirección a θ + α)
    p_end   = c_r(y) + r × (⊥ dirección a θ + α)
@@ -251,10 +257,11 @@ Simétrico a LSR.
 3. **Condición**: d ≤ 4r (los tres círculos deben poder tocarse)
 
 4. Centro del círculo intermedio (derecho):
+
    ```
    θ = atan2(c_l(y).y - c_l(x).y, c_l(y).x - c_l(x).x)
    α = acos(d / (4r))
-   
+
    c_r(mid) = c_l(x) + 2r × (cos(θ + α), sin(θ + α))
    ```
 
@@ -315,21 +322,19 @@ L_straight = √((x₂ - x₁)² + (y₂ - y₁)²)
 
 ```typescript
 const optimal = paths
-  .filter(p => p.isValid)
-  .reduce((min, p) => 
-    p.totalLength < min.totalLength ? p : min
-  );
+  .filter((p) => p.isValid)
+  .reduce((min, p) => (p.totalLength < min.totalLength ? p : min));
 ```
 
 ## Aplicación a Nudos
 
 ### Medición de Longitud de Envolvente
 
-Dado un nudo con puntos de control P₀, P₁, ..., P_{n-1}:
+Dado un nudo con puntos de control P₀, P₁, ..., P\_{n-1}:
 
-1. Para cada par consecutivo (P_i, P_{i+1 mod n}):
+1. Para cada par consecutivo (P*i, P*{i+1 mod n}):
    - Estimar vector tangente en cada punto
-   - Construir poses (x_i, X_i) y (x_{i+1}, X_{i+1})
+   - Construir poses (x*i, X_i) y (x*{i+1}, X\_{i+1})
    - Calcular Dubins path óptimo
    - Acumular longitud
 
@@ -343,18 +348,15 @@ Dado un nudo con puntos de control P₀, P₁, ..., P_{n-1}:
 Dada una secuencia de puntos, estimamos el ángulo tangente mediante:
 
 ```typescript
-function estimateTangent(
-  points: Point2D[], 
-  index: number
-): number {
+function estimateTangent(points: Point2D[], index: number): number {
   const n = points.length;
   const prev = points[(index - 1 + n) % n];
   const next = points[(index + 1) % n];
-  
+
   // Vector promedio (diferencias centradas)
   const dx = (next.x - prev.x) / 2;
   const dy = (next.y - prev.y) / 2;
-  
+
   return Math.atan2(dy, dx);
 }
 ```
@@ -416,13 +418,13 @@ Casos de prueba importantes:
 
 ## Referencias
 
-1. **Dubins, L. E.** (1957). "On curves of minimal length with a constraint on average curvature, and with prescribed initial and terminal positions and tangents". *American Journal of Mathematics*, 79(3), 497-516.
+1. **Dubins, L. E.** (1957). "On curves of minimal length with a constraint on average curvature, and with prescribed initial and terminal positions and tangents". _American Journal of Mathematics_, 79(3), 497-516.
 
-2. **Díaz, J., & Ayala, J.** (2020). "Census of Bounded Curvature Paths". *arXiv preprint arXiv:2005.13210*.
+2. **Díaz, J., & Ayala, J.** (2020). "Census of Bounded Curvature Paths". _arXiv preprint arXiv:2005.13210_.
 
-3. **Dubins, L. E.** (1961). "On plane curves with curvature". *Pacific Journal of Mathematics*, 11(2), 471-481.
+3. **Dubins, L. E.** (1961). "On plane curves with curvature". _Pacific Journal of Mathematics_, 11(2), 471-481.
 
-4. **Reeds, J. A., & Shepp, L. A.** (1990). "Optimal paths for a car that goes both forwards and backwards". *Pacific Journal of Mathematics*, 145(2), 367-393.
+4. **Reeds, J. A., & Shepp, L. A.** (1990). "Optimal paths for a car that goes both forwards and backwards". _Pacific Journal of Mathematics_, 145(2), 367-393.
 
 ## Extensiones
 
@@ -433,6 +435,7 @@ Generalización que permite **movimiento hacia atrás**: 48 tipos de paths posib
 ### Bounded Curvature en Superficies
 
 El paper extiende la teoría a:
+
 - Plano hiperbólico H²
 - Superficies de Riemann
 
@@ -443,7 +446,6 @@ El paper extiende la teoría a:
 - **Teoría de nudos**: Longitud con curvatura acotada
 - **Diseño de caminos**: Ferrocarriles, carreteras
 
-
 ## Los 6 Caminos de Dubins: Clasificacion Exhaustiva
 
 Segun la caracterizacion fundamental de Dubins (1957), existen exactamente **6 tipos** de caminos de longitud minima entre dos puntos en el tangent bundle TR². Esta seccion proporciona un analisis exhaustivo basado en el paper "Census of Bounded Curvature Paths" (Diaz & Ayala, 2020).
@@ -451,7 +453,7 @@ Segun la caracterizacion fundamental de Dubins (1957), existen exactamente **6 t
 ### Notacion Fundamental
 
 - **L**: Arco circular a la **izquierda** (left turn)
-- **R**: Arco circular a la **derecha** (right turn) 
+- **R**: Arco circular a la **derecha** (right turn)
 - **S**: Segmento recto (straight line segment)
 - **r** = radio minimo de curvatura (min_radius = 1.0)
 - **κ** = curvatura = 1/r (en nuestro caso, κ = 1)
@@ -514,7 +516,7 @@ Estos caminos consisten en: Arco - Arco - Arco (tres arcos consecutivos)
 - Centro 2: Circulo tangente a la derecha en posicion intermedia
 - Centro 3: Circulo tangente a la izquierda en posicion final
 - Aplicacion: Maniobras de cambio de direccion
-- Formula: L_LRL = r*alpha_1 + r*alpha_2 + r*alpha_3
+- Formula: L_LRL = r*alpha_1 + r*alpha_2 + r\*alpha_3
 
 **2.2 RLR Path (Right-Left-Right)**
 
@@ -524,18 +526,19 @@ Estos caminos consisten en: Arco - Arco - Arco (tres arcos consecutivos)
 
 ### Tabla Resumen de los 6 Caminos de Dubins
 
-| Tipo | Categoria | Estructura | Giros | Complejidad |
-|------|-----------|-----------|-------|------|
-| LSL  | CSC       | L + S + L | Izq-Izq | Media |
-| RSR  | CSC       | R + S + R | Der-Der | Media |
-| LSR  | CSC       | L + S + R | Izq-Der | Alta |
-| RSL  | CSC       | R + S + L | Der-Izq | Alta |
-| LRL  | CCC       | L + R + L | Izq-Der-Izq | Muy Alta |
-| RLR  | CCC       | R + L + R | Der-Izq-Der | Muy Alta |
+| Tipo | Categoria | Estructura | Giros       | Complejidad |
+| ---- | --------- | ---------- | ----------- | ----------- |
+| LSL  | CSC       | L + S + L  | Izq-Izq     | Media       |
+| RSR  | CSC       | R + S + R  | Der-Der     | Media       |
+| LSR  | CSC       | L + S + R  | Izq-Der     | Alta        |
+| RSL  | CSC       | R + S + L  | Der-Izq     | Alta        |
+| LRL  | CCC       | L + R + L  | Izq-Der-Izq | Muy Alta    |
+| RLR  | CCC       | R + L + R  | Der-Izq-Der | Muy Alta    |
 
 ### Formulacion Matematica Rigurosa
 
 Para cualquier par de poses (x, X, y, Y) en el tangent bundle TR^2, donde:
+
 - x, y son puntos en R^2
 - X, Y son vectores unitarios (direcciones tangentes)
 - r es el radio minimo de curvatura

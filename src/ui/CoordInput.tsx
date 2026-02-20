@@ -16,13 +16,15 @@ export function CoordInput({ x, y, onChange, label, disabled }: CoordInputProps)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
       {label && (
-        <label style={{
-          fontSize: 'var(--fs-caption)',
-          color: 'var(--text-secondary)',
-          fontWeight: 'var(--fw-medium)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.02em'
-        }}>
+        <label
+          style={{
+            fontSize: 'var(--fs-caption)',
+            color: 'var(--text-secondary)',
+            fontWeight: 'var(--fw-medium)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.02em',
+          }}
+        >
           {label}
         </label>
       )}
@@ -37,7 +39,7 @@ export function CoordInput({ x, y, onChange, label, disabled }: CoordInputProps)
           style={{
             ...inputStyle,
             opacity: disabled ? 0.5 : 1,
-            cursor: disabled ? 'not-allowed' : 'text'
+            cursor: disabled ? 'not-allowed' : 'text',
           }}
         />
         <input
@@ -50,7 +52,7 @@ export function CoordInput({ x, y, onChange, label, disabled }: CoordInputProps)
           style={{
             ...inputStyle,
             opacity: disabled ? 0.5 : 1,
-            cursor: disabled ? 'not-allowed' : 'text'
+            cursor: disabled ? 'not-allowed' : 'text',
           }}
         />
       </div>

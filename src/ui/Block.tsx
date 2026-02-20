@@ -21,19 +21,23 @@ export function Block({ title, children, active = false, onDelete }: BlockProps)
         transition: 'border-color 0.15s ease',
       }}
     >
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 'var(--space-sm)'
-      }}>
-        <div style={{
-          fontSize: 'var(--fs-caption)',
-          fontWeight: 'var(--fw-semibold)',
-          color: active ? 'var(--canvas-arc)' : 'var(--text-secondary)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
-        }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 'var(--space-sm)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 'var(--fs-caption)',
+            fontWeight: 'var(--fw-semibold)',
+            color: active ? 'var(--canvas-arc)' : 'var(--text-secondary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}
+        >
           {title}
         </div>
         {onDelete && (

@@ -36,7 +36,7 @@ export class EnvelopeRenderer {
   constructor(
     ctx: CanvasRenderingContext2D,
     envelope: SmoothCSEnvelope,
-    options?: Partial<EnvelopeRenderOptions>
+    options?: Partial<EnvelopeRenderOptions>,
   ) {
     this.ctx = ctx;
     this.envelope = envelope;
@@ -285,14 +285,7 @@ export class EnvelopeRenderer {
     const centerY = (bounds.minY + bounds.maxY) / 2;
     const radius = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) / 2;
 
-    const gradient = this.ctx.createRadialGradient(
-      centerX,
-      centerY,
-      0,
-      centerX,
-      centerY,
-      radius
-    );
+    const gradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
 
     const rgb = this.extractRGB(color);
     gradient.addColorStop(0, this.getRGBAColor(color, opacity * 1.2));

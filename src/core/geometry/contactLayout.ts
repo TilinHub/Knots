@@ -1,6 +1,6 @@
-import type { Graph } from "../../io/parseGraph6";
-import type { Point, Primitive, Scene, Segment } from "../model/entities";
-import { createInitialScene } from "../model/scene";
+import type { Graph } from '../../io/parseGraph6';
+import type { Point, Primitive, Scene, Segment } from '../model/entities';
+import { createInitialScene } from '../model/scene';
 
 type Vec2 = { x: number; y: number };
 
@@ -29,17 +29,17 @@ function segId(a: string, b: string) {
 
 export type LayoutParams = {
   iterations?: number;
-  edgeK?: number;    // fuerza de “resorte” para contactos
-  repelK?: number;   // empuje anti-solapamiento para no-aristas
-  jitter?: number;   // ruido inicial
-  seed?: number;     // Semilla manual para random
+  edgeK?: number; // fuerza de “resorte” para contactos
+  repelK?: number; // empuje anti-solapamiento para no-aristas
+  jitter?: number; // ruido inicial
+  seed?: number; // Semilla manual para random
   attempts?: number; // Intentos (multi-start) para evitar máximos locales
 };
 
 export function graphToContactScene(
   graph: Graph,
   radius: number,
-  params: LayoutParams = {}
+  params: LayoutParams = {},
 ): Scene {
   const base = createInitialScene();
 
@@ -118,7 +118,11 @@ export function graphToContactScene(
         let dx = b.x - a.x;
         let dy = b.y - a.y;
         let d = Math.hypot(dx, dy);
-        if (d < 1e-6) { dx = 1; dy = 0; d = 1; }
+        if (d < 1e-6) {
+          dx = 1;
+          dy = 0;
+          d = 1;
+        }
         const ux = dx / d;
         const uy = dy / d;
         const err = d - target;
@@ -138,7 +142,11 @@ export function graphToContactScene(
           let dx = b.x - a.x;
           let dy = b.y - a.y;
           let d = Math.hypot(dx, dy);
-          if (d < 1e-6) { dx = 1; dy = 0; d = 1; }
+          if (d < 1e-6) {
+            dx = 1;
+            dy = 0;
+            d = 1;
+          }
 
           // CRITICAL FIX:
           // Enforce a small safety margin (gap) for non-edges.
@@ -167,7 +175,11 @@ export function graphToContactScene(
             let dx = b.x - a.x;
             let dy = b.y - a.y;
             let d = Math.hypot(dx, dy);
-            if (d < 1e-6) { dx = 1; dy = 0; d = 1; }
+            if (d < 1e-6) {
+              dx = 1;
+              dy = 0;
+              d = 1;
+            }
             if (d < target - 1e-4) {
               const overlap = target - d;
               const ux = dx / d;
@@ -186,10 +198,18 @@ export function graphToContactScene(
       }
       // 4) Cooling / Centering
       if (it % 20 === 0) {
-        let cx = 0, cy = 0;
-        for (const p of pts) { cx += p.x; cy += p.y; }
-        cx /= n; cy /= n;
-        for (const p of pts) { p.x -= cx * 0.05; p.y -= cy * 0.05; }
+        let cx = 0,
+          cy = 0;
+        for (const p of pts) {
+          cx += p.x;
+          cy += p.y;
+        }
+        cx /= n;
+        cy /= n;
+        for (const p of pts) {
+          p.x -= cx * 0.05;
+          p.y -= cy * 0.05;
+        }
       }
     }
 
@@ -234,7 +254,7 @@ export function graphToContactScene(
   // Use best points
   const points: Point[] = bestPts.map((p, idx) => ({
     id: `p${idx + 1}`,
-    kind: "point",
+    kind: 'point',
     x: p.x,
     y: p.y,
   }));
@@ -242,7 +262,7 @@ export function graphToContactScene(
   const primitives: Primitive[] = graph.edges.map(([i, j]) => {
     const a = `p${i + 1}`;
     const b = `p${j + 1}`;
-    const seg: Segment = { id: segId(a, b), kind: "segment", a, b };
+    const seg: Segment = { id: segId(a, b), kind: 'segment', a, b };
     return seg;
   });
 

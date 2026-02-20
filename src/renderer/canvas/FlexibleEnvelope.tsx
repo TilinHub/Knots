@@ -1,4 +1,4 @@
-import React, { useEffect, useRef,useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Disk {
   id: string;
@@ -21,16 +21,18 @@ export const FlexibleEnvelope: React.FC<FlexibleEnvelopeProps> = ({
   disks,
   width,
   height,
-  onDiskDrag
+  onDiskDrag,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [draggingDisk, setDraggingDisk] = useState<string | null>(null);
-  const [diskPositions, setDiskPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const [diskPositions, setDiskPositions] = useState<Map<string, { x: number; y: number }>>(
+    new Map(),
+  );
 
   // Inicializar posiciones de discos
   useEffect(() => {
     const positions = new Map();
-    disks.forEach(disk => {
+    disks.forEach((disk) => {
       positions.set(disk.id, disk.center);
     });
     setDiskPositions(positions);
@@ -43,7 +45,7 @@ export const FlexibleEnvelope: React.FC<FlexibleEnvelopeProps> = ({
     const points: Array<{ x: number; y: number; diskId: string; radius: number }> = [];
 
     // Generar puntos alrededor de cada disco
-    disks.forEach(disk => {
+    disks.forEach((disk) => {
       const pos = diskPositions.get(disk.id) || disk.center;
       const expandedRadius = disk.radius + 10; // Expandir un poco el radio
 
@@ -54,7 +56,7 @@ export const FlexibleEnvelope: React.FC<FlexibleEnvelopeProps> = ({
           x: pos.x + expandedRadius * Math.cos(angle),
           y: pos.y + expandedRadius * Math.sin(angle),
           diskId: disk.id,
-          radius: expandedRadius
+          radius: expandedRadius,
         });
       }
     });
@@ -146,11 +148,12 @@ export const FlexibleEnvelope: React.FC<FlexibleEnvelopeProps> = ({
     }
 
     // Dibujar discos
-    disks.forEach(disk => {
+    disks.forEach((disk) => {
       const pos = diskPositions.get(disk.id) || disk.center;
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, disk.radius, 0, Math.PI * 2);
-      ctx.fillStyle = draggingDisk === disk.id ? 'rgba(255, 100, 100, 0.7)' : 'rgba(100, 150, 255, 0.6)';
+      ctx.fillStyle =
+        draggingDisk === disk.id ? 'rgba(255, 100, 100, 0.7)' : 'rgba(100, 150, 255, 0.6)';
       ctx.fill();
       ctx.strokeStyle = '#2563eb';
       ctx.lineWidth = 2;

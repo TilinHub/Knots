@@ -1,9 +1,8 @@
-
 export type Vec2 = { x: number; y: number };
 export type Disk = { id: string; x: number; y: number; r: number };
 
 export type TangentSegment = {
-  type: "tangent";
+  type: 'tangent';
   from: Vec2;
   to: Vec2;
   disk1: Disk;
@@ -11,7 +10,7 @@ export type TangentSegment = {
 };
 
 export type ArcSegment = {
-  type: "arc";
+  type: 'arc';
   disk: Disk;
   startAngle: number;
   endAngle: number;
@@ -32,17 +31,29 @@ export type DiskHull = {
 
 /* --- Helpers --- */
 
-function sub(a: Vec2, b: Vec2): Vec2 { return { x: a.x - b.x, y: a.y - b.y }; }
-function add(a: Vec2, b: Vec2): Vec2 { return { x: a.x + b.x, y: a.y + b.y }; }
-function mul(a: Vec2, k: number): Vec2 { return { x: a.x * k, y: a.y * k }; }
-function len(v: Vec2) { return Math.hypot(v.x, v.y); }
+function sub(a: Vec2, b: Vec2): Vec2 {
+  return { x: a.x - b.x, y: a.y - b.y };
+}
+function add(a: Vec2, b: Vec2): Vec2 {
+  return { x: a.x + b.x, y: a.y + b.y };
+}
+function mul(a: Vec2, k: number): Vec2 {
+  return { x: a.x * k, y: a.y * k };
+}
+function len(v: Vec2) {
+  return Math.hypot(v.x, v.y);
+}
 function norm(v: Vec2): Vec2 {
   const l = len(v);
   return l < 1e-12 ? { x: 0, y: 0 } : { x: v.x / l, y: v.y / l };
 }
-function angleOf(center: Vec2, p: Vec2) { return Math.atan2(p.y - center.y, p.x - center.x); }
+function angleOf(center: Vec2, p: Vec2) {
+  return Math.atan2(p.y - center.y, p.x - center.x);
+}
 
-function perpLeft(v: Vec2): Vec2 { return { x: -v.y, y: v.x }; }
+function perpLeft(v: Vec2): Vec2 {
+  return { x: -v.y, y: v.x };
+}
 
 /**
  * Cross Product (2D)
@@ -70,7 +81,10 @@ function jarvisMarch(disks: Disk[]): Disk[] {
   // 1. Start at Top-Left (Min Y, then Min X)
   let startIdx = 0;
   for (let i = 1; i < disks.length; i++) {
-    if (disks[i].y < disks[startIdx].y || (disks[i].y === disks[startIdx].y && disks[i].x < disks[startIdx].x)) {
+    if (
+      disks[i].y < disks[startIdx].y ||
+      (disks[i].y === disks[startIdx].y && disks[i].x < disks[startIdx].x)
+    ) {
       startIdx = i;
     }
   }
@@ -94,7 +108,8 @@ function jarvisMarch(disks: Disk[]): Disk[] {
       // The system uses Y-Up (Cartesian) for logic.
       const isLeft = c > 0; // FIXED for Y-Up CCW
       const isCollinear = c === 0;
-      const isFurthestVar = distanceSq(disks[currentIdx], disks[i]) > distanceSq(disks[currentIdx], disks[nextIdx]);
+      const isFurthestVar =
+        distanceSq(disks[currentIdx], disks[i]) > distanceSq(disks[currentIdx], disks[nextIdx]);
 
       if (nextIdx === currentIdx || isLeft || (isCollinear && isFurthestVar)) {
         nextIdx = i;
@@ -147,7 +162,7 @@ function arcFlagsFromAngles(startAngle: number, endAngle: number) {
   // We ALWAYS pick the shortest path.
 
   const largeArcFlag = 0 as 0 | 1;
-  const sweepFlag = ((diff <= Math.PI) ? 1 : 0) as 0 | 1; // 1=CCW, 0=CW
+  const sweepFlag = (diff <= Math.PI ? 1 : 0) as 0 | 1; // 1=CCW, 0=CW
 
   return { sweepFlag, largeArcFlag };
 }
@@ -162,7 +177,9 @@ function buildHullSegmentsCCW(hullDisks: Disk[]) {
     const curr = hullDisks[i];
     const next = hullDisks[(i + 1) % hullDisks.length];
     const t = outerTangentEqualRadiusCCW(curr, next);
-    const tan = t ? { from: t.p1, to: t.p2 } : { from: { x: curr.x, y: curr.y }, to: { x: next.x, y: next.y } };
+    const tan = t
+      ? { from: t.p1, to: t.p2 }
+      : { from: { x: curr.x, y: curr.y }, to: { x: next.x, y: next.y } };
     tangents.push({ ...tan, disk1: curr, disk2: next });
   }
 
@@ -181,7 +198,7 @@ function buildHullSegmentsCCW(hullDisks: Disk[]) {
     const { sweepFlag, largeArcFlag } = arcFlagsFromAngles(startAngle, endAngle);
 
     segments.push({
-      type: "arc",
+      type: 'arc',
       disk: curr,
       startAngle,
       endAngle,
@@ -191,11 +208,11 @@ function buildHullSegmentsCCW(hullDisks: Disk[]) {
       largeArcFlag,
     });
     segments.push({
-      type: "tangent",
+      type: 'tangent',
       from: currTan.from,
       to: currTan.to,
       disk1: currTan.disk1,
-      disk2: currTan.disk2
+      disk2: currTan.disk2,
     });
   }
   return segments;
@@ -204,28 +221,36 @@ function buildHullSegmentsCCW(hullDisks: Disk[]) {
 const fmt = (n: number) => n.toFixed(3);
 
 export function hullSegmentsToSvgPath(segments: HullSegment[]) {
-  if (segments.length === 0) return "";
+  if (segments.length === 0) return '';
   const start = segments[0].type === 'tangent' ? segments[0].from : segments[0].startPoint;
   const cmds: string[] = [`M ${fmt(start.x)} ${fmt(start.y)}`];
   for (const s of segments) {
-    if (s.type === "tangent") {
+    if (s.type === 'tangent') {
       cmds.push(`L ${fmt(s.to.x)} ${fmt(s.to.y)}`);
     } else {
       const r = s.disk.r;
-      cmds.push(`A ${fmt(r)} ${fmt(r)} 0 0 ${s.sweepFlag} ${fmt(s.endPoint.x)} ${fmt(s.endPoint.y)}`);
+      cmds.push(
+        `A ${fmt(r)} ${fmt(r)} 0 0 ${s.sweepFlag} ${fmt(s.endPoint.x)} ${fmt(s.endPoint.y)}`,
+      );
     }
   }
-  cmds.push("Z");
-  return cmds.join(" ");
+  cmds.push('Z');
+  return cmds.join(' ');
 }
 
 export function computeDiskHull(disks: Disk[]): DiskHull {
-  if (disks.length === 0) return { hullDisks: [], segments: [], svgPathD: "", stats: { disks: 0, tangents: 0, arcs: 0 } };
+  if (disks.length === 0)
+    return { hullDisks: [], segments: [], svgPathD: '', stats: { disks: 0, tangents: 0, arcs: 0 } };
 
   if (disks.length === 1) {
     const d = disks[0];
     const path = `M ${d.x + d.r} ${d.y} A ${d.r} ${d.r} 0 1 0 ${d.x - d.r} ${d.y} A ${d.r} ${d.r} 0 1 0 ${d.x + d.r} ${d.y}`;
-    return { hullDisks: disks.slice(), segments: [], svgPathD: path, stats: { disks: 1, tangents: 0, arcs: 1 } };
+    return {
+      hullDisks: disks.slice(),
+      segments: [],
+      svgPathD: path,
+      stats: { disks: 1, tangents: 0, arcs: 1 },
+    };
   }
 
   // 1. Jarvis March (CCW of Centers)
@@ -241,8 +266,8 @@ export function computeDiskHull(disks: Disk[]): DiskHull {
     svgPathD,
     stats: {
       disks: hullDisks.length,
-      tangents: segments.filter(s => s.type === 'tangent').length,
-      arcs: segments.filter(s => s.type === 'arc').length
+      tangents: segments.filter((s) => s.type === 'tangent').length,
+      arcs: segments.filter((s) => s.type === 'arc').length,
     },
   };
 }
@@ -254,8 +279,12 @@ export function computeFromOrderedHull(hullDisks: Disk[]): DiskHull {
     hullDisks,
     segments,
     svgPathD,
-    stats: { disks: hullDisks.length, tangents: segments.filter(s => s.type === 'tangent').length, arcs: segments.filter(s => s.type === 'arc').length }
-  }
+    stats: {
+      disks: hullDisks.length,
+      tangents: segments.filter((s) => s.type === 'tangent').length,
+      arcs: segments.filter((s) => s.type === 'arc').length,
+    },
+  };
 }
 
 export function computeHullLength(hull: DiskHull): number {
@@ -308,6 +337,6 @@ export function computeHullMetrics(hull: DiskHull): HullMetrics {
   return {
     totalLength: tangentLength + arcLength,
     tangentLength,
-    arcLength
+    arcLength,
   };
 }

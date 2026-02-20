@@ -1,28 +1,28 @@
-import React from "react";
+import React from 'react';
 
-import { computeDiskHull } from "../../core/geometry/diskHull";
-import type { Point, Primitive,Scene } from "../../core/model/entities";
+import { computeDiskHull } from '../../core/geometry/diskHull';
+import type { Point, Primitive, Scene } from '../../core/model/entities';
 
 export type BBox = { x: number; y: number; width: number; height: number };
-export type ToolMode = "move" | "add" | "delete" | "link";
+export type ToolMode = 'move' | 'add' | 'delete' | 'link';
 
 const COLORS = {
-  bg: "#ffffff",
+  bg: '#ffffff',
 
   // dashed graph edges (thin)
-  edge: "rgba(91, 143, 189, 0.75)",
-  edgePreview: "rgba(91, 143, 189, 1)",
+  edge: 'rgba(91, 143, 189, 0.75)',
+  edgePreview: 'rgba(91, 143, 189, 1)',
 
   // hull (unchanged)
-  hull: "#a855f7",
+  hull: '#a855f7',
   hullStrokeWidth: 10,
 
   // nodes: solid purple (no transparency) + darker purple thin stroke
-  nodeFill: "#A78BFA",          // solid purple
-  nodeStroke: "#4C1D95",        // dark purple
-  selectedNodeStroke: "#2E1065", // even darker purple
+  nodeFill: '#A78BFA', // solid purple
+  nodeStroke: '#4C1D95', // dark purple
+  selectedNodeStroke: '#2E1065', // even darker purple
 
-  nodeText: "#111827",
+  nodeText: '#111827',
 };
 
 type ViewBox = { minX: number; minY: number; width: number; height: number };
@@ -38,7 +38,7 @@ function viewBoxToString(vb: ViewBox) {
 function clientToSvgPoint(
   e: { clientX: number; clientY: number },
   svg: SVGSVGElement,
-  vb: ViewBox
+  vb: ViewBox,
 ) {
   const rect = svg.getBoundingClientRect();
   const px = (e.clientX - rect.left) / rect.width;
@@ -106,7 +106,7 @@ export function SvgStage(props: {
   // Usar radio geométrico (radius) para cálculos del hull
   const disks = React.useMemo(
     () => scene.points.map((p) => ({ id: p.id, x: p.x, y: p.y, r: scene.radius })),
-    [scene.points, scene.radius]
+    [scene.points, scene.radius],
   );
   const hull = React.useMemo(() => computeDiskHull(disks), [disks]);
 
@@ -135,20 +135,24 @@ export function SvgStage(props: {
   const [spaceDown, setSpaceDown] = React.useState(false);
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.code === "Space") setSpaceDown(true);
+      if (e.code === 'Space') setSpaceDown(true);
     }
     function onKeyUp(e: KeyboardEvent) {
-      if (e.code === "Space") setSpaceDown(false);
+      if (e.code === 'Space') setSpaceDown(false);
     }
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
     };
   }, []);
 
-  const panRef = React.useRef<{ pointerId: number; start: { x: number; y: number }; vb0: ViewBox } | null>(null);
+  const panRef = React.useRef<{
+    pointerId: number;
+    start: { x: number; y: number };
+    vb0: ViewBox;
+  } | null>(null);
 
   function beginPan(e: React.PointerEvent<SVGSVGElement>) {
     if (!spaceDown) return;
@@ -187,10 +191,12 @@ export function SvgStage(props: {
   }
 
   // Node drag (mode move)
-  const dragRef = React.useRef<{ id: string; dx: number; dy: number; pointerId: number } | null>(null);
+  const dragRef = React.useRef<{ id: string; dx: number; dy: number; pointerId: number } | null>(
+    null,
+  );
 
   function beginDrag(e: React.PointerEvent<SVGGElement>, p: Point) {
-    if (mode !== "move") return;
+    if (mode !== 'move') return;
     if (spaceDown) return;
 
     e.stopPropagation();
@@ -234,7 +240,7 @@ export function SvgStage(props: {
     const svg = svgRef.current;
     if (!svg) return;
 
-    if (mode === "add") {
+    if (mode === 'add') {
       const pt = clientToSvgPoint(e, svg, vb);
       onAddPoint(pt);
       return;
@@ -247,12 +253,12 @@ export function SvgStage(props: {
   function onPointPointerDown(e: React.PointerEvent<SVGGElement>, p: Point) {
     e.stopPropagation();
 
-    if (mode === "delete") {
+    if (mode === 'delete') {
       onDeletePoint(p.id);
       return;
     }
 
-    if (mode === "link") {
+    if (mode === 'link') {
       if (!linkA) {
         onPickLinkA(p.id);
         onSelectPoint(p.id);
@@ -270,7 +276,7 @@ export function SvgStage(props: {
   // Preview link
   const [cursor, setCursor] = React.useState<{ x: number; y: number } | null>(null);
   React.useEffect(() => {
-    if (mode !== "link" || !linkA) {
+    if (mode !== 'link' || !linkA) {
       setCursor(null);
       return;
     }
@@ -279,16 +285,16 @@ export function SvgStage(props: {
       if (!svg) return;
       setCursor(clientToSvgPoint(ev, svg, vb));
     }
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
   }, [mode, linkA, vb]);
 
-  const linkAPoint = linkA ? pointsById.get(linkA) ?? null : null;
+  const linkAPoint = linkA ? (pointsById.get(linkA) ?? null) : null;
 
   return (
     <svg
       ref={svgRef}
-      style={{ width: "100%", height: "100%", background: COLORS.bg, touchAction: "none" }}
+      style={{ width: '100%', height: '100%', background: COLORS.bg, touchAction: 'none' }}
       viewBox={viewBoxToString(vb)}
       onWheel={onWheel}
       onPointerDown={onBackgroundPointerDown}
@@ -328,7 +334,7 @@ export function SvgStage(props: {
         opacity={0.95}
       >
         {scene.primitives.map((pr: Primitive) => {
-          if (pr.kind !== "segment") return null;
+          if (pr.kind !== 'segment') return null;
           const a = pointsById.get(pr.a);
           const b = pointsById.get(pr.b);
           if (!a || !b) return null;
@@ -337,7 +343,7 @@ export function SvgStage(props: {
       </g>
 
       {/* Link preview (thin + dashed) */}
-      {mode === "link" && linkAPoint && cursor && (
+      {mode === 'link' && linkAPoint && cursor && (
         <line
           x1={linkAPoint.x}
           y1={linkAPoint.y}
@@ -355,7 +361,7 @@ export function SvgStage(props: {
       <g>
         {scene.points.map((p: Point) => {
           const selected = p.id === selectedPointId;
-          const isLinkA = mode === "link" && linkA === p.id;
+          const isLinkA = mode === 'link' && linkA === p.id;
 
           const stroke = isLinkA
             ? COLORS.edgePreview
@@ -366,7 +372,7 @@ export function SvgStage(props: {
           return (
             <g
               key={p.id}
-              style={{ cursor: spaceDown ? "grab" : mode === "move" ? "grab" : "pointer" }}
+              style={{ cursor: spaceDown ? 'grab' : mode === 'move' ? 'grab' : 'pointer' }}
               onPointerDown={(e) => {
                 onPointPointerDown(e, p);
                 beginDrag(e, p);

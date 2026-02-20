@@ -18,6 +18,7 @@
 This document provides the complete mathematical foundation for using **Dubins paths** to measure the length of knot embeddings with bounded curvature constraints.
 
 Based on the seminal work:
+
 - **Dubins, L. E.** (1957). "On Curves of Minimal Length with a Constraint on Average Curvature, and with Prescribed Initial and Terminal Positions and Tangents"
 - **Díaz, J. & Ayala, J.** (2020). "Census of Bounded Curvature Paths" [arXiv:2005.13210]
 
@@ -34,6 +35,7 @@ TR² = {(x, X) : x ∈ R², X ∈ T_x R²}
 ```
 
 Where:
+
 - `x = (x, y)` is a point in the plane R²
 - `X` is a unit tangent vector at point `x`
 - `T_x R²` is the tangent space at `x` (all vectors based at `x`)
@@ -44,8 +46,8 @@ In practice, we represent elements of TR² as **poses**:
 
 ```typescript
 interface Pose2D {
-  position: Point2D;  // x ∈ R²
-  theta: number;      // θ ∈ [0, 2π), direction of X
+  position: Point2D; // x ∈ R²
+  theta: number; // θ ∈ [0, 2π), direction of X
 }
 ```
 
@@ -107,6 +109,7 @@ For fixed endpoints `(x, X), (y, Y) ∈ TR²`, we denote:
 ```
 
 This space has rich topological structure:
+
 - May contain **isolated points** (paths that cannot be deformed)
 - May contain **homotopy classes** (families of equivalent paths)
 - May contain **isotopy classes** (bounded regions trapping embedded paths)
@@ -179,6 +182,7 @@ The external tangent runs parallel to the line connecting centers:
 ```
 
 Tangent points:
+
 ```
 p₁ = c₁ + r(±cos(θ_base + π/2), ±sin(θ_base + π/2))
 p₂ = c₂ + r(±cos(θ_base + π/2), ±sin(θ_base + π/2))
@@ -196,6 +200,7 @@ The internal tangent crosses between the circles:
 ```
 
 Tangent points:
+
 ```
 p₁ = c₁ + r × perpendicular(θ_tangent)
 p₂ = c₂ - r × perpendicular(θ_tangent)
@@ -258,12 +263,14 @@ L_total = L(s₁) + L(s₂) + L(s₃)
 **Steps**:
 
 1. **Compute circle centers**:
+
    ```
    cₗₛ = C_L(xₛ, θₛ)
    cₗₑ = C_L(xₑ, θₑ)
    ```
 
 2. **Check feasibility**:
+
    ```
    d = ||cₗₑ - cₗₛ||
    if d < 2r - ε:
@@ -271,29 +278,32 @@ L_total = L(s₁) + L(s₂) + L(s₃)
    ```
 
 3. **Find external tangent**:
+
    ```
    θ_base = atan2(cₗₑ.y - cₗₛ.y, cₗₑ.x - cₗₛ.x)
    θ_tangent = θ_base + π/2
-   
+
    p₁ = cₗₛ + r(cos θ_tangent, sin θ_tangent)
    p₂ = cₗₑ + r(cos θ_tangent, sin θ_tangent)
    ```
 
 4. **Compute arc angles**:
+
    ```
    θ₁_start = atan2(xₛ.y - cₗₛ.y, xₛ.x - cₗₛ.x)
    θ₁_end = atan2(p₁.y - cₗₛ.y, p₁.x - cₗₛ.x)
-   
+
    θ₂_start = atan2(p₂.y - cₗₑ.y, p₂.x - cₗₑ.x)
    θ₂_end = atan2(xₑ.y - cₗₑ.y, xₑ.x - cₗₑ.x)
    ```
 
 5. **Calculate lengths**:
+
    ```
    L₁ = r × normalize_angle_ccw(θ₁_end - θ₁_start)
    Lₛ = ||p₂ - p₁||
    L₂ = r × normalize_angle_ccw(θ₂_end - θ₂_start)
-   
+
    L_total = L₁ + Lₛ + L₂
    ```
 
@@ -304,12 +314,14 @@ L_total = L(s₁) + L(s₂) + L(s₃)
 **Steps**:
 
 1. **Compute left circle centers**:
+
    ```
    cₗₛ = C_L(xₛ, θₛ)
    cₗₑ = C_L(xₑ, θₑ)
    ```
 
 2. **Check feasibility**:
+
    ```
    d = ||cₗₑ - cₗₛ||
    if d > 4r:
@@ -317,39 +329,41 @@ L_total = L(s₁) + L(s₂) + L(s₃)
    ```
 
 3. **Find middle circle center** (right-turning):
-   
+
    The middle circle `cᴹ` must satisfy:
    - `||cᴹ - cₗₛ|| = 2r` (tangent to first circle)
    - `||cᴹ - cₗₑ|| = 2r` (tangent to second circle)
-   
+
    **Solution using triangle geometry**:
-   
+
    ```
    // Midpoint between circles
    m = (cₗₛ + cₗₑ) / 2
-   
+
    // Distance from midpoint to middle circle
    h = √(4r² - (d/2)²)
-   
+
    // Perpendicular direction
    θ_perp = atan2(cₗₑ.y - cₗₛ.y, cₗₑ.x - cₗₛ.x) + π/2
-   
+
    // Middle circle center (choose + or - for different solutions)
    cᴹ = m + h(cos θ_perp, sin θ_perp)
    ```
 
 4. **Find tangent points**:
+
    ```
    p₁ = point where cₗₛ and cᴹ are tangent
    p₂ = point where cᴹ and cₗₑ are tangent
    ```
 
 5. **Calculate lengths**:
+
    ```
    L₁ = left arc from xₛ to p₁ on cₗₛ
    Lᴹ = right arc from p₁ to p₂ on cᴹ
    L₂ = left arc from p₂ to xₑ on cₗₑ
-   
+
    L_total = L₁ + Lᴹ + L₂
    ```
 
@@ -431,6 +445,7 @@ y'(t) = -sin(t) + 4sin(2t)
 **Theorem 2.3** (Díaz & Ayala): The length of minimal paths can be **discontinuous** as endpoints vary.
 
 **Example**: Consider start `(0, 0, 0)` and end `(1, 1, θ)`:
+
 - For `θ = π/2 - ε`: LSL path with length ≈ L₁
 - For `θ = π/2`: Isolated point (special cc path)
 - For `θ = π/2 + ε`: Different path with length ≈ L₂
@@ -442,12 +457,15 @@ Where `L₂ - L₁` can be arbitrarily large.
 From the paper, endpoints are classified by proximity:
 
 #### Condition A
+
 ```
 d(C_L(start), C_L(end)) ≥ 4r  AND  d(C_R(start), C_R(end)) ≥ 4r
 ```
+
 ⇒ No bounded isotopy classes
 
 #### Condition B
+
 ```
 (d(C_L(start), C_L(end)) < 4r  AND  d(C_R(start), C_R(end)) ≥ 4r)
 OR
@@ -455,12 +473,14 @@ OR
 ```
 
 #### Condition C
+
 ```
 d(C_L(start), C_L(end)) < 4r  AND  d(C_R(start), C_R(end)) < 4r
 AND no bounded isotopy class exists
 ```
 
 #### Condition D
+
 ```
 d(C_L(start), C_L(end)) < 4r  AND  d(C_R(start), C_R(end)) < 4r
 AND bounded isotopy class exists
@@ -475,6 +495,7 @@ AND bounded isotopy class exists
 1. **Angle normalization**: Always normalize angles to `[0, 2π)` or `[-π, π)`
 
 2. **Epsilon comparisons**: Use `ε = 10⁻⁶` for floating-point comparisons:
+
    ```
    if (abs(d - 2r) < ε):
        // Circles are tangent
@@ -501,27 +522,29 @@ For knots with many control points:
 
 ## References
 
-1. **Dubins, L. E.** (1957). "On Curves of Minimal Length with a Constraint on Average Curvature, and with Prescribed Initial and Terminal Positions and Tangents". *American Journal of Mathematics*, 79(3), 497-516.
+1. **Dubins, L. E.** (1957). "On Curves of Minimal Length with a Constraint on Average Curvature, and with Prescribed Initial and Terminal Positions and Tangents". _American Journal of Mathematics_, 79(3), 497-516.
 
-2. **Díaz, J., & Ayala, J.** (2020). "Census of Bounded Curvature Paths". *arXiv preprint arXiv:2005.13210*. Available at: https://arxiv.org/abs/2005.13210
+2. **Díaz, J., & Ayala, J.** (2020). "Census of Bounded Curvature Paths". _arXiv preprint arXiv:2005.13210_. Available at: https://arxiv.org/abs/2005.13210
 
-3. **Graustein, W. C.** (1937). "On the total curvature of closed curves". *Annals of Mathematics*, 38(2), 289-296.
+3. **Graustein, W. C.** (1937). "On the total curvature of closed curves". _Annals of Mathematics_, 38(2), 289-296.
 
-4. **Reeds, J. A., & Shepp, L. A.** (1990). "Optimal paths for a car that goes both forwards and backwards". *Pacific Journal of Mathematics*, 145(2), 367-393.
+4. **Reeds, J. A., & Shepp, L. A.** (1990). "Optimal paths for a car that goes both forwards and backwards". _Pacific Journal of Mathematics_, 145(2), 367-393.
 
-5. **Sussmann, H. J., & Tang, G.** (1991). "Shortest paths for the Reeds-Shepp car: a worked out example of the use of geometric techniques in nonlinear optimal control". *Report SYCON-91-10, Rutgers University*.
+5. **Sussmann, H. J., & Tang, G.** (1991). "Shortest paths for the Reeds-Shepp car: a worked out example of the use of geometric techniques in nonlinear optimal control". _Report SYCON-91-10, Rutgers University_.
 
 ---
 
 ## Appendix: Formula Summary
 
 ### Circle Centers
+
 ```
 C_L(x, y, θ) = (x - r sin θ, y + r cos θ)
 C_R(x, y, θ) = (x + r sin θ, y - r cos θ)
 ```
 
 ### Arc Lengths
+
 ```
 L_left = r × normalize_ccw(θ_end - θ_start)
 L_right = r × normalize_cw(θ_start - θ_end)
@@ -529,14 +552,14 @@ L_right = r × normalize_cw(θ_start - θ_end)
 
 ### Path Type Selection
 
-| Configuration | Available Paths |
-|--------------|----------------|
-| `d(C_L, C_L) ≥ 2r` and `d(C_R, C_R) ≥ 2r` | LSL, RSR, LSR, RSL |
-| `d(C_L, C_L) < 4r` | LSL, LRL |
-| `d(C_R, C_R) < 4r` | RSR, RLR |
-| All conditions | All 6 paths possible |
+| Configuration                             | Available Paths      |
+| ----------------------------------------- | -------------------- |
+| `d(C_L, C_L) ≥ 2r` and `d(C_R, C_R) ≥ 2r` | LSL, RSR, LSR, RSL   |
+| `d(C_L, C_L) < 4r`                        | LSL, LRL             |
+| `d(C_R, C_R) < 4r`                        | RSR, RLR             |
+| All conditions                            | All 6 paths possible |
 
 ---
 
-*Last updated: January 2026*
-*Implementation: See `src/core/math/DubinsPath.ts`*
+_Last updated: January 2026_
+_Implementation: See `src/core/math/DubinsPath.ts`_

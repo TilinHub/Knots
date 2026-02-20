@@ -7,201 +7,284 @@ import { analyzeDiagram } from '../../analysis/first_variation/analyzer';
 import { convertDisksToDiagram } from '../utils/diagramAdapter';
 
 interface ContactMatrixViewerProps {
-    disks: CSDisk[];
+  disks: CSDisk[];
 }
 
 export const ContactMatrixViewer: React.FC<ContactMatrixViewerProps> = ({ disks }) => {
-    const { matrix, contacts } = useMemo(() => {
-        // Map CSDisk to ContactDisk (ensure regionId exists)
-        const contactDisks = disks.map(d => ({
-            id: d.id,
-            center: d.center,
-            radius: d.visualRadius, // Use visual radius for contact!
-            regionId: 'default',
-            color: d.color
-        }));
-        return calculateJacobianMatrix(contactDisks);
-    }, [disks]);
-    const [copied, setCopied] = useState(false);
+  const { matrix, contacts } = useMemo(() => {
+    // Map CSDisk to ContactDisk (ensure regionId exists)
+    const contactDisks = disks.map((d) => ({
+      id: d.id,
+      center: d.center,
+      radius: d.visualRadius, // Use visual radius for contact!
+      regionId: 'default',
+      color: d.color,
+    }));
+    return calculateJacobianMatrix(contactDisks);
+  }, [disks]);
+  const [copied, setCopied] = useState(false);
 
-    // Criticality Analysis
-    const analysis = useMemo(() => {
-        const diagram = convertDisksToDiagram(disks);
-        if (!diagram) return null;
-        return analyzeDiagram(diagram);
-    }, [disks]);
+  // Criticality Analysis
+  const analysis = useMemo(() => {
+    const diagram = convertDisksToDiagram(disks);
+    if (!diagram) return null;
+    return analyzeDiagram(diagram);
+  }, [disks]);
 
-    const handleCopy = () => {
-        // Format for spreadsheet copy (tab separated)
-        const header = disks.map((_, i) => `x${i}\ty${i}`).join('\t');
-        const rows = matrix.map((row) =>
-            row.map(val => val.toFixed(4)).join('\t')
-        ).join('\n');
+  const handleCopy = () => {
+    // Format for spreadsheet copy (tab separated)
+    const header = disks.map((_, i) => `x${i}\ty${i}`).join('\t');
+    const rows = matrix.map((row) => row.map((val) => val.toFixed(4)).join('\t')).join('\n');
 
-        navigator.clipboard.writeText(`Contact Matrix A(c)\n${header}\n${rows}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
+    navigator.clipboard.writeText(`Contact Matrix A(c)\n${header}\n${rows}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-    if (disks.length === 0) return null;
+  if (disks.length === 0) return null;
 
-    // Loading/Error states for Matrix
-    if (matrix.length === 0) {
-        return (
-            <div style={{
-                marginTop: 'var(--space-md)',
-                padding: 'var(--space-md)',
-                background: 'var(--bg-secondary)',
-                borderRadius: '8px',
-                color: 'var(--text-secondary)',
-                fontStyle: 'italic',
-                fontSize: '13px'
-            }}>
-                No contacts detected. (Disks too far apart)
-            </div>
-        );
-    }
-
-    // Grid size calculation
-    const numCols = disks.length * 2;
-    const colWidth = 35; // Wider for floats
-
-    // Criticality Display Logic
-    const isCritical = analysis?.criticality?.isCritical;
-    const critRatio = analysis?.criticality?.ratio;
-    const critMessage = analysis?.criticality?.message;
-    const critStatusColor = isCritical ? 'var(--accent-success)' : (critRatio && critRatio < 0.1 ? 'var(--accent-warning)' : 'var(--accent-error)');
-
+  // Loading/Error states for Matrix
+  if (matrix.length === 0) {
     return (
-        <div style={{
-            marginTop: 'var(--space-md)',
-            padding: 'var(--space-md)',
-            background: 'var(--bg-secondary)',
-            borderRadius: '8px',
-            overflowX: 'auto'
-        }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h3 style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    margin: 0
-                }}>
-                    Rigidity Matrix A(c)
-                </h3>
-                <Button variant="secondary" onClick={handleCopy} style={{ fontSize: '10px', padding: '2px 8px' }}>
-                    {copied ? 'Copied!' : 'Copy'}
-                </Button>
-            </div>
-
-            <div style={{ display: 'flex' }}>
-                {/* Row Labels (Contact Pairs) */}
-                <div style={{ display: 'flex', flexDirection: 'column', marginRight: '8px', paddingTop: '24px' }}>
-                    {contacts.map((c, i) => (
-                        <div key={`row-label-${i}`} style={{ height: '20px', lineHeight: '20px', fontSize: '10px', color: 'var(--text-secondary)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                            {c.index1}-{c.index2}
-                        </div>
-                    ))}
-                </div>
-
-                <div>
-                    {/* Column Labels (Top) - Grouped per disk */}
-                    <div style={{ display: 'flex', marginBottom: '4px' }}>
-                        {disks.map((d, i) => (
-                            <div key={`col-group-${i}`} style={{ width: `${colWidth * 2}px`, textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
-                                <div style={{ fontSize: '10px', color: 'var(--text-primary)', fontWeight: 'bold' }}>{i}</div>
-                                <div style={{ display: 'flex' }}>
-                                    <div style={{ width: `${colWidth}px`, fontSize: '9px', color: 'var(--text-secondary)' }}>x</div>
-                                    <div style={{ width: `${colWidth}px`, fontSize: '9px', color: 'var(--text-secondary)' }}>y</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Matrix Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, ${colWidth}px)`, gap: '1px' }}>
-                        {matrix.flat().map((val, idx) => {
-                            const isZero = Math.abs(val) < 0.0001;
-                            const isNegative = val < 0;
-                            return (
-                                <div
-                                    key={idx}
-                                    style={{
-                                        height: '20px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        // Highlight non-zero values
-                                        background: isZero ? 'var(--bg-tertiary)' : 'var(--bg-primary)',
-                                        // Color logic: Red for negative, Blue for positive (if significant)
-                                        color: isZero ? 'var(--text-tertiary)' : (isNegative ? 'var(--accent-error)' : 'var(--accent-primary)'),
-                                        fontSize: '10px',
-                                        borderRadius: '2px',
-                                        fontWeight: isZero ? 'normal' : 'bold',
-                                        border: isZero ? 'none' : '1px solid var(--border)'
-                                    }}
-                                    title={val.toString()}
-                                >
-                                    {isZero ? '0' : val.toFixed(2)}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-
-            <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                * Rows represent contact constraints (u_ij). Columns represent disk configuration (x, y).
-            </div>
-
-            {/* CRITICALITY ANALYSIS SECTION */}
-            {analysis && (
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-                    <h3 style={{
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        color: 'var(--text-secondary)',
-                        textTransform: 'uppercase',
-                        margin: '0 0 8px 0'
-                    }}>
-                        Criticality Analysis (L(c))
-                    </h3>
-
-                    {analysis.error ? (
-                        <div style={{ fontSize: '11px', color: 'var(--accent-error)' }}>
-                            ⚠️ {analysis.error}
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Status:</span>
-                                <span style={{
-                                    fontSize: '11px',
-                                    fontWeight: 'bold',
-                                    color: critStatusColor,
-                                    background: isCritical ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px'
-                                }}>
-                                    {isCritical ? 'CREST / CRITICAL' : 'UNSTABLE'}
-                                </span>
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Residual Ratio:</span>
-                                <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>
-                                    {critRatio?.toExponential(2) ?? '-'}
-                                </span>
-                            </div>
-
-                            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                                {critMessage}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
+      <div
+        style={{
+          marginTop: 'var(--space-md)',
+          padding: 'var(--space-md)',
+          background: 'var(--bg-secondary)',
+          borderRadius: '8px',
+          color: 'var(--text-secondary)',
+          fontStyle: 'italic',
+          fontSize: '13px',
+        }}
+      >
+        No contacts detected. (Disks too far apart)
+      </div>
     );
+  }
+
+  // Grid size calculation
+  const numCols = disks.length * 2;
+  const colWidth = 35; // Wider for floats
+
+  // Criticality Display Logic
+  const isCritical = analysis?.criticality?.isCritical;
+  const critRatio = analysis?.criticality?.ratio;
+  const critMessage = analysis?.criticality?.message;
+  const critStatusColor = isCritical
+    ? 'var(--accent-success)'
+    : critRatio && critRatio < 0.1
+      ? 'var(--accent-warning)'
+      : 'var(--accent-error)';
+
+  return (
+    <div
+      style={{
+        marginTop: 'var(--space-md)',
+        padding: 'var(--space-md)',
+        background: 'var(--bg-secondary)',
+        borderRadius: '8px',
+        overflowX: 'auto',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '8px',
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}
+        >
+          Rigidity Matrix A(c)
+        </h3>
+        <Button
+          variant="secondary"
+          onClick={handleCopy}
+          style={{ fontSize: '10px', padding: '2px 8px' }}
+        >
+          {copied ? 'Copied!' : 'Copy'}
+        </Button>
+      </div>
+
+      <div style={{ display: 'flex' }}>
+        {/* Row Labels (Contact Pairs) */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            marginRight: '8px',
+            paddingTop: '24px',
+          }}
+        >
+          {contacts.map((c, i) => (
+            <div
+              key={`row-label-${i}`}
+              style={{
+                height: '20px',
+                lineHeight: '20px',
+                fontSize: '10px',
+                color: 'var(--text-secondary)',
+                textAlign: 'right',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {c.index1}-{c.index2}
+            </div>
+          ))}
+        </div>
+
+        <div>
+          {/* Column Labels (Top) - Grouped per disk */}
+          <div style={{ display: 'flex', marginBottom: '4px' }}>
+            {disks.map((d, i) => (
+              <div
+                key={`col-group-${i}`}
+                style={{
+                  width: `${colWidth * 2}px`,
+                  textAlign: 'center',
+                  borderBottom: '1px solid var(--border)',
+                }}
+              >
+                <div style={{ fontSize: '10px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                  {i}
+                </div>
+                <div style={{ display: 'flex' }}>
+                  <div
+                    style={{
+                      width: `${colWidth}px`,
+                      fontSize: '9px',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    x
+                  </div>
+                  <div
+                    style={{
+                      width: `${colWidth}px`,
+                      fontSize: '9px',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    y
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Matrix Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${numCols}, ${colWidth}px)`,
+              gap: '1px',
+            }}
+          >
+            {matrix.flat().map((val, idx) => {
+              const isZero = Math.abs(val) < 0.0001;
+              const isNegative = val < 0;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    height: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    // Highlight non-zero values
+                    background: isZero ? 'var(--bg-tertiary)' : 'var(--bg-primary)',
+                    // Color logic: Red for negative, Blue for positive (if significant)
+                    color: isZero
+                      ? 'var(--text-tertiary)'
+                      : isNegative
+                        ? 'var(--accent-error)'
+                        : 'var(--accent-primary)',
+                    fontSize: '10px',
+                    borderRadius: '2px',
+                    fontWeight: isZero ? 'normal' : 'bold',
+                    border: isZero ? 'none' : '1px solid var(--border)',
+                  }}
+                  title={val.toString()}
+                >
+                  {isZero ? '0' : val.toFixed(2)}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '8px', fontSize: '10px', color: 'var(--text-tertiary)' }}>
+        * Rows represent contact constraints (u_ij). Columns represent disk configuration (x, y).
+      </div>
+
+      {/* CRITICALITY ANALYSIS SECTION */}
+      {analysis && (
+        <div
+          style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}
+        >
+          <h3
+            style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              margin: '0 0 8px 0',
+            }}
+          >
+            Criticality Analysis (L(c))
+          </h3>
+
+          {analysis.error ? (
+            <div style={{ fontSize: '11px', color: 'var(--accent-error)' }}>
+              ⚠️ {analysis.error}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Status:</span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    color: critStatusColor,
+                    background: isCritical ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                  }}
+                >
+                  {isCritical ? 'CREST / CRITICAL' : 'UNSTABLE'}
+                </span>
+              </div>
+
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  Residual Ratio:
+                </span>
+                <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>
+                  {critRatio?.toExponential(2) ?? '-'}
+                </span>
+              </div>
+
+              <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                {critMessage}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };

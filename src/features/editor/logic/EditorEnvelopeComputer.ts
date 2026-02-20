@@ -8,14 +8,14 @@ import type { CSDisk } from '../../../core/types/cs';
  * Wraps the original `computeOuterContour` logic.
  */
 export class EditorEnvelopeComputer implements EnvelopeComputer {
-    compute(disks: CSDisk[], _modeContext?: any): EnvelopeSegment[] {
-        if (!disks || disks.length === 0) return [];
-        // Map to ContactDisk (requires regionId)
-        const contactDisks = disks.map(d => ({
-            ...d,
-            radius: d.visualRadius, // Ensure radius is set if missing, CSDisk usually has visualRadius
-            regionId: 'default'
-        }));
-        return computeOuterContour(contactDisks);
-    }
+  compute(disks: CSDisk[], _modeContext?: any): EnvelopeSegment[] {
+    if (!disks || disks.length === 0) return [];
+    // Map to ContactDisk (requires regionId)
+    const contactDisks = disks.map((d) => ({
+      ...d,
+      radius: d.visualRadius, // Ensure radius is set if missing, CSDisk usually has visualRadius
+      regionId: 'default',
+    }));
+    return computeOuterContour(contactDisks);
+  }
 }

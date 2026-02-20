@@ -2,4 +2,7 @@
  * Canvas renderers.
  */
 
-export { default as FlexibleEnvelope, FlexibleEnvelope as FlexibleEnvelopeComponent } from './FlexibleEnvelope';
+export {
+  default as FlexibleEnvelope,
+  FlexibleEnvelope as FlexibleEnvelopeComponent,
+} from './FlexibleEnvelope';

@@ -41,12 +41,12 @@ const MyComponent = () => {
 
 ## Props
 
-| Prop | Tipo | Descripcion |
-|------|------|-------------|
-| `disks` | `Disk[]` | Array de discos a envolver. Cada disco debe tener id, center (x,y) y radius |
-| `width` | `number` | Ancho del canvas en pixeles |
-| `height` | `number` | Alto del canvas en pixeles |
-| `onDiskDrag` | `(diskId: string, newPos: {x, y}) => void` | Callback opcional cuando se arrastra un disco |
+| Prop         | Tipo                                       | Descripcion                                                                 |
+| ------------ | ------------------------------------------ | --------------------------------------------------------------------------- |
+| `disks`      | `Disk[]`                                   | Array de discos a envolver. Cada disco debe tener id, center (x,y) y radius |
+| `width`      | `number`                                   | Ancho del canvas en pixeles                                                 |
+| `height`     | `number`                                   | Alto del canvas en pixeles                                                  |
+| `onDiskDrag` | `(diskId: string, newPos: {x, y}) => void` | Callback opcional cuando se arrastra un disco                               |
 
 ## Algoritmo de Envolvente
 
@@ -100,7 +100,7 @@ export const DemoEnvelope = () => {
   ]);
 
   const handleDiskDrag = (diskId: string, newPos: { x: number; y: number }) => {
-    setDisks(disks.map(disk => 
+    setDisks(disks.map(disk =>
       disk.id === diskId ? { ...disk, center: newPos } : disk
     ));
   };

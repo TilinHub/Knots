@@ -15,10 +15,7 @@ export interface CurveState {
  * Obtiene la posición y tangente de un punto en la curva CS
  * dada una longitud de arco desde el inicio
  */
-export function getCurvePointAtLength(
-  blocks: CSBlock[],
-  targetLength: number
-): CurveState | null {
+export function getCurvePointAtLength(blocks: CSBlock[], targetLength: number): CurveState | null {
   if (blocks.length === 0 || targetLength < 0) return null;
 
   let accumulatedLength = 0;
@@ -64,10 +61,7 @@ function getPointOnBlock(block: CSBlock, t: number): CurveState {
     const dy = block.p2.y - block.p1.y;
     const length = Math.sqrt(dx * dx + dy * dy);
 
-    const tangent: Point2D =
-      length > 0
-        ? { x: dx / length, y: dy / length }
-        : { x: 1, y: 0 };
+    const tangent: Point2D = length > 0 ? { x: dx / length, y: dy / length } : { x: 1, y: 0 };
 
     return {
       position: { x, y },
@@ -119,10 +113,7 @@ function getPointOnBlock(block: CSBlock, t: number): CurveState {
  * Divide la curva en N puntos equidistantes
  * Útil para generar trazados completos
  */
-export function sampleCurve(
-  blocks: CSBlock[],
-  numPoints: number
-): CurveState[] {
+export function sampleCurve(blocks: CSBlock[], numPoints: number): CurveState[] {
   if (blocks.length === 0 || numPoints < 2) return [];
 
   const points: CurveState[] = [];
@@ -154,7 +145,7 @@ export function sampleCurve(
 export function getCurvatureAt(
   blocks: CSBlock[],
   arcLength: number,
-  epsilon = 0.01
+  epsilon = 0.01,
 ): number | null {
   const state1 = getCurvePointAtLength(blocks, arcLength - epsilon);
   const state2 = getCurvePointAtLength(blocks, arcLength + epsilon);

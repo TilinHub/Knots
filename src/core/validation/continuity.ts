@@ -2,7 +2,7 @@
  * Validación de continuidad posicional y tangencial para diagramas CS
  */
 
-import type { CSBlock, Point2D,ValidationResult } from '../types/cs';
+import type { CSBlock, Point2D, ValidationResult } from '../types/cs';
 
 // Tolerancia para comparaciones numéricas (2px para snap y errores de redondeo)
 const EPSILON = 2.0;
@@ -118,8 +118,8 @@ export function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
   const chains: CSBlock[][] = [];
 
   // Construir grafo de adyacencia
-  const adjacency = new Map<string, Array<{ block: CSBlock, connectsTo: 'start' | 'end' }>>();
-  
+  const adjacency = new Map<string, Array<{ block: CSBlock; connectsTo: 'start' | 'end' }>>();
+
   for (const block of blocks) {
     adjacency.set(block.id, []);
   }
@@ -128,10 +128,10 @@ export function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
   for (let i = 0; i < blocks.length; i++) {
     for (let j = 0; j < blocks.length; j++) {
       if (i === j) continue;
-      
+
       const blockA = blocks[i];
       const blockB = blocks[j];
-      
+
       const aStart = getStartPoint(blockA);
       const aEnd = getEndPoint(blockA);
       const bStart = getStartPoint(blockB);
@@ -141,7 +141,7 @@ export function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
       if (pointsEqual(aEnd, bStart)) {
         adjacency.get(blockA.id)?.push({ block: blockB, connectsTo: 'start' });
       }
-      
+
       // A.start conecta con B.end
       if (pointsEqual(aStart, bEnd)) {
         adjacency.get(blockB.id)?.push({ block: blockA, connectsTo: 'start' });
@@ -155,7 +155,7 @@ export function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
 
     const chain: CSBlock[] = [];
     const visited = new Set<string>();
-    
+
     // DFS para encontrar toda la cadena conectada
     function dfs(block: CSBlock) {
       if (visited.has(block.id)) return;
@@ -172,7 +172,7 @@ export function findContinuousChains(blocks: CSBlock[]): CSBlock[][] {
     }
 
     dfs(startBlock);
-    
+
     if (chain.length > 0) {
       // Reordenar la cadena para que sea secuencial
       const orderedChain = orderChain(chain);
@@ -235,7 +235,7 @@ function orderChain(blocks: CSBlock[]): CSBlock[] {
 /**
  * Validar continuidad de una cadena ordenada
  */
-function validateChain(chain: CSBlock[]): { errors: string[], warnings: string[] } {
+function validateChain(chain: CSBlock[]): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -256,7 +256,7 @@ function validateChain(chain: CSBlock[]): { errors: string[], warnings: string[]
       const distance = Math.hypot(startPoint.x - endPoint.x, startPoint.y - endPoint.y);
       errors.push(
         `Discontinuidad entre ${current.id} y ${next.id}: ` +
-        `distancia = ${distance.toFixed(2)} px`
+          `distancia = ${distance.toFixed(2)} px`,
       );
       continue;
     }
@@ -266,10 +266,7 @@ function validateChain(chain: CSBlock[]): { errors: string[], warnings: string[]
     const startTangent = getStartTangent(next);
 
     if (!tangentsAlign(endTangent, startTangent)) {
-      warnings.push(
-        `${current.id} → ${next.id}: tangentes no alineadas ` +
-        `(puede no ser C¹)`
-      );
+      warnings.push(`${current.id} → ${next.id}: tangentes no alineadas ` + `(puede no ser C¹)`);
     }
   }
 
@@ -311,9 +308,9 @@ export function validateContinuity(blocks: CSBlock[]): ValidationResult {
 
   // Advertencias sobre bloques no conectados
   if (mainChain.length < blocks.length) {
-    const unused = blocks.filter(b => !mainChain.includes(b));
+    const unused = blocks.filter((b) => !mainChain.includes(b));
     warnings.push(
-      `${unused.length} bloque(s) no conectado(s): ${unused.map(b => b.id).join(', ')}`
+      `${unused.length} bloque(s) no conectado(s): ${unused.map((b) => b.id).join(', ')}`,
     );
   }
 
@@ -321,7 +318,7 @@ export function validateContinuity(blocks: CSBlock[]): ValidationResult {
   if (chains.length > 1) {
     warnings.push(
       `Se encontraron ${chains.length} cadenas separadas. ` +
-      `Validando la más larga (${mainChain.length} bloques).`
+        `Validando la más larga (${mainChain.length} bloques).`,
     );
   }
 

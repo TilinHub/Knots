@@ -1,10 +1,18 @@
 import React from 'react';
 
 import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
-import { buildBoundedCurvatureGraph, findEnvelopePath, findEnvelopePathFromPoints } from '@/core/geometry/contactGraph';
+import {
+  buildBoundedCurvatureGraph,
+  findEnvelopePath,
+  findEnvelopePathFromPoints,
+} from '@/core/geometry/contactGraph';
 import { type Disk } from '@/core/geometry/diskHull';
 import type { Config, DubinsPath } from '@/core/geometry/dubins';
-import { type DiskContact, findAllCrossings, findDiskContacts } from '@/core/geometry/intersections';
+import {
+  type DiskContact,
+  findAllCrossings,
+  findDiskContacts,
+} from '@/core/geometry/intersections';
 import { computeOuterContour } from '@/core/geometry/outerFace';
 import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
 import { computeRobustConvexHull } from '@/core/geometry/robustHull';
@@ -37,12 +45,15 @@ function adjustColor(color: string, amount: number): string {
   if (isNaN(num)) return '#000000';
 
   let r = (num >> 16) + amount;
-  let b = ((num >> 8) & 0x00FF) + amount;
-  let g = (num & 0x0000FF) + amount;
+  let b = ((num >> 8) & 0x00ff) + amount;
+  let g = (num & 0x0000ff) + amount;
 
-  if (r > 255) r = 255; else if (r < 0) r = 0;
-  if (b > 255) b = 255; else if (b < 0) b = 0;
-  if (g > 255) g = 255; else if (g < 0) g = 0;
+  if (r > 255) r = 255;
+  else if (r < 0) r = 0;
+  if (b > 255) b = 255;
+  else if (b < 0) b = 0;
+  if (g > 255) g = 255;
+  else if (g < 0) g = 0;
 
   return '#' + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
 }
@@ -67,10 +78,10 @@ interface CSCanvasProps {
   knotMode?: boolean; // [RESTORED] Fallback
   knotPath?: EnvelopeSegment[]; // [RESTORED] Fallback
   knotSequence?: string[]; // [RESTORED] Fallback
-  anchorSequence?: { x: number, y: number }[] | any[]; // [RESTORED] Fallback + DynamicAnchor support
+  anchorSequence?: { x: number; y: number }[] | any[]; // [RESTORED] Fallback + DynamicAnchor support
 
   knotState?: any; // [NEW] Pass full state
-  savedKnotPaths?: { id: string, color: string, path: EnvelopeSegment[] }[]; // [NEW]
+  savedKnotPaths?: { id: string; color: string; path: EnvelopeSegment[] }[]; // [NEW]
   onKnotSegmentClick?: (index: number) => void;
   onKnotPointClick?: (diskId: string, point: Point2D) => void; // [NEW]
   // Appearance
@@ -93,8 +104,8 @@ interface CSCanvasProps {
   // Flexible Envelope (Rolling Mode)
   currentPath?: DubinsPath | null; // [NEW] Path from Angular Range Dubins
   // Persistent Dubins
-  persistentDubinsState?: any; // Avoiding circular dependency hell by using any or creating shared type. 
-  // Ideally "PersistentDubinsState" but it is exported from a hook. 
+  persistentDubinsState?: any; // Avoiding circular dependency hell by using any or creating shared type.
+  // Ideally "PersistentDubinsState" but it is exported from a hook.
   // Let's use any for speed or duplicate interface. Using 'any' for now to avoid circular import of hook file.
   persistentDubinsActions?: any;
   transparentDisks?: boolean; // [NEW]
@@ -171,13 +182,13 @@ export function CSCanvas({
     anchorPoints: anchorPointsArg,
     anchorSequence: rawAnchorSequence, // [NEW] Get raw anchors (diskId, angle)
     chiralities: knotChiralities, // [NEW] Get chiralities for topology
-    actions: knotActions
+    actions: knotActions,
   } = (knotState as any) || {};
 
-  const knotMode = knotState ? (knotModeStringArg === 'knot') : (props.knotMode ?? false);
-  const staticKnotPath = knotState ? knotPathArg : (props.knotPath || []);
-  const knotSequence = knotState ? knotSequenceArg : (props.knotSequence || []);
-  const anchorPoints = knotState ? anchorPointsArg : (anchorSequence || []);
+  const knotMode = knotState ? knotModeStringArg === 'knot' : (props.knotMode ?? false);
+  const staticKnotPath = knotState ? knotPathArg : props.knotPath || [];
+  const knotSequence = knotState ? knotSequenceArg : props.knotSequence || [];
+  const anchorPoints = knotState ? anchorPointsArg : anchorSequence || [];
 
   const centerX = width / 2;
   const centerY = height / 2;
@@ -189,8 +200,8 @@ export function CSCanvas({
   // Calculate Rolling Position first
   const rollingDiskPosition = React.useMemo(() => {
     if (!rollingMode || !pivotDiskId || !rollingDiskId) return null;
-    const pivot = disks.find(d => d.id === pivotDiskId);
-    const rolling = disks.find(d => d.id === rollingDiskId);
+    const pivot = disks.find((d) => d.id === pivotDiskId);
+    const rolling = disks.find((d) => d.id === rollingDiskId);
     if (!pivot || !rolling) return null;
     const distance = pivot.visualRadius + rolling.visualRadius;
     const newCenter: Point2D = {
@@ -204,7 +215,7 @@ export function CSCanvas({
   // Create list of disks with overrides applied (for Hull and Contacts)
   const displayedDisks = React.useMemo(() => {
     if (!rollingDiskPosition || !rollingDiskId) return disks;
-    return disks.map(d => {
+    return disks.map((d) => {
       if (d.id === rollingDiskId) {
         return { ...d, center: rollingDiskPosition.center };
       }
@@ -213,15 +224,18 @@ export function CSCanvas({
   }, [disks, rollingDiskPosition, rollingDiskId]);
 
   // Mapear CSDisk a la estructura Disk que espera diskHull
-  const simpleDisks = React.useMemo(() => displayedDisks.map(d => ({
-    id: d.id,
-    x: d.center.x,
-    y: d.center.y,
-    r: d.visualRadius
-  })), [displayedDisks]);
+  const simpleDisks = React.useMemo(
+    () =>
+      displayedDisks.map((d) => ({
+        id: d.id,
+        x: d.center.x,
+        y: d.center.y,
+        r: d.visualRadius,
+      })),
+    [displayedDisks],
+  );
 
   const hullData = useDiskHull(simpleDisks);
-
 
   // Detectar cruces solo en bloques no-disco
   const crossings = React.useMemo(() => findAllCrossings(nonDiskBlocks), [nonDiskBlocks]);
@@ -231,12 +245,16 @@ export function CSCanvas({
 
   // NEW: Contact Graph Integration
   // Map CSDisk to ContactDisk
-  const contactDisks = React.useMemo(() => displayedDisks.map(d => ({
-    id: d.id,
-    center: d.center,
-    radius: d.visualRadius,
-    regionId: 'default'
-  })), [displayedDisks]);
+  const contactDisks = React.useMemo(
+    () =>
+      displayedDisks.map((d) => ({
+        id: d.id,
+        center: d.center,
+        radius: d.visualRadius,
+        regionId: 'default',
+      })),
+    [displayedDisks],
+  );
 
   const contactGraph = useContactGraph(contactDisks);
 
@@ -245,11 +263,15 @@ export function CSCanvas({
   // We must recompute it using the *displayed* disks (which have the rolling position).
   const knotPath = React.useMemo(() => {
     if (rollingMode && knotMode) {
-
       // 1. Priority: True Elastic Envelope (Sequence + Chirality)
       // This respects the topology (L/R sequence) but re-solves the geometry continuously.
       // This is the "Rubber Band" behavior described in contact compass theory.
-      if (knotSequence && knotSequence.length >= 2 && knotChiralities && knotChiralities.length > 0) {
+      if (
+        knotSequence &&
+        knotSequence.length >= 2 &&
+        knotChiralities &&
+        knotChiralities.length > 0
+      ) {
         try {
           // Build a fresh graph from the CURRENT (rolling) disk positions
           const graph = buildBoundedCurvatureGraph(contactDisks, true, [], false);
@@ -274,7 +296,7 @@ export function CSCanvas({
       if (rawAnchorSequence && Array.isArray(rawAnchorSequence) && rawAnchorSequence.length > 0) {
         try {
           const dynamicPoints = rawAnchorSequence.map((anchor: any) => {
-            const disk = displayedDisks.find(d => d.id === anchor.diskId);
+            const disk = displayedDisks.find((d) => d.id === anchor.diskId);
             if (!disk) return { x: 0, y: 0 };
 
             let effectiveAngle = anchor.angle;
@@ -285,7 +307,7 @@ export function CSCanvas({
 
             return {
               x: disk.center.x + disk.visualRadius * Math.cos(effectiveAngle),
-              y: disk.center.y + disk.visualRadius * Math.sin(effectiveAngle)
+              y: disk.center.y + disk.visualRadius * Math.sin(effectiveAngle),
             };
           });
 
@@ -308,13 +330,24 @@ export function CSCanvas({
       }
     }
     return staticKnotPath;
-  }, [rollingMode, knotMode, knotSequence, knotChiralities, rawAnchorSequence, anchorPoints, contactDisks, staticKnotPath, displayedDisks, rollingDiskId, rollingDiskPosition]);
+  }, [
+    rollingMode,
+    knotMode,
+    knotSequence,
+    knotChiralities,
+    rawAnchorSequence,
+    anchorPoints,
+    contactDisks,
+    staticKnotPath,
+    displayedDisks,
+    rollingDiskId,
+    rollingDiskPosition,
+  ]);
 
   // ── LAYERS LOGIC ────────────────────────────────────────────────
   // Replaced manual computation with Layers (render-time or internal).
   // Standard Envelope -> StandardLayer (uses EditorEnvelopeComputer)
   // Knot Envelope -> KnotLayer (uses KnotEnvelopeComputer)
-
 
   // NEW: Active Path Selection Hook
   const { diskSequence, activePath, toggleDisk, clearSequence } = useContactPath(contactGraph);
@@ -327,7 +360,6 @@ export function CSCanvas({
   // User wants "Todo el Implementation Plan", which replaced Dubins.
   // So 'dubinsMode' effectively becomes 'ContactGraphMode'.
 
-
   // Detectar regiones y discos de contacto (Legacy/Optional)
   const regions = React.useMemo(() => {
     if (showContactDisks && nonDiskBlocks.length >= 3 && disks.length === 0) {
@@ -336,11 +368,9 @@ export function CSCanvas({
     return [];
   }, [nonDiskBlocks, showContactDisks, disks.length]);
 
-
-
   React.useEffect(() => {
     if (rollingDiskPosition && showTrail) {
-      setTrailPoints(prev => {
+      setTrailPoints((prev) => {
         const newPoints = [...prev, rollingDiskPosition.center];
         return newPoints.length > 200 ? newPoints.slice(-200) : newPoints;
       });
@@ -349,37 +379,38 @@ export function CSCanvas({
     }
   }, [rollingDiskPosition, showTrail, rollingMode, rollingDiskId]);
 
-  const checkDiskOverlap = React.useCallback((diskId: string, newCenter: Point2D): boolean => {
-    const current = disks.find(d => d.id === diskId);
-    if (!current) return false;
-    const currentR = current.visualRadius;
-    for (const other of disks) {
-      if (other.id === diskId) continue;
-      const dx = newCenter.x - other.center.x;
-      const dy = newCenter.y - other.center.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const otherR = other.visualRadius;
+  const checkDiskOverlap = React.useCallback(
+    (diskId: string, newCenter: Point2D): boolean => {
+      const current = disks.find((d) => d.id === diskId);
+      if (!current) return false;
+      const currentR = current.visualRadius;
+      for (const other of disks) {
+        if (other.id === diskId) continue;
+        const dx = newCenter.x - other.center.x;
+        const dy = newCenter.y - other.center.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const otherR = other.visualRadius;
 
-      const minDistance = currentR + otherR;
+        const minDistance = currentR + otherR;
 
-      // Strict overlap check
-      if (distance < minDistance) {
-        // Unsticking logic: Allow moving away if already overlapping
-        const oldDx = current.center.x - other.center.x;
-        const oldDy = current.center.y - other.center.y;
-        const oldDistance = Math.sqrt(oldDx * oldDx + oldDy * oldDy);
+        // Strict overlap check
+        if (distance < minDistance) {
+          // Unsticking logic: Allow moving away if already overlapping
+          const oldDx = current.center.x - other.center.x;
+          const oldDy = current.center.y - other.center.y;
+          const oldDistance = Math.sqrt(oldDx * oldDx + oldDy * oldDy);
 
-        // Only allow if we were already too close AND we are strictly moving outward
-        if (oldDistance < minDistance && distance > oldDistance) {
-          continue;
+          // Only allow if we were already too close AND we are strictly moving outward
+          if (oldDistance < minDistance && distance > oldDistance) {
+            continue;
+          }
+          return true;
         }
-        return true;
       }
-    }
-    return false;
-  }, [disks]);
-
-
+      return false;
+    },
+    [disks],
+  );
 
   // Convertir coordenadas cartesianas a SVG
   function toSVG(x: number, y: number): [number, number] {
@@ -389,21 +420,24 @@ export function CSCanvas({
   // Helper para convertir path del hull (que está en coords cartesianas) a SVG coords
   // diskHull devuelve 'M x y L x y ...', necesitamos transformar esos x,y
   function transformPathToSVG(d: string): string {
-    return d.replace(/([ML])\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g, (_, cmd, x, y) => {
-      const [sx, sy] = toSVG(parseFloat(x), parseFloat(y));
-      return `${cmd} ${sx} ${sy}`;
-    }).replace(/A\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g,
-      (_, rx, ry, rot, large, sweep, ex, ey) => {
-        // Arcos son más complejos de transformar si hay rotación/escala asimétrica
-        // Pero aquí escala es 1:1, solo translación y flip Y.
-        // Flip Y cambia el sweep flag.
-        const [sx, sy] = toSVG(parseFloat(ex), parseFloat(ey));
-        // Invertir sweep flag debido al flip Y del eje SVG vs Cartesiano
-        const newSweep = sweep === '0' ? '1' : '0';
-        return `A ${rx} ${ry} ${rot} ${large} ${newSweep} ${sx} ${sy}`;
-      });
+    return d
+      .replace(/([ML])\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g, (_, cmd, x, y) => {
+        const [sx, sy] = toSVG(parseFloat(x), parseFloat(y));
+        return `${cmd} ${sx} ${sy}`;
+      })
+      .replace(
+        /A\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+)\s+(-?\d+)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/g,
+        (_, rx, ry, rot, large, sweep, ex, ey) => {
+          // Arcos son más complejos de transformar si hay rotación/escala asimétrica
+          // Pero aquí escala es 1:1, solo translación y flip Y.
+          // Flip Y cambia el sweep flag.
+          const [sx, sy] = toSVG(parseFloat(ex), parseFloat(ey));
+          // Invertir sweep flag debido al flip Y del eje SVG vs Cartesiano
+          const newSweep = sweep === '0' ? '1' : '0';
+          return `A ${rx} ${ry} ${rot} ${large} ${newSweep} ${sx} ${sy}`;
+        },
+      );
   }
-
 
   function fromSVGExact(svgX: number, svgY: number): Point2D {
     return { x: svgX - centerX, y: centerY - svgY };
@@ -465,7 +499,7 @@ export function CSCanvas({
           pointType: 'start',
           dragSubtype: hitStart,
           startX: cartX,
-          startY: cartY
+          startY: cartY,
         });
         return;
       }
@@ -476,7 +510,7 @@ export function CSCanvas({
           pointType: 'end',
           dragSubtype: hitEnd,
           startX: cartX,
-          startY: cartY
+          startY: cartY,
         });
         return;
       }
@@ -495,7 +529,7 @@ export function CSCanvas({
     // Click logic moved to handleMouseUp (click vs drag detection).
 
     if (rollingMode && onDiskClick) {
-      const block = blocks.find(b => b.id === blockId);
+      const block = blocks.find((b) => b.id === blockId);
       if (block?.kind === 'disk') {
         const pos = getMousePositionExact(e as any);
         onDiskClick(block.id, pos || undefined);
@@ -542,7 +576,7 @@ export function CSCanvas({
     const pos = getMousePositionExact(e as any); // Simplificado para usar coordenadas base
     if (!pos) return;
 
-    const block = blocks.find(b => b.id === blockId);
+    const block = blocks.find((b) => b.id === blockId);
 
     // Calculate offset for absolute dragging
     let offsetX = 0;
@@ -583,9 +617,9 @@ export function CSCanvas({
   function checkTrajectoryIntersections(p1: Point2D, p2: Point2D): Point2D | null {
     if (!savedKnotPaths) return null;
 
-    const obstacles: { p1: Point2D, p2: Point2D }[] = [];
-    savedKnotPaths.forEach(k => {
-      k.path.forEach(seg => {
+    const obstacles: { p1: Point2D; p2: Point2D }[] = [];
+    savedKnotPaths.forEach((k) => {
+      k.path.forEach((seg) => {
         if ('start' in seg) {
           obstacles.push({ p1: seg.start, p2: seg.end });
         }
@@ -596,8 +630,14 @@ export function CSCanvas({
     let minT = 1.0;
 
     for (const obs of obstacles) {
-      const x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
-      const x3 = obs.p1.x, y3 = obs.p1.y, x4 = obs.p2.x, y4 = obs.p2.y;
+      const x1 = p1.x,
+        y1 = p1.y,
+        x2 = p2.x,
+        y2 = p2.y;
+      const x3 = obs.p1.x,
+        y3 = obs.p1.y,
+        x4 = obs.p2.x,
+        y4 = obs.p2.y;
 
       const den = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
       if (Math.abs(den) < 1e-9) continue;
@@ -610,7 +650,7 @@ export function CSCanvas({
           minT = ua;
           firstHit = {
             x: x1 + ua * (x2 - x1),
-            y: y1 + ua * (y2 - y1)
+            y: y1 + ua * (y2 - y1),
           };
         }
       }
@@ -626,16 +666,23 @@ export function CSCanvas({
     if (!pos) return;
 
     // 1. Knot Mode Dragging (Drawing) - UNLESS SHIFT IS PRESSED (Shift = Move Disk)
-    if (knotMode && !e.shiftKey && dragState.pointType === 'disk' && dragState.offsetX === undefined) {
+    if (
+      knotMode &&
+      !e.shiftKey &&
+      dragState.pointType === 'disk' &&
+      dragState.offsetX === undefined
+    ) {
       // Find hovered disk
-      const currentId = disks.find(d => {
+      const currentId = disks.find((d) => {
         const dist = Math.sqrt(Math.pow(pos.x - d.center.x, 2) + Math.pow(pos.y - d.center.y, 2));
         return dist < d.visualRadius;
       })?.id;
 
       if (currentId && currentId !== dragState.lastAdded) {
         onDiskClick?.(currentId, pos || undefined);
-        setDragState(prev => prev ? ({ ...prev, lastAdded: currentId, pendingUndo: false }) : null);
+        setDragState((prev) =>
+          prev ? { ...prev, lastAdded: currentId, pendingUndo: false } : null,
+        );
       }
       return;
     }
@@ -660,7 +707,7 @@ export function CSCanvas({
         const constrainedDiskId = isStart ? startDiskId : endDiskId;
 
         if (constrainedDiskId) {
-          const disk = disks.find(d => d.id === constrainedDiskId);
+          const disk = disks.find((d) => d.id === constrainedDiskId);
           if (disk) {
             // Snap strictly to disk boundary
             const dx = currentX - disk.center.x;
@@ -677,7 +724,7 @@ export function CSCanvas({
             setConfig?.({
               x: targetX,
               y: targetY,
-              theta: targetTheta
+              theta: targetTheta,
             });
             return; // Skip other logic
           }
@@ -688,7 +735,9 @@ export function CSCanvas({
         let minDist = 30; // Snap radius
 
         for (const c of contacts) {
-          const dist = Math.sqrt(Math.pow(currentX - c.point.x, 2) + Math.pow(currentY - c.point.y, 2));
+          const dist = Math.sqrt(
+            Math.pow(currentX - c.point.x, 2) + Math.pow(currentY - c.point.y, 2),
+          );
           if (dist < minDist) {
             minDist = dist;
             closestContact = c;
@@ -701,7 +750,7 @@ export function CSCanvas({
           setConfig?.({
             x: targetX,
             y: targetY,
-            theta: closestContact.tangentAngle
+            theta: closestContact.tangentAngle,
           });
         } else {
           setConfig?.({ ...currentConfig, x: targetX, y: targetY });
@@ -716,16 +765,19 @@ export function CSCanvas({
       return;
     }
 
-
     if (rollingMode) return;
 
     const { blockId, pointType, offsetX, offsetY } = dragState;
-    const block = blocks.find(b => b.id === blockId);
+    const block = blocks.find((b) => b.id === blockId);
     if (!block) return;
 
     // 3. Absolute Dragging Logic using Offset (Disk)
-    if (block.kind === 'disk' && pointType === 'disk' && offsetX !== undefined && offsetY !== undefined) {
-
+    if (
+      block.kind === 'disk' &&
+      pointType === 'disk' &&
+      offsetX !== undefined &&
+      offsetY !== undefined
+    ) {
       // [FIX] Prevent dragging in Knot Mode (unless Shift is held)
       if (knotMode && !e.shiftKey) return;
 
@@ -748,10 +800,12 @@ export function CSCanvas({
         const rect = svgRef.current!.getBoundingClientRect();
         const svgX = (e.clientX - rect.left) * (width / rect.width);
         const svgY = (e.clientY - rect.top) * (height / rect.height);
-        const moveDist = Math.sqrt(Math.pow(svgX - dragState.startX, 2) + Math.pow(svgY - dragState.startY, 2));
+        const moveDist = Math.sqrt(
+          Math.pow(svgX - dragState.startX, 2) + Math.pow(svgY - dragState.startY, 2),
+        );
 
         if (!dragState.hasMoved && moveDist > 2) {
-          setDragState(prev => prev ? ({ ...prev, hasMoved: true }) : null);
+          setDragState((prev) => (prev ? { ...prev, hasMoved: true } : null));
         }
       }
     }
@@ -759,16 +813,16 @@ export function CSCanvas({
 
   function handleMouseUp() {
     if (dragState && !dragState.hasMoved && dragState.pointType === 'disk') {
-
       // KNOT MODE UNDO
       if (knotMode && dragState.pendingUndo) {
         onDiskClick?.(dragState.blockId);
       }
 
-      const block = blocks.find(b => b.id === dragState.blockId);
+      const block = blocks.find((b) => b.id === dragState.blockId);
       // Only trigger click if block exists and is disk
       // Handles Knot Mode (Legacy/Fallback), and potentially Dubins/Rolling if they use onDiskClick
-      if (block?.kind === 'disk' && !knotMode) { // Prevent double trigger in Knot Mode
+      if (block?.kind === 'disk' && !knotMode) {
+        // Prevent double trigger in Knot Mode
         onDiskClick?.(block.id);
       }
     }
@@ -805,7 +859,7 @@ export function CSCanvas({
           // Ensure Dubins gets triggered if we click background
           if (dubinsMode) {
             persistentDubinsActions?.setHoverDiskId(null);
-            // Optional: Clear active disk? 
+            // Optional: Clear active disk?
             // persistentDubinsActions?.setActiveDiskId(null);
           } else if (e.currentTarget) {
             handleMouseDown('background', 'p1', e);
@@ -815,13 +869,34 @@ export function CSCanvas({
     >
       <defs>
         {/* Sub-grid (e.g., 20px) */}
-        <pattern id="smallGrid" width={gridSpacing / 5} height={gridSpacing / 5} patternUnits="userSpaceOnUse">
-          <path d={`M ${gridSpacing / 5} 0 L 0 0 0 ${gridSpacing / 5}`} fill="none" stroke="var(--canvas-grid)" strokeWidth="1" strokeOpacity="0.5" />
+        <pattern
+          id="smallGrid"
+          width={gridSpacing / 5}
+          height={gridSpacing / 5}
+          patternUnits="userSpaceOnUse"
+        >
+          <path
+            d={`M ${gridSpacing / 5} 0 L 0 0 0 ${gridSpacing / 5}`}
+            fill="none"
+            stroke="var(--canvas-grid)"
+            strokeWidth="1"
+            strokeOpacity="0.5"
+          />
         </pattern>
         {/* Main Grid (e.g., 100px) */}
-        <pattern id="largeGrid" width={gridSpacing} height={gridSpacing} patternUnits="userSpaceOnUse">
+        <pattern
+          id="largeGrid"
+          width={gridSpacing}
+          height={gridSpacing}
+          patternUnits="userSpaceOnUse"
+        >
           <rect width={gridSpacing} height={gridSpacing} fill="url(#smallGrid)" />
-          <path d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`} fill="none" stroke="var(--canvas-grid)" strokeWidth="1" />
+          <path
+            d={`M ${gridSpacing} 0 L 0 0 0 ${gridSpacing}`}
+            fill="none"
+            stroke="var(--canvas-grid)"
+            strokeWidth="1"
+          />
         </pattern>
       </defs>
 
@@ -831,11 +906,24 @@ export function CSCanvas({
       {/* Ejes - Only show if Grid is on */}
       {showGrid && (
         <>
-          <line x1="0" y1={centerY} x2={width} y2={centerY} stroke="var(--border)" strokeWidth="1" />
-          <line x1={centerX} y1="0" x2={centerX} y2={height} stroke="var(--border)" strokeWidth="1" />
+          <line
+            x1="0"
+            y1={centerY}
+            x2={width}
+            y2={centerY}
+            stroke="var(--border)"
+            strokeWidth="1"
+          />
+          <line
+            x1={centerX}
+            y1="0"
+            x2={centerX}
+            y2={height}
+            stroke="var(--border)"
+            strokeWidth="1"
+          />
         </>
       )}
-
 
       {/* BELT (Outer Contour or Convex Hull) — ENVELOPE DISPLAY */}
 
@@ -859,44 +947,46 @@ export function CSCanvas({
         knotSequence={knotSequence}
         knotChiralities={knotChiralities}
         anchorPoints={anchorPoints}
-        showEnvelope={showEnvelope && (!knotState?.flexibleKnotPaths || knotState.flexibleKnotPaths.length === 0)}
+        showEnvelope={
+          showEnvelope &&
+          (!knotState?.flexibleKnotPaths || knotState.flexibleKnotPaths.length === 0)
+        }
         envelopeColor={envelopeColor}
         savedEnvelopeColor={savedEnvelopeColor}
         knotMode={knotMode}
         onKnotPointClick={onKnotPointClick}
-        savedKnotPaths={[]}  // [FIX] No saved knots here — they render AFTER disks
+        savedKnotPaths={[]} // [FIX] No saved knots here — they render AFTER disks
         context={{ width, height }}
       />
 
       {/* [NEW] Flexible Knot Envelope (Dubins) */}
-      {knotMode && knotState?.flexibleKnotPaths && knotState.flexibleKnotPaths.length > 0 && showEnvelope && (
-        <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <DubinsRenderer
-            paths={knotState.flexibleKnotPaths}
-            // Use same color as envelope? DubinsRenderer uses path type colors by default usually?
-            // If DubinsRenderer doesn't accept color override, we might need to style it.
-            // But DubinsRenderer usually renders based on Type.
-            // Wait, Knot Envelope should be uniform color (e.g. Blue/Orange).
-            // Let's see if DubinsRenderer accepts visual override.
-            // Typically it uses standard colors.
-            // If the user wants "Envelope Color", we might need to modify DubinsRenderer or wrap it.
-            // For now, let's just render it. The "Orange" lines in screenshot suggest default or specific styling.
-            overrideColor={envelopeColor}
-            width={4} // Thicker for envelope
-          />
-        </g>
-      )}
+      {knotMode &&
+        knotState?.flexibleKnotPaths &&
+        knotState.flexibleKnotPaths.length > 0 &&
+        showEnvelope && (
+          <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
+            <DubinsRenderer
+              paths={knotState.flexibleKnotPaths}
+              // Use same color as envelope? DubinsRenderer uses path type colors by default usually?
+              // If DubinsRenderer doesn't accept color override, we might need to style it.
+              // But DubinsRenderer usually renders based on Type.
+              // Wait, Knot Envelope should be uniform color (e.g. Blue/Orange).
+              // Let's see if DubinsRenderer accepts visual override.
+              // Typically it uses standard colors.
+              // If the user wants "Envelope Color", we might need to modify DubinsRenderer or wrap it.
+              // For now, let's just render it. The "Orange" lines in screenshot suggest default or specific styling.
+              overrideColor={envelopeColor}
+              width={4} // Thicker for envelope
+            />
+          </g>
+        )}
 
       {/* ROLLING MODE PATH (Flexible Envelope) [NEW] */}
       {rollingMode && currentPath && (
         <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-          <DubinsRenderer
-            paths={[currentPath]}
-            visibleTypes={new Set([currentPath.type])}
-          />
+          <DubinsRenderer paths={[currentPath]} visibleTypes={new Set([currentPath.type])} />
         </g>
       )}
-
 
       {/* Contact Graph Overlay (Global Tangent Network) - HIDDEN BY DEFAULT (Too messy) */}
       <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
@@ -909,7 +999,9 @@ export function CSCanvas({
       {/* DISK CONTACT LINES (Penny Graph Edges) */}
       {disks.map((d1, i) =>
         disks.slice(i + 1).map((d2) => {
-          const dist = Math.sqrt(Math.pow(d1.center.x - d2.center.x, 2) + Math.pow(d1.center.y - d2.center.y, 2));
+          const dist = Math.sqrt(
+            Math.pow(d1.center.x - d2.center.x, 2) + Math.pow(d1.center.y - d2.center.y, 2),
+          );
           const threshold = d1.visualRadius + d2.visualRadius + 0.5; // Tolerance
           if (dist <= threshold) {
             const [x1, y1] = toSVG(d1.center.x, d1.center.y);
@@ -917,14 +1009,17 @@ export function CSCanvas({
             return (
               <line
                 key={`contact-${d1.id}-${d2.id}`}
-                x1={x1} y1={y1} x2={x2} y2={y2}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
                 stroke={envelopeColor}
                 strokeWidth="2"
               />
             );
           }
           return null;
-        })
+        }),
       )}
 
       {/* 3. Dubins Layer (Background) */}
@@ -964,38 +1059,39 @@ export function CSCanvas({
 
         if (rollingMode) {
           if (disk.id === pivotDiskId) {
-            fill = "rgba(100, 200, 100, 0.5)"; // Greenish for Pivot
-            stroke = "#2E8B57";
+            fill = 'rgba(100, 200, 100, 0.5)'; // Greenish for Pivot
+            stroke = '#2E8B57';
             strokeWidth = 3;
           } else if (disk.id === rollingDiskId) {
-            fill = "rgba(255, 165, 0, 0.6)"; // Orange for Rolling
-            stroke = "#FF8C00";
+            fill = 'rgba(255, 165, 0, 0.6)'; // Orange for Rolling
+            stroke = '#FF8C00';
             strokeWidth = 3;
           }
         } else if (knotMode && knotSequence.length > 0 && knotSequence[0] === disk.id) {
           // Highlight Start Disk in Knot Mode to help closing the loop
-          fill = "rgba(50, 205, 50, 0.2)"; // Subtle Green
-          stroke = "#32CD32"; // Lime Green
+          fill = 'rgba(50, 205, 50, 0.2)'; // Subtle Green
+          stroke = '#32CD32'; // Lime Green
           strokeWidth = 3;
         } else if (dubinsMode) {
           if (isStart) {
-            fill = "rgba(100, 255, 100, 0.6)";
-            stroke = "rgba(50, 200, 50, 0.9)";
+            fill = 'rgba(100, 255, 100, 0.6)';
+            stroke = 'rgba(50, 200, 50, 0.9)';
             strokeWidth = 4;
           } else if (isEnd) {
-            fill = "rgba(255, 100, 100, 0.6)";
-            stroke = "rgba(200, 50, 50, 0.9)";
+            fill = 'rgba(255, 100, 100, 0.6)';
+            stroke = 'rgba(200, 50, 50, 0.9)';
             strokeWidth = 4;
           }
         }
 
         if (isKnotSelected) {
-          // User requested same color as normal modes. 
+          // User requested same color as normal modes.
           // We keep fill as diskColor.
         }
 
         return (
-          <g key={disk.id}
+          <g
+            key={disk.id}
             onMouseDown={(e) => {
               // Always use handleMouseDown to allow dragging + clicking
               handleMouseDown(disk.id, 'disk', e);
@@ -1018,7 +1114,7 @@ export function CSCanvas({
               // So r = radius.
               r={radius} // Don't shrink
               fill={fill}
-              fillOpacity={transparentDisks ? 0.2 : (isKnotSelected ? 0.6 : 1)}
+              fillOpacity={transparentDisks ? 0.2 : isKnotSelected ? 0.6 : 1}
               stroke={stroke}
               strokeWidth={strokeWidth}
             />
@@ -1051,11 +1147,11 @@ export function CSCanvas({
                 pointerEvents="none"
                 style={{
                   userSelect: 'none',
-                  textShadow: '0px 0px 3px rgba(0,0,0,0.5)'
+                  textShadow: '0px 0px 3px rgba(0,0,0,0.5)',
                 }}
               >
                 {knotSequence
-                  .map((id: string, idx: number) => id === disk.id ? idx + 1 : -1)
+                  .map((id: string, idx: number) => (id === disk.id ? idx + 1 : -1))
                   .filter((i: number) => i !== -1)
                   .join(', ')}
               </text>
@@ -1084,67 +1180,73 @@ export function CSCanvas({
       })}
 
       {/* [NEW] Knot Mode Anchors (Rendered on top of everything) */}
-      {knotMode && disks.map(disk => {
-        const r = disk.visualRadius;
-        const { x, y } = disk.center;
-        // 4 Anchors: N, S, E, W
-        const anchors = [
-          { x: x, y: y + r }, // N
-          { x: x, y: y - r }, // S
-          { x: x + r, y: y }, // E
-          { x: x - r, y: y }, // W
-        ];
-        return anchors.map((p, i) => {
-          const [sx, sy] = toSVG(p.x, p.y);
-          // NEW: Hover State Local Logic (using a group to handle hover on both visual & hit target)
-          // Actually, in React tracking hover state per anchor might be overkill for state.
-          // CSS :hover works on SVG elements!
-          return (
-            <g key={`${disk.id}-anchor-${i}`} className="anchor-group" style={{ cursor: 'pointer' }}>
-              <style>
-                {`
+      {knotMode &&
+        disks.map((disk) => {
+          const r = disk.visualRadius;
+          const { x, y } = disk.center;
+          // 4 Anchors: N, S, E, W
+          const anchors = [
+            { x: x, y: y + r }, // N
+            { x: x, y: y - r }, // S
+            { x: x + r, y: y }, // E
+            { x: x - r, y: y }, // W
+          ];
+          return anchors.map((p, i) => {
+            const [sx, sy] = toSVG(p.x, p.y);
+            // NEW: Hover State Local Logic (using a group to handle hover on both visual & hit target)
+            // Actually, in React tracking hover state per anchor might be overkill for state.
+            // CSS :hover works on SVG elements!
+            return (
+              <g
+                key={`${disk.id}-anchor-${i}`}
+                className="anchor-group"
+                style={{ cursor: 'pointer' }}
+              >
+                <style>
+                  {`
                   .anchor-group:hover .anchor-visual {
                     r: 8px; /* Scale up on hover */
                     stroke-width: 3px;
                     transition: r 0.1s, stroke-width 0.1s;
                   }
                 `}
-              </style>
+                </style>
 
-              {/* 1. Large Invisible Hit Target (r=20) */}
-              <circle
-                cx={sx} cy={sy}
-                r={20}
-                fill="transparent"
-                stroke="none"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  onKnotPointClick?.(disk.id, { x: p.x, y: p.y });
-                }}
-              />
+                {/* 1. Large Invisible Hit Target (r=20) */}
+                <circle
+                  cx={sx}
+                  cy={sy}
+                  r={20}
+                  fill="transparent"
+                  stroke="none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onKnotPointClick?.(disk.id, { x: p.x, y: p.y });
+                  }}
+                />
 
-              {/* 2. Visible Anchor Dot (r=5 -> 8 on hover) */}
-              <circle
-                className="anchor-visual"
-                cx={sx} cy={sy}
-                r={5}
-                fill="#FF4500" // Red-Orange
-                stroke="white"
-                strokeWidth={1.5}
-                pointerEvents="none" // Let clicks pass to hit target
-              />
-            </g>
-          );
-        });
-      })}
-
+                {/* 2. Visible Anchor Dot (r=5 -> 8 on hover) */}
+                <circle
+                  className="anchor-visual"
+                  cx={sx}
+                  cy={sy}
+                  r={5}
+                  fill="#FF4500" // Red-Orange
+                  stroke="white"
+                  strokeWidth={1.5}
+                  pointerEvents="none" // Let clicks pass to hit target
+                />
+              </g>
+            );
+          });
+        })}
 
       {/* Saved Knots — ALWAYS visible, rendered AFTER disks so they appear ON TOP */}
       <KnotLayer
-        visible={true}  // [FIX] Always visible for saved knots
+        visible={true} // [FIX] Always visible for saved knots
         blocks={blocks}
-        knotPath={showEnvelope ? knotPath : []}  // Active path only when envelope is on
+        knotPath={showEnvelope ? knotPath : []} // Active path only when envelope is on
         knotSequence={knotSequence}
         knotChiralities={knotState?.chiralities}
         anchorPoints={showEnvelope ? (anchorSequence as any) : []}
@@ -1153,7 +1255,7 @@ export function CSCanvas({
         savedEnvelopeColor={savedEnvelopeColor}
         knotMode={knotMode}
         onKnotPointClick={onKnotPointClick}
-        savedKnotPaths={savedKnotPaths}  // [FIX] Saved knots render here (on top of disks)
+        savedKnotPaths={savedKnotPaths} // [FIX] Saved knots render here (on top of disks)
         context={{ width: 800, height: 600 }}
       />
 
@@ -1172,27 +1274,29 @@ export function CSCanvas({
       />
 
       {/* [NEW] DEBUG: Render Selected Anchor Points (Purple) */}
-      {knotMode && anchorPoints?.map((p: any, i: number) => {
-        const [cx, cy] = toSVG(p.x, p.y);
-        return (
-          <circle
-            key={`debug-anchor-${i}`}
-            cx={cx} cy={cy}
-            r={6}
-            fill="#8A2BE2" // BlueViolet / Purple
-            stroke="white"
-            strokeWidth={2}
-            pointerEvents="none"
-          />
-        );
-      })}
+      {knotMode &&
+        anchorPoints?.map((p: any, i: number) => {
+          const [cx, cy] = toSVG(p.x, p.y);
+          return (
+            <circle
+              key={`debug-anchor-${i}`}
+              cx={cx}
+              cy={cy}
+              r={6}
+              fill="#8A2BE2" // BlueViolet / Purple
+              stroke="white"
+              strokeWidth={2}
+              pointerEvents="none"
+            />
+          );
+        })}
 
       {/* Resto de bloques (Segmentos/Arcos) si existen */}
-      {nonDiskBlocks.map((block) => (
-        // ... (Renderizado mínimo para no romper app si hay otros bloques)
-        null
-      ))}
-
+      {nonDiskBlocks.map(
+        (block) =>
+          // ... (Renderizado mínimo para no romper app si hay otros bloques)
+          null,
+      )}
     </svg>
   );
 }

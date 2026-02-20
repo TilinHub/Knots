@@ -1,4 +1,4 @@
-import type { CSArc,CSBlock, CSSegment } from '../types/cs';
+import type { CSArc, CSBlock, CSSegment } from '../types/cs';
 import { findContinuousChains } from '../validation/continuity';
 
 /**
@@ -45,7 +45,7 @@ export function blockLength(block: CSBlock): number {
  */
 export function totalCurveLength(blocks: CSBlock[]): number {
   return blocks
-    .filter(b => b.kind !== 'disk')
+    .filter((b) => b.kind !== 'disk')
     .reduce((sum, block) => sum + blockLength(block), 0);
 }
 
@@ -63,7 +63,7 @@ export interface LengthInfo {
 
 export function getCurveLengthInfo(blocks: CSBlock[]): LengthInfo {
   // Filtrar discos antes de encontrar cadenas
-  const nonDiskBlocks = blocks.filter(b => b.kind !== 'disk');
+  const nonDiskBlocks = blocks.filter((b) => b.kind !== 'disk');
 
   // Encontrar la cadena continua más larga
   const chains = findContinuousChains(nonDiskBlocks);
@@ -71,8 +71,8 @@ export function getCurveLengthInfo(blocks: CSBlock[]): LengthInfo {
 
   // Calcular longitudes solo de la cadena principal
   const blockLengths = mainChain
-    .filter(b => b.kind !== 'disk')
-    .map(block => ({
+    .filter((b) => b.kind !== 'disk')
+    .map((block) => ({
       id: block.id,
       kind: block.kind as 'segment' | 'arc',
       length: blockLength(block),
@@ -97,14 +97,14 @@ export function formatArcLength(len: number): string {
   // 1/4 vuelta = pi/2
 
   const PI = Math.PI;
-  if (len < 0.001) return "0.00";
+  if (len < 0.001) return '0.00';
 
   const k_pi = len / PI;
   const k_pi_rounded = Math.round(k_pi);
 
   if (Math.abs(k_pi - k_pi_rounded) < 0.05) {
-    if (k_pi_rounded === 0) return "0.00";
-    if (k_pi_rounded === 1) return "π";
+    if (k_pi_rounded === 0) return '0.00';
+    if (k_pi_rounded === 1) return 'π';
     return `${k_pi_rounded}π`;
   }
 
@@ -112,10 +112,9 @@ export function formatArcLength(len: number): string {
   const k_pi2_rounded = Math.round(k_pi2);
 
   if (Math.abs(k_pi2 - k_pi2_rounded) < 0.05) {
-    if (k_pi2_rounded === 1) return "π/2";
+    if (k_pi2_rounded === 1) return 'π/2';
     return `${k_pi2_rounded}π/2`;
   }
 
   return len.toFixed(2);
 }
-

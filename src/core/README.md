@@ -11,7 +11,7 @@ This directory contains the pure business logic, geometry, algorithms, and model
 
 ## Structure
 
-*   `geometry/`: Geometric primitives (Points, Segments, arcs), intersection logic, and hull algorithms.
-*   `algorithms/`: Pathfinding, graph traversal.
-*   `types/`: Domain entities (CSBlock, CSDisk).
-*   `math/`: Mathematical utilities.
+- `geometry/`: Geometric primitives (Points, Segments, arcs), intersection logic, and hull algorithms.
+- `algorithms/`: Pathfinding, graph traversal.
+- `types/`: Domain entities (CSBlock, CSDisk).
+- `math/`: Mathematical utilities.
