@@ -302,8 +302,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       return { ...seg };
     });
 
-    // Step 1.5: Validate tangents → reroute any that cross a disk
-    // This produces an EXPANDED path (tangents that cross disks become [t1, arc, t2])
+    // Step 1.5: (REMOVED) We no longer auto-reroute tangents that cross disks.
+    // Knots are allowed to cross over other disks!
     const expandedPath: any[] = [];
     for (let i = 0; i < frozenPath.length; i++) {
       const seg = frozenPath[i];
@@ -311,14 +311,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         expandedPath.push({ ...seg, _originalIndex: i }); // Keep original ARC info
       } else {
         const recomp = recomputed[i];
-        if (!recomp) continue;
-
-        const blockingId = findBlockingDisk(recomp, diskLookup);
-        if (blockingId) {
-          // Reroute around the blocking disk
-          const rerouted = rerouteAroundDisk(recomp, blockingId, diskLookup);
-          expandedPath.push(...rerouted);
-        } else {
+        if (recomp) {
           expandedPath.push(recomp);
         }
       }
