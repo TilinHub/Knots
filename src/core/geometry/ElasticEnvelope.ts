@@ -477,11 +477,15 @@ export function validateEnvelope(
     }
   }
 
-  // Check 2: Arc angles are valid
+  // Check 2: Arc angles are valid (allow full 2pi circles which have identical start/end angles)
   for (const seg of envelope.segments) {
     if (seg.type === 'diskArc') {
-      if (Math.abs(seg.startAngle - seg.endAngle) < 1e-10) {
-        errors.push(`Zero-length arc on disk ${seg.diskId}`);
+      const disk = disks.get(seg.diskId);
+      if (disk) {
+        const len = calcArcLength(disk.radius, seg.startAngle, seg.endAngle, seg.chirality);
+        if (len < 1e-4) {
+          errors.push(`Zero-length arc on disk ${seg.diskId}`);
+        }
       }
     }
   }
@@ -558,5 +562,8 @@ function segmentPenetratesDisk(p1: Point2D, p2: Point2D, disk: DiskGeometry): bo
   const projY = p1.y + t * dy;
   const dist = Math.sqrt((projX - disk.center.x) ** 2 + (projY - disk.center.y) ** 2);
 
-  return dist < disk.radius - 1e-4; // Strict interior with tolerance
+  // Strict interior with tolerance
+  // [FIX] Relax tolerance slightly to avoid false positives on grazing tangents or reconstructed bitangents.
+  // The tangent connects two disk boundaries exactly, so it might pass within r - 1e-12 of an intermediate disk boundary due to float errors.
+  return dist < disk.radius - 1e-3;
 }

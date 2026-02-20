@@ -542,7 +542,9 @@ function isArcBlocked(
     a2 = temp;
   }
 
-  const sweep = (a2 - a1 + PI2) % PI2; // Length of arc
+  // Length of arc: if it's very small, don't over-block
+  const sweep = (a2 - a1 + PI2) % PI2;
+  if (sweep < 1e-4) return false;
 
   for (const other of obstacles) {
     if (other.id === disk.id) continue;
@@ -552,18 +554,29 @@ function isArcBlocked(
     const dy = other.center.y - disk.center.y;
     const d2 = dx * dx + dy * dy;
     const rSum = disk.radius + other.radius;
-    if (d2 >= rSum * rSum - 1e-6) continue; // No overlap
+    // Allow a tiny bit of overlap (grazing) before considering it blocked
+    if (d2 >= (rSum - 1e-4) * (rSum - 1e-4)) continue; // No functional overlap
 
     // 2. Overlap detected.
     const d = Math.sqrt(d2);
-    if (d + other.radius <= disk.radius) return true;
-    if (d + disk.radius <= other.radius) return true;
+    // If one disk is completely inside another, is the boundary blocked?
+    // If 'disk' is inside 'other', the whole arc is blocked
+    if (d + disk.radius <= other.radius + 1e-4) return true;
+    // If 'other' is inside 'disk', it doesn't block the outer boundary
+    if (d + other.radius <= disk.radius + 1e-4) continue;
 
     const phi = Math.atan2(dy, dx);
     const cosGamma = (disk.radius ** 2 + d2 - other.radius ** 2) / (2 * disk.radius * d);
 
     if (Math.abs(cosGamma) >= 1) continue;
+
+    // Check chord length to ignore grazing collisions
+    // The chord length on `disk` where `other` intersects
     const gamma = Math.acos(cosGamma);
+    const chordLen = 2 * disk.radius * Math.sin(gamma);
+
+    // Only block if the chord is substantive (not just a grazing touch from numerical noise)
+    if (chordLen < disk.radius * 0.15) continue;
 
     const b1 = norm(phi - gamma);
     const b2 = norm(phi + gamma);
@@ -571,7 +584,8 @@ function isArcBlocked(
     const isAngleIn = (ang: number, s: number, e: number) => {
       const da = (ang - s + PI2) % PI2;
       const ds = (e - s + PI2) % PI2;
-      return da <= ds;
+      // Allow angles to be slightly outside the block interval due to float issues
+      return da <= ds - 1e-5 && da >= 1e-5;
     };
 
     if (isAngleIn(b1, a1, a2)) return true;

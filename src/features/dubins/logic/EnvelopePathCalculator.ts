@@ -119,10 +119,11 @@ export class EnvelopePathCalculator {
           // Calculate Arc Length based on Chirality
           // L = CCW, R = CW
           let delta = a2 - a1;
+          const EPSILON = 1e-5;
           if (chirality === 'L') {
-            while (delta < 0) delta += 2 * Math.PI;
+            while (delta <= EPSILON) delta += 2 * Math.PI;
           } else {
-            while (delta > 0) delta -= 2 * Math.PI;
+            while (delta >= -EPSILON) delta -= 2 * Math.PI;
           }
 
           // Arc Length = |delta| * R

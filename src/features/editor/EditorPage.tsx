@@ -378,10 +378,12 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
 
         const PI2 = 2 * Math.PI;
         let delta = endAngle - startAngle;
+        // Normalize for float precision near 0
+        const EPSILON = 1e-5;
         if (seg.chirality === 'L') {
-          while (delta <= 0) delta += PI2;
+          while (delta <= EPSILON) delta += PI2;
         } else {
-          while (delta >= 0) delta -= PI2;
+          while (delta >= -EPSILON) delta -= PI2;
           delta = Math.abs(delta);
         }
 
@@ -637,26 +639,26 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         lengthInfo={
           dubinsState.state.isActive
             ? {
-                totalLength: persistentDubins.state.totalLength,
-                tangentLength: persistentDubins.state.totalLength,
-                arcLength: 0,
-              }
+              totalLength: persistentDubins.state.totalLength,
+              tangentLength: persistentDubins.state.totalLength,
+              arcLength: 0,
+            }
             : knotState.mode === 'knot' && knotMetrics
               ? knotMetrics
               : savedKnotPaths.length > 0 // [NEW] Prioritize Saved Knots if they exist
                 ? {
-                    totalLength:
-                      knotMetrics?.totalLength ||
-                      savedKnotsMetrics.tangentLength + savedKnotsMetrics.arcLength,
-                    tangentLength: knotMetrics?.tangentLength || savedKnotsMetrics.tangentLength,
-                    arcLength: knotMetrics?.arcLength || savedKnotsMetrics.arcLength,
-                  }
+                  totalLength:
+                    knotMetrics?.totalLength ||
+                    savedKnotsMetrics.tangentLength + savedKnotsMetrics.arcLength,
+                  tangentLength: knotMetrics?.tangentLength || savedKnotsMetrics.tangentLength,
+                  arcLength: knotMetrics?.arcLength || savedKnotsMetrics.arcLength,
+                }
                 : editorState.nonDiskBlocks.length === 0 && editorState.diskBlocks.length > 1
                   ? {
-                      totalLength: hullMetrics.totalLength,
-                      tangentLength: hullMetrics.tangentLength,
-                      arcLength: hullMetrics.arcLength,
-                    }
+                    totalLength: hullMetrics.totalLength,
+                    tangentLength: hullMetrics.tangentLength,
+                    arcLength: hullMetrics.arcLength,
+                  }
                   : editorState.lengthInfo
         }
         sidebarOpen={editorState.sidebarOpen}
@@ -681,29 +683,29 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             // Rolling Mode / Interaction Logic
             {...(rollingState.isActive
               ? {
-                  rollingMode: true,
-                  pivotDiskId: rollingState.pivotDiskId,
-                  rollingDiskId: rollingState.rollingDiskId,
-                  theta: rollingState.theta,
-                  showTrail: rollingState.showTrail,
-                  onDiskClick: rollingState.selectDisk,
-                  currentPath: rollingState.currentPath, // [NEW] Pass computed path
-                }
+                rollingMode: true,
+                pivotDiskId: rollingState.pivotDiskId,
+                rollingDiskId: rollingState.rollingDiskId,
+                theta: rollingState.theta,
+                showTrail: rollingState.showTrail,
+                onDiskClick: rollingState.selectDisk,
+                currentPath: rollingState.currentPath, // [NEW] Pass computed path
+              }
               : {
-                  // Click Priority: Dubins > Knot > Select
-                  onDiskClick: dubinsState.state.isActive
-                    ? (diskId, point) => persistentDubins.actions.handleDiskClick(diskId, point)
-                    : knotState.mode === 'knot'
-                      ? knotState.actions.toggleDisk
-                      : undefined,
-                })}
+                // Click Priority: Dubins > Knot > Select
+                onDiskClick: dubinsState.state.isActive
+                  ? (diskId, point) => persistentDubins.actions.handleDiskClick(diskId, point)
+                  : knotState.mode === 'knot'
+                    ? knotState.actions.toggleDisk
+                    : undefined,
+              })}
             knotState={knotState} // [NEW] Pass the full state object!
             knotMode={knotState.mode === 'knot'}
             knotPath={knotState.knotPath}
             knotSequence={knotState.diskSequence}
             anchorSequence={knotState.anchorPoints} // [FIX] Use calculated points, NOT dynamic anchors!
             savedKnotPaths={savedKnotPaths} // Pass computed persistent knots
-            onKnotSegmentClick={() => {}}
+            onKnotSegmentClick={() => { }}
             onKnotPointClick={knotState.actions.extendSequenceWithPoint} // [NEW] Link interaction
             showContactDisks={editorState.showContactDisks}
             showEnvelope={editorState.showEnvelope}
