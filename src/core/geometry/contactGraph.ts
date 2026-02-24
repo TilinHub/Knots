@@ -156,10 +156,10 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
     const segmentLen = Math.sqrt(segmentLenSq);
     const chordLen = (t2 - t1) * segmentLen;
 
-    // If chord is less than 15% of radius (grazing/touching)
+    // If chord is less than 10% of radius (grazing/touching)
     // 0.01 was too strict (numerical noise rejected valid packed configurations).
-    // 0.15 allows ~0.3% overlap, sufficient for "soft" contacts.
-    if (chordLen < r * 0.15) {
+    // 0.10 rejects visible overlaps while tolerating numerical noise.
+    if (chordLen < r * 0.10) {
       // Grazing/Touching -> Allowed
       return false;
     }
@@ -176,7 +176,7 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
   const mx = (p1.x + p2.x) / 2;
   const my = (p1.y + p2.y) / 2;
   const midDistSq = (mx - cx) ** 2 + (my - cy) ** 2;
-  if (midDistSq < (r * 0.95) ** 2) {
+  if (midDistSq < (r * 0.96) ** 2) {
     return true;
   }
 
@@ -576,7 +576,7 @@ function isArcBlocked(
     const chordLen = 2 * disk.radius * Math.sin(gamma);
 
     // Only block if the chord is substantive (not just a grazing touch from numerical noise)
-    if (chordLen < disk.radius * 0.15) continue;
+    if (chordLen < disk.radius * 0.10) continue;
 
     const b1 = norm(phi - gamma);
     const b2 = norm(phi + gamma);
@@ -810,6 +810,9 @@ function findSubPathGraph(
       }
     }
   }
+
+  if (!bestEnd) console.warn('[findSubPathGraph] Failed to find ANY path to END.');
+  else console.log('[findSubPathGraph] SUCCESS. Returning path of length', bestEnd.cost);
 
   return bestEnd ? bestEnd.path : null;
 }

@@ -41,6 +41,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
   // [NEW] Lock refs for debouncing and preventing concurrent recalculations
   const recalcLockRef = useRef(false);
   const recalcTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recalcRetryCountRef = useRef(0); // Prevent infinite auto-correction loops
+  const lastSeqLenRef = useRef(0); // Reset retry counter when sequence changes
 
   const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]);
   const [lastAnchorPoint, setLastAnchorPoint] = useState<{ x: number; y: number } | null>(null);
@@ -164,17 +166,21 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     let fullChiralities: ('L' | 'R')[] = [];
 
-    // Skip dubins during drag to prevent stutters
-    if (!isDragging && diskSequence.length >= 2) {
+    // Always compute Dubins to prevent visual glitches/tangles (Image 2) during drag
+    if (diskSequence.length >= 2) {
       const calculator = new EnvelopePathCalculator();
 
-      // Use STATE chiralities if valid
-      fullChiralities = diskSequence.map((id, i) => {
-        // Priority: Derived (Geometry) > State (User Override) > Default 'L'
-        if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
-        if (chiralities.length === diskSequence.length) return chiralities[i];
-        return 'L';
-      });
+      if (isDragging && lockedChiralities.length === diskSequence.length) {
+        fullChiralities = lockedChiralities;
+      } else {
+        // Use STATE chiralities if valid
+        fullChiralities = diskSequence.map((id, i) => {
+          // Priority: Derived (Geometry) > State (User Override) > Default 'L'
+          if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
+          if (chiralities.length === diskSequence.length) return chiralities[i];
+          return 'L';
+        });
+      }
 
       dubinsPaths = calculator.calculateKnotPath(
         blocks,
@@ -182,8 +188,6 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         fullChiralities,
         true, // Closed
       );
-    } else if (isDragging && lockedChiralities.length === diskSequence.length) {
-      fullChiralities = lockedChiralities;
     }
 
     Logger.debug('KnotState', 'Computed Flexible Envelope', {
@@ -287,6 +291,19 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
       Logger.debug('KnotState', 'Recalc locked');
       return;
     }
+
+    // Reset retry counter when disk sequence changes
+    if (diskSequence.length !== lastSeqLenRef.current) {
+      lastSeqLenRef.current = diskSequence.length;
+      recalcRetryCountRef.current = 0;
+    }
+
+    // Prevent infinite auto-correction loops: max 2 retries per sequence
+    if (recalcRetryCountRef.current >= 2) {
+      Logger.debug('KnotState', 'Auto-correction retry limit reached, skipping');
+      return;
+    }
+    recalcRetryCountRef.current++;
 
     // Only warn/correct if LEGACY path is broken.
     // If Dubins path works, maybe we don't care?

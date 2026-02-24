@@ -456,30 +456,49 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     }
 
     const paths = editorState.savedKnots.map((knot) => {
-      // ── PRIMARY: Geometric Reconstruction from frozenPath ──
-      // This walks the saved topology and recomputes each segment
-      // from current disk positions. Works for N disks.
-      if (knot.frozenPath && knot.frozenPath.length > 0) {
-        try {
-          const reconstructed = reconstructFromFrozenPath(knot.frozenPath, diskLookup);
-          if (reconstructed && reconstructed.length > 0) {
-            return { id: knot.id, color: knot.color, path: reconstructed };
-          }
-        } catch (e) {
-          Logger.warn('EditorPage', `[Reconstruct] Geometric failed for Knot ${knot.id}: ${e}`);
-        }
-      }
-
-      // ── FALLBACK: Topological Solver (for knots saved without frozenPath) ──
+      // ── PRIMARY: Topological Solver (elastic, collision-free) ──
+      // Recomputes the envelope from topology (diskSequence + chiralities)
+      // using the Bounded Curvature Graph with collision checking enabled.
+      // This guarantees flexibility (elastic behavior) and no disk overlap.
       if (knot.chiralities && knot.chiralities.length > 0) {
         try {
           const graph = buildBoundedCurvatureGraph(contactDisksForGraph, true, [], false);
-          const result = findEnvelopePath(graph, knot.diskSequence, knot.chiralities, true);
+          const result = findEnvelopePath(graph, knot.diskSequence, knot.chiralities, false);
           if (result.path && result.path.length > 0) {
             return { id: knot.id, color: knot.color, path: result.path };
           }
         } catch (e) {
-          Logger.warn('EditorPage', `[Reconstruct] Solver fallback failed for Knot ${knot.id}`);
+          Logger.warn('EditorPage', `[Reconstruct] Topological solver failed for Knot ${knot.id}: ${e}`);
+        }
+      }
+
+      // ── FALLBACK: Geometric Reconstruction from frozenPath ──
+      // Only used if the topological solver fails (e.g., no valid path exists
+      // for the current disk configuration).
+      if (knot.frozenPath && knot.frozenPath.length > 0) {
+        try {
+          const reconstructed = reconstructFromFrozenPath(knot.frozenPath, diskLookup);
+          if (reconstructed && reconstructed.length > 0) {
+            // Post-reconstruction validation: check tangent segments against all disks
+            const validated: any[] = [];
+            for (const seg of reconstructed) {
+              if (seg.type === 'ARC') {
+                validated.push(seg);
+              } else if (seg.start && seg.end) {
+                const blockingId = findBlockingDisk(seg, diskLookup);
+                if (blockingId) {
+                  validated.push(...rerouteAroundDisk(seg, blockingId, diskLookup));
+                } else {
+                  validated.push(seg);
+                }
+              } else {
+                validated.push(seg);
+              }
+            }
+            return { id: knot.id, color: knot.color, path: validated };
+          }
+        } catch (e) {
+          Logger.warn('EditorPage', `[Reconstruct] Geometric failed for Knot ${knot.id}: ${e}`);
         }
       }
 
