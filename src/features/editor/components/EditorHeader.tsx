@@ -23,6 +23,9 @@ interface EditorHeaderProps {
   // Dubins
   dubinsMode: boolean;
   onToggleDubinsMode: () => void;
+  // Ribbon
+  ribbonMode?: boolean; // [NEW]
+  onToggleRibbonMode?: () => void; // [NEW]
   // Envelope
   showEnvelope?: boolean; // [NEW]
   onToggleEnvelope?: () => void; // [NEW]
@@ -66,6 +69,8 @@ export const EditorHeader = ({
   onToggleKnotMode,
   dubinsMode,
   onToggleDubinsMode,
+  ribbonMode, // [NEW]
+  onToggleRibbonMode, // [NEW]
   showEnvelope = true,
   onToggleEnvelope,
   showGrid,
@@ -112,6 +117,19 @@ export const EditorHeader = ({
   const totalLenDisplay = arcLenStr.includes('π')
     ? `${arcLenStr} + ${tangentLenVal.toFixed(2)}`
     : (lengthInfo.totalLength / 50).toFixed(2);
+
+  const commonBtnStyle: React.CSSProperties = {
+    padding: '0 8px',
+    height: '32px',
+    width: '145px', // Fixed size for all buttons
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '13px',
+    fontWeight: 500,
+    borderRadius: '6px',
+    transition: 'all 0.15s',
+  };
 
   return (
     <header
@@ -164,15 +182,11 @@ export const EditorHeader = ({
           onClick={onToggleEnvelope}
           disabled={diskBlocksCount < 2}
           style={{
-            padding: '6px 12px',
-            fontSize: '13px',
-            fontWeight: 500,
+            ...commonBtnStyle,
             background: showEnvelope ? '#6B46C1' : 'transparent',
             color: showEnvelope ? 'white' : 'var(--text-primary)',
             border: `1px solid ${showEnvelope ? '#6B46C1' : 'var(--border)'}`,
-            borderRadius: '6px',
             cursor: diskBlocksCount < 2 ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s',
             opacity: diskBlocksCount < 2 ? 0.5 : 1,
           }}
           title={showEnvelope ? 'Hide Envelope' : 'Show Envelope'}
@@ -184,15 +198,11 @@ export const EditorHeader = ({
           <button
             onClick={onToggleContactDisks}
             style={{
-              padding: '6px 12px',
-              fontSize: '13px',
-              fontWeight: 500,
+              ...commonBtnStyle,
               background: showContactDisks ? '#0071E3' : 'transparent',
               color: showContactDisks ? 'white' : 'var(--text-primary)',
               border: `1px solid ${showContactDisks ? '#0071E3' : 'var(--border)'}`,
-              borderRadius: '6px',
               cursor: 'pointer',
-              transition: 'all 0.15s',
             }}
           >
             🔵 Contact Graphs
@@ -203,15 +213,11 @@ export const EditorHeader = ({
           onClick={onToggleKnotMode}
           disabled={diskBlocksCount < 2}
           style={{
-            padding: '6px 12px',
-            fontSize: 'var(--fs-caption)',
-            fontWeight: 'var(--fw-medium)',
+            ...commonBtnStyle,
             background: knotMode ? '#FF6B6B' : 'var(--bg-tertiary)',
             color: knotMode ? 'white' : 'var(--text-primary)',
             border: `1px solid ${knotMode ? '#FF6B6B' : 'var(--border)'}`,
-            borderRadius: '6px',
             cursor: diskBlocksCount < 2 ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s',
             opacity: diskBlocksCount < 2 ? 0.5 : 1,
           }}
         >
@@ -221,15 +227,11 @@ export const EditorHeader = ({
         <button
           onClick={onToggleDubinsMode}
           style={{
-            padding: '6px 12px',
-            fontSize: 'var(--fs-caption)',
-            fontWeight: 'var(--fw-medium)',
+            ...commonBtnStyle,
             background: dubinsMode ? '#4ECDC4' : 'var(--bg-tertiary)',
             color: dubinsMode ? 'white' : 'var(--text-primary)',
             border: `1px solid ${dubinsMode ? '#4ECDC4' : 'var(--border)'}`,
-            borderRadius: '6px',
             cursor: 'pointer',
-            transition: 'all 0.15s',
           }}
         >
           🚗 Dubins
@@ -239,15 +241,11 @@ export const EditorHeader = ({
           onClick={onToggleRollingMode}
           disabled={diskBlocksCount < 2}
           style={{
-            padding: '6px 12px',
-            fontSize: 'var(--fs-caption)',
-            fontWeight: 'var(--fw-medium)',
+            ...commonBtnStyle,
             background: rollingMode ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
             color: rollingMode ? 'white' : 'var(--text-primary)',
             border: `1px solid ${rollingMode ? 'var(--accent-primary)' : 'var(--border)'}`,
-            borderRadius: '6px',
             cursor: diskBlocksCount < 2 ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s',
             opacity: diskBlocksCount < 2 ? 0.5 : 1,
           }}
         >
@@ -258,87 +256,98 @@ export const EditorHeader = ({
         <button
           onClick={onToggleCatalogMode}
           style={{
-            padding: '6px 12px',
-            fontSize: 'var(--fs-caption)',
-            fontWeight: 'var(--fw-medium)',
+            ...commonBtnStyle,
             background: catalogMode ? 'var(--accent-secondary)' : 'var(--bg-tertiary)',
             color: catalogMode ? 'white' : 'var(--text-primary)',
             border: `1px solid ${catalogMode ? 'var(--accent-secondary)' : 'var(--border)'}`,
-            borderRadius: '6px',
             cursor: 'pointer',
-            transition: 'all 0.15s',
           }}
           title="Knot Catalog"
         >
           📚 Catalog
         </button>
 
+        {/* RIBBON MODE BUTTON */}
+        <button
+          onClick={onToggleRibbonMode}
+          style={{
+            ...commonBtnStyle,
+            background: ribbonMode ? '#F6AD55' : 'var(--bg-tertiary)',
+            color: ribbonMode ? 'white' : 'var(--text-primary)',
+            border: `1px solid ${ribbonMode ? '#F6AD55' : 'var(--border)'}`,
+            cursor: 'pointer',
+          }}
+          title="Ribbon Mode"
+        >
+          🎀 Ribbon Mode
+        </button>
+
         {((validation.valid && nonDiskBlocksCount > 0) ||
           (diskBlocksCount >= 2 && !showContactDisks)) && (
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowLengthDetails(!showLengthDetails)}
-              style={{
-                fontSize: 'var(--fs-caption)',
-                color: 'var(--text-secondary)',
-                fontWeight: 'var(--fw-medium)',
-                padding: '4px 12px',
-                background: 'var(--bg-tertiary)',
-                borderRadius: '6px',
-                fontFamily: 'var(--ff-mono)',
-                border: 'none',
-                cursor: 'help',
-              }}
-            >
-              L = {(lengthInfo.totalLength / 50).toFixed(2)} u
-            </button>
-            {showLengthDetails && (
-              <div
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowLengthDetails(!showLengthDetails)}
                 style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: '8px',
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  padding: '8px 12px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  zIndex: 10,
-                  minWidth: '160px',
                   fontSize: 'var(--fs-caption)',
-                  color: 'var(--text-primary)',
+                  color: 'var(--text-secondary)',
+                  fontWeight: 'var(--fw-medium)',
+                  padding: '4px 12px',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: '6px',
+                  fontFamily: 'var(--ff-mono)',
+                  border: 'none',
+                  cursor: 'help',
                 }}
               >
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}
-                >
-                  <span>Rectas:</span>
-                  <span style={{ fontFamily: 'var(--ff-mono)' }}>{tangentLenVal.toFixed(2)}</span>
-                </div>
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}
-                >
-                  <span>Arcos:</span>
-                  <span style={{ fontFamily: 'var(--ff-mono)' }}>{arcLenStr}</span>
-                </div>
+                L = {(lengthInfo.totalLength / 50).toFixed(2)} u
+              </button>
+              {showLengthDetails && (
                 <div
                   style={{
-                    borderTop: '1px solid var(--border)',
-                    paddingTop: '4px',
-                    marginTop: '4px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontWeight: 'bold',
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '8px',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    zIndex: 10,
+                    minWidth: '160px',
+                    fontSize: 'var(--fs-caption)',
+                    color: 'var(--text-primary)',
                   }}
                 >
-                  <span>Total:</span>
-                  <span style={{ fontFamily: 'var(--ff-mono)' }}>{totalLenDisplay}</span>
+                  <div
+                    style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}
+                  >
+                    <span>Rectas:</span>
+                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{tangentLenVal.toFixed(2)}</span>
+                  </div>
+                  <div
+                    style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}
+                  >
+                    <span>Arcos:</span>
+                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{arcLenStr}</span>
+                  </div>
+                  <div
+                    style={{
+                      borderTop: '1px solid var(--border)',
+                      paddingTop: '4px',
+                      marginTop: '4px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    <span>Total:</span>
+                    <span style={{ fontFamily: 'var(--ff-mono)' }}>{totalLenDisplay}</span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
 
         {/* Settings Gear */}
         <div style={{ position: 'relative' }}>
