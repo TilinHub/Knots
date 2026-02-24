@@ -252,20 +252,6 @@ export const EditorHeader = ({
           🎡 Rolling Mode
         </button>
 
-        {/* CATALOG MODE BUTTON */}
-        <button
-          onClick={onToggleCatalogMode}
-          style={{
-            ...commonBtnStyle,
-            background: catalogMode ? 'var(--accent-secondary)' : 'var(--bg-tertiary)',
-            color: catalogMode ? 'white' : 'var(--text-primary)',
-            border: `1px solid ${catalogMode ? 'var(--accent-secondary)' : 'var(--border)'}`,
-            cursor: 'pointer',
-          }}
-          title="Knot Catalog"
-        >
-          📚 Catalog
-        </button>
 
         {/* RIBBON MODE BUTTON */}
         <button

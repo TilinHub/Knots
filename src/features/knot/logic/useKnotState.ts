@@ -4,6 +4,8 @@ import {
   buildBoundedCurvatureGraph,
   type EnvelopePathResult,
   type EnvelopeSegment,
+  type ArcSegment,
+  type TangentSegment,
   findEnvelopePath,
   findEnvelopePathFromPoints,
 } from '../../../core/geometry/contactGraph';
@@ -40,9 +42,11 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
   const recalcLockRef = useRef(false);
   const recalcTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Legacy/Derivative
   const [chiralities, setChiralities] = useState<('L' | 'R')[]>([]);
   const [lastAnchorPoint, setLastAnchorPoint] = useState<{ x: number; y: number } | null>(null);
+
+  // [NEW] Lock chiralities when not dragging. Used to bypass geometric tangles when user drags.
+  const [lockedChiralities, setLockedChiralities] = useState<('L' | 'R')[]>([]);
 
   // 1. Build Graph (Memoized)
   const contactDisks = useMemo(
@@ -142,12 +146,84 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
       dubinsLen: dubinsPaths.length,
     });
 
+    // [FIX] ELASTIC SOLVER OVERRIDE DURING DRAG
+    // If the user is dragging, findEnvelopePathFromPoints causes tangles due to rigid anchor angles projecting through disks.
+    // Instead, we freeze the derived chiralities and rely strictly on the topological solver.
+    if (isDragging && diskSequence.length >= 2 && lockedChiralities.length === diskSequence.length) {
+      // Build a collision-free graph to allow sliding over geometry without hallucinated inner tangencies
+      const graph = buildBoundedCurvatureGraph(contactDisks, false, [], false);
+      const elasticPath = findEnvelopePath(graph, diskSequence, lockedChiralities, false);
+
+      if (elasticPath && elasticPath.path.length > 0) {
+        return {
+          path: elasticPath.path,
+          chiralities: lockedChiralities,
+          dubinsPaths: [], // Dubins currently disabled during drag to save cycles/tangles
+        };
+      }
+    }
+
     return {
       ...legacyResult,
       dubinsPaths,
       chiralities: fullChiralities,
     };
-  }, [currentAnchors, contactDisks, blocks, diskSequence, chiralities]);
+  }, [currentAnchors, contactDisks, blocks, diskSequence, chiralities, isDragging, lockedChiralities]);
+
+  const prevDraggingRef = useRef(isDragging);
+  const lastElasticPathRef = useRef<EnvelopeSegment[]>([]);
+
+  // Sync locked chiralities when steady
+  useEffect(() => {
+    if (!isDragging && computationResult.chiralities.length === diskSequence.length) {
+      setLockedChiralities(computationResult.chiralities);
+    }
+
+    // Track the perfectly solved elastic path during drag
+    if (isDragging && computationResult.path && computationResult.path.length > 0) {
+      lastElasticPathRef.current = computationResult.path;
+    }
+  }, [isDragging, computationResult.chiralities, diskSequence.length, computationResult.path]);
+
+  // Sync mathematical anchors upon DROP to avoid snap-back deformation
+  useEffect(() => {
+    if (prevDraggingRef.current && !isDragging && lastElasticPathRef.current.length > 0) {
+      const newAnchors: DynamicAnchor[] = [];
+      diskSequence.forEach((diskId) => {
+        const disk = blocks.find((b) => b.id === diskId && b.kind === 'disk');
+        if (!disk) return;
+
+        // Priority 1: Find the ARC segment for this disk
+        const arc = lastElasticPathRef.current.find((s: any) => s.type === 'ARC' && s.diskId === diskId) as ArcSegment;
+        if (arc) {
+          newAnchors.push({ diskId, angle: arc.startAngle });
+          return;
+        }
+
+        // Priority 2: Find outgoing tangent
+        const outTangent = lastElasticPathRef.current.find((s: any) => s.startDiskId === diskId) as TangentSegment;
+        if (outTangent) {
+          const angle = Math.atan2(outTangent.start.y - disk.center.y, outTangent.start.x - disk.center.x);
+          newAnchors.push({ diskId, angle });
+          return;
+        }
+
+        // Priority 3: Find incoming tangent
+        const inTangent = lastElasticPathRef.current.find((s: any) => s.endDiskId === diskId) as TangentSegment;
+        if (inTangent) {
+          const angle = Math.atan2(inTangent.end.y - disk.center.y, inTangent.end.x - disk.center.x);
+          newAnchors.push({ diskId, angle });
+          return;
+        }
+      });
+
+      if (newAnchors.length === diskSequence.length) {
+        Logger.info('KnotState', 'Snapped anchors to elastic geometry post-drag');
+        setAnchorSequence(newAnchors);
+      }
+    }
+    prevDraggingRef.current = isDragging;
+  }, [isDragging, diskSequence, blocks]);
 
   // 3. Validation
   const validation = useMemo(() => {
@@ -232,9 +308,9 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         const startPt =
           s.type === 'ARC'
             ? {
-                x: disk.center.x + disk.visualRadius * Math.cos(s.startAngle),
-                y: disk.center.y + disk.visualRadius * Math.sin(s.startAngle),
-              }
+              x: disk.center.x + disk.visualRadius * Math.cos(s.startAngle),
+              y: disk.center.y + disk.visualRadius * Math.sin(s.startAngle),
+            }
             : s.start;
 
         const angle = Math.atan2(startPt.y - disk.center.y, startPt.x - disk.center.x);

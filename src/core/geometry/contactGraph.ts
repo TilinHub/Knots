@@ -2,7 +2,7 @@ import { Logger } from '../../core/utils/Logger';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 
-export type TangentType = 'LSL' | 'RSR' | 'LSR' | 'RSL';
+export type TangentType = 'LSL' | 'RSR' | 'LSR' | 'RSL' | 'PTD-L' | 'PTD-R' | 'DTP-L' | 'DTP-R';
 
 export interface TangentSegment {
   type: TangentType;
@@ -685,13 +685,13 @@ function findSubPathGraph(
             cost: t.length,
             path: [
               {
-                type: t.type === 'L' ? 'LSR' : 'RSL',
+                type: t.type === 'L' ? 'PTD-L' : 'PTD-R',
                 start: start,
                 end: t.pt,
                 length: t.length,
                 startDiskId: 'point',
                 endDiskId: d.id,
-              } as TangentSegment,
+              },
             ],
             angle: ang,
             diskId: d.id,
@@ -762,7 +762,7 @@ function findSubPathGraph(
                     diskId: d.id,
                   });
                 p.push({
-                  type: 'LSR',
+                  type: t.type === 'L' ? 'DTP-L' : 'DTP-R',
                   start: t.pt,
                   end: end,
                   length: t.length,

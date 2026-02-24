@@ -281,9 +281,14 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       const tangentType = seg.type;
       const match = tangents.find((t: { type: string }) => t.type === tangentType);
 
-      if (match) return { ...match };
+      if (match) {
+        // Only return a matched bitangent if it wasn't a Point-to-Disk fake segment
+        if (!tangentType.includes('PTD') && !tangentType.includes('DTP')) {
+          return { ...match, _originalIndex: seg._originalIndex };
+        }
+      }
 
-      // Fallback: project using stored angles
+      // Fallback: project using stored angles. Crucial for exact PTD/DTP anchors.
       if (seg._startAngle !== undefined && seg._endAngle !== undefined) {
         return {
           ...seg,
@@ -295,8 +300,36 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             x: d2Data.center.x + d2Data.radius * Math.cos(seg._endAngle),
             y: d2Data.center.y + d2Data.radius * Math.sin(seg._endAngle),
           },
-          length: 0,
         };
+      }
+
+      // If it's a PTD/DTP but has no stored angles, its absolute point positions
+      // were stored directly by findEnvelopePathFromPoints (which sets raw x,y coords)
+      if (tangentType.startsWith('PTD') || tangentType.startsWith('DTP')) {
+        // Verify that this is not attached to two valid disks
+        if (startDiskId === 'point' || startDiskId === 'start') {
+          const dx = endDiskId ? d2.center.x - seg.start.x : 0;
+          const dy = endDiskId ? d2.center.y - seg.start.y : 0;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(seg.end.y - d2.center.y, seg.end.x - d2.center.x);
+          return {
+            ...seg,
+            end: {
+              x: d2Data.center.x + d2Data.radius * Math.cos(angle),
+              y: d2Data.center.y + d2Data.radius * Math.sin(angle),
+            }
+          }
+        }
+        if (endDiskId === 'point' || endDiskId === 'end') {
+          const angle = Math.atan2(seg.start.y - d1.center.y, seg.start.x - d1.center.x);
+          return {
+            ...seg,
+            start: {
+              x: d1Data.center.x + d1Data.radius * Math.cos(angle),
+              y: d1Data.center.y + d1Data.radius * Math.sin(angle),
+            }
+          }
+        }
       }
 
       return { ...seg };
