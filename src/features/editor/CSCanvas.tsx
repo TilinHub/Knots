@@ -22,6 +22,7 @@ import { Logger } from '@/core/utils/Logger';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
 import { DubinsLayer } from '@/renderer/layers/DubinsLayer';
 import { KnotLayer } from '@/renderer/layers/KnotLayer';
+import { RibbonLayer } from '@/renderer/layers/RibbonLayer';
 import { StandardLayer } from '@/renderer/layers/StandardLayer';
 
 import { ContactGraphRenderer } from './components/ContactGraphRenderer';
@@ -109,6 +110,7 @@ interface CSCanvasProps {
   // Let's use any for speed or duplicate interface. Using 'any' for now to avoid circular import of hook file.
   persistentDubinsActions?: any;
   transparentDisks?: boolean; // [NEW]
+  ribbonState?: any; // [NEW]
 }
 
 type PointType = 'p1' | 'p2' | 'center' | 'start' | 'end' | 'disk';
@@ -168,6 +170,7 @@ export function CSCanvas({
   persistentDubinsState,
   persistentDubinsActions,
   transparentDisks = false, // Default false
+  ribbonState, // [NEW]
   ...props // Capture other props for fallback
 }: CSCanvasProps) {
   const svgRef = React.useRef<SVGSVGElement>(null);
@@ -1256,6 +1259,17 @@ export function CSCanvas({
         knotMode={knotMode}
         onKnotPointClick={onKnotPointClick}
         savedKnotPaths={savedKnotPaths} // [FIX] Saved knots render here (on top of disks)
+        context={{ width: 800, height: 600 }}
+      />
+
+      {/* Ribbon Mode Layer */}
+      <RibbonLayer
+        visible={ribbonState?.isActive}
+        path={knotPath}
+        width={ribbonState?.width || 20}
+        opacity={ribbonState?.opacity || 0.3}
+        showEdges={ribbonState?.showEdges}
+        color={envelopeColor}
         context={{ width: 800, height: 600 }}
       />
 

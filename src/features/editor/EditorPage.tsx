@@ -23,6 +23,7 @@ import { CSCanvas } from './CSCanvas';
 import { useContactGraph } from './hooks/useContactGraph';
 import { useEditorState } from './hooks/useEditorState';
 import { usePersistentDubins } from './hooks/usePersistentDubins';
+import { useRibbonMode } from '../ribbon/logic/useRibbonMode';
 
 interface EditorPageProps {
   onBackToGallery?: () => void;
@@ -42,6 +43,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // 1. Logic & State (Custom Hooks)
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
+  const ribbonState = useRibbonMode();
   // New Catalog Mode
   const [catalogMode, setCatalogMode] = React.useState(false);
 
@@ -630,6 +632,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         }
         showEnvelope={editorState.showEnvelope}
         onToggleEnvelope={() => editorActions.setShowEnvelope(!editorState.showEnvelope)}
+        // Ribbon Mode
+        ribbonMode={ribbonState.state.isActive}
+        onToggleRibbonMode={ribbonState.actions.toggleMode}
         // Catalog Mode
         catalogMode={catalogMode}
         onToggleCatalogMode={() => {
@@ -751,6 +756,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             // Persistent Dubins Props
             persistentDubinsState={persistentDubins.state}
             persistentDubinsActions={persistentDubins.actions}
+            // Ribbon Props
+            ribbonState={ribbonState.state}
           />
         </div>
 
@@ -764,6 +771,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
           editorState={editorState}
           actions={editorActions}
           catalogMode={catalogMode}
+          ribbonMode={ribbonState.state.isActive}
+          ribbonState={ribbonState}
         />
       </div>
 

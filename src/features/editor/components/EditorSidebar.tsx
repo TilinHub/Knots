@@ -12,6 +12,7 @@ import { RollingPanel } from '../../rolling/components/RollingPanel';
 import { BlockList } from './BlockList';
 import { ContactMatrixViewer } from './ContactMatrixViewer';
 import { GraphsPanel } from './GraphsPanel';
+import { RibbonPanel } from '../../ribbon/components/RibbonPanel';
 
 interface EditorState {
   blocks: CSBlock[];
@@ -89,6 +90,8 @@ interface EditorSidebarProps {
   knotMode?: boolean;
   knotState?: any;
   catalogMode?: boolean;
+  ribbonMode?: boolean;
+  ribbonState?: any;
 }
 
 export const EditorSidebar = ({
@@ -101,6 +104,8 @@ export const EditorSidebar = ({
   knotMode = false,
   knotState,
   catalogMode = false,
+  ribbonMode = false,
+  ribbonState,
 }: EditorSidebarProps) => {
   if (!isOpen) return null;
 
@@ -188,6 +193,11 @@ export const EditorSidebar = ({
       {/* KNOT MODE PANEL */}
       {knotMode && knotState && (
         <KnotPanel knotState={knotState} editorState={editorState} actions={actions} />
+      )}
+
+      {/* RIBBON MODE PANEL */}
+      {ribbonMode && ribbonState && (
+        <RibbonPanel state={ribbonState.state} actions={ribbonState.actions} />
       )}
 
       {/* CONTACT MATRIX FOR ROLLING MODE (Dynamic) */}
