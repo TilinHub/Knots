@@ -1,0 +1,1910 @@
+
+
+========================================
+--- Reading 2005.13168v1.pdf ---
+========================================
+
+IMMERSED FLAT RIBBON KNOTS
+JOS´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+Abstract. We study the minimum ribbonlength for immersed planar ribbon knots and links.
+Our approach is to embed the space of such knots and links into a larger more tractable space
+of disk diagrams. When length minimisers in disk diagram space are ribbon, then these solve
+the ribbonlength problem. We also provide examples when minimisers in the space of disk
+diagrams are not ribbon and state some conjectures. We compute the minimal ribbonlength
+of some small knot and link diagrams and certain inﬁnite families of link diagrams. Finally we
+present a bound for the number of crossings for a diagram yielding the minimum ribbonlength
+of a knot or link amongst all diagrams.
+1. Introduction
+A ﬂat ribbon knot is an immersion of an annulus into the Euclidean plane such that the
+core of the annulus corresponds to an immersed knot diagram. Flat ribbon links then are a
+ﬁnite union of ﬂat ribbon knots. We require that the combinatorics of the self-intersections of
+the knot or link match that of the associated immersed annulus or annuli. The ribbonlength
+problem aims to ﬁnd the minimal ratio between the length of the core to the ribbon width over
+all the planar realisations in a knot or link type. We normalise our ribbons so that the ribbon
+width is 2 as can be done by a suitable homothety of the plane.
+Kauﬀman [7] proposed a model for folded ﬂat ribbon knots whose core is piecewise linear.
+He gave conjectures about the ribbonlength of the trefoil and the ﬁgure-eight knot. Currently,
+results in the literature provide bounds on the ribbonlength of ﬂat folded ribbons knots for
+certain families of torus knots. The ribbonlength problem remains open for general immersed
+and folded ribbon knots. A good survey on ﬂat folded ribbon knots can be found in [3]. Denne,
+Sullivan and Wrinkle have reported to be working on the same problem considered here [4].
+A similar scenario occurs for the ropelength problem, the 3-dimensional analog of the ribbon-
+length problem [2, 5, 6, 9]. Minimum ropelength is the smallest ratio between the thickness of
+a tubular neighbourhood of a knot or link and its length. In this case, the unknot is minimised
+by a round circle and certain chain links are minimised by linked piecewise C2 loops [2].
+In this note, we describe a method that in some cases leads to the solution of the ribbonlength
+problem for ﬂat immersed ribbon knot and link diagrams, see Fig. 1. Our method ﬁnds the
+tightest immersed ﬂat ribbon knot or link diagram satisfying some simple geometric constraints.
+These constraints allow us to embed the space of immersed ﬂat ribbon knots and link diagrams
+into a larger space of disk diagrams. The latter space has better properties and in particular,
+passing to a minimum length is straightforward. Moreover, we can characterise critical points
+of length in this larger space as piecewise C2 immersions, formed by concatenations of arcs of
+(unit radius) circles and straight line segments.
+When a minimum length disk diagram satisﬁes the conditions for being a ribbon knot or
+link, this immediately gives us the solution for the ribbonlength problem for such diagrams.
+We give examples where this is the case and also where the minimum length disk diagrams are
+Date: November 28, 2021.
+2000 Mathematics Subject Classiﬁcation. 57M25, 57M27, 49Q10, 53C42.
+Key words and phrases. Knots, links, ribbons, ribbonlength, ropelength.
+1
+arXiv:2005.13168v1  [math.GT]  27 May 2020
+2
+JOS´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+Figure 1. Examples of minimal ribbonlength knot and link diagrams. From
+left to right: the trefoil, Hopf link and an element of an inﬁnite family of link
+diagrams whose ribbonlength can be computed.
+not ribbon. We compute the minimal ribbonlength of some small knot and link diagrams like
+the unknot, trefoil, Hopf link and an inﬁnite family of link diagrams - see Figure 1.
+Finally using disk diagrams, we are able to give a bound on the number of crossings in a
+diagram of a given knot or link which minimises ribbonlength amongst all diagrams.
+2. Immersed ribbon loops
+An immersion is a C1 map between manifolds whose Jacobian is injective everywhere. We
+consider C1 immersed loops γ : S1 →R2, where the length of the derivative ||γ′|| = 1/ℓand
+S1 = [0, 1]/{0 ∼1}, denoting the length of the loop by ℓ. We endow the space of immersed
+loops with the C1 metric. A map γ : X →Y is considered either as a function or its image
+γ(X) ⊂Y when no confusion occurs.
+The medial axis of an embedded planar loop is the locus of the centres of the circles of
+maximal radii which are tangent to the loop and are inscribed in the compact region bounded
+by the loop [14]. Note that the medial axis is contained in the focal cut locus, i.e the points in
+the region bounded by the loop where either the distance function to the loop has zero Jacobian
+or is not smooth. This locus consists of either focal conjugate points for the normal map to the
+loop (where the normal map has a singular Jacobian) or focal cut points where there are several
+equal length minimising normals to the loop. A simple example is an ellipse where the medial
+axis or focal cut locus is a closed interval. The end points of this interval are focal conjugate
+points and the interior points are focal cut points.
+In this paper, we will use an analogous concept of medial axis for an embedded planar open
+or closed arc. Note that the key diﬀerence to the case of an embedded loop is that such an
+arc does not separate the plane. So we do not restrict attention to one side of the arc. In
+particular, the medial axis of an arc is not necessarily connected and there can be components
+associated to normals on either side of the arc. So the medial axis for an arc is the locus of
+centres of maximal circles touching the arc with interiors disjoint from the arc and is contained
+in the focal cut locus of the arc. The medial axis of a closed arc is necessarily closed. Note
+we will combine the medial axes of a ﬁnite closed arc cover of an immersed loop, obtaining a
+closed set as a result.
+Deﬁnition 2.1. Given a C1 immersion γ : S1 →R2, choose I ⊂S1 a suﬃciently small open or
+closed interval such that γ(I) is embedded. The separation bound for γ on I is the condition
+that for an arbitrary point c on the medial axis of γ restricted to I, ||γ(s) −c|| ≥1, for all
+s ∈I.
+IMMERSED FLAT RIBBON KNOTS
+3
+Deﬁnition 2.2. Given a C1 immersion γ : S1 →R2, the weak separation bound is the
+condition that for each point p = γ(s), there are two circles of radius 1 which touch γ at p one
+on each side of γ. In other words, the circles pass through p, have a common tangent to γ at p
+and locally lie on one side and the other side of γ near p.
+Let T(s) and N(s), for s ∈S1, be a continuous choice of unit length tangent and normal
+vectors to γ respectively at γ(s). Let LT(s) = ⟨γ(s)+tT(s)⟩and LN(s) = ⟨γ(s)+tN(s)⟩be the
+tangent and normal lines passing through γ(s). We deﬁne a continuous map Γ : S1 ×(−1, 1) →
+R2, which is an extension of γ, by Γ(s, t) = γ(s) + tN(s). So Γ(s, 0) = γ(s), for s ∈S1.
+The notation Γ will be considered either an immersion of an open annulus or its image when
+no confusion occurs, assuming that γ satisﬁes the separation bound for a collection of small
+intervals covering γ.
+Proposition 2.3. Let γ : S1 →R2 be an immersed loop and I ⊂S1 be a closed interval so
+that γ(I) is embedded and γ satisﬁes the separation bound for γ on I. If I is suﬃciently small
+then Γ(I × (−1, 1)) is embedded.
+Proof. Suppose by way of contradiction that Γ(s, t) = Γ(s′, t′), where (s, t) ̸= (s′, t′), s, s′ ∈I
+and 0 ≤t, t′ < 1. Firstly, we cannot have t = t′ = 0 since γ(I) is embedded. Next we cannot
+have t = t′ ̸= 0 since this would contradict the separation bound. In fact, since I is closed, in
+this case we can ﬁnd t = t′ ̸= 0 minimal so that Γ(s, t) = Γ(s′, t) is a point on the medial axis
+at a distance at most t < 1 from γ.
+So it remains to deal with the case that t ̸= t′. Consider the smallest value of min{t, t′} for
+which Γ(s, t) = Γ(s′, t′) for s, s′ ∈I. (We need I closed to ﬁnd such a smallest value). Consider
+the angle between the normal lines LN(s), LN(s′) at X = Γ(s, t) = Γ(s′, t′). If the angle is zero
+then s = s′ and this is impossible as the normal line is embedded. Since I is chosen as a small
+closed interval, the angle between the normal lines will also be small. Now we can perturb X
+to ˆX along the bisector of this angle. By continuity, we claim that we can ﬁnd (ˆs, ˆt) near (s, t)
+and (ˆs′, ˆt′) near (s′, t′) so that ˆX = Γ(ˆs, ˆt) = Γ(ˆs′, ˆt′) and ˆt < t, ˆt′ < t′.
+The claim follows by analysing the distance to the curve γ. Note that as I is small, ˆs, ˆs′
+will be between s, s′ in I. The reason is by the weak separation bound, there are two circles
+of radius one which touch γ at either of γ(s), γ(t) (see Figure ?). In particular, γ is locally
+between these circles near γ(s), γ(t) respectively. Hence if we choose an initial point X lying on
+the line segment L joining these two circles and perturb it in the direction of a small angle to
+this line, clearly the closest point on γ to the perturbed point will move in the same direction
+away from L as the perturbation of X. Hence since we have chosen the perturbation as the
+bisector of the angle between the normal lines to γ(s), γ(t), we see that ˆs, ˆs′ will be between
+s, s′ in I.
+But this contradicts our choice since min{ˆt, ˆt′} < min{t, t′}. So this completes the proof.
+□
+Deﬁnition 2.4. Assume that γ is an immersed loop satisfying the separation bound for each
+of a collection of closed intervals covering S1. The crossing condition is the following re-
+quirements:
+• γ and Γ have only double points of self-intersection. In particular, γ self-intersects in
+isolated double points or double intervals (for the latter, the self-intersections are not
+transverse). Also, for any isolated double point p (or double interval J) of γ, there is a
+neighbourhood Up (or UJ) so that Γ−1(Up) = D1 ∪D2 (or Γ−1(UJ) = D1 ∪D2), where
+D1, D2 are disjoint open disks, see Fig. 2 and Fig. 3.
+• The two branches of γ cross at p or J, see Fig. 2.
+
+
+========================================
+--- Reading 2005.13210v1.pdf ---
+========================================
+
+CENSUS OF BOUNDED CURVATURE PATHS
+JEAN D´IAZ AND JOS´E AYALA
+Abstract. A bounded curvature path is a continuously diﬀerentiable piece-wise C2 path with
+bounded absolute curvature connecting two points in the tangent bundle of a surface. These
+paths have been widely considered in computer science and engineering since the bound on cur-
+vature models the trajectory of the motion of robots under turning circle constraints. Analyzing
+global properties of spaces of bounded curvature paths is not a simple matter since the length
+variation between length minimizers of arbitrary close endpoints or directions is in many cases
+discontinuous. In this note, we develop a simple technology allowing us to partition the space
+of spaces of bounded curvature paths into one-parameter families. These families of spaces are
+classiﬁed in terms of the type of connected components their elements have (homotopy classes,
+isotopy classes, or isolated points) as we vary a parameter deﬁned in the reals. Consequently,
+we answer a question raised by Dubins (Pac J Math 11(2):471481, 1961).
+1. Prelude
+It is well known that any two plane curves both closed or with diﬀerent endpoints are homo-
+topic. Graustein, and Whitney in 1937, independently proved that not any two planar closed
+curves are regularly homotopic (homotopic through immersions) [31]. Markov in 1857 consid-
+ered several optimization problems relating a bound on curvature with the design of railroads
+[22]. But, it was only in 1957 that bounded curvature paths were rigorously introduced by
+Dubins when bounded curvature paths of minimal length were ﬁrst characterized [15].
+Fix two elements in the tangent bundle of the Euclidean plane (x, X), (y, Y ) ∈TR2. Infor-
+mally, a planar bounded curvature path is a C1 and piecewise C2 path starting at x, ﬁnishing
+at y; with tangent vectors at these points X and Y respectively, having absolute curvature
+bounded by κ = 1
+r > 0. Here r is the minimum allowed radius of curvature. The piecewise C2
+property comes naturally due to the nature of the length minimizers [15]1.
+In 1961 Dubins raised fundamental questions about the topology of the spaces of bounded
+curvature paths [16]. “Here we only begin the exploration, raise some questions that we hope
+will prove stimulating, and invite others to discover the proofs of the deﬁnite theorems, proofs
+that have eluded us” see pp. 471 in [16]. Fifty years later the fundamental questions proposed
+by Dubins were answered through the papers [2, 4, 5, 6]. In addition, the classiﬁcation of
+the homotopy classes of curves with bounded absolute curvature, having ﬁxed initial and ﬁnal
+positions, and variable initial and ﬁnal directions was achieved in [3].
+In this note, we develop an elementary framework enabling us to parametrize families of
+spaces of bounded curvature paths. These families share similar types of connected components,
+being these: isolated points, homotopy, or isotopy classes, see Theorem 8.5 and Deﬁnition 8.4.
+In particular, we answer a question raised by Dubins in 1961 [16] by explicitly describing the
+set of endpoints (x, X), (y, Y ) ∈TR2 so that the space of bounded curvature paths starting at
+x, ﬁnishing at y; with tangent vectors at these points X and Y respectively admits a bounded
+isotopy class, see Theorem 8.6 and Corollary 8.7.
+We conclude by presenting an updated
+(parametric) version of the classiﬁcation theorem for homotopy classes of bounded curvature
+paths in [6], by incorporating the results here obtained, see Theorem 9.1. Our results can be
+extended without much eﬀort for paths in the hyperbolic 2-space.
+1Dubins proved that bounded curvature paths of minimal length are concatenations of two arcs of a circle
+with a line segment in between, or three arcs of a circle, or any subset of these. The so-called csc-ccc paths.
+1
+arXiv:2005.13210v1  [math.MG]  27 May 2020
+2
+JEAN D´IAZ AND JOS´E AYALA
+This article is the culmination of a program devoted to classify the homotopy classes of
+bounded curvature paths [5, 6], and the minimal length elements in homotopy classes [2, 4].
+We recommend the reader from time to time refer to our previous work [2, 3, 4, 5, 6]. We
+conclude by presenting an Appendix that can be read independently. This Appendix considers
+further examples and questions about computational aspects of connected components, and
+deformations of piecewise constant bounded curvature paths.
+There is a vast literature on bounded curvature paths from the theoretical computer science
+point of view. We encourage the reader to refer to [1, 7, 9, 11, 18, 19, 12, 25, 27]. Bounded
+curvature paths have been applied to many real-life problems since a bound on curvature models
+the trajectory of the motion of wheeled vehicles, and drones also called unmanned aerial vehicles
+(UAV). We mention only [10, 13, 17, 21, 23, 28, 30]. Literature on the topology and geometry
+of spaces of bounded curvature paths can be found in [2, 3, 4, 5, 6, 15, 16, 24, 26, 29].
+The illustrations here presented have been imported from Dubins Explorer, a software for
+bounded curvature paths [14].
+2. On spaces of bounded curvature paths
+For the convenience of the reader, we include relevant material from our previous work in
+[2, 3, 4, 5, 6]. Denote by TR2 the tangent bundle of R2. Recall that the elements in TR2 are
+pairs (x, X) denoted here for short by x. The ﬁrst coordinate of such a pair corresponds to a
+point in R2 and the second to a tangent vector to R2 at x.
+Deﬁnition 2.1. Given (x, X), (y, Y ) ∈TR2, a path γ : [0, s] →R2 connecting these points is
+a bounded curvature path if:
+• γ is C1 and piecewise C2;
+• γ is parametrized by arc length (i.e ||γ′(t)|| = 1 for all t ∈[0, s]);
+• γ(0) = x, γ′(0) = X; γ(s) = y, γ′(s) = Y ;
+• ||γ′′(t)|| ≤κ, for all t ∈[0, s] when deﬁned, κ > 0 a constant.
+The ﬁrst item means that a bounded curvature path has continuous ﬁrst derivative and
+piecewise continuous second derivative. Minimal length elements in spaces of paths satisfying
+the last three items in Deﬁnition 2.1 are in fact C1 and piecewise C2. For the third item,
+without loss of generality, we extend the domain of γ to (−ϵ, s + ϵ) for ϵ > 0. Sometimes
+we describe the third item as the endpoint condition. The fourth item means that bounded
+curvature paths have absolute curvature bounded above by a positive constant. Without loss
+of generality, we consider κ = 1.
+The unit tangent bundle UTR2 is equipped with a natural projection p : UTR2 →R2. Note
+that p−1(y) is S1 for all y ∈R2. The space of endpoints is a circle bundle over R2.
+Remark 2.2. (Coordinate system and angle orientation).
+• For the given (x, X), (y, Y ) ∈TR2 in Deﬁnition 2.1 we consider a coordinate system so
+that the origin is identiﬁed with x, and X with the ﬁrst canonical vector in the standard
+basis {X = e1, e2} for R2.
+• When measuring angles we consider the positive orientation to be traveled counterclock-
+wise.
+Dubins [15] proved that the length minimizer bounded curvature paths are necessarily a
+concatenation of an arc of a unit radius circle, followed by a line segment, followed by an arc
+of a unit radius circle, the so-called csc paths. Or, a concatenation of three arcs of unit radius
+circles, the so-called ccc paths. After considering r be a circle traveled to the right and l a
+circle travelled to the left we obtain six possible types of paths, namely lsl, rsr, lsr, rsl,
+lrl and rlr. Paths having one of these types are here called Dubins paths. Note that we are
+considering Dubins path to be local not necessarily global minimum of length.
+In the following paragraphs, we illustrate through examples the richness of the theory of
+bounded curvature paths. Its features come from the constraints these curves satisfy. These
+CENSUS OF BOUNDED CURVATURE PATHS
+3
+constraints lead to interesting interactions between metric geometry and computational math-
+ematics.
+Example 2.3.
+(1) Recall that length minimizers are considered for establishing distance between points in
+a manifold. This approach is not suitable when considering bounded curvature paths,
+since in many cases, the length variation between length minimizers of arbitrarily close
+endpoints or directions is discontinuous.
+Consider (x, X), (y, Yθ) ∈TR2, θ ∈R, with κ = 1:
+• x = (0, 0); X = e2πi ∈TxR2.
+• y = (1, 1); Yθ = eθi ∈TyR2.
+Discontinuities for the length of the length minimizers happen when perturbing around
+Y π
+2 , see Fig. 1. The sudden jumps in length suggest the existence of isolated points, see
+Theorem 3.9 in [5]. In fact, the path in Fig. 1 left is an isolated point in the space of
+bounded curvature paths from (x, X) to (y, Y π
+2 ).
+The path in Fig. 1 right illustrates a discontinuity after perturbing the ﬁnal location
+to y′ = (1−ϵ, 1−ϵ) for ϵ > 0 small. Note that length minimisers may not be embedded
+paths.
+Figure 1. Examples of length minimizers in their respective path space. The
+three paths at the right are the result of small perturbations to the ﬁnal position
+or direction of (y, Y π
+2 ), for ϵ > 0. After applying Dubins’ characterization for
+the length minimizers [15] a simple numerical experiment shows the existence of
+length discontinuities.
+(2) Spaces of bounded curvature paths have several local minima of length, see Fig. 2.
+Consider x = (x, X), y = (y, Y ) ∈TR2 with κ = 1:
+• x = (0, 0); X = e2πi ∈TxR2.
+• y = (−2, 1); Y = e−π
+4 i ∈TyR2.
+By recursively applying the methods in [4] for obtaining the csc-ccc charactarization
+for the length minimizers [2, 4, 8, 15, 20] we obtain all the local minima of length.
+By Proposition 4.4 in [6] the paths γ0 and γ5 are homotopic without violating the
+curvature bound throughout the deformation. The same applies for γ1 and γ4. By
+Proposition 4.3 in [6] the paths γ2 and γ3 lie in the same homotopy class of bounded
+curvature paths.
+(3) Another interesting feature is that the symmetry property metrics satisfy is in general
+violated. For example, the length minimizer from (x, X) to (y, Y π
+2 ) has lenght π
+4, see
+Fig. 1 left. On the other hand, the length minimizer from (y, Y π
+2 ) to (x, X) has length
+3π
+4 , see Theorem 4.6 in [2].
+(4) The classiﬁcation of the homotopy classes of bounded curvature paths was obtained
+in [6]. A crucial step was to prove that for certain (x, X), (y, Y ) ∈TR2 there exists
+
+
+========================================
+--- Reading Fabiantesis.pdf ---
+========================================
+
+Per´ımetros extremos en empaquetamientos de discos
+congruentes
+Fabi´an Henry Vilaxa
+19 de diciembre de 2025
+Resumen
+Mi investigaci´on est´a enmarcada en el problema del per´ımetro minimo de la en-
+volvente convexa de empaquetamientos de discos congruentes. Concretamente, busco
+resolver el siguiente problema: Dado un grafo de contacto conexo de discos congruentes
+en el plano, determinar si dicho grafo constituye un punto cr´ıtico del per´ımetro de la
+envolvente convexa de su clase de contacto. De ser as´ı, indicar si corresponde a un
+m´ınimo o m´aximo. En este documento describo y fundamento los elementos esencia-
+les del procedimiento basado en el c´alculo variacional que propongo para resolver este
+problema.
+1.
+El problema del per´ımetro de la envolvente convexa
+El problema central que motiva esta investigaci´on es bastante visual. Supongamos que
+tenemos un mont´on de discos del mismo radio sobre una mesa y les ponemos una banda
+el´astica alrededor. Lo que nos interesa es encontrar la disposici´on (o configuraci´on) de estos
+discos que hace que esa banda el´astica tenga la menor longitud posible. Es decir, buscamos
+minimizar el per´ımetro de la envolvente convexa de los discos.
+En lugar de intentar buscar la mejor configuraci´on entre las infinitas posibilidades (lo
+cual es computacionalmente infactible), nos enfocamos en un problema distinto, pero en la
+misma l´ınea.
+No buscaremos el m´ınimo global directamente. En su lugar, tomaremos un grafo de con-
+tacto espec´ıfico (una ”forma”de conectar los discos) y utilizaremos herramientas de c´alculo
+variacional para responder dos preguntas fundamentales sobre ´el:
+1. Criticidad: Si posicionamos los discos de una forma espec´ıfica, ¿Ser´a que esa dispoci´on
+entrega un punto cr´ıtico del per´ımetro? (Primera Variaci´on).
+2. Estabilidad: Si es as´ı, ¿Qu´e clase de estabilidad tiene ese punto cr´ıtico? (Segunda
+Variaci´on).
+1
+2.
+Preliminares
+2.1.
+Representaci´on de empaquetamientos
+Los empaquetamientos los representamos mediante grafos de contacto. Definimos a un
+grafo como una estructura G que tiene aristas E y vertices V . Por ejemplo, el siguiente grafo
+tiene vertices V = {v1, v2, v3} y aristas E = {(v1, v2), (v2, v3), (v3, v1)}.
+v1
+v2
+v3
+En un grafo de contacto, los vertices se “expanden” de manera que cada uno se transforme
+en un disco. En nuestro caso, concretamente en un disco de radio 1. En cuanto a las aristas del
+grafo, se representan como un “contacto” entre dos discos, es decir, los discos que representan
+los vertices conectados por una arista son tangentes entre s´ı.
+c1
+c2
+c3
+Para nuestra investigacion, cada realizaci´on de uno de estos grafos en el plano le llamamos
+configuraci´on, y la representamos mediante un vector c de R2n, donde n es el n´umero de
+discos en la configuraci´on.
+c = (c1, c2, ..., cn) ∈R2n.
+(1)
+Entonces, si tenemos 3 discos, la configuraci´on se representa como un vector
+c = (c1, c2, c3),
+donde cada ci representa un par ordenado (xi, yi) que indica la posici´on del centro del
+disco ci en el plano. En forma expandida:
+c = (x1, y1, x2, y2, x3, y3).
+2
+2.2.
+Espacio de Configuraciones
+¿Con qu´e configuraciones exactamente estamos trabajando? ¿Que propiedades tienen?
+En primer lugar, nuestras configuraciones:
+Son conexas: el grafo de contacto asociado a la configuraci´on es conexo.
+Son no superpuestas: ning´un par de discos se intersecta
+Que el grafo sea conexo significa que no puede existir un vertice o conjunto de vertices
+“aislados”, o que no est´e conectado al resto del grafo. Dicho de otra forma, todos los discos
+deben tener al menos un contacto con otro disco.
+Debido a que estamos trabajando con empaquetamientos, no tiene sentido considerar que
+nuestros grafos puedan tener discos que se intersecten entre s´ı, por lo que nuestra restricci´on
+principal es que todo centro del grafo debe estar a una distancia minima de 2. Es decir, la
+distancia del disco cj y ci debe ser ≥2, o = 2 si existe contacto entre cj y ci.
+As´ı, todas las configuraciones “admisibles” pueden definirse como un conjunto de grafos
+conexos dado por:
+Dn = {c ∈R2n | ||ci −cj|| ≥2, ∀i ̸= j}
+(2)
+En esta definici´on, ||ci −cj|| denota la distancia euclidiana entre los centros de los discos
+ci y cj, y Dn es el espacio de configuraciones de n discos congruentes en el plano.
+Podemos descomponer el espacio Dn en conjuntos que contienen todos los grafos de
+contacto cuya estructura combinatoria es la misma; es decir, “agrupar” todos los grafos que
+tienen las mismas aristas y vertices, pero con diferentes posiciones en el plano. A cada uno
+de estos conjuntos los llamamos clases de contacto o estratos, denotados como C(G).
+Podemos definir una clase de contacto como:
+C(G) = {c ∈Dn : ||cj −ci|| = 2, ∀(i, j) ∈E(G)}
+(3)
+2.3.
+Bordes de la envolvente convexa
+Para calcular el per´ımetro de la envolvente de una configuraci´on, es necesario primero que
+determinemos qu´e es la envolvente convexa exactamente. Consideramos que la envolvente
+son las lineas que forman el per´ımetro exterior del conjunto de discos de la configuraci´on.
+Concretamente, es la suma de las distancias entre los vertices que forman parte del per´ımetro
+exterior, en orden ciclico, + 2π (la longitud de los arcos de los discos que forman parte del
+per´ımetro).
+Supongamos que el per´ımetro conecta una secuencia de discos identificados por los´ındices
+v1, v2, . . . , vh. Definimos B como el conjunto de pares ordenados de ´ındices que conforman
+este ciclo:
+3
+
+
+========================================
+--- Reading Instrucciones.pdf ---
+========================================
+
+PRIMERA VARIACION DEL LARGO PARA DIAGRAMAS CS
+JOS´E AYALA AND TOM´AS AYALA
+1. Parte conceptual: primera variaci´on para diagramas cs
+1.1. Lo que vas a lograr con este documento. La meta es que puedas hacer lo siguiente,
+sin adivinar nada:
+• Construir la matriz completa L(c) de restricciones lineales de primer orden.
+• Calcular el funcional lineal de primera variacion de longitud Φ(δc, ω).
+• Decidir criticidad: el diagrama es critico si y solo si Φ se anula en todas las direcciones
+admisibles.
+• (Opcional) Calcular una segunda variacion (forma cuadratica) sobre direcciones admis-
+ibles.
+Lo importante: L(c) solo describe movimientos permitidos (primer orden). La longitud entra
+por separado en Φ.
+1.2. Datos del diagrama cs y convenciones.
+Discos. Hay N discos unitarios D1, . . . , DN con centros ci ∈R2 y radio R = 1.
+Piezas cs. El diagrama cs γ esta compuesto por:
+• segmentos rectos (en el complemento de los discos) cuyos extremos son tangencias con
+discos,
+• arcos circulares sobre fronteras ∂Dk cuyos extremos son tangencias con el mismo disco.
+Conjuntos indice (combinatoria fija).
+• E = conjunto de contactos disco–disco, cada elemento es un par no ordenado {i, j}.
+• T = conjunto de tangencias curva–disco, cada elemento es una etiqueta α.
+• S = conjunto de segmentos, cada segmento es un par ordenado α →β de tangencias.
+• A = conjunto de arcos, cada arco es un triple (α →β, k, σa): extremos α, β sobre el
+mismo disco Dk y un signo σa ∈{+1, −1}.
+Datos geometricos minimos (esto SI es entrada). Para poder construir matrices y longitud,
+necesitas:
+• los centros c1, . . . , cN,
+• para cada tangencia α ∈T: el disco k(α) ∈{1, . . . , N} y el punto pα ∈∂Dk(α),
+• la lista S de segmentos α →β,
+• la lista A de arcos (α →β, k, σa).
+Convencion de rotacion 90◦. Usamos J(x, y) = (−y, x).
+Normal y tangente en una tangencia (calculable desde c y p). Si α ∈T ocurre en el disco
+k = k(α):
+• normal unitario nα := pα −ck,
+• tangente unitario tα := εαJnα con εα ∈{+1, −1}.
+El signo εα lo fijas para que tα apunte en la direccion de recorrido de γ en α.
+2000 Mathematics Subject Classification. 57M25, 57M27, 49Q10, 53C42.
+Key words and phrases. Knots, links, ribbons, ribbonlength, ropelength.
+1
+2
+JOS´E AYALA AND TOM´AS AYALA
+Chequeos inmediatos (si falla, la entrada esta mal).
+• Para todo α ∈T: ∥pα −ck(α)∥= 1.
+• Para todo α ∈T: ⟨nα, tα⟩= 0 y ∥tα∥= 1.
+• Para todo {i, j} ∈E: ∥ci −cj∥= 2.
+1.3. Variables de primer orden.
+Variacion de centros (incognita). δc = (δc1, . . . , δcN) ∈R2N con δci ∈R2.
+Variables auxiliares por tangencia (incognita). ω = (ωα)α∈T ∈R|T|.
+Modelo cinematico (esto es una definicion operacional). El movimiento de cada punto de tan-
+gencia se modela por δpα = δck(α) + ωαtα.
+Comentario honesto: esta es la forma mas simple y util para convertir variacion de longitud
+en una forma lineal en (δc, ω), y es la que se usa en el protocolo.
+1.4. Bloque de contactos disco–disco: construccion de A(c).
+Vector unitario de contacto. Para cada contacto {i, j} ∈E define uij := (ci −cj)/∥ci −cj∥.
+Restriccion de primer orden. Como ∥ci−cj∥= 2 se mantiene constante en el estrato de contacto,
+la derivada da ⟨uij, δci −δcj⟩= 0.
+Construccion de la fila. A(c) tiene |E| filas y 2N columnas (bloques de tama˜no 2 por disco). La
+fila de {i, j} tiene:
+• bloque u⊤
+ij en las columnas del disco i,
+• bloque −u⊤
+ij en las columnas del disco j,
+• ceros en las demas columnas.
+Espacio de rodadura. Roll(c) := ker A(c).
+1.5. Bloques de tangencia: construccion de Tc(c) y Tω(c).
+Ecuacion por tangencia. Para cada α ∈T imponemos ⟨tα, δck(α)⟩+ ωα = 0.
+Aclaracion para tu duda:
+• tα SI es calculable (desde pα y ck(α), mas el signo de orientacion).
+• δc y ω NO se conocen a priori: son las incognitas del sistema lineal.
+• La ecuacion no es un dato, es una restriccion.
+Fila en Tc(c). La fila de Tc(c) asociada a α tiene un unico bloque no nulo:
+• bloque t⊤
+α en las columnas del disco k(α),
+• ceros en los otros discos.
+Fila en Tω(c). La fila de Tω(c) asociada a α tiene:
+• un 1 en la columna de ωα,
+• ceros en las demas columnas.
+Conclusion. Con esta convencion Tω(c) = I.
+1.6. Operador lineal completo de restricciones: L(c).
+Definicion. L(c) es la matriz por bloques L(c) =
+
+A(c)
+0
+Tc(c) Tω(c)
+
+que actua sobre (δc, ω) ∈R2N ×
+R|T|.
+Significado de L(c). Las direcciones admisibles a primer orden son exactamente ker L(c) =
+{(δc, ω) : L(c)(δc, ω) = 0}.
+Eliminacion explicita de ω. Como Tω = I, la segunda linea da ω = −Tc(c)δc. Entonces, en este
+modelo, toda δc ∈Roll(c) tiene un lift unico a ker L(c), dado por ω = −Tc(c)δc.
+3
+Correccion importante (esto arregla un error frecuente). No es correcto escribir un teorema de
+primera variacion que dependa solo de c y contactos sin usar pα, tα y la descomposicion S, A.
+La longitud del diagrama no depende solo del grafo de contacto; depende de la geometria del
+trazo γ.
+1.7. Longitud del diagrama y funcional de primera variacion Φ.
+Longitud. Len(γ) es la suma de longitudes de:
+• segmentos s ∈S (distancia entre extremos),
+• arcos a ∈A (longitud angular sobre ∂Dk, con R = 1).
+Definicion de Φ. El funcional de primera variacion es Φ(δc, ω) := D Len(γ)[δγ(δc, ω)] evaluado
+en una direccion admisible (δc, ω) ∈ker L(c).
+Criticidad en el estrato cs significa: Φ(δc, ω) = 0 para todo (δc, ω) ∈ker L(c).
+1.8. Contribucion de un segmento y de un arco (formulas correctas).
+Segmento s : α →β.
+Datos del segmento. vs := pβ −pα, ℓs := ∥vs∥, ˆvs := vs/ℓs.
+Primera variacion del segmento. D Len(s) = ⟨ˆvs, δpβ −δpα⟩.
+Usando δpα = δck(α) + ωαtα: D Len(s) = ⟨ˆvs, δck(β) −δck(α)⟩+ ⟨ˆvs, ωβtβ −ωαtα⟩.
+Arco a = (α →β, k, σa) sobre ∂Dk.
+Primera variacion del arco. En este modelo: D Len(a) = σa(ωβ −ωα).
+Nota de sanidad. Esta formula NO produce un termino directo en δc antes de eliminar ω. Si
+luego sustituyes ω = −Tcδc, entonces si aparece dependencia en δc, pero eso es despues de la
+eliminacion.
+1.9. Ensamblaje mecanico de Φ: reglas de acumulacion.
+Forma general. Φ(δc, ω) = g⊤
+c δc + g⊤
+ω ω para ciertos coeficientes gc ∈R2N y gω ∈R|T|.
+Inicializacion. Partir con gc = 0 y gω = 0.
+Regla por segmento s : α →β.
+• En el bloque del disco k(α) sumar −ˆvs a gc.
+• En el bloque del disco k(β) sumar +ˆvs a gc.
+• Sumar −⟨ˆvs, tα⟩a gω[α].
+• Sumar +⟨ˆvs, tβ⟩a gω[β].
+Regla por arco a = (α →β, k, σa).
+• Sumar −σa a gω[α].
+• Sumar +σa a gω[β].
+Resultado. Despues de procesar todas las piezas, Φ(δc, ω) = g⊤
+c δc + g⊤
+ω ω.
+1.10. Test de criticidad en algebra lineal (dos metodos equivalentes).
+Metodo 1: base de ker L(c).
+(1) Calcula una base de ker L(c) y juntala como columnas de una matriz K.
+(2) Calcula (gc, gω)⊤K.
+(3) El diagrama es critico si y solo si (gc, gω)⊤K = 0.
+Metodo 2: criterio de espacio fila. El diagrama es critico si y solo si existe λ tal que (gc, gω) =
+L(c)⊤λ. Esto es resolver un sistema lineal para λ.
+
+
+========================================
+--- Reading Irreducible Plane Curves.pdf ---
+========================================
+
+Irreducible
+Plane
+Curv
+es
+Jason
+E.
+Durham
+
+Oregon
+State
+Univ
+ersit
+y
+Corv
+allis,
+Oregon
+durhamj@ucs.orst.edu
+August
+,
+			
+Abstract
+Progress
+in
+the
+classication
+of
+plane
+curv
+es
+in
+the
+last
+v
+e
+y
+ears
+has
+cen
+tered
+largely
+around
+the
+w
+ork
+of
+Arnold,
+V
+assiliev,
+and
+Aicardi.
+The
+classical
+index
+theorem
+of
+H.
+Whitney
+(	)
+classies
+curv
+es
+b
+y
+index,
+up
+to
+isotop
+y
+.
+Arnold
+has
+recen
+tly
+prop
+osed
+new
+curv
+e
+in
+v
+arian
+ts
+(J
++
+,
+J
+ ,
+and
+S
+t)
+with
+the
+aim
+of
+nding
+classications
+of
+curv
+es
+with
+the
+same
+index,
+up
+to
+am
+bien
+t
+dieomorphisms
+of
+the
+plane
+and
+reparametrizations
+of
+the
+curv
+e.
+Since
+these
+new
+in
+v
+arian
+ts
+still
+do
+not
+uniquely
+determine
+curv
+es,
+new
+w
+a
+ys
+of
+classifying
+curv
+es
+up
+to
+dieomorphisms
+ha
+v
+e
+b
+een
+sough
+t.
+A
+certain
+class
+of
+curv
+es
+(so
+called
+\reducible"
+curv
+es)
+app
+ears
+to
+b
+e
+classi-
+able
+b
+y
+direct
+consideration
+via
+relativ
+ely
+simple
+com
+binatorial
+metho
+ds
+in
+v
+olving
+com
+binations
+of
+irreducible
+curv
+es.
+This
+shifts
+the
+fo
+cus
+to
+the
+classication
+of
+the
+irreducible
+curv
+es,
+whose
+c
+haracterization
+app
+ears
+to
+b
+e
+simplied
+b
+y
+asso
+ciation
+with
+certain
+t
+yp
+es
+of
+planar
+graphs.
+
+Reducibilit
+y
+of
+Curv
+es
+Throughout
+this
+article,
+\am
+bien
+t
+dieomorphisms
+of
+the
+plane
+and
+reparame-
+trizations
+of
+the
+curv
+e"
+ma
+y
+b
+e
+shortened
+to
+\dieomorphisms."
+\Distinct"
+is
+short
+for
+\distinct
+up
+to
+dieomorphisms."
+Denition
+..
+An
+immersion
+of
+a
+cir
+cle
+into
+the
+plane
+is
+a
+smo
+oth
+mapping
+of
+a
+circle
+in
+to
+the
+plane
+
+:
+S
+
+!
+R
+
+whose
+deriv
+ativ
+e
+nev
+er
+v
+anishes.
+Denition
+..
+A
+double
+p
+oint
+(resp
+ectiv
+ely
+,
+n-p
+oint)
+on
+an
+immersion
+of
+a
+circle
+in
+to
+the
+plane
+is
+a
+p
+oin
+t
+that
+is
+the
+image
+of
+exactly
+t
+w
+o
+(resp
+ectiv
+ely
+,
+n)
+p
+oin
+ts
+on
+S
+
+under
+
+.
+The
+term
+cr
+ossing
+will
+b
+e
+used
+in
+terc
+hangeably
+with
+double
+p
+oin
+t.
+
+Under
+the
+guidance
+of
+Professor
+Juha
+P
+ohjanp
+elto
+of
+Oregon
+State
+Univ
+ersit
+y
+
+Figure
+:
+An
+in
+v
+erted
+sum
+of
+t
+w
+o
+curv
+es.
+Denition
+..
+A
+curve
+shall
+b
+e
+dened
+as
+an
+immersion
+of
+a
+circle
+in
+to
+the
+plane
+that
+con
+tains
+no
+self-tangencies
+and
+where
+ev
+ery
+n-p
+oin
+t
+is
+a
+double
+p
+oin
+t.
+Denition
+..
+A
+str
+and
+of
+a
+curv
+e
+is
+a
+segmen
+t
+of
+the
+curv
+e
+that
+runs
+from
+one
+crossing
+to
+another
+with
+no
+crossings
+in
+b
+et
+w
+een.
+F
+or
+consistency
+w
+e
+also
+consider
+the
+whole
+image
+of
+S
+
+to
+b
+e
+a
+strand
+ev
+en
+though
+it
+has
+no
+crossings.
+Note
+.
+Let
+S
+tr
+
+denote
+the
+n
+um
+b
+er
+of
+strands
+on
+a
+curv
+e
+
+,
+and
+R
+
+denote
+the
+n
+um
+b
+er
+of
+regions
+in
+to
+whic
+h
+the
+curv
+e
+divides
+the
+plane.
+F
+or
+ev
+ery
+n-crossing
+curv
+e
+b
+esides
+S
+
+,
+S
+tr
+
+=
+n.
+Recall
+that
+S
+tr
+S
+
+is
+dened
+to
+b
+e
+.
+Denition
+..
+The
+inverte
+d
+sum
+b
+et
+w
+een
+t
+w
+o
+strands
+of
+t
+w
+o
+curv
+es
+is
+the
+new
+curv
+e
+sho
+wn
+in
+Figure
+.
+Denition
+..
+A
+r
+e
+duction
+cut
+at
+a
+crossing
+on
+a
+curv
+e
+is
+a
+surgery
+and
+sub-
+sequen
+t
+smo
+othing
+that
+separates
+the
+image
+of
+the
+curv
+e
+in
+to
+t
+w
+o
+disjoin
+t,
+w
+ell-
+dened
+curv
+es
+(see
+Figure
+).
+Note
+that
+the
+reduction
+cut
+has
+the
+opp
+osite
+eect
+of
+the
+in
+v
+erted
+sum
+pro
+cedure
+(see
+Figure
+).
+Denition
+..
+A
+r
+e
+duction
+p
+oint
+is
+a
+double
+p
+oin
+t
+on
+a
+curv
+e
+at
+whic
+h
+a
+reduction
+cut
+can
+b
+e
+p
+erformed.
+Denition
+..
+A
+curv
+e
+is
+said
+to
+b
+e
+r
+e
+ducible
+if
+it
+has
+a
+reduction
+p
+oin
+t.
+That
+is,
+there
+exists
+some
+crossing
+on
+the
+curv
+e
+that
+divides
+the
+image
+of
+the
+curv
+e
+in
+to
+t
+w
+o
+curv
+es
+with
+no
+other
+p
+oin
+ts
+in
+common.
+A
+curv
+e
+is
+c
+ompletely
+r
+e
+ducible
+
+INVERTED SUM
+REDUCTION CUT
+Figure
+:
+Opp
+osite
+pro
+cedures.
+if
+ev
+ery
+crossing
+on
+the
+curv
+e
+is
+a
+reduction
+p
+oin
+t.
+A
+curv
+e
+is
+p
+artial
+ly
+r
+e
+ducible
+if
+it
+has
+a
+reduction
+p
+oin
+t
+and
+also
+has
+a
+crossing
+that
+is
+not
+a
+reduction
+p
+oin
+t.
+A
+curv
+e
+is
+irr
+e
+ducible
+if
+it
+has
+no
+reduction
+p
+oin
+ts.
+Figure
+
+sho
+ws
+a
+list
+of
+the
+irreducible
+curv
+es
+with
+v
+e
+or
+few
+er
+crossings.
+The
+n
+um
+b
+ers
+asso
+ciated
+with
+the
+curv
+es
+will
+b
+e
+used
+later
+to
+aid
+in
+referring
+to
+them.
+Prop
+osition
+..
+The
+inverte
+d
+sum
+of
+two
+immersions
+always
+has
+a
+r
+e
+duction
+p
+oint
+|
+the
+double
+p
+oint
+cr
+e
+ate
+d
+by
+the
+inverte
+d
+sum
+pr
+o
+c
+e
+dur
+e.
+Pr
+o
+of.
+Eviden
+t,
+b
+y
+doing
+the
+reduction
+cut
+pro
+cedure
+corresp
+onding
+to
+whatev
+er
+in
+v
+erted
+sum
+pro
+cedure
+yielded
+the
+in
+v
+erted
+sum.
+Note
+.
+Let
+
+
+and
+
+
+b
+e
+t
+w
+o
+arbitrary
+curv
+es.
+After
+taking
+an
+y
+in
+v
+erted
+sum
+of
+
+
+and
+
+
+,
+an
+y
+crossings
+that
+had
+b
+een
+reduction
+p
+oin
+ts
+on
+
+
+or
+
+
+will
+b
+e
+reduction
+p
+oin
+ts
+on
+the
+curv
+e
+resulting
+from
+the
+in
+v
+erted
+sum,
+and
+an
+y
+crossings
+on
+
+
+and
+
+
+that
+had
+not
+b
+een
+reduction
+p
+oin
+ts
+will
+not
+b
+e
+reduction
+p
+oin
+ts
+on
+the
+resulting
+curv
+e.
+The
+new
+crossing
+formed
+b
+y
+the
+in
+v
+erted
+sum
+pro
+cedure
+will
+b
+y
+Prop
+osition
+.
+b
+e
+a
+reduction
+p
+oin
+t.
+Similarly
+,
+p
+erforming
+a
+reduction
+cut
+pro
+cedure
+at
+a
+crossing
+on
+a
+curv
+e
+cannot
+c
+hange
+the
+status
+of
+an
+y
+of
+the
+other
+double
+p
+oin
+ts
+with
+resp
+ect
+to
+reducibilit
+y
+.
+Prop
+osition
+..
+A
+ny
+c
+ompletely
+r
+e
+ducible
+curve
+c
+an
+b
+e
+expr
+esse
+d
+as
+a
+se-
+quenc
+e
+of
+inverte
+d
+sums
+of
+standar
+d
+cir
+cles.
+Conversely,
+every
+se
+quenc
+e
+of
+in-
+verte
+d
+sums
+of
+standar
+d
+cir
+cles
+yields
+a
+c
+ompletely
+r
+e
+ducible
+curve.
+Pr
+o
+of.
+Consider
+an
+arbitrary
+completely
+reducible
+curv
+e
+with
+n
+crossings
+(hence
+n
+reduction
+p
+oin
+ts).
+P
+erform
+a
+reduction
+cut
+at
+ev
+ery
+crossing;
+this
+yields
+a
+set
+of
+n
++
+
+circles.
+No
+w
+it
+is
+clear
+that
+p
+erforming
+the
+in
+v
+erted
+sums
+that
+undo
+the
+reduction
+cuts
+will
+pro
+duce
+the
+original
+curv
+e.
+
+
+
+========================================
+--- Reading tex.pdf ---
+========================================
+
+1. Un paquete completo de primera y segunda variacion para diagramas cs
+1.1. Lo que vas a lograr con este documento. La meta es que puedas hacer lo siguiente,
+sin adivinar nada:
+• Construir la matriz completa L(c) de restricciones lineales de primer orden.
+• Calcular el funcional lineal de primera variacion de longitud Φ(δc, ω).
+• Decidir criticidad: el diagrama es critico si y solo si Φ se anula en todas las direcciones
+admisibles.
+• (Opcional) Calcular una segunda variacion (forma cuadratica) sobre direcciones admis-
+ibles.
+Lo importante: L(c) solo describe movimientos permitidos (primer orden). La longitud entra
+por separado en Φ.
+1.2. Datos del diagrama cs y convenciones.
+Discos. Hay N discos unitarios D1, . . . , DN con centros ci ∈R2 y radio R = 1.
+Piezas cs. El diagrama cs γ esta compuesto por:
+• segmentos rectos (en el complemento de los discos) cuyos extremos son tangencias con
+discos,
+• arcos circulares sobre fronteras ∂Dk cuyos extremos son tangencias con el mismo disco.
+Conjuntos indice (combinatoria fija).
+• E = conjunto de contactos disco–disco, cada elemento es un par no ordenado {i, j}.
+• T = conjunto de tangencias curva–disco, cada elemento es una etiqueta α.
+• S = conjunto de segmentos, cada segmento es un par ordenado α →β de tangencias.
+• A = conjunto de arcos, cada arco es un triple (α →β, k, σa): extremos α, β sobre el
+mismo disco Dk y un signo σa ∈{+1, −1}.
+Datos geometricos minimos (esto SI es entrada). Para poder construir matrices y longitud,
+necesitas:
+• los centros c1, . . . , cN,
+• para cada tangencia α ∈T: el disco k(α) ∈{1, . . . , N} y el punto pα ∈∂Dk(α),
+• la lista S de segmentos α →β,
+• la lista A de arcos (α →β, k, σa).
+Convencion de rotacion 90◦. Usamos J(x, y) = (−y, x).
+Normal y tangente en una tangencia (calculable desde c y p). Si α ∈T ocurre en el disco
+k = k(α):
+• normal unitario nα := pα −ck,
+• tangente unitario tα := εαJnα con εα ∈{+1, −1}.
+El signo εα lo fijas para que tα apunte en la direccion de recorrido de γ en α.
+Chequeos inmediatos (si falla, la entrada esta mal).
+• Para todo α ∈T: ∥pα −ck(α)∥= 1.
+• Para todo α ∈T: ⟨nα, tα⟩= 0 y ∥tα∥= 1.
+• Para todo {i, j} ∈E: ∥ci −cj∥= 2.
+1.3. Variables de primer orden.
+Variacion de centros (incognita). δc = (δc1, . . . , δcN) ∈R2N con δci ∈R2.
+Variables auxiliares por tangencia (incognita). ω = (ωα)α∈T ∈R|T|.
+Modelo cinematico (esto es una definicion operacional). El movimiento de cada punto de tan-
+gencia se modela por δpα = δck(α) + ωαtα.
+Comentario honesto: esta es la forma mas simple y util para convertir variacion de longitud
+en una forma lineal en (δc, ω), y es la que se usa en el protocolo.
+1.4. Bloque de contactos disco–disco: construccion de A(c).
+Vector unitario de contacto. Para cada contacto {i, j} ∈E define uij := (ci −cj)/∥ci −cj∥.
+1
+2
+Restriccion de primer orden. Como ∥ci−cj∥= 2 se mantiene constante en el estrato de contacto,
+la derivada da ⟨uij, δci −δcj⟩= 0.
+Construccion de la fila. A(c) tiene |E| filas y 2N columnas (bloques de tama˜no 2 por disco). La
+fila de {i, j} tiene:
+• bloque u⊤
+ij en las columnas del disco i,
+• bloque −u⊤
+ij en las columnas del disco j,
+• ceros en las demas columnas.
+Espacio de rodadura. Roll(c) := ker A(c).
+1.5. Bloques de tangencia: construccion de Tc(c) y Tω(c).
+Ecuacion por tangencia. Para cada α ∈T imponemos ⟨tα, δck(α)⟩+ ωα = 0.
+Aclaracion para tu duda:
+• tα SI es calculable (desde pα y ck(α), mas el signo de orientacion).
+• δc y ω NO se conocen a priori: son las incognitas del sistema lineal.
+• La ecuacion no es un dato, es una restriccion.
+Fila en Tc(c). La fila de Tc(c) asociada a α tiene un unico bloque no nulo:
+• bloque t⊤
+α en las columnas del disco k(α),
+• ceros en los otros discos.
+Fila en Tω(c). La fila de Tω(c) asociada a α tiene:
+• un 1 en la columna de ωα,
+• ceros en las demas columnas.
+Conclusion. Con esta convencion Tω(c) = I.
+1.6. Operador lineal completo de restricciones: L(c).
+Definicion. L(c) es la matriz por bloques L(c) =
+
+A(c)
+0
+Tc(c) Tω(c)
+
+que actua sobre (δc, ω) ∈R2N ×
+R|T|.
+Significado de L(c). Las direcciones admisibles a primer orden son exactamente ker L(c) =
+{(δc, ω) : L(c)(δc, ω) = 0}.
+Eliminacion explicita de ω. Como Tω = I, la segunda linea da ω = −Tc(c)δc. Entonces, en este
+modelo, toda δc ∈Roll(c) tiene un lift unico a ker L(c), dado por ω = −Tc(c)δc.
+Correccion importante (esto arregla un error frecuente). No es correcto escribir un teorema de
+primera variacion que dependa solo de c y contactos sin usar pα, tα y la descomposicion S, A.
+La longitud del diagrama no depende solo del grafo de contacto; depende de la geometria del
+trazo γ.
+1.7. Longitud del diagrama y funcional de primera variacion Φ.
+Longitud. Len(γ) es la suma de longitudes de:
+• segmentos s ∈S (distancia entre extremos),
+• arcos a ∈A (longitud angular sobre ∂Dk, con R = 1).
+Definicion de Φ. El funcional de primera variacion es Φ(δc, ω) := D Len(γ)[δγ(δc, ω)] evaluado
+en una direccion admisible (δc, ω) ∈ker L(c).
+Criticidad en el estrato cs significa: Φ(δc, ω) = 0 para todo (δc, ω) ∈ker L(c).
+1.8. Contribucion de un segmento y de un arco (formulas correctas).
+Segmento s : α →β.
+Datos del segmento. vs := pβ −pα, ℓs := ∥vs∥, ˆvs := vs/ℓs.
+Primera variacion del segmento. D Len(s) = ⟨ˆvs, δpβ −δpα⟩.
+Usando δpα = δck(α) + ωαtα: D Len(s) = ⟨ˆvs, δck(β) −δck(α)⟩+ ⟨ˆvs, ωβtβ −ωαtα⟩.
+Arco a = (α →β, k, σa) sobre ∂Dk.
+Primera variacion del arco. En este modelo: D Len(a) = σa(ωβ −ωα).
+3
+Nota de sanidad. Esta formula NO produce un termino directo en δc antes de eliminar ω. Si
+luego sustituyes ω = −Tcδc, entonces si aparece dependencia en δc, pero eso es despues de la
+eliminacion.
+1.9. Ensamblaje mecanico de Φ: reglas de acumulacion.
+Forma general. Φ(δc, ω) = g⊤
+c δc + g⊤
+ω ω para ciertos coeficientes gc ∈R2N y gω ∈R|T|.
+Inicializacion. Partir con gc = 0 y gω = 0.
+Regla por segmento s : α →β.
+• En el bloque del disco k(α) sumar −ˆvs a gc.
+• En el bloque del disco k(β) sumar +ˆvs a gc.
+• Sumar −⟨ˆvs, tα⟩a gω[α].
+• Sumar +⟨ˆvs, tβ⟩a gω[β].
+Regla por arco a = (α →β, k, σa).
+• Sumar −σa a gω[α].
+• Sumar +σa a gω[β].
+Resultado. Despues de procesar todas las piezas, Φ(δc, ω) = g⊤
+c δc + g⊤
+ω ω.
+1.10. Test de criticidad en algebra lineal (dos metodos equivalentes).
+Metodo 1: base de ker L(c).
+(1) Calcula una base de ker L(c) y juntala como columnas de una matriz K.
+(2) Calcula (gc, gω)⊤K.
+(3) El diagrama es critico si y solo si (gc, gω)⊤K = 0.
+Metodo 2: criterio de espacio fila. El diagrama es critico si y solo si existe λ tal que (gc, gω) =
+L(c)⊤λ. Esto es resolver un sistema lineal para λ.
+Explicacion para abuela (sin perder verdad). L(c) dice que movimientos pequenos estan per-
+mitidos sin romper contactos ni tangencias. Φ dice si esos movimientos pequenos hacen que la
+curva se alargue o se acorte al primer orden. Critico significa: ningun movimiento permitido
+cambia la longitud al primer orden.
+1.11. Segunda variacion: version util para pregrado. Aqui hay una forma correcta y
+ejecutable de segunda variacion, sin afirmar cosas falsas.
+Idea. Primero construyes una forma cuadratica Qamb(δc, ω) (segunda variacion en el espacio
+extendido). Luego la restringes a (δc, ω) ∈ker L(c).
+Segunda variacion de un segmento. Para un segmento s : α →β con vs = pβ −pα y ℓs = ∥vs∥,
+la segunda variacion de la distancia euclidea (formula estandar) se escribe como:
+D2 Len(s) = 1
+ℓs ∥(I −ˆvsˆv⊤
+s )(δpβ −δpα) ∥2 + ⟨ˆvs, δ2pβ −δ2pα⟩.
+En un protocolo de pregrado, normalmente se usa la aproximacion consistente de primer
+orden: se ignora δ2p y se trabaja con la parte cuadratica positiva:
+Qs(δc, ω) := 1
+ℓs ∥(I −ˆvsˆv⊤
+s )(δpβ −δpα) ∥2.
+Esto es una forma cuadratica explicita en (δc, ω) porque δp es lineal en (δc, ω).
+Segunda variacion de un arco. En este modelo, D Len(a) = σa(ωβ −ωα) es lineal, por lo tanto
+su segunda variacion en las variables (δc, ω) es cero: Qa(δc, ω) = 0.
+Forma cuadratica total. Define Qamb(δc, ω) := P
+s∈S Qs(δc, ω).
+La segunda variacion reducida sobre el estrato cs es la restriccion: Qred := Qamb|ker L(c).
+Comentario honesto. Esta segunda variacion capta de manera limpia la curvatura de la parte de
+segmentos y es suficiente para tests de estabilidad linealizados en muchos ejemplos. Si quieres
+la formula completa con δ2p, hay que fijar un modelo de segundo orden del movimiento de
+puntos de tangencia; eso es mas avanzado.
