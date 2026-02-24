@@ -337,8 +337,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       return { ...seg };
     });
 
-    // Step 1.5: (REMOVED) We no longer auto-reroute tangents that cross disks.
-    // Knots are allowed to cross over other disks!
+    // Step 1.5: Auto-reroute tangents that cross disks
+    // This allows the saved knot envelope to act like an elastic band avoiding new obstacles.
     const expandedPath: any[] = [];
     for (let i = 0; i < frozenPath.length; i++) {
       const seg = frozenPath[i];
@@ -347,7 +347,12 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       } else {
         const recomp = recomputed[i];
         if (recomp) {
-          expandedPath.push(recomp);
+          const blockingId = findBlockingDisk(recomp, diskLookup);
+          if (blockingId) {
+            expandedPath.push(...rerouteAroundDisk(recomp, blockingId, diskLookup));
+          } else {
+            expandedPath.push(recomp);
+          }
         }
       }
     }

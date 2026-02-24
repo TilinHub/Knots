@@ -596,7 +596,7 @@ function isArcBlocked(
   return false;
 }
 
-function intersectsAnyDiskStrict(
+export function intersectsAnyDiskStrict(
   p1: Point2D,
   p2: Point2D,
   disks: ContactDisk[],
@@ -901,10 +901,7 @@ export function findEnvelopePathFromPoints(
     let lineBlocked = false;
 
     // 1. Check Collisions with OTHER disks
-    // [FIX] We no longer block direct lines between points if they cross other disks.
-    // Knots naturally cross over other disks in projections. User's explicitly drawn
-    // segments should be respected without auto-deforming/routing around obstacles.
-    // (Old strict check removed).
+    lineBlocked = intersectsAnyDiskStrict(start, end, obstacles, startDisk?.id, endDisk?.id);
 
     // 2. Check Valid Departure (Normal check)
     if (!lineBlocked && dist > 1e-6) {

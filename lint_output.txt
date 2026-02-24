@@ -1,0 +1,595 @@
+
+> knots@0.0.0 lint
+> eslint .
+
+
+C:\Users\tomas\OneDrive\Desktop\Knots\scripts\reproduce_bent.ts
+   1:1   error  Run autofix to sort these imports!           simple-import-sort/imports
+  18:9   error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  24:19  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  35:34  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  57:11  error  'd1' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  58:11  error  'd2' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  60:11  error  'pAlpha' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\algorithms\pathfinder.ts
+    3:15  error  'ContactDisk' is defined but never used   @typescript-eslint/no-unused-vars
+  303:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\EnvelopeComputer.ts
+  17:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\contactGraph.ts
+  373:9  error  'chirResult' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  463:7  error  'bestChir' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  931:7  error  'isDeparture' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\contactLayout.ts
+   83:13  error  'i' is assigned a value but never used   @typescript-eslint/no-unused-vars
+   85:13  error  'a' is assigned a value but never used   @typescript-eslint/no-unused-vars
+   86:13  error  'jx' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   87:13  error  'jy' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  100:13  error  'a' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\dubins\angularDubins.ts
+  121:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\dubins\dubins.ts
+  641:3  error  'stepSize' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\outerFace.ts
+  208:50  error  'disks' is defined but never used         @typescript-eslint/no-unused-vars
+  452:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\robustHull.ts
+    3:32  error  'TangentType' is defined but never used     @typescript-eslint/no-unused-vars
+   16:50  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   17:46  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   28:10  error  'normalizeAngle' is defined but never used  @typescript-eslint/no-unused-vars
+  174:12  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  308:12  error  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\rolling.ts
+  85:9   error  'normalize' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  99:13  error  'diff' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\math\KnotLengthCalculator.ts
+  199:9  error  Unexpected lexical declaration in case block  no-case-declarations
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\utils\Logger.ts
+  29:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  35:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  47:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  77:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\validation\envelopeValidator.ts
+  3:15  error  'CSArc' is defined but never used      @typescript-eslint/no-unused-vars
+  3:22  error  'CSSegment' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\AnalysisResultsPanel.tsx
+   88:7   error  'MathVar' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  785:57  error  'i' is defined but never used                 @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\analyzer.ts
+   14:10  error  'calculateNormal' is defined but never used  @typescript-eslint/no-unused-vars
+   14:27  error  'dot' is defined but never used              @typescript-eslint/no-unused-vars
+   14:32  error  'J' is defined but never used                @typescript-eslint/no-unused-vars
+  109:17  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  114:33  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  117:17  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  125:17  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  133:17  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  141:17  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  149:17  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  197:19  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  330:15  error  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\checks.ts
+    8:3   error  'calculateDeltaTheta' is defined but never used  @typescript-eslint/no-unused-vars
+   20:15  error  'Arc' is defined but never used                  @typescript-eslint/no-unused-vars
+   20:31  error  'Disk' is defined but never used                 @typescript-eslint/no-unused-vars
+   20:37  error  'Segment' is defined but never used              @typescript-eslint/no-unused-vars
+   20:46  error  'Tangency' is defined but never used             @typescript-eslint/no-unused-vars
+  267:29  error  'disks' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  382:13  error  'tEnd' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\converter.ts
+   13:37  error  'wrap0_2pi' is defined but never used              @typescript-eslint/no-unused-vars
+   23:16  error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+   69:9   error  'contactDisks' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   77:23  error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+   83:30  error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  136:41  error  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\criticality.ts
+   8:21  error  'normalize' is defined but never used       @typescript-eslint/no-unused-vars
+  76:23  error  'disks' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\functional.ts
+  9:26  error  'Disk' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\gauge.ts
+  102:9  error  'Ug_full' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\gradientDescent.ts
+    3:8   error  'EnvelopePathResult' is defined but never used  @typescript-eslint/no-unused-vars
+    7:15  error  'CSDiagram' is defined but never used           @typescript-eslint/no-unused-vars
+  101:11  error  'delta' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\linearAlgebra.ts
+  225:14  error  'R' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\analysis\first_variation\matrices.ts
+  7:10  error  'calculateArcTangent' is defined but never used  @typescript-eslint/no-unused-vars
+  7:31  error  'calculateNormal' is defined but never used      @typescript-eslint/no-unused-vars
+  7:48  error  'dist' is defined but never used                 @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\catalog\CatalogPanel.tsx
+  272:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\catalog\KnotThumbnail.tsx
+    4:10  error  'SmoothCSEnvelope' is defined but never used  @typescript-eslint/no-unused-vars
+    6:10  error  'EnvelopeRenderer' is defined but never used  @typescript-eslint/no-unused-vars
+   17:19  error  'ctx' is defined but never used               @typescript-eslint/no-unused-vars
+   17:50  error  'disk' is defined but never used              @typescript-eslint/no-unused-vars
+  150:16  error  'e' is defined but never used                 @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\catalog\catalogTypes.ts
+  1:26  error  'CSDisk' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\catalog\generator.ts
+  6:8  error  'RollingStepResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\dubins\logic\ElasticBandSolver.ts
+  104:39  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  125:13  error  'nextIdx' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  168:47  error  'disks' is defined but never used             @typescript-eslint/no-unused-vars
+  168:64  error  'chiralities' is defined but never used       @typescript-eslint/no-unused-vars
+  172:27  error  'i' is defined but never used                 @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\dubins\logic\EnvelopePathCalculator.ts
+   8:15  error  'ContactGraph' is defined but never used         @typescript-eslint/no-unused-vars
+  90:17  error  'startAngle' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\CSCanvas.tsx
+     9:15  error    'Disk' is defined but never used                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+    16:10  error    'computeOuterContour' is defined but never used                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+    18:10  error    'computeRobustConvexHull' is defined but never used                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+    19:15  error    'CSArc' is defined but never used                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+    20:15  error    'KnotDiagram' is defined but never used                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+    28:10  error    'ContactGraphRenderer' is defined but never used                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+    31:10  error    'KnotRenderer' is defined but never used                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+    39:7   error    'USE_OUTER_CONTOUR_ENVELOPE' is assigned a value but never used                                                                                                                                                                               @typescript-eslint/no-unused-vars
+    82:49  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+    84:15  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   108:27  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   111:29  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   113:17  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   154:3   error    'onKnotSegmentClick' is defined but never used                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   178:10  error    'trailPoints' is assigned a value but never used                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   189:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   192:9   warning  The 'staticKnotPath' conditional could make the dependencies of useMemo Hook (at line 336) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'staticKnotPath' in its own useMemo() Hook  react-hooks/exhaustive-deps
+   193:9   warning  The 'knotSequence' conditional could make the dependencies of useMemo Hook (at line 336) change on every render. To fix this, wrap the initialization of 'knotSequence' in its own useMemo() Hook                                             react-hooks/exhaustive-deps
+   194:9   warning  The 'anchorPoints' conditional could make the dependencies of useMemo Hook (at line 336) change on every render. To fix this, wrap the initialization of 'anchorPoints' in its own useMemo() Hook                                             react-hooks/exhaustive-deps
+   241:9   error    'hullData' is assigned a value but never used                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   244:9   error    'crossings' is assigned a value but never used                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   301:64  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   356:11  error    'diskSequence' is assigned a value but never used                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+   356:37  error    'toggleDisk' is assigned a value but never used                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   356:49  error    'clearSequence' is assigned a value but never used                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   367:9   error    'regions' is assigned a value but never used                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   425:12  error    'transformPathToSVG' is defined but never used                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   464:46  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   482:43  error    'id' is defined but never used                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   537:48  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   579:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+   842:12  error    'describeArc' is defined but never used                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   842:43  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  1255:57  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  1292:31  error    Unexpected any. Specify a different type                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  1310:10  error    'block' is defined but never used                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\EditorPage.tsx
+    1:1   error    Run autofix to sort these imports!                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            simple-import-sort/imports
+    9:3   error    'findEnvelopePathFromPoints' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   13:3   error    'computeHullLength' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   56:40  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `rollingState`, but the source dependencies were [diskBlocks, rollingState.isActive, rollingState.rollingDiskId, rollingState.theta, rollingState.getCurrentPosition]. Inferred less specific property than source.
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\EditorPage.tsx:56:40
+  54 |   );
+  55 |   // Compute graph for persistent knots (shared with KnotState internally, but we need it here for saved knots)
+> 56 |   const contactDisksForGraph = useMemo(() => {
+     |                                        ^^^^^^^
+> 57 |     // If rolling, get the dynamic position
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 58 |     const rollingPos = rollingState.isActive ? rollingState.getCurrentPosition() : null;
+     ÔÇª
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 69 |     }));
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 70 |   }, [
+     | ^^^^ Could not preserve existing manual memoization
+  71 |     diskBlocks,
+  72 |     rollingState.isActive,
+  73 |     rollingState.rollingDiskId,                                                                                                                                                                                                   react-hooks/preserve-manual-memoization
+   70:6   warning  React Hook useMemo has a missing dependency: 'rollingState'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 react-hooks/exhaustive-deps
+   78:9   error    'graph' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  123:14  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  163:14  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  167:6   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  192:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  217:15  error    'segments' is never reassigned. Use 'const' instead                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           prefer-const
+  217:25  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  253:17  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  255:6   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  257:24  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  315:17  error    'dist' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  342:25  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  361:19  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  365:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  374:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  442:60  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `editorState`, but the source dependencies were [editorState.savedKnots, contactDisksForGraph, diskBlocks, rollingState.isActive, rollingState.rollingDiskId, rollingState.getCurrentPosition]. Inferred less specific property than source.
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\EditorPage.tsx:442:60
+  440 |   // Based on tex.pdf: tangent points p╬▒ are NOT fixed ÔÇö
+  441 |   // they are recomputed from disk centers + tangent type (LSL/RSR/LSR/RSL).
+> 442 |   const { savedKnotPaths, accumulatedObstacles } = useMemo(() => {
+      |                                                            ^^^^^^^
+> 443 |     // Build a lookup map for current disk positions
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 444 |     const diskLookup = new Map<string, { center: { x: number; y: number }; radius: number }>();
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 494 |     return { savedKnotPaths: paths, accumulatedObstacles: [] };
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 495 |   }, [
+      | ^^^^ Could not preserve existing manual memoization
+  496 |     editorState.savedKnots,
+  497 |     contactDisksForGraph,
+  498 |     diskBlocks,   react-hooks/preserve-manual-memoization
+  442:60  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `rollingState`, but the source dependencies were [editorState.savedKnots, contactDisksForGraph, diskBlocks, rollingState.isActive, rollingState.rollingDiskId, rollingState.getCurrentPosition]. Inferred less specific property than source.
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\EditorPage.tsx:442:60
+  440 |   // Based on tex.pdf: tangent points p╬▒ are NOT fixed ÔÇö
+  441 |   // they are recomputed from disk centers + tangent type (LSL/RSR/LSR/RSL).
+> 442 |   const { savedKnotPaths, accumulatedObstacles } = useMemo(() => {
+      |                                                            ^^^^^^^
+> 443 |     // Build a lookup map for current disk positions
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 444 |     const diskLookup = new Map<string, { center: { x: number; y: number }; radius: number }>();
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 494 |     return { savedKnotPaths: paths, accumulatedObstacles: [] };
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 495 |   }, [
+      | ^^^^ Could not preserve existing manual memoization
+  496 |     editorState.savedKnots,
+  497 |     contactDisksForGraph,
+  498 |     diskBlocks,  react-hooks/preserve-manual-memoization
+  481:18  error    'e' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  495:6   warning  React Hook useMemo has missing dependencies: 'reconstructFromFrozenPath' and 'rollingState'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react-hooks/exhaustive-deps
+  505:32  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `rollingState`, but the source dependencies were [editorState.diskBlocks, rollingState.isActive, rollingState.rollingDiskId, rollingState.theta, rollingState.getCurrentPosition]. Inferred less specific property than source.
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\EditorPage.tsx:505:32
+  503 |
+  504 |   // Map CSDisk to ContactDisk for Dubins logic
+> 505 |   const contactDisks = useMemo(() => {
+      |                                ^^^^^^^
+> 506 |     // If rolling, get the dynamic position
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 507 |     const rollingPos = rollingState.isActive ? rollingState.getCurrentPosition() : null;
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 518 |     }));
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 519 |   }, [
+      | ^^^^ Could not preserve existing manual memoization
+  520 |     editorState.diskBlocks,
+  521 |     rollingState.isActive,
+  522 |     rollingState.rollingDiskId,                                                                                                                                                                                                                                               react-hooks/preserve-manual-memoization
+  519:6   warning  React Hook useMemo has a missing dependency: 'rollingState'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 react-hooks/exhaustive-deps
+  560:33  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  576:33  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  814:56  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\RollingDisk.tsx
+  242:8  error  Unexpected constant truthiness on the left-hand side of a `&&` expression  no-constant-binary-expression
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\components\DubinsRenderer.tsx
+    1:17  error  'useMemo' is defined but never used      @typescript-eslint/no-unused-vars
+  188:10  error  'ConfigArrow' is defined but never used  @typescript-eslint/no-unused-vars
+  188:39  error  'label' is defined but never used        @typescript-eslint/no-unused-vars
+  190:9   error  'x2' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  191:9   error  'y2' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\components\EditorHeader.tsx
+    1:15  error  'FC' is defined but never used                                             @typescript-eslint/no-unused-vars
+   15:41  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+   55:3   error  'initialKnotName' is defined but never used                                @typescript-eslint/no-unused-vars
+   88:3   error  'catalogMode' is defined but never used                                    @typescript-eslint/no-unused-vars
+   89:3   error  'onToggleCatalogMode' is defined but never used                            @typescript-eslint/no-unused-vars
+  197:10  error  Unexpected constant truthiness on the left-hand side of a `&&` expression  no-constant-binary-expression
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\components\EditorSidebar.tsx
+    1:1   error  Run autofix to sort these imports!                                                                                           simple-import-sort/imports
+   29:41  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+   37:18  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+   59:22  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+   89:17  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+   91:15  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+   94:17  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  113:47  error  React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+  154:29  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  155:42  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  391:60  error  Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\components\GraphsPanel.tsx
+  31:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\components\GraphsPanel.tsx:31:5
+  29 |
+  30 |   useEffect(() => {
+> 31 |     setLoading(true);
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  32 |     loadAllGraphs()
+  33 |       .then((sets) => {
+  34 |         console.log('GraphSets loaded:', sets);  react-hooks/set-state-in-effect
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useEditorState.ts
+    3:10  error  'blockLength' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   21:16  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-explicit-any
+   89:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useEditorState.ts:89:5
+  87 |     });
+  88 |
+> 89 |     setBlocks(initialBlocks);
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  90 |   }, [initialKnot]);
+  91 |
+  92 |   // Computed  react-hooks/set-state-in-effect
+   97:9   error  'diskCount' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  106:18  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-explicit-any
+  113:23  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-explicit-any
+  119:48  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-explicit-any
+  119:75  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-explicit-any
+  138:43  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useInteractiveEnvelope.ts
+    1:34  error    'useMemo' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   43:5   error    'autoUpdate' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   60:6   warning  React Hook useEffect has missing dependencies: 'adaptiveSmoothing', 'bezierTension', 'initialCircles', and 'smoothness'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+   75:6   warning  React Hook useEffect has a missing dependency: 'canvasRef'. Either include it or remove the dependency array. Mutable values like 'canvasRef.current' aren't valid dependencies because mutating them doesn't re-render the component                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             react-hooks/exhaustive-deps
+   75:7   error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useInteractiveEnvelope.ts:75:7
+  73 |       rendererRef.current.setEnvelope(envelopeRef.current);
+  74 |     }
+> 75 |   }, [canvasRef.current, renderOptions]);
+     |       ^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  76 |
+  77 |   /**
+  78 |    * Actualiza c├¡rculos con debouncing para mejor rendimiento                                                                                                                                react-hooks/refs
+   75:7   error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useInteractiveEnvelope.ts:75:7
+  73 |       rendererRef.current.setEnvelope(envelopeRef.current);
+  74 |     }
+> 75 |   }, [canvasRef.current, renderOptions]);
+     |       ^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  76 |
+  77 |   /**
+  78 |    * Actualiza c├¡rculos con debouncing para mejor rendimiento                                                                                                                                react-hooks/refs
+  174:10  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useInteractiveEnvelope.ts:174:10
+  172 |   }, []);
+  173 |
+> 174 |   return {
+      |          ^
+> 175 |     envelope: envelopeRef.current,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 176 |     renderer: rendererRef.current,
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 184 |     setRenderOptions,
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 185 |   };
+      | ^^^^ Cannot access ref value during render
+  186 | }
+  187 |
+  188 | /**  react-hooks/refs
+  175:15  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useInteractiveEnvelope.ts:175:15
+  173 |
+  174 |   return {
+> 175 |     envelope: envelopeRef.current,
+      |               ^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  176 |     renderer: rendererRef.current,
+  177 |     updateCircles,
+  178 |     updateCirclesImmediate,                                                                                                                                                             react-hooks/refs
+  176:15  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\useInteractiveEnvelope.ts:176:15
+  174 |   return {
+  175 |     envelope: envelopeRef.current,
+> 176 |     renderer: rendererRef.current,
+      |               ^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  177 |     updateCircles,
+  178 |     updateCirclesImmediate,
+  179 |     render,                                                                                                                                                 react-hooks/refs
+  201:6   warning  React Hook useEffect has a missing dependency: 'envelope'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+  229:6   warning  React Hook useEffect has a missing dependency: 'envelope'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\hooks\usePersistentDubins.ts
+  1:1  error  Run autofix to sort these imports!  simple-import-sort/imports
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\logic\EditorEnvelopeComputer.ts
+  11:28  error  '_modeContext' is defined but never used  @typescript-eslint/no-unused-vars
+  11:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\editor\utils\diagramAdapter.ts
+   1:32  error  'HullSegment' is defined but never used  @typescript-eslint/no-unused-vars
+  60:31  error  'index' is defined but never used        @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\knot\components\KnotPanel.tsx
+  10:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  12:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  92:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\knot\logic\KnotEnvelopeComputer.ts
+  14:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  36:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\knot\logic\useKnotState.ts
+    1:1   error    Run autofix to sort these imports!                                                                                                                        simple-import-sort/imports
+    1:8   error    'React' is defined but never used                                                                                                                         @typescript-eslint/no-unused-vars
+  107:9   error    'elasticPathRef' is assigned a value but never used                                                                                                       @typescript-eslint/no-unused-vars
+  114:51  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  119:52  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  125:51  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  151:24  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  228:57  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  235:64  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  243:63  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  329:26  error    Unexpected any. Specify a different type                                                                                                                  @typescript-eslint/no-explicit-any
+  383:6   warning  React Hook useEffect has missing dependencies: 'anchorSequence.length', 'blocks', and 'diskSequence'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\ribbon\components\RibbonPanel.tsx
+  1:1   error  Run autofix to sort these imports!  simple-import-sort/imports
+  2:10  error  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\rolling\logic\useRollingMode.ts
+  106:6   warning  React Hook useEffect has a missing dependency: 'state.currentPath'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/exhaustive-deps
+  148:48  error    Error: Cannot access variable before it is declared
+
+`animate` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\rolling\logic\useRollingMode.ts:148:48
+  146 |     });
+  147 |
+> 148 |     requestRef.current = requestAnimationFrame(animate);
+      |                                                ^^^^^^^ `animate` accessed before it is declared
+  149 |   }, [checkCollision, diskBlocks]);
+  150 |
+  151 |   useEffect(() => {
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\features\rolling\logic\useRollingMode.ts:109:3
+  107 |
+  108 |   // Animation Loop using requestAnimationFrame
+> 109 |   const animate = useCallback(() => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 110 |     setState((prev) => {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^
+> 111 |       if (!prev.isAnimating || !prev.pivotDiskId || !prev.rollingDiskId) return prev;
+      ÔÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^
+> 148 |     requestRef.current = requestAnimationFrame(animate);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^
+> 149 |   }, [checkCollision, diskBlocks]);
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `animate` is declared here
+  150 |
+  151 |   useEffect(() => {
+  152 |     if (state.isAnimating) {  react-hooks/immutability
+  149:6   warning  React Hook useCallback has an unnecessary dependency: 'diskBlocks'. Either exclude it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/exhaustive-deps
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\EnvelopeRenderer.ts
+  290:11  error  'rgb' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\canvas\FlexibleEnvelope.tsx
+   38:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\canvas\FlexibleEnvelope.tsx:38:5
+  36 |       positions.set(disk.id, disk.center);
+  37 |     });
+> 38 |     setDiskPositions(positions);
+     |     ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  39 |   }, [disks]);
+  40 |
+  41 |   // Calcular convex hull de los discos (simplificado)  react-hooks/set-state-in-effect
+   70:37  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+   88:23  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  174:6   warning  React Hook useEffect has a missing dependency: 'calculateEnvelope'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\layers\DubinsLayer.tsx
+   9:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  10:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  12:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\layers\KnotLayer.tsx
+   80:3   error  'onKnotPointClick' is defined but never used                                                                                                                                               @typescript-eslint/no-unused-vars
+  105:17  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+  108:20  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+  109:28  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\layers\RibbonLayer.tsx
+   1:1   error  Run autofix to sort these imports!                                                                                                                                                         simple-import-sort/imports
+   4:10  error  'PathLayer' is defined but never used                                                                                                                                                      @typescript-eslint/no-unused-vars
+  73:21  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\layers\StandardLayer.tsx
+   3:32  error  'DiskHull' is defined but never used                                                                                                                                                       @typescript-eslint/no-unused-vars
+  49:17  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+  52:20  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+  53:28  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+  59:20  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\renderer\types\Layer.ts
+  10:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\tomas\OneDrive\Desktop\Knots\tests\core\geometry\dubins\examples.ts
+  7:15  error  'DubinsPath' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\tests\core\math\DubinsPathTests.ts
+  8:1  error  Run autofix to sort these imports!  simple-import-sort/imports
+
+C:\Users\tomas\OneDrive\Desktop\Knots\vite.config.ts
+  1:1  error  Run autofix to sort these imports!  simple-import-sort/imports
+
+Ô£û 257 problems (243 errors, 14 warnings)
+  10 errors and 0 warnings potentially fixable with the `--fix` option.
+

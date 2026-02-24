@@ -91,9 +91,51 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
   const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
     if (currentAnchors.length < 2) return { path: [], chiralities: [] };
 
+    let activeAnchors = currentAnchors;
+
+    // [FIX] ELASTIC SOLVER OVERRIDE DURING DRAG
+    // If the user is dragging, rigid anchor angles cause tangles.
+    // Instead, we freeze the derived chiralities, use the topological solver to find the ideal "sliding"
+    // anchor points, and then pass them to the point solver so it can route around obstacles.
+    if (isDragging && diskSequence.length >= 2 && lockedChiralities.length === diskSequence.length) {
+      // Build a collision-free graph to allow sliding over geometry without hallucinated inner tangencies
+      const graph = buildBoundedCurvatureGraph(contactDisks, false, [], false);
+      const elasticResult = findEnvelopePath(graph, diskSequence, lockedChiralities, false);
+
+      if (elasticResult && elasticResult.path.length > 0) {
+        const idealAnchors: { x: number; y: number }[] = [];
+        diskSequence.forEach((diskId) => {
+          const disk = contactDisks.find(d => d.id === diskId);
+          if (!disk) return;
+
+          const arc = elasticResult.path.find((s: any) => s.type === 'ARC' && s.diskId === diskId) as ArcSegment;
+          if (arc) {
+            idealAnchors.push({ x: disk.center.x + disk.radius * Math.cos(arc.startAngle), y: disk.center.y + disk.radius * Math.sin(arc.startAngle) });
+            return;
+          }
+          const outT = elasticResult.path.find((s: any) => s.type !== 'ARC' && s.startDiskId === diskId) as TangentSegment;
+          if (outT) {
+            const angle = Math.atan2(outT.start.y - disk.center.y, outT.start.x - disk.center.x);
+            idealAnchors.push({ x: disk.center.x + disk.radius * Math.cos(angle), y: disk.center.y + disk.radius * Math.sin(angle) });
+            return;
+          }
+          const inT = elasticResult.path.find((s: any) => s.type !== 'ARC' && s.endDiskId === diskId) as TangentSegment;
+          if (inT) {
+            const angle = Math.atan2(inT.end.y - disk.center.y, inT.end.x - disk.center.x);
+            idealAnchors.push({ x: disk.center.x + disk.radius * Math.cos(angle), y: disk.center.y + disk.radius * Math.sin(angle) });
+            return;
+          }
+        });
+
+        if (idealAnchors.length === diskSequence.length) {
+          activeAnchors = idealAnchors;
+        }
+      }
+    }
+
     // A. Legacy Path (for validation/compatibility)
-    // Use the DYNAMICALLY updated positions or just points
-    const legacyResult = findEnvelopePathFromPoints(currentAnchors, contactDisks);
+    // Uses the DYNAMICALLY updated positions or just points
+    const legacyResult = findEnvelopePathFromPoints(activeAnchors, contactDisks);
 
     // B. Flexible Dubins Path (for rendering)
     // We need chiralities that match the "Natural" path found by the legacy solver.
@@ -122,7 +164,8 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
     let fullChiralities: ('L' | 'R')[] = [];
 
-    if (diskSequence.length >= 2) {
+    // Skip dubins during drag to prevent stutters
+    if (!isDragging && diskSequence.length >= 2) {
       const calculator = new EnvelopePathCalculator();
 
       // Use STATE chiralities if valid
@@ -139,29 +182,14 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         fullChiralities,
         true, // Closed
       );
+    } else if (isDragging && lockedChiralities.length === diskSequence.length) {
+      fullChiralities = lockedChiralities;
     }
 
     Logger.debug('KnotState', 'Computed Flexible Envelope', {
       legacyLen: legacyResult.path.length,
       dubinsLen: dubinsPaths.length,
     });
-
-    // [FIX] ELASTIC SOLVER OVERRIDE DURING DRAG
-    // If the user is dragging, findEnvelopePathFromPoints causes tangles due to rigid anchor angles projecting through disks.
-    // Instead, we freeze the derived chiralities and rely strictly on the topological solver.
-    if (isDragging && diskSequence.length >= 2 && lockedChiralities.length === diskSequence.length) {
-      // Build a collision-free graph to allow sliding over geometry without hallucinated inner tangencies
-      const graph = buildBoundedCurvatureGraph(contactDisks, false, [], false);
-      const elasticPath = findEnvelopePath(graph, diskSequence, lockedChiralities, false);
-
-      if (elasticPath && elasticPath.path.length > 0) {
-        return {
-          path: elasticPath.path,
-          chiralities: lockedChiralities,
-          dubinsPaths: [], // Dubins currently disabled during drag to save cycles/tangles
-        };
-      }
-    }
 
     return {
       ...legacyResult,
