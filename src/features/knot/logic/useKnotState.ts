@@ -17,6 +17,11 @@ import {
   validateNoSelfIntersection,
 } from '../../../core/validation/envelopeValidator';
 import { EnvelopePathCalculator } from '../../dubins/logic/EnvelopePathCalculator';
+import type { CSDiagramState } from '../../../core/geometry/csProtocol';
+import { createMathematicalStateFromPath, transitionCSDiagramState } from '../../../core/geometry/csTransitions';
+import { solveCSDiagramDelta } from '../../../core/geometry/csSolver';
+import { convertStateToPath } from '../../../core/geometry/csConverter';
+import type { Point2D } from '../../../core/types/cs';
 
 interface UseKnotStateProps {
   blocks: CSDisk[]; // We need disks to build the graph
@@ -49,6 +54,10 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
 
   // [NEW] Lock chiralities when not dragging. Used to bypass geometric tangles when user drags.
   const [lockedChiralities, setLockedChiralities] = useState<('L' | 'R')[]>([]);
+
+  // [CS PROTOCOL] Pure mathematical topological boundaries
+  const csStateRef = useRef<CSDiagramState | null>(null);
+  const prevDisksRef = useRef<Map<string, Point2D>>(new Map());
 
   // 1. Build Graph (Memoized)
   const contactDisks = useMemo(
@@ -135,9 +144,93 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
       }
     }
 
-    // A. Legacy Path (for validation/compatibility)
+    // [CS PROTOCOL ENGINE] Mathematical Evolution
+    if (isDragging && diskSequence.length >= 2 && csStateRef.current) {
+
+      // Calculate continuous deltas
+      const currentDisksMap = new Map<string, Point2D>();
+      contactDisks.forEach(d => currentDisksMap.set(d.id, d.center));
+
+      const targetDisplacements = new Map<string, Point2D>();
+      currentDisksMap.forEach((center, id) => {
+        const prev = prevDisksRef.current.get(id);
+        if (prev) {
+          targetDisplacements.set(id, { x: center.x - prev.x, y: center.y - prev.y } as Point2D);
+        } else {
+          targetDisplacements.set(id, { x: 0, y: 0 } as Point2D);
+        }
+      });
+
+      // Request Solver Delta 
+      const deltaResult = solveCSDiagramDelta(csStateRef.current, targetDisplacements);
+
+      // If valid continuous projection available, try moving, else transition
+      if (deltaResult) {
+        // Generate theoretical pushed disks
+        const theoreticalDisks = new Map<string, Point2D>();
+        csStateRef.current.disks.forEach(d => {
+          const disp = deltaResult.deltaC.get(d.id) || { x: 0, y: 0 };
+          theoreticalDisks.set(d.id, { x: d.center.x + disp.x, y: d.center.y + disp.y });
+        });
+
+        // Validate and Jump if constraints broken
+        csStateRef.current = transitionCSDiagramState(
+          csStateRef.current,
+          theoreticalDisks, // Apply our projection target (not actual mouse, strictly mapped)
+          lockedChiralities,
+          diskSequence
+        );
+      } else {
+        // Forced Jump due to unsolvable matrix (e.g. overlapping disks)
+        csStateRef.current = transitionCSDiagramState(
+          csStateRef.current,
+          currentDisksMap,
+          lockedChiralities,
+          diskSequence
+        );
+      }
+
+      // Sync refs
+      prevDisksRef.current = currentDisksMap;
+
+      // Build output path from rigorous state
+      const strictPath = convertStateToPath(csStateRef.current);
+
+      if (strictPath && strictPath.length > 0) {
+        const parsedAnchors: { x: number; y: number }[] = [];
+        strictPath.forEach(s => {
+          if (s.type === 'ARC') {
+            const a = s as ArcSegment;
+            parsedAnchors.push({ x: a.center.x + a.radius * Math.cos(a.startAngle), y: a.center.y + a.radius * Math.sin(a.startAngle) });
+          }
+        });
+        if (parsedAnchors.length === diskSequence.length) {
+          activeAnchors = parsedAnchors;
+        }
+
+        // Return bypassing legacy pathing
+        return {
+          path: strictPath,
+          chiralities: lockedChiralities,
+          dubinsPaths: [], // To be populated or rely directly on strict
+        };
+      }
+    }
+
+    // A. Legacy Base Path (for initial construction and stable states)
     // Uses the DYNAMICALLY updated positions or just points
     const legacyResult = findEnvelopePathFromPoints(activeAnchors, contactDisks);
+
+    // [CS PROTOCOL] Snapshot into strict format if not dragging and valid
+    if (!isDragging && legacyResult.path.length > 0 && diskSequence.length > 1) {
+      const dMap = new Map<string, any>();
+      contactDisks.forEach(d => dMap.set(d.id, d));
+      const strictState = createMathematicalStateFromPath(legacyResult.path, dMap, diskSequence);
+      if (strictState) {
+        csStateRef.current = strictState;
+        contactDisks.forEach(d => prevDisksRef.current.set(d.id, d.center));
+      }
+    }
 
     // B. Flexible Dubins Path (for rendering)
     // We need chiralities that match the "Natural" path found by the legacy solver.

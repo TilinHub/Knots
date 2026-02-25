@@ -1,0 +1,22 @@
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\csSolver.ts
+  1:1  error  Run autofix to sort these imports!           simple-import-sort/imports
+  7:7  error  'vecAdd' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\csTransitions.ts
+  10:1   error  Run autofix to sort these imports!          simple-import-sort/imports
+  10:31  error  'CSTangency' is defined but never used      @typescript-eslint/no-unused-vars
+  10:43  error  'CSSegment' is defined but never used       @typescript-eslint/no-unused-vars
+  10:54  error  'CSArc' is defined but never used           @typescript-eslint/no-unused-vars
+  10:61  error  'CSContact' is defined but never used       @typescript-eslint/no-unused-vars
+  14:44  error  'TangentSegment' is defined but never used  @typescript-eslint/no-unused-vars
+  22:5   error  'diskSequence' is defined but never used    @typescript-eslint/no-unused-vars
+  65:24  error  'idx' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\tomas\OneDrive\Desktop\Knots\src\core\geometry\csValidator.ts
+   6:1  error  Run autofix to sort these imports!      simple-import-sort/imports
+  17:7  error  'J' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+Ô£û 12 problems (12 errors, 0 warnings)
+  3 errors and 0 warnings potentially fixable with the `--fix` option.
+
