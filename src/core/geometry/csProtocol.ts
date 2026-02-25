@@ -47,7 +47,7 @@ export interface CSDiskMap {
  * The complete mathematical state of a CS Diagram.
  */
 export interface CSDiagramState {
-    disks: Map<string, CSDiskMap>; // c_1, ..., c_N
+    disks: Map<string, { id: string; center: { x: number; y: number }; radius: number }>; // c_1 ... c_N  & R_i
     contacts: CSContact[]; // $\cal{E}$ (Disk-disk contacts)
     tangencies: Map<string, CSTangency>; // $\cal{T}$ (Curve-disk tangencies)
     segments: CSSegment[]; // $\cal{S}$ (Straight segments)

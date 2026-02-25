@@ -289,9 +289,9 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
     });
 
     return {
-      ...legacyResult,
-      dubinsPaths,
+      path: legacyResult.path,
       chiralities: fullChiralities,
+      dubinsPaths
     };
   }, [currentAnchors, contactDisks, blocks, diskSequence, chiralities, isDragging, lockedChiralities]);
 
@@ -301,7 +301,10 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
   // Sync locked chiralities when steady
   useEffect(() => {
     if (!isDragging && computationResult.chiralities.length === diskSequence.length) {
-      setLockedChiralities(computationResult.chiralities);
+      setLockedChiralities(prev => {
+        if (prev.join(',') === computationResult.chiralities.join(',')) return prev;
+        return computationResult.chiralities;
+      });
     }
 
     // Track the perfectly solved elastic path during drag

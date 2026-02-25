@@ -908,21 +908,27 @@ export function findEnvelopePathFromPoints(
 
     // 2. Check Valid Departure (Normal check)
     if (!lineBlocked && dist > 1e-6) {
-      const dirX = (end.x - start.x) / dist;
-      const dirY = (end.y - start.y) / dist;
+      if (startDisk && endDisk && startDisk.id === endDisk.id) {
+        // A straight line between two distinct points on the SAME disk is a chord 
+        // passing through its interior, which is strictly invalid for an envelope.
+        lineBlocked = true;
+      } else {
+        const dirX = (end.x - start.x) / dist;
+        const dirY = (end.y - start.y) / dist;
 
-      if (startDisk) {
-        const nx = (start.x - startDisk.center.x) / startDisk.radius;
-        const ny = (start.y - startDisk.center.y) / startDisk.radius;
-        // Must go OUT or TANGENT
-        if (nx * dirX + ny * dirY < -0.01) lineBlocked = true;
-      }
+        if (startDisk) {
+          const nx = (start.x - startDisk.center.x) / startDisk.radius;
+          const ny = (start.y - startDisk.center.y) / startDisk.radius;
+          // Must go OUT or TANGENT
+          if (nx * dirX + ny * dirY < -0.01) lineBlocked = true;
+        }
 
-      if (endDisk && !lineBlocked) {
-        const nx = (end.x - endDisk.center.x) / endDisk.radius;
-        const ny = (end.y - endDisk.center.y) / endDisk.radius;
-        // Must arrive from OUTSIDE
-        if (nx * dirX + ny * dirY > 0.01) lineBlocked = true;
+        if (endDisk && !lineBlocked) {
+          const nx = (end.x - endDisk.center.x) / endDisk.radius;
+          const ny = (end.y - endDisk.center.y) / endDisk.radius;
+          // Must arrive from OUTSIDE
+          if (nx * dirX + ny * dirY > 0.01) lineBlocked = true;
+        }
       }
     }
 

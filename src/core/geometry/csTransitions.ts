@@ -10,7 +10,7 @@
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 import { Logger } from '../utils/Logger';
-import type { ArcSegment, EnvelopeSegment } from './contactGraph';
+import type { ArcSegment, EnvelopeSegment, TangentSegment } from './contactGraph';
 import { buildBoundedCurvatureGraph, findEnvelopePath } from './contactGraph';
 import type { CSDiagramState } from './csProtocol';
 import { validateCSSpaceMatrix } from './csValidator';
@@ -33,16 +33,17 @@ export function createMathematicalStateFromPath(
 
     // 1. Populate discs
     disks.forEach((disk) => {
-        state.disks.set(disk.id, { id: disk.id, center: { x: disk.center.x, y: disk.center.y } });
+        state.disks.set(disk.id, { id: disk.id, center: { x: disk.center.x, y: disk.center.y }, radius: disk.radius });
     });
 
-    // Calculate contacts based on exact distance 2
+    // Calculate contacts based on exact distance 
     const diskArr = Array.from(disks.values());
     for (let i = 0; i < diskArr.length; i++) {
         for (let j = i + 1; j < diskArr.length; j++) {
             const dx = diskArr[i].center.x - diskArr[j].center.x;
             const dy = diskArr[i].center.y - diskArr[j].center.y;
-            if (Math.abs(Math.sqrt(dx * dx + dy * dy) - 2.0) < 1e-4) {
+            const expectedDist = diskArr[i].radius + diskArr[j].radius;
+            if (Math.abs(Math.sqrt(dx * dx + dy * dy) - expectedDist) < 1.0) { // 1px tolerance
                 state.contacts.push({
                     id: `${diskArr[i].id}-${diskArr[j].id}`,
                     diskId1: diskArr[i].id,
@@ -52,87 +53,134 @@ export function createMathematicalStateFromPath(
         }
     }
 
-    // 2. Parse Path
+    // 2. Parse Path to extract Lines
+    const lines = path.filter(seg => seg.type !== 'ARC') as TangentSegment[];
+    if (lines.length === 0) return null;
+
     let tIndex = 0;
     let sIndex = 0;
     let aIndex = 0;
 
-    // Since it's a loop, we trace pairs of tangencies per disk.
-    // Each ARC segment provides an incoming tangency and an outgoing tangency.
-    // Each non-ARC provides a physical line.
+    interface LineContext {
+        line: TangentSegment;
+        tOutId: string;
+        tInId: string;
+    }
 
-    // We loop to find arcs
-    path.forEach((seg) => {
-        if (seg.type === 'ARC') {
-            const arc = seg as ArcSegment;
-            const tInId = `t_${tIndex++}`;
-            const tOutId = `t_${tIndex++}`;
+    const lineContexts: LineContext[] = lines.map(line => ({
+        line,
+        tOutId: `t_${tIndex++}`,
+        tInId: `t_${tIndex++}`
+    }));
 
-            const tInNormal = { x: Math.cos(arc.startAngle), y: Math.sin(arc.startAngle) };
-            const tOutNormal = { x: Math.cos(arc.endAngle), y: Math.sin(arc.endAngle) };
+    // 3. Create Tangencies and Line Segments
+    for (const ctx of lineContexts) {
+        const epsOut = ctx.line.type.startsWith('L') ? 1 : -1;
+        const diskOut = state.disks.get(ctx.line.startDiskId!);
 
-            const eps = arc.chirality === 'L' ? 1 : -1;
+        if (!diskOut) {
+            Logger.warn('csTransitions', `Cannot find start disk '${ctx.line.startDiskId}' in state.disks. Aborting state creation.`);
+            return null;
+        }
 
-            state.tangencies.set(tInId, {
-                id: tInId,
-                diskId: arc.diskId,
-                point: { x: arc.center.x + tInNormal.x, y: arc.center.y + tInNormal.y },
-                normal: tInNormal,
-                tangent: { x: eps * -tInNormal.y, y: eps * tInNormal.x },
-                epsilon: eps
-            });
+        const dxOut = ctx.line.start.x - diskOut.center.x;
+        const dyOut = ctx.line.start.y - diskOut.center.y;
+        const lenOut = Math.sqrt(dxOut * dxOut + dyOut * dyOut) || 1;
+        const tOutNormal = { x: dxOut / lenOut, y: dyOut / lenOut };
 
-            state.tangencies.set(tOutId, {
-                id: tOutId,
-                diskId: arc.diskId,
-                point: { x: arc.center.x + tOutNormal.x, y: arc.center.y + tOutNormal.y },
-                normal: tOutNormal,
-                tangent: { x: eps * -tOutNormal.y, y: eps * tOutNormal.x },
-                epsilon: eps
-            });
+        state.tangencies.set(ctx.tOutId, {
+            id: ctx.tOutId,
+            diskId: diskOut.id,
+            point: { x: ctx.line.start.x, y: ctx.line.start.y },
+            normal: tOutNormal,
+            tangent: { x: epsOut * -tOutNormal.y, y: epsOut * tOutNormal.x },
+            epsilon: epsOut
+        });
 
-            // Compute Delta Theta safely in CCW format considering chirality
-            const PI2 = 2 * Math.PI;
-            let delta = arc.endAngle - arc.startAngle;
-            while (delta <= -Math.PI) delta += PI2;
-            while (delta > Math.PI) delta -= PI2;
+        const epsIn = ctx.line.type.endsWith('L') ? 1 : -1;
+        const diskIn = state.disks.get(ctx.line.endDiskId!);
 
-            if (arc.chirality === 'L') {
+        if (!diskIn) {
+            Logger.warn('csTransitions', `Cannot find end disk '${ctx.line.endDiskId}' in state.disks. Aborting state creation.`);
+            return null;
+        }
+
+        const dxIn = ctx.line.end.x - diskIn.center.x;
+        const dyIn = ctx.line.end.y - diskIn.center.y;
+        const lenIn = Math.sqrt(dxIn * dxIn + dyIn * dyIn) || 1;
+        const tInNormal = { x: dxIn / lenIn, y: dyIn / lenIn };
+
+        state.tangencies.set(ctx.tInId, {
+            id: ctx.tInId,
+            diskId: diskIn.id,
+            point: { x: ctx.line.end.x, y: ctx.line.end.y },
+            normal: tInNormal,
+            tangent: { x: -epsIn * -tInNormal.y, y: -epsIn * tInNormal.x },
+            epsilon: epsIn
+        });
+
+        state.segments.push({
+            id: `s_${sIndex++}`,
+            startTangencyId: ctx.tOutId,
+            endTangencyId: ctx.tInId
+        });
+    }
+
+    // 4. Create Arcs to connect the Segments
+    for (let i = 0; i < lineContexts.length; i++) {
+        const currCtx = lineContexts[i];
+        const nextCtx = lineContexts[(i + 1) % lineContexts.length];
+
+        const diskId = currCtx.line.endDiskId;
+        if (diskId !== nextCtx.line.startDiskId) {
+            Logger.warn('csTransitions', 'Path line discontinuity found between segments!', { curr: diskId, next: nextCtx.line.startDiskId });
+            // For now, assume it's still mathematically connected on the same disk due to topology solver.
+            // A more robust implementation might handle intermediate missing disks.
+        }
+
+        const incomingId = currCtx.tInId;
+        const outgoingId = nextCtx.tOutId;
+
+        const tangencyIn = state.tangencies.get(incomingId)!;
+        const tangencyOut = state.tangencies.get(outgoingId)!;
+
+        // Use the outgoing line to determine arc chirality
+        const arcChirality = nextCtx.line.type.startsWith('L') ? 'L' : 'R';
+        const epsArc = arcChirality === 'L' ? 1 : -1;
+
+        let startAngle = Math.atan2(tangencyIn.normal.y, tangencyIn.normal.x);
+        let endAngle = Math.atan2(tangencyOut.normal.y, tangencyOut.normal.x);
+
+        const PI2 = 2 * Math.PI;
+        let delta = endAngle - startAngle;
+        while (delta <= -Math.PI) delta += PI2;
+        while (delta > Math.PI) delta -= PI2;
+
+        const distSq = (tangencyIn.point.x - tangencyOut.point.x) ** 2 + (tangencyIn.point.y - tangencyOut.point.y) ** 2;
+        if (distSq < 1e-6) {
+            delta = 0;
+        } else {
+            if (arcChirality === 'L') {
                 if (delta <= 0) delta += PI2;
             } else {
                 if (delta >= 0) delta -= PI2;
                 delta = Math.abs(delta);
             }
-
-            state.arcs.push({
-                id: `a_${aIndex++}`,
-                startTangencyId: tInId,
-                endTangencyId: tOutId,
-                diskId: arc.diskId,
-                sign: eps,
-                deltaTheta: delta
-            });
         }
-    });
 
-    // Second pass: hook up the lines. Assuming alternating logic in typical outputs:
-    // ARC -> Tangent -> ARC 
-    const tangencyList = Array.from(state.tangencies.values());
-    for (let i = 0; i < tangencyList.length; i += 2) {
-        // Current outgoing tangency is i+1, next incoming tangency is (i+2) % len
-        const outgoing = tangencyList[i + 1];
-        const nextIncoming = tangencyList[(i + 2) % tangencyList.length];
-
-        state.segments.push({
-            id: `s_${sIndex++}`,
-            startTangencyId: outgoing.id,
-            endTangencyId: nextIncoming.id
+        state.arcs.push({
+            id: `a_${aIndex++}`,
+            startTangencyId: incomingId,
+            endTangencyId: outgoingId,
+            diskId: diskId,
+            sign: epsArc,
+            deltaTheta: delta
         });
     }
 
-    // Final Strict Check before passing control to kinematic handler
     const validation = validateCSSpaceMatrix(state);
     if (!validation.valid) {
+        console.error('[csTransitions] Failed validation:', validation.errors);
         Logger.error('csTransitions', 'Failed to generate rigorous mathematical state from fallback path', validation.errors);
         return null;
     }

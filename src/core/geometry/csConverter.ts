@@ -30,11 +30,11 @@ export function convertStateToPath(state: CSDiagramState): EnvelopeSegment[] {
             type: 'ARC',
             diskId: arc.diskId,
             center: disk.center,
-            radius: 1, // Assumption from CS theory
+            radius: disk.radius, // Fix: Use real mathematical radius from state
             startAngle,
             endAngle,
             chirality: arc.sign === 1 ? 'L' : 'R',
-            length: arc.deltaTheta * 1, // length = delta * radius
+            length: arc.deltaTheta * disk.radius, // length = delta * real radius
         } as ArcSegment);
     });
 

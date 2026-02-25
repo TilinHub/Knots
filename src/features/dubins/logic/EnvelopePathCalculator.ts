@@ -3,6 +3,7 @@ import {
   type AngularRange,
   type AngularSamplingConfig,
   computeDubinsWithRanges,
+  calculateBitangentPaths,
   type ContactPointWithRange,
 } from '../../../core/geometry/dubins';
 import type { ContactGraph, DiskContact } from '../../../core/types/contactGraph';
@@ -189,61 +190,14 @@ export class EnvelopePathCalculator {
     // For RSR, touches are at -PI/2.
     // For Cross, they vary.
 
-    // Instead of guessing the range center, let's use a wide range relative to the connector
-    // and filter the *result* path type.
-
-    // Dubins Types:
-    // LSL: Leaves L, Arrives L
-    // LSR: Leaves L, Arrives R
-    // RSL: Leaves R, Arrives L
-    // RSR: Leaves R, Arrives R
-
-    // Mapping:
-    // L -> L : LSL (and LRL if we allow 3 segments)
-    // L -> R : LSR
-    // R -> L : RSL
-    // R -> R : RSR (and RLR)
-
-    // 2. Define Angular Ranges based on Chirality
-    // We center the search range on the "Left" or "Right" hemisphere relative to the connection line.
-    // This ensures we sample the relevant sectors (0, 90, 180 degrees relative to line) which contain
-    // the standard Inner and Outer tangents.
-
-    // Vector D1 -> D2 is angle12.
-    // 'L' (Left/CCW) favors the "Left" side (angle12 + PI/2)
-    // 'R' (Right/CW) favors the "Right" side (angle12 - PI/2)
-
-    // Start Range
-    const center1 = chiral1 === 'L' ? angle12 + Math.PI / 2 : angle12 - Math.PI / 2;
-    const range1: AngularRange = { center: center1, delta: Math.PI / 2 };
-
-    // End Range
-    // For the destination disk, we use the same relativity to the connection line D1->D2.
-    // LSL (Left->Left) uses Top->Top tangents (+90 -> +90 relative to D1->D2).
-    // LSR (Left->Right) uses Top->Bottom tangents (+90 -> -90 relative to D1->D2).
-    const center2 = chiral2 === 'L' ? angle12 + Math.PI / 2 : angle12 - Math.PI / 2;
-    const range2: AngularRange = { center: center2, delta: Math.PI / 2 };
-
-    const start: ContactPointWithRange = {
-      disk: { center: disk1.center, radius: disk1.visualRadius },
-      range: range1,
-    };
-    const end: ContactPointWithRange = {
-      disk: { center: disk2.center, radius: disk2.visualRadius },
-      range: range2,
-    };
-
-    // [FIX] Use the actual disk radius as the Dubins turning radius.
-    // This ensures the "Curve" segments of the Dubins path match the disk curvature.
-    // If disks have different radii, we use the start disk's radius as a best-effort approximation for the path model,
-    // but since we are connecting tangent-to-tangent, the critical part is leaving D1 correctly.
-    const dynamicConfig: AngularSamplingConfig = {
-      ...this.samplingConfig,
-      minRadius: disk1.visualRadius, // Use visual radius of the start disk
-    };
-
-    // Generate ALL candidates
-    const candidates = computeDubinsWithRanges(start, end, dynamicConfig);
+    // [FIX] Use analytically exact bitangents for unequal radii instead of fixed-radius sampler
+    // This prevents the path from erroneously cutting through the disk interior when connecting 
+    // disks of different sizes.
+    // We import calculateBitangentPaths at top to use here
+    const candidates = calculateBitangentPaths(
+      { ...disk1.center, radius: disk1.visualRadius },
+      { ...disk2.center, radius: disk2.visualRadius }
+    );
 
     // Filter by Chirality
     // We check if the Dubins Path Type starts with chiral1 and ends with chiral2.
