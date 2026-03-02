@@ -62,21 +62,7 @@ export const RibbonPanel: React.FC<RibbonPanelProps> = ({ state, actions }) => {
             </header>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Ribbon Width</label>
-                        <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{state.width}px</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="2"
-                        max="100"
-                        step="1"
-                        value={state.width}
-                        onChange={(e) => actions.setWidth(Number(e.target.value))}
-                        style={{ width: '100%' }}
-                    />
-                </div>
+
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>

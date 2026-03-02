@@ -78,19 +78,64 @@ export const RibbonLayer: React.FC<RibbonLayerProps> = ({
     return (
         <BaseLayer visible={visible} zIndex={5}>
             <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-                {/* Ribbon Outline (Black, slightly wider than width) */}
-                <path
-                    d={svgPath}
-                    fill="none"
-                    stroke="black"
-                    strokeWidth={width + 2}
-                    strokeOpacity={opacity}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    style={{ pointerEvents: 'none' }}
-                />
+                <defs>
+                    <mask id="ribbon-mask">
+                        {/* 1. White everywhere to show the outline */}
+                        <rect x="-5000" y="-5000" width="10000" height="10000" fill="white" />
+                        {/* 2. Black precisely on the inner path so the outline gets a hole */}
+                        <path
+                            d={svgPath}
+                            fill="none"
+                            stroke="black"
+                            strokeWidth={width}
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                        />
+                        {/* Mask out saved paths too */}
+                        {savedPaths.map((saved) => (
+                            <path
+                                key={`mask-saved-${saved.id}`}
+                                d={segmentsToPath(saved.path)}
+                                fill="none"
+                                stroke="black"
+                                strokeWidth={width}
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                            />
+                        ))}
+                    </mask>
+                </defs>
 
-                {/* Ribbon Body (Solid Fill) */}
+                {/* --- 1. OUTLINE LAYER --- */}
+                {/* Drawn identically but with the center masked out entirely! */}
+                <g mask="url(#ribbon-mask)">
+                    {/* Active Ribbon Outline */}
+                    <path
+                        d={svgPath}
+                        fill="none"
+                        stroke="black"
+                        strokeWidth={width + 2}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        style={{ pointerEvents: 'none' }}
+                    />
+                    {/* Saved Ribbons Outlines */}
+                    {savedPaths.map((saved) => (
+                        <path
+                            key={`outline-saved-${saved.id}`}
+                            d={segmentsToPath(saved.path)}
+                            fill="none"
+                            stroke="black"
+                            strokeWidth={width + 2}
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            style={{ pointerEvents: 'none' }}
+                        />
+                    ))}
+                </g>
+
+                {/* --- 2. TRANSPARENT BODY LAYER --- */}
+                {/* Drawn inside the hole left by the mask */}
                 <path
                     d={svgPath}
                     fill="none"
@@ -102,61 +147,46 @@ export const RibbonLayer: React.FC<RibbonLayerProps> = ({
                     style={{ pointerEvents: 'none' }}
                 />
 
-                {/* Ribbon Center Path (Dotted) */}
-                {showCenterPath && (
+                {savedPaths.map((saved) => (
                     <path
-                        d={svgPath}
+                        key={`body-saved-${saved.id}`}
+                        d={segmentsToPath(saved.path)}
                         fill="none"
-                        stroke="black"
-                        strokeWidth={1.5}
+                        stroke={color}
+                        strokeWidth={width}
                         strokeOpacity={opacity}
-                        strokeDasharray="4, 4"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
                         style={{ pointerEvents: 'none' }}
                     />
-                )}
-                {/* Saved Knots Ribbons */}
-                {savedPaths.map((saved) => {
-                    if (!saved.path || saved.path.length === 0) return null;
-                    const savedSvgPath = segmentsToPath(saved.path);
-                    return (
-                        <g key={`ribbon-saved-${saved.id}`}>
-                            {/* Outline */}
+                ))}
+
+                {/* --- 3. CENTER PATH (Always 100% Solid Black Dotted) --- */}
+                {showCenterPath && (
+                    <>
+                        <path
+                            d={svgPath}
+                            fill="none"
+                            stroke="black"
+                            strokeWidth={1.5}
+                            strokeOpacity={1}
+                            strokeDasharray="4, 4"
+                            style={{ pointerEvents: 'none' }}
+                        />
+                        {savedPaths.map((saved) => (
                             <path
-                                d={savedSvgPath}
+                                key={`center-saved-${saved.id}`}
+                                d={segmentsToPath(saved.path)}
                                 fill="none"
                                 stroke="black"
-                                strokeWidth={width + 2}
-                                strokeOpacity={opacity}
-                                strokeLinejoin="round"
-                                strokeLinecap="round"
+                                strokeWidth={1.5}
+                                strokeOpacity={1}
+                                strokeDasharray="4, 4"
                                 style={{ pointerEvents: 'none' }}
                             />
-                            {/* Body */}
-                            <path
-                                d={savedSvgPath}
-                                fill="none"
-                                stroke={color}
-                                strokeWidth={width}
-                                strokeOpacity={opacity}
-                                strokeLinejoin="round"
-                                strokeLinecap="round"
-                                style={{ pointerEvents: 'none' }}
-                            />
-                            {/* Center Path */}
-                            {showCenterPath && (
-                                <path
-                                    d={savedSvgPath}
-                                    fill="none"
-                                    stroke="black"
-                                    strokeWidth={1.5}
-                                    strokeOpacity={opacity}
-                                    strokeDasharray="4, 4"
-                                    style={{ pointerEvents: 'none' }}
-                                />
-                            )}
-                        </g>
-                    );
-                })}
+                        ))}
+                    </>
+                )}
             </g>
         </BaseLayer>
     );
