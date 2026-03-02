@@ -1,0 +1,885 @@
+IMMERSED FLAT RIBBON KNOTS
+JOS´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+Abstract. We study the minimum ribbonlength for immersed planar ribbon knots and links.
+Our approach is to embed the space of such knots and links into a larger more tractable space
+of disk diagrams. When length minimisers in disk diagram space are ribbon, then these solve
+the ribbonlength problem. We also provide examples when minimisers in the space of disk
+diagrams are not ribbon and state some conjectures. We compute the minimal ribbonlength
+of some small knot and link diagrams and certain inﬁnite families of link diagrams. Finally we
+present a bound for the number of crossings for a diagram yielding the minimum ribbonlength
+of a knot or link amongst all diagrams.
+1. Introduction
+A ﬂat ribbon knot is an immersion of an annulus into the Euclidean plane such that the
+core of the annulus corresponds to an immersed knot diagram. Flat ribbon links then are a
+ﬁnite union of ﬂat ribbon knots. We require that the combinatorics of the self-intersections of
+the knot or link match that of the associated immersed annulus or annuli. The ribbonlength
+problem aims to ﬁnd the minimal ratio between the length of the core to the ribbon width over
+all the planar realisations in a knot or link type. We normalise our ribbons so that the ribbon
+width is 2 as can be done by a suitable homothety of the plane.
+Kauﬀman [7] proposed a model for folded ﬂat ribbon knots whose core is piecewise linear.
+He gave conjectures about the ribbonlength of the trefoil and the ﬁgure-eight knot. Currently,
+results in the literature provide bounds on the ribbonlength of ﬂat folded ribbons knots for
+certain families of torus knots. The ribbonlength problem remains open for general immersed
+and folded ribbon knots. A good survey on ﬂat folded ribbon knots can be found in [3]. Denne,
+Sullivan and Wrinkle have reported to be working on the same problem considered here [4].
+A similar scenario occurs for the ropelength problem, the 3-dimensional analog of the ribbon-
+length problem [2, 5, 6, 9]. Minimum ropelength is the smallest ratio between the thickness of
+a tubular neighbourhood of a knot or link and its length. In this case, the unknot is minimised
+by a round circle and certain chain links are minimised by linked piecewise C 2 loops [2].
+In this note, we describe a method that in some cases leads to the solution of the ribbonlength
+problem for ﬂat immersed ribbon knot and link diagrams, see Fig. 1. Our method ﬁnds the
+tightest immersed ﬂat ribbon knot or link diagram satisfying some simple geometric constraints.
+These constraints allow us to embed the space of immersed ﬂat ribbon knots and link diagrams
+into a larger space of disk diagrams. The latter space has better properties and in particular,
+passing to a minimum length is straightforward. Moreover, we can characterise critical points
+of length in this larger space as piecewise C 2 immersions, formed by concatenations of arcs of
+(unit radius) circles and straight line segments.
+When a minimum length disk diagram satisﬁes the conditions for being a ribbon knot or
+link, this immediately gives us the solution for the ribbonlength problem for such diagrams.
+We give examples where this is the case and also where the minimum length disk diagrams are
+Date: November 28, 2021.
+2000 Mathematics Subject Classiﬁcation. 57M25, 57M27, 49Q10, 53C42.
+Key words and phrases. Knots, links, ribbons, ribbonlength, ropelength.
+1
+arXiv:2005.13168v1  [math.GT]  27 May 2020
+
+2 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+Figure 1. Examples of minimal ribbonlength knot and link diagrams. From
+left to right: the trefoil, Hopf link and an element of an inﬁnite family of link
+diagrams whose ribbonlength can be computed.
+not ribbon. We compute the minimal ribbonlength of some small knot and link diagrams like
+the unknot, trefoil, Hopf link and an inﬁnite family of link diagrams - see Figure 1.
+Finally using disk diagrams, we are able to give a bound on the number of crossings in a
+diagram of a given knot or link which minimises ribbonlength amongst all diagrams.
+2. Immersed ribbon loops
+An immersion is a C 1 map between manifolds whose Jacobian is injective everywhere. We
+consider C 1 immersed loops γ : S1→ R2, where the length of the derivative ||γ′|| = 1/ℓ and
+S1 = [0, 1]/{0∼ 1}, denoting the length of the loop by ℓ. We endow the space of immersed
+loops with the C 1 metric. A map γ : X→ Y is considered either as a function or its image
+γ(X)⊂Y when no confusion occurs.
+The medial axis of an embedded planar loop is the locus of the centres of the circles of
+maximal radii which are tangent to the loop and are inscribed in the compact region bounded
+by the loop [14]. Note that the medial axis is contained in the focal cut locus, i.e the points in
+the region bounded by the loop where either the distance function to the loop has zero Jacobian
+or is not smooth. This locus consists of either focal conjugate points for the normal map to the
+loop (where the normal map has a singular Jacobian) or focal cut points where there are several
+equal length minimising normals to the loop. A simple example is an ellipse where the medial
+axis or focal cut locus is a closed interval. The end points of this interval are focal conjugate
+points and the interior points are focal cut points.
+In this paper, we will use an analogous concept of medial axis for an embedded planar open
+or closed arc. Note that the key diﬀerence to the case of an embedded loop is that such an
+arc does not separate the plane. So we do not restrict attention to one side of the arc. In
+particular, the medial axis of an arc is not necessarily connected and there can be components
+associated to normals on either side of the arc. So the medial axis for an arc is the locus of
+centres of maximal circles touching the arc with interiors disjoint from the arc and is contained
+in the focal cut locus of the arc. The medial axis of a closed arc is necessarily closed. Note
+we will combine the medial axes of a ﬁnite closed arc cover of an immersed loop, obtaining a
+closed set as a result.
+Deﬁnition 2.1. Given aC 1 immersionγ :S1→ R2, chooseI⊂S1 a suﬃciently small open or
+closed interval such thatγ(I) is embedded. The separation bound forγ onI is the condition
+that for an arbitrary point c on the medial axis of γ restricted to I,||γ(s)−c||≥ 1, for all
+s∈I.
+
+IMMERSED FLAT RIBBON KNOTS 3
+Deﬁnition 2.2. Given a C 1 immersion γ : S1→ R2, the weak separation bound is the
+condition that for each point p =γ(s), there are two circles of radius 1 which touch γ atp one
+on each side of γ. In other words, the circles pass through p, have a common tangent to γ atp
+and locally lie on one side and the other side of γ near p.
+Let T (s) and N(s), for s∈ S1, be a continuous choice of unit length tangent and normal
+vectors toγ respectively atγ(s). Let LT (s) =⟨γ(s)+tT (s)⟩ andLN(s) =⟨γ(s)+tN(s)⟩ be the
+tangent and normal lines passing throughγ(s). We deﬁne a continuous map Γ : S1×(−1, 1)→
+R2, which is an extension of γ, by Γ( s,t ) = γ(s) + tN(s). So Γ( s, 0) = γ(s), for s∈ S1.
+The notation Γ will be considered either an immersion of an open annulus or its image when
+no confusion occurs, assuming that γ satisﬁes the separation bound for a collection of small
+intervals coveringγ.
+Proposition 2.3. Let γ : S1→ R2 be an immersed loop and I⊂ S1 be a closed interval so
+thatγ(I) is embedded and γ satisﬁes the separation bound for γ onI. If I is suﬃciently small
+then Γ(I× (−1, 1)) is embedded.
+Proof. Suppose by way of contradiction that Γ( s,t ) = Γ(s′,t′), where (s,t )̸= (s′,t′), s,s′∈ I
+and 0≤ t,t′ < 1. Firstly, we cannot have t = t′ = 0 since γ(I) is embedded. Next we cannot
+havet =t′̸= 0 since this would contradict the separation bound. In fact, since I is closed, in
+this case we can ﬁnd t =t′̸= 0 minimal so that Γ(s,t ) = Γ(s′,t ) is a point on the medial axis
+at a distance at most t< 1 from γ.
+So it remains to deal with the case that t̸=t′. Consider the smallest value of min{t,t′} for
+which Γ(s,t ) = Γ(s′,t′) fors,s′∈I. (We need I closed to ﬁnd such a smallest value). Consider
+the angle between the normal lines LN(s),LN(s′) at X = Γ(s,t ) = Γ(s′,t′). If the angle is zero
+then s =s′ and this is impossible as the normal line is embedded. Since I is chosen as a small
+closed interval, the angle between the normal lines will also be small. Now we can perturb X
+to ˆX along the bisector of this angle. By continuity, we claim that we can ﬁnd (ˆs, ˆt) near (s,t )
+and (ˆs′, ˆt′) near (s′,t′) so that ˆX = Γ(ˆs, ˆt) = Γ(ˆs′, ˆt′) and ˆt<t, ˆt′ <t′.
+The claim follows by analysing the distance to the curve γ. Note that as I is small, ˆs, ˆs′
+will be between s,s′ in I. The reason is by the weak separation bound, there are two circles
+of radius one which touch γ at either of γ(s),γ (t) (see Figure ?). In particular, γ is locally
+between these circles nearγ(s),γ (t) respectively. Hence if we choose an initial point X lying on
+the line segment L joining these two circles and perturb it in the direction of a small angle to
+this line, clearly the closest point on γ to the perturbed point will move in the same direction
+away from L as the perturbation of X. Hence since we have chosen the perturbation as the
+bisector of the angle between the normal lines to γ(s),γ (t), we see that ˆs, ˆs′ will be between
+s,s′ in I.
+But this contradicts our choice since min{ˆt, ˆt′}< min{t,t′}. So this completes the proof. □
+Deﬁnition 2.4. Assume that γ is an immersed loop satisfying the separation bound for each
+of a collection of closed intervals covering S1. The crossing condition is the following re-
+quirements:
+• γ and Γ have only double points of self-intersection. In particular, γ self-intersects in
+isolated double points or double intervals (for the latter, the self-intersections are not
+transverse). Also, for any isolated double point p (or double interval J) of γ, there is a
+neighbourhood Up (or UJ) so that Γ−1(Up) = D1∪D2 (or Γ−1(UJ) = D1∪D2), where
+D1,D 2 are disjoint open disks, see Fig. 2 and Fig. 3.
+• The two branches of γ cross at p or J, see Fig. 2.
+
+4 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+• S1×(−1, 1)\Di is contractible, fori = 1, 2. Moreover S1×(−1, 1)\D hasn contractible
+components, where D consists of n pre-images of neighbourhoods of all isolated double
+points and double intervals for γ.
+• Di∩(S1×{0}) is connected fori = 1, 2. So Up∩γ (orUJ∩γ) consists of two intersecting
+open intervals.
+• The pre-images of all double points of Γ come from such pairs of disks D1,D 2.
+Figure 2. The broken lines are the ribbon loopγ (core) associated with the open
+ribbon Γ, while the arrows show a branch ofγ. The grey areas are neighbourhoods
+around self-intersections. From left to right: a ribbon self-intersecting at an
+isolated double point. A ribbon self-intersecting in a double interval. A non-
+crossing self-intersection at a double point. A non-crossing self-intersection in a
+double interval. Finally, a self-intersection not satisfying the crossing condition
+as the ribbon self-intersects but there are no associated double points or intervals
+of the core.
+Deﬁnition 2.5. A C 1 immersed loop γ : S1→ R2 satisfying the crossing condition and the
+separation bound for a collection of closed intervals covering S1 is called a ribbon loop. The
+immersed open annular neighbourhood Γ( S1× (−1, 1)) of a ribbon loop γ(S1) is called the
+ribbon associated to the loop. A ﬁnite collection of C 1 loops which together satisfy these two
+conditions is called a ribbon link. The space of ribbon knots and links has the standard C 1
+topology.
+Observation 2.6.
+(1) Critical self-distance. Suppose that the normal lines LN(s),LN(t) coincide for s̸=t.
+Sinceγ′(s) andγ′(t) are parallel, we have thatγ′(s)·(γ(s)−γ(t)) =γ′(t)·(γ(s)−γ(t)) =
+0. This gives a double critical self-distance ∥γ(s)−γ(t)∥ between γ(s),γ (t), [9]. We
+observe that a bound on medial axis distance implies a bound on double critical self-
+distance between such points γ(s),γ (t).
+(2) Bound on curvature . If there is a maximal radius circle with centre c which is
+tangent to γ atγ(s) satisfying||γ(s)−c||< 1, then this implies that γ does not satisfy
+the separation condition. This implies that the curvature κ of γ is at most 1 at all
+points where a ribbon loop or link γ is C 2.
+Moreover, ribbon loops or links are C 1,1 curves. To see this, note for s ﬁxed, if there
+are suﬃciently close pointst∈S1 tos satisfying||γ′(s)−γ′(t)||>k|s−t|/ℓ withk >1,
+then the maximal radius circle touching the loop at γ(s) has radius smaller than 1,
+which again contradicts the separation condition. So this establishes that ribbon loops
+are C 1,1 curves.
+Finally the same argument shows thatC 1 immersed loops or links satisfying the weak
+separation bound are also in the class C 1,1. This will be important when we discuss
+loops in disk space.
+(3) Non-overlapping condition. Two branches of the open annular neighbourhood Γ of
+a ribbon loop or link γ intersect only if their core components of γ intersect, see Fig. 2.
+
+IMMERSED FLAT RIBBON KNOTS 5
+(4) Complementary regions. A ribbon loop or link separates the plane into open com-
+plementary connected domains each of whose boundary is a piecewise C 1 polygon.
+Figure 3. For a double point p of γ there is a neighbourhood Up so that
+Γ−1(Up) = D1∪D2, where D1,D 2 are disjoint open disks which separate the
+annulus into contractible components. Note that Γ( s, 0) =γ(s), for s∈S1.
+Proposition 2.7. Each complementary region of a ribbon loop or link contains an open disk
+with radius 1.
+Proof. Each complementary region P of a ribbon loop or link γ is a union of open domains
+each of whose boundary is a piecewise C 1 polygon. Consider the ribbon Γ associated with γ.
+(Recall we abuse notation by denoting mappings and images by the same symbol, when this
+does not create confusion). It is clearly suﬃcient to show that P\ Γ is non empty. For if we
+can ﬁnd a point c∈ P\ Γ then the open disk of radius 1 centred at c is clearly in P , since Γ
+contains all points distance < 1 from γ.
+Suppose by way of contradiction that P ⊂ Γ. We claim this contradicts the crossing con-
+dition satisﬁed by γ. Note that the crossing condition implies that the image of the ribbon
+Γ deformation retracts onto the ribbon loop or link γ, see Fig. 2 and Fig. 3. In fact the
+crossing condition shows that the image ribbon can be viewed as an open regular neighbour-
+hood of the image loop or link. Hence there is an isomorphism between ﬁrst homology groups
+H1(γ, Z)→H1(Γ, Z) induced by inclusion, where we are identifying maps with their images in
+the plane. But P ﬁlls in a non-zero homologous cycle of γ, namely ∂P . So if P⊂ Γ then the
+ﬁrst homology H1(Γ) would not be isomorphic to H1(γ). So this contradiction establishes the
+result.
+□
+Observation 2.8. Proposition 2.7 does not extend to a ﬁnite collection of C 1 ribbon loops
+unless they collectively satisfy the ribbon conditions.
+Deﬁnition 2.9. A C 1 immersed planar loop or link is said to satisfy the double point con-
+dition if it has ﬁnitely many isolated double points and double intervals.
+Theorem 2.10. Ribbon loops and links satisfy the double point condition.
+Proof. Clearly the double points (or intervals) of a C 0 loop form a closed set in S1. If there
+are inﬁnitely many isolated double points or double intervals, then these accumulate at a
+double point or double interval. But this contradicts the crossing condition satisﬁed by ribbon
+loops. The explanation is the existence of disks D1,D 2 associated with double points or double
+intervals (see Fig 3) implies that the connected components of the set of double points inS1 are
+the individual double points and double intervals, since pairs of such points and intervals are
+
+6 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+separated by open sets. (The closed subsets of the plane have the usual Hausdorﬀ topology).
+Hence, there cannot be an accumulation point in this set. The same argument clearly applies
+to a ribbon link. □
+We immediately have the following.
+Corollary 2.11. A ribbon loop or link partitions the plane into a ﬁnite number of open disk
+regions with exactly one being unbounded.
+Deﬁnition 2.12. Disk space D is the space of ﬁnite collections of C 1 immersed planar loops
+satisfying the following;
+• the double point condition
+• the weak separation condition
+• there is an open disk of radius 1 contained in each complementary region. Here comple-
+mentary regions are obtained by taking the unions of complementary connected open
+domains which are adjacent at non-crossing isolated double points and intervals. (See
+Fig. 2 third and fourth diagrams).
+Also D has the standard C 1 topology.
+The elements in D are called disk diagrams. In particular, a ribbon loop or link is an element
+of D.
+Observation 2.13. A connected component of disk space D consists of all representations of a
+ﬁnite collection of C 1 immersed planar loops, satisfying the required properties, with the same
+combinatorial type of complementary regions. Here the combinatorial type of a complementary
+region is deﬁned by splitting the region open along all non-crossing double points and intervals
+using the resulting polygonal type. Equivalently, the loop or link can be perturbed to remove
+all non-crossing double points and intervals and the resulting complementary domains have the
+required combinatorial types.
+Observation 2.14. Note that as complementary regions contain open disks of radius 1, they
+cannot disappear under limits of sequences of loops. New non-crossing double points can
+appear or disappear under limits, but by deﬁnition, these do not change the combinatorial type
+of complementary regions.
+3. Ribbonlength minimisers
+For a ribbon loop γ : S1→ R2, we have deﬁned the ribbon map Γ : S1× (−1, 1)→ R2
+whose image is also immersed, and abused notation by identifying a map with its image. We
+use similar notation for ribbon links.
+Deﬁnition 3.1. The combinatorial type of a ribbon loop or link is deﬁned by the collection of
+complementary connected domains. Two sets of domains are equivalent if there is a bijection
+between them preserving the boundary structure along the loop or link, where the corresponding
+polygonal types of the open complementary connected domains are isomorphic. By boundary
+structure, we mean divide the boundary into arcs bounded by vertices which are either isolated
+double points or ends of double intervals.
+By convention, we use representative of a given ribbon diagram to mean any ribbon diagram
+with the same combinatorial type.
+Deﬁnition 3.2. A ribbon diagram is cs if its core is a ﬁnite C 1 concatenation of arcs of circles
+of radius 1 and line segments. The complexity of a cs ribbon diagram is the number of arcs of
+circles of radius 1 plus the number of line segments.
+
+IMMERSED FLAT RIBBON KNOTS 7
+Theorem 3.3. Suppose that γ is a ribbon diagram. Then minimal length ribbon representatives
+of γ exist.
+Proof. By Observation 2.6, we know that the core of a ribbon knot or link diagram is in the class
+C 1,1. Therefore, we can apply the Arzela-Ascoli theorem and conclude that given a sequence
+γi of ribbon representatives of γ, so that the lengths ||γi|| converge to the inﬁmum of lengths
+in the class of γ, there are convergent subsequences of the γi. The limit of such a subsequence
+is a loop or link ˆγ which is C 1 and realises the least length in the class of γ.
+We will show that either ˆγ satisﬁes the ribbon conditions and ˆγ is a representative of γ or
+this is true after a modiﬁcation of ˆ γ which does not change its length. We will denote the
+subsequence converging to ˆγ byγi again. For the separation bound, note that none of the loops
+or linksγi have points in their medial axes closer than distance 1 to the loops or links. But then
+it is easy to deduce the same is true for ˆγ. To verify this, choose a sequence of maximal circles
+touching each γi at a point xi, so that the sequence xi converges to x on ˆγ and the circles are
+all on sides of γi corresponding to a given side of ˆγ at x. Then there is a subsequence of these
+circles which converges to a circle touching ˆγ at x. So the radius of a maximal circle touching
+ˆγ at x is at least 1 as claimed. This implies that ˆγ satisﬁes the separation bound.
+For the crossing condition, we claim that double points of ˆΓ are limits of double points for Γi.
+Notice that the domain and image of Γi, ˆΓ are open sets. If there are points (s,t )̸= (s′,t′) with
+ˆΓ(s,t ) = ˆΓ(s′,t′) then ˆΓ(s,t ) = ˆΓ(s′,t′) = limΓi(s,t ) = limΓi(s′,t′). The image of Γ i contains
+a disk of some ﬁxed radius about Γ i(s,t ) and similarly for Γi(s′,t′), by convergence of Γi to ˆΓ.
+Hence for i large enough, Γi(s,t ), Γi(s′,t′) are suﬃciently close that these disks overlap and we
+have double points of Γi which converge to (s,t ), (s′,t′) as claimed.
+Next, we can take limits of subsequences of pairs of disks Di
+1,Di
+2 in the pre-image of Γ i
+corresponding to an isolated double point or double interval of γi to get pairs of disks ˆD1, ˆD2
+corresponding to double points or double intervals for ˆγ in the pre-image of ˆΓ, establishing that
+ˆΓ also satisﬁes one of the requirements for the crossing condition. This follows using Hausdorﬀ
+convergence of subsets of the plane, see [11]. However although the complements of the disks
+ˆDi are contractible, this does not follow necessarily for their limits ˆD1, ˆD2 - see Fig. 4b. To ﬁx
+this issue, we will need to modify ˆγ and this will be done later in the proof.
+Figure 4. (a) the limit of a sequence of double points for the γi can lie in a
+double interval of ˆγ. (b) two “close” double points x,x for ˆγ. (c) the tangents to
+λ1,λ 2 may agree at x′. (d) a switch between the arcs λ1 and λ2.
+To continue the proof of the crossing condition, we need to show the double point set S of ˆγ
+inside ˆU = ˆΓ( ˆD1) = ˆΓ( ˆD2) is a single point or interval and also verify that ˆDi∩ (S1×{ 0}) is
+connected for i = 1, 2. For the former, we claim that the double points of ˆγ inside ˆU are either
+
+8 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+isolated double points or double intervals. We can suppose by passing to a subsequence that
+the corresponding double points for γi inUi = Γi(Di
+1) = Γi(Di
+2) are a convergent set of isolated
+double points or double intervals. We claim that S is either a double point or double interval
+which contains the limit of the sets of double points for the γi in Ui. (Note that the limit of
+a sequence of double points for the γi can lie in a double interval of ˆγ - see Fig. 4a). So the
+problem is to show that S∩ ˆU is connected - it is clearly closed and contains the limit of the
+sets of double points for the γi in ˆU.
+Suppose that S is not connected. Since S is closed, its complement in ˆγ∩ ˆU is open. Then we
+can choose two arcsλ1,λ 2 of ˆγ with common end points x,x′, where∂λ1 =∂λ2 ={x,x′} are in
+diﬀerent components of S and intγi is disjoint from S fori = 1, 2. We can also assume without
+loss of generality that the double point component of ˆ γ containing x, is part of the limit of
+the double sets for γi. We will prove that this contradicts the assumption that ˆγ achieves the
+minimum of length amongst representatives of γ if there is a non-zero angle between λ1,λ 2 at
+x. See Fig. 4b.
+We can choose two subarcs of γi starting at the sequence of double points xi which converge
+to x as i→∞ , with the other ends x′
+i,x′′
+i both converging to x′. These arcs converge to the
+two branches λ1,λ 2 of ˆγ. Moreover the tangents to λ1,λ 2 agree at x′, since clearly this is a
+non-crossing double point of ˆγ. See Fig. 4c. The key idea is to use the Meeks-Yau exchange
+and round-oﬀ trick ([10]) to get a contradiction to the assumption that the length of ˆ γ is the
+inﬁmum of lengths in the class of γ. This will not only eliminate the extra self-intersection of
+ˆγ but also the problem of the complement of the disks ˆDi failing to be contractible.
+We modify ˆγ in two stages. See Fig. 4d. Firstly we switch the arcs λ1 andλ2. Note that the
+new loop is smooth at x′ but not at x. Next we need to ‘smooth the corners’ at x created by
+this exchange. The idea is to use two unit radius circles tangent to two branches of ˆγ atx as in
+Fig. 5 top. We then replace parts of these branches with an arc µ,ν of each circle to produce a
+newC 1 path, which is the required further modiﬁcation of ˆγ. Since radial projection onto µ,ν
+reduces length, replacement of segments of the two branches of ˆγ byµ,ν decreases the length
+of ˆγ. Let us denote the further modiﬁed loop by γ∗.
+Figure 5. Top: Smoothing the corners at x. Bottom: An example where the
+centres of the unit circles are where the boundary of the ribbon ˆΓ crosses itself.
+Next we claim that no new double points are introduced inγ∗ as compared with ˆγ. It suﬃces
+to show that there are no intersections of ˆγ andµ, except at the endpoints of µ. If we can show
+
+IMMERSED FLAT RIBBON KNOTS 9
+that µ,ν are contained in ˆU then this follows. But the centres of the unit radius circles are
+where the boundary of the ribbon ˆΓ crosses itself - see Fig. 5 bottom. Hence it is easy to see
+that as well as µ,ν ⊂ ˆU, the ribbon Γ∗ for γ∗ is contained in ˆΓ. Moreover, the modiﬁed loop
+γ∗ clearly satisﬁes that the modiﬁed disks D∗
+1,D∗
+2 have contractible complements - see Fig. 6.
+Figure 6. A modiﬁcation of ˆγ such that the resultant loop γ∗ has disks D∗
+1,D∗
+2
+of contractible complements.
+For the ﬁnal crossing condition for γ∗, we need to show that D∗
+j∩ (S1×{ 0}) is connected
+for j = 1, 2. We know that Di
+j∩ (S1×{ 0}) is connected for j = 1, 2 and for all i. Moreover
+ˆDj is the limit of Di
+j as i→∞ and ˆγ is the limit of γi as i→∞ . It is easy to see that the
+modiﬁcation of ˆγ toγ∗ gives ˆDj∩ (S1×{ 0}) =D∗
+j∩ (S1×{ 0}) and so we see immediately that
+this is also connected. So this completes the proof that ˆγ orγ∗ satisﬁes this crossing condition.
+Hence we have shown that the assumptions that the crossing condition is a single double
+point or interval for ˆγ in ˆU is violated and the angle at x between the branches of ˆγ is non-zero
+lead to a contradiction.
+It remains to consider the case that the angle at x between the branches of ˆγ is zero. In
+this case, suppose without loss of generality that ∥λ1|≤∥ λ2∥. We modify ˆγ by replacing λ2
+with a copy of λ1. Hence for the modiﬁed loop, which we denote again by γ∗, the double set
+now contains λ1 and the length is at most that of ˆγ. We can continue doing this if there are
+further such pairs of branches of γ∗ with ends which are tangential, until no such branches
+occur. This clearly gives a new loop in the same class as γ with minimum length. Moreover
+for this modiﬁed loop, we see that ˆDj∩ (S1×{ 0}) = D∗
+j∩ (S1×{ 0}) is connected and the
+complement of Dj is contractible - see Fig. 6.
+So this completes the proof of all parts of the crossing condition for γ∗ and the argument
+also shows that it is in the same diagram class as γ.
+□
+Deﬁnition 3.4. The ribbonlength Rib(γ) of a ribbon knot or link γ is the ratio of the length
+of the core γ to the width of the ribbon Γ,
+Rib(γ) = Length(γ)
+Width(Γ) = Length(γ)
+2
+4. Length minimisers in disk space
+Theorem 4.1. (1) Length minimisers in disk space exist and are cs.
+(2) Suppose that a length minimiser of a ribbon knot or link in disk space is ribbon. Then
+this disk space minimiser is also a length minimiser in ribbon space.
+Proof. By Proposition 2.7, Observation 2.8 and Theorem 2.10 all the ribbon loop diagrams or
+link diagrams in a given class are contained in a component of disk space, which we will denote
+
+10 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+by Dγ. Here we abuse notation by using γ as both a single realisation of a given ribbon loop
+or link diagram or the class of such realisations.
+Firstly, we need to prove that Dγ has length minimisers. Later on we will show that such
+minimisers are of cs type. Firstly in disk space, loops satisfy the weak separation bound, so by
+Observation 2.6 and the Arzela-Ascoli theorem, we can ﬁnd a C 1 limit ˆγ of a sequence of loops
+or links γi in Dγ whose lengths converge to the inﬁmum of length. To show that ˆ γ is in Dγ,
+we need to ﬁrst establish that ˆγ satisﬁes the weak separation condition. This follows by the
+approach in Theorem 3.3. In particular at a sequence of points xi on γi converging to x on ˆγ,
+there are two circles of radius one which touch γi atxi on either side. These circles converge to
+a similar pair of circles touching ˆγ atx on each side, establishing the weak separation condition.
+Note that the double points of ˆγ don’t necessarily exactly match those of γi under taking
+limits. There are two ambiguities in the matchings. The ﬁrst is that isolated double points
+may switch with double intervals. The second is that new non-crossing double points or double
+intervals may appear in the limit ˆγ. However it is still true that the complementary regions
+of ˆγ match those of members of γi under limits and there are still unit radius disks in these
+regions for ˆγ, by taking limits of such disks in the corresponding regions ofγi. (Recall that non-
+crossing double points and double intervals do not separate complementary regions, so having
+new such points and intervals in ˆγ does not change the class of loop or link). Consequently,
+this completes the proof that minimisers of length exist in Dγ.
+Clearly it suﬃces to show that C 1 minimisers of length in Dγ are always of cs type, to
+complete the ﬁrst part of the Theorem.
+Figure 7. Left: The subarc λ does not touch the unit radius disks (in grey) in
+the complementary regions for ˆγ on either side of λ. Right: We shorten λ by
+replacing it by a Dubins solution of type csc (circle-line segment-circle).
+The argument that a C 1 length minimiser ˆγ of Dγ is of cs type is by contradiction. We can
+divide ˆγ into a ﬁnite collection of short subarcs with the following properties. Suppose ﬁrst one
+of the short subarcs λ of ˆγ does not touch the unit radius disks in the complementary regions
+for ˆγ on either side of λ. We can then shorten λ by replacing it by a Dubins solution (see [1]
+and Fig. 7) with the same endpoints and end directions as λ if the latter is not of cs type. We
+can choose the subarcs so that any such a λ is short enough relative to its distance from the
+adjacent unit radius disks, so that the Dubins solution will also miss these disks.
+We also need to consider subarcs λ of ˆγ with one or both ends on a unit radius disk in a
+complementary region, so that the interior of λ is disjoint from any of these disks. Again if λ
+is short enough and not of cs type, then we can replace it by a Dubins solution with the same
+endpoints and end directions as λ so that the new arc has still has interior disjoint from these
+disks. See Fig. 7 and [1]. Note that the unit disks at the ends of λ are tangential to λ.
+Hence we have found a shorter loop or link in Dγ, contradicting our choice of ˆγ as shortest.
+Next, by the above argument it follows that ˆ γ is a collection of Dubins solutions possibly
+connecting points on the boundaries of the unit disks in the complementary regions. Moreover
+at these unit disk boundary points, ˆγ must be tangent to the unit circles. To conclude that
+
+IMMERSED FLAT RIBBON KNOTS 11
+ˆγ is cs, it remains to verify it is a ﬁnite concatenation of Dubins curves together with arcs of
+unit disks joined smoothly together. If there were inﬁnitely many Dubins curves, then these
+would end at inﬁnitely many points on the boundary of the unit disks. Such points would
+accumulate. But if two such points are very close, it is easy to see [1] that any embedded
+Dubins curve joining them is the arc of the unit circle. Hence at an accumulation point, we
+would have such arcs joining up smoothly and hence do get a ﬁnite number of Dubins curves
+as required, unless inﬁnitely many of these arcs had self intersections. But in the latter case, ˆγ
+would have inﬁnitely many self-crossing points, which is a contradiction. So this establishes a
+ribbon length minimiser is of cs type and is in Dγ.
+By assumption, if the ribbon conditions of separation and crossing are satisﬁed by this disk
+length minimiser, then this provides a ribbon length minimiser, since disk space contains ribbon
+space. This completes the proof. □
+5. V ariational approach
+In this section we study critical points of length for elements in disk spaceD. Then in Section
+6 we will show how the ribbonlength varies as the knot diagram changes, so long as the length
+minimiser in disk space is a ribbon loop.
+A useful physical model for studying critical points of length for loops inD is a ﬁnite collection
+of n unit radius disks (each of these corresponds to a bounded complementary region of the
+loop) and an elastic band being the loop itself. For each of the n disks, there are two degrees of
+freedom, which are the coordinates of its centre. Accordingly, the conﬁguration space is a subset
+of R2n. In addition, there is a distance constraint, that the centres of a pair of unit disks must
+be separated by a distance of at least 2 (see also Proposition 2.7). Our approach is based on the
+following proposition from the work of Kirszenblat et. al. on minimal curvature-constrained
+networks [8] inspired by the work of Rubinstein and Thomas on Steiner trees [12].
+Figure 8. Left: an illustration of Proposition 5.1. The other illustrations are
+for Proposition 5.2.
+Proposition 5.1. Suppose that p1p2p3 is a smooth curve consisting of a concatenation of an
+arc of a unit circle and a line segment with common point p2 such that p1 is held ﬁxed while
+p3 is varied, as shown in Fig. 8 left. Then the ﬁrst variation of length of p1p2p3 is the inner
+product between the direction of variation and the unit vector from p2 to p3.
+Proof. Suppose that p3 moves along any smooth curve with derivative at its initial position
+being the vector v. Let ℓ denote the length of p1p2p3. The curve p1p2, of length θ, is an arc of
+a unit circle whose centre c is considered the origin.
+Let ˆn be the unit vector from the origin to the point p2 and x the vector from p2 top3, with
+length denoted by x and unit vector in the direction of x denoted by ˆx. Observe that the ﬁrst
+variation of the vector x is equal to the ﬁrst variation of its head v minus the ﬁrst variation of
+
+12 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+its tail ˆn. If the point p3 is perturbed in the direction of v, then the ﬁrst variation of length of
+p1p2p3 is
+ℓ′ =θ′ +x′
+= ˆn′· ˆx + x′· ˆx
+= ˆn′· ˆx + (v− ˆn′)· ˆx
+= v· ˆx
+□
+As a consequence of Proposition 5.1, we obtain the following proposition.
+Proposition 5.2. Suppose that p1p2p3p4 is a smooth curve consisting of a concatenation of an
+arc of a unit radius circle with centre c1 (ﬁxed), followed by a line segment, followed by an arc
+of a unit radius circle with centre c2 (variable), as shown in Fig. 8. Then the ﬁrst variation
+of length of p1p2p3p4 is the scalar product between the vector of variation and the unit vector
+from p2 to p3.
+Proof. Suppose that the centre c2 (respectively the point p4) moves along any smooth curve
+with derivative at its initial position being the vector v (respectively a parallel translation of
+this curve with the derivative v atp4). Let ℓ denote the length of the curve p1p2p3p4. We may
+view the case where the line segment has zero length as a limiting case, see Fig. 8 right. In
+this case, the points p2 and p3 coincide and we deﬁne the unit vector ˆx to be tangent to the
+disks at the point p2 and pointing in the direction of motion along the curve when traveling
+from the pointp1 toward the pointp4. Let m denote the midpoint of the straight segmentp2p3,
+which coincides with the points p2 and p3 if the straight segment is degenerate. Let ℓ1 and ℓ2
+denote the respective lengths of the curves p1p2m and mp3p4, both of which are curves as in
+Proposition 5.1. Observe that the ﬁrst variation of the midpoint m is half that of the centre c2.
+By proposition 5.1, if the point m is perturbed in the direction of v/2, then the ﬁrst variation
+of length of p1p2m is
+ℓ′
+1 = 1
+2v· ˆx
+On the other hand, if we subtract v from all elements in Fig 8, then we see that the ﬁrst
+variation of length of mp3p4 is
+ℓ′
+2 =− 1
+2v·− ˆx
+= 1
+2v· ˆx
+Summing these two terms, we obtain for the ﬁrst variation of length of p1p2p3p4
+ℓ′ =ℓ′
+1 +ℓ′
+2 = v· ˆx
+□
+Observation 5.3. We have established that minimal length elements in disk spaceD must becs
+disk diagrams, in Theorem 4.1 . To compute the ﬁrst variation of the length of acs disk diagram
+(as the positions of the disks are varied) we ﬁrst decompose thecs disk diagram into curves, each
+of which is a concatenation of an arc of a unit radius circle, followed by a line segment, followed
+by an arc of a unit radius circle as in Proposition 5.2. Then, we simply add the contributions
+coming from each piece in this decomposition. Concretely, suppose that the ith disk moves
+along a smooth curve t→ c(t)∈ R2 with velocity vector v = dc
+dt while the remaining disks are
+held ﬁxed. Moreover, suppose that there are 2 k (possibly degenerate) straight segments lying
+tangent to the ith disk with outward pointing unit vectors ˆu1, ˆu2,..., ˆu2k, see Fig. 9. Let ℓ
+
+IMMERSED FLAT RIBBON KNOTS 13
+denote the length of the loop γ and (x2i−1,x 2i) the centre of the ith disk. Then the directional
+derivativeDℓ(v) of ℓ in the direction of v at the conﬁguration point x = (x1,x 2,...,x 2n) is
+given by
+Dℓ(v) = lim
+t→0+
+ℓ(x1,x 2,...,x 2i−1 +c1(t),x 2i +c2(t),...,x 2n)−ℓ(x1,x 2,...,x 2n)
+= (ˆu1 + ˆu2 +... + ˆu2k)· v.
+Figure 9.
+6. Examples of ribbonlength minimisers
+We compute the minimal ribbonlength for some small knot and link diagrams. We discuss
+the minimal ribbonlength of the standard ﬁgure-8 knot diagram and observe that there exists a
+minimum length disk diagram that does not satisfy the separation bound. We give a conjecture
+about the minimal ribbonlength for the standard ﬁgure-8 knot diagram. We ﬁnish this section
+by providing an inﬁnite family of link diagrams whose minimal ribbonlength can be easily
+computed.
+6.1. The minimal ribbonlength of the unknot.
+Since Length(γ) = 2π, the ribbonlength of the unknot is clearly Rib(unknot) = π for the
+standard diagram γ, see Fig. 10. We will see in the next section that this is also the minimal
+ribbon length over all diagrams of the unknot.
+Figure 10. Left: the ribbon knot of minimal ribbonlength for the standard
+unknot diagram. Right: the ribbon knot of minimal ribbonlength for the standard
+unknot with one twist.
+6.1.1. The twisted unknot. We compute the eﬀect of a twist on the ribbonlength of the unknot.
+See Fig. 10. Without loss of generality, consider the disk diagram in Fig. 11 ( a), and ﬁx the
+position of D0. We claim that D1 must touch D0 at a single point. Suppose to the contrary
+that D1 does not touch D0. Let the contribution to the negative gradient of length from the
+centre of D1 be denoted by u. If D0 and D1 do not touch, we can always decrease the length
+of the disk diagram by perturbing the disk D1 in the direction of the negative gradient u.
+
+14 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+In addition, since D0 and D1 belong to diﬀerent regions separated by the disk diagram, the
+distance between their centres is at least 2. We conclude that D0 and D1 intersect at a single
+point. It is easy to see that the minimal length disk diagram is in fact a minimal length ribbon
+loop. Since the length of the minimal ribbon loop is 4 π, the ribbonlength of a twisted unknot
+is 2π.
+In general, a twist adds 2π to the length of a minimal disk diagram by a similar argument.
+6.2. The minimal ribbonlength of the standard trefoil knot diagram.
+We will prove that the disk diagram for the standard trefoil diagram in Fig. 12 left is a length
+minimising ribbon loop. The disks are labelled D0,D1,D2 andD3 as in Fig. 11 (b)-(d). Let us
+ﬁx the position of the diskD0. We will show that each of the three disksD1,D2 andD3 touches
+the disk D0 and a length minimising loop is connected to it by straight segments. Suppose to
+the contrary that one of the three disks D1, D2 and D3, say D2, touches no other disks. In
+order for the disk D2 to be in mechanical equilibrium, meaning that we cannot decrease the
+length of the curve by perturbing the disk D2, the disk diagram must be as in Fig. 12 ( b).
+In this case, the disk D2 is connected to the disk D0 by two straight segments and to each
+of the disks D1 and D3 by one straight segment. We can decrease the length of the curve by
+perturbing one of the two disks D1 andD3, say D1, in the direction of a vector v which makes
+an acute angle with the negative gradient.
+Next, suppose that one of the three disks D1,D2 andD3, sayD2, is prevented from touching
+the disk D0 by at least one of the two disks D1 andD3, see Fig. 11 (c). In this case, we cannot
+perturb the disk D1 in the direction of the negative gradient, because it will intersect the disk
+D0. However, we can perturb the disk D1 in the direction of a vector v which makes an acute
+angle with the negative gradient in order to decrease the length of the curve.
+Finally, suppose that each of the disks D1,D2 andD3 touches the disk D0, but that at least
+one of the disks D1, D2 and D3, say D2, is not connected to the disk D0 by straight segments,
+see Fig. 11 ( d). In this case, we can perturb one of the disks D1 or D3 in the direction of a
+vector v which makes an acute angle with the negative gradient in order to decrease the length
+of the curve.
+Observe that there is a 2-parameter family of length minimisers that is obtained by rotating
+two of the three disks D1,D 2 and D3 about the disk D0. To see this, observe that the contri-
+bution to the negative gradient from the position of, say, the disk D1, which we denote by u,
+points from the centre of the disk D1 to that of the disk D0. Since the disk D0 is held ﬁxed,
+the smallest admissible angle between the vectors u and v, i.e. the perturbation vector, is π/2.
+That is, the rate of change of the length of the core γ is at least zero. This is true so long as
+we rotate the disk D1 about the disk D0 in some neighbourhood of the original conﬁguration.
+In Fig. 11 ( h) we illustrate the other minimal crossing disk diagram for the trefoil. This
+cannot be a ribbon loop since it violates, for example, the separation bound since||p0−p1||< 2.
+Since Length(γ) = 12+4π, the ribbonlength of the standard trefoil knot diagram is Rib(trefoil) =
+6 + 2π.
+Observation 6.1. Tangential crossings do not separate disk regions . Recall that in
+Deﬁnition 2.12 we allowed crossings to be tangential in disk space. Consider three simple
+loops with an intersection pattern like that of three Olympic circles (a planar projection of the
+Borromean rings). Note that a minimal double point representative of this diagram separates
+the plane into six regions, one of which is unbounded. A tight disk diagram for the three
+Olympic circles is shown in Fig. 11 ( i). Therefore the length minimiser in disk space divides
+the plane into seven connected domains, two of which are separated by a tangential crossing
+
+IMMERSED FLAT RIBBON KNOTS 15
+Figure 11. The black trace represents a disk diagram for the standard trefoil
+knot diagram for (b)-(d) and for the standard Hopf link diagram for (e)-(g). The
+vector u denotes a contribution to the negative gradient for the length of a disk
+diagram. The centre of D1 moves along a smooth curve with derivative at its
+initial position being the vector v. The illustration ( h) is a minimal crossing
+trefoil disk diagram that violates the separation bound as ||p0−p1||< 2. In (i)
+the green portions are part of the same region as p is a tangential (fake) crossing.
+The disk D2 is obtained from Proposition 2.7, see Observation 6.1.
+Figure 12. Left: A length minimising ribbon loop (core) for the standard trefoil
+diagram. Right: a ribbon knot of minimal ribbonlength for this trefoil diagram.
+denoted byp. In Fig. 11 ( i) the green portions are part of the same complementary region and
+D2 is the disk obtained from Proposition 2.7.
+
+16 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+6.3. The minimal ribbonlength for the standard Hopf link diagram.
+We will prove that the disk diagram corresponding to the standard Hopf link diagram in Fig.
+13 left is a length minimising ribbon loop. The disks are labelled D0, D1 and D2 as in Fig 11
+(e)-(g). Let us ﬁx the position of the disk D0. We will show that each of the two disks D1 and
+D2 touches the disk D0 and is connected to it by straight segments for a length minimising
+representative. Suppose to the contrary that at least one of the two disks D1 and D2, say D1,
+does not touch the disk D0. In particular, the disk D1 touches no other disks. In Fig. 11 ( e),
+the contribution to the negative gradient from the position of the disk D1 is denoted by u. We
+can decrease the length of the curve by perturbing the disk D1 in the direction of the negative
+gradient. Similarly, if the two disks D1 and D2 touch one another but do not touch the disk
+D0, then we can perturb the two disks D1 and D2 collectively in the direction of the negative
+gradient.
+Next, suppose that one of the two disks D1 andD2, sayD1, serves as an obstacle preventing
+the disk D2 from touching the disk D0, see Fig.11 (f). Let u denote the contribution to the
+negative gradient from the position of the disk D1. In this case, we cannot perturb the disk
+D1 in the direction of the negative gradient, because it touches the disk D0. However, we can
+perturb the disk D1 in the direction of a vector v which makes an acute angle with the vector
+u. In this way, we can decrease the length of the curve.
+Finally, suppose that both of the disks D1 andD2 touch the disk D0, but that neither of the
+two disksD1 andD2 is connected to the disk D0 by straight segments, see Fig. 11 (g). In this
+case, we can perturb the disk D1 in the direction of a vector v which makes an acute angle
+with the negative gradient in order to decrease the length of the curve.
+Since Length(γ) = 8+4π, the ribbonlength of the standard Hopf link diagram is Rib(Hopf link) =
+4 + 2π.
+Figure 13. Left: A length minimising ribbon loop (core) for the standard Hopf
+link diagram. Note that there is a 1-parameter family of minimisers (up to
+isometries) that is obtained by rotating D1 or D2 about the disk D0. Right: the
+ribbon link of minimal ribbonlength for the standard Hopf link diagram.
+6.4. On the ribbonlength of the standard ﬁgure-8 knot diagram.
+Regarding the disk diagram for the standard ﬁgure-8 knot diagram, there is a simple ar-
+gument to show that the conﬁguration depicted in Fig. 14 left, where the centres of the
+disks D0,D 1,D 2,D 3 and D4 are positioned at the points (0 , 0), (−
+√
+3,−1), (0,−2), (
+√
+3,−1)
+and (0, 2), respectively, gives a minimum length element in disk space D. To see this, observe
+that we can decompose the core γ into three loops γ1,γ 2 andγ3 as in Fig. 14. By a variational
+argument similar to those given above, it is clear that the respective lengths of the loops γ1,γ 2
+and γ3 must be at least 2π, 4 + 2π and 8 +π due to the number of disks contained inside each
+of the three loops. Since the conﬁguration depicted in Fig. 14 left attains all three bounds, it
+
+IMMERSED FLAT RIBBON KNOTS 17
+gives a minimum length element in disk space D for disk diagrams of the combinatorial type of
+the standard ﬁgure-8 knot diagram. The corresponding ribbon is illustrated in Fig. 15. Note
+there is a 1-parameter family of length minimisers that is obtained by rotating the disk D4
+about the disk D0.
++ =
+ +
+Figure 14. A decomposition of a minimal disk diagram for the standard ﬁgure-8
+knot diagram.
+Observation 6.2. The previous example of a minimiser in D for disk diagrams with the com-
+binatorial type of the standard ﬁgure-8 knot diagram violates the non-overlapping condition.
+This conﬁguration of disks does not lead to a ribbon knot diagram since the associated ribbon
+loop violates the separation condition ||p0−p1|| < 2, and consequently, the ribbon violates
+the non-overlapping condition, see Fig. 15. Observe that one segment of the ribbon overlaps
+another in a coloured wedge in Fig. 15 (left), even though the corresponding core components
+do not intersect one another. A third ribbon segment lies above one of the two segments and
+beneath the other. The non-overlapping condition places an additional constraint on the disk
+diagram required for it to be ribbon.
+A conjectured minimiser that satisﬁes the non-overlapping condition is depicted in Fig. 15
+at right, where the centres of the disks D0,D 1,D 2,D 3 and D4 are positioned at the points
+(0, 0), (−
+√
+2,−
+√
+2), (0,−2
+√
+2), (
+√
+2,−
+√
+2) and (0, 2), respectively.
+6.5. Minimal length for the standard Whitehead link diagram in disk space.
+In the case of the standard Whitehead link diagram, we may apply a similar decomposition
+argument but we again run into the non-overlapping condition. That is, we can decompose the
+coreγ into three loops, two of which contain two disks and one of which contains four disks. By
+a variational argument, it is easy to see that the respective lengths of the loops must be at least
+4 + 2π, 4 + 2π and 8 + 2π due to the number of disks contained inside each of the three loops.
+Since the conﬁguration depicted in Fig. 12 left attains all three bounds, it gives a minimum
+length element in disk space D for disk diagrams of the combinatorial type of the standard
+Whitehead link diagram. The corresponding ribbon is illustrated in Fig. 12. Note there is a
+2-parameter family of length minimisers that is obtained by rotating the disk D1 about the
+disk D0 and the disk D3 about the disk D2. Since Length(γ) = 16 + 6π, the minimium length
+of the standard Whitehead link diagram in disk space is Rib(Whitehead link) = 8 + 3 π.
+6.6. Minimal length in disk space for diagram family 1.
+Each member of the inﬁnite family of link diagrams F1, an example of which is depicted in
+Fig. 17, comprises n Whitehead links concatenated via nugatory crossings. For this choice of
+
+18 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+Figure 15. From left to right: a length minimising disk diagram in D with the
+combinatorial type of the standard ﬁgure-8 knot diagram. The ribbon associated
+with the core is at the left. The coloured wedge illustrates an overlap between
+two branches of the ribbon. A conjectured length minimising ribbon loop for
+the standard ﬁgure-8 knot diagram on the right. The conjectured ribbon knot
+associated with the ribbon loop on the right.
+Figure 16. Left: A length minimising core for the standard Whitehead link dia-
+gram in disk space. Right: the corresponding ribbon for the standard Whitehead
+link diagram, violating the non-overlapping condition.
+knot diagram as in Fig. 17, we show via a decomposition argument that the minimum length
+of the family F1 of link diagrams in disk space is
+Rib(F1) = Rib(Whitehead link)×n = (8 + 3π)n.
+To see this, observe that the core can be decomposed into 2n loops, each of which contains two
+disks, in addition to n loops, each of which contains four disks. By a variational argument, a
+loop containing two disks must be of length at least 4 + 2 π, whereas a loop containing four
+disks must be of length at least 8 + 2 π. Since the geometric realisation of the link diagram
+depicted in the Fig. 17 attains the above bounds, it must give a minimum for the length of
+this particular diagram in disk space.
+6.7. Minimal ribbonlength for diagram family 2.
+Each member of the inﬁnite family of link diagrams F2, an example of which is depicted in
+Fig. 18, comprises n Hopf links concatenated via nugatory crossings. Observe that the core
+
+IMMERSED FLAT RIBBON KNOTS 19
+Figure 17. Here the core does not satisfy the separation bound. So the ribbon
+is overlapping and this only gives the minimum length in disk space and is not a
+ribbon link diagram
+can be decomposed into 2n loops, each of which contains two disks. By following a pattern of
+argument similar to that provided for the previous example, it is easy to see that the minimum
+length of the family of link diagrams F2 amongst all disk diagrams is
+Rib(F1) = Rib(Hopf link)×n = (4 + 2π)n.
+Figure 18. Here the core obeys the separation bound, so the ribbon satisﬁes
+the non-overlapping condition. So this gives the minimum ribbon length diagrams
+
+20 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+7. Bounding the crossing number of minimal length knot and link ribbon and
+disk diagrams
+In this section, the aim is to give a useful bound on the crossing number of a projection of
+a knot or link which minimises ribbonlength amongst ribbon diagrams or length amongst disk
+diagrams. In this way, if the procedures of the previous sections could be made more eﬃcient,
+then a practical method would follow for computing minimum ribbon length amongst all ribbon
+diagrams of a given knot or link, or the minimum length amongst all disk diagrams of a ﬁxed
+knot or link. These both give (geometrical) invariants of knots and links, but the diﬃculty is
+to have a practical process for computing these minimum lengths. To illustrate the theory, we
+bound the crossing numbers for the trefoil knot and the Hopf link. But only for the trefoil knot,
+is the bound strong enough to immediately conclude that the minimum ribbon length can be
+computed over all diagrams. For the Hopf link, all diagrams with at most 4 crossings need to
+be examined.
+Theorem 7.1. Suppose that K is a knot or link in R3 and γ is a ribbon (respectively disk)
+planar projection with length ℓ. Then a planar projection of K which minimises ribbon length
+(respectively length) amongst all ribbon diagrams (respectively disk diagrams) has at most
+[ℓ
+π− 1
+2
+(√
+(1 + 4ℓ
+π )− 1
+)
+]
+crossings.
+Proof. Suppose a planar projection γ∗ is ribbon (respectively disk) with c transverse crossings
+and with minimum length amongst all ribbon (respectively disk) diagrams. Note we will slightly
+perturb any planar diagram to only have transverse crossings, eliminating any non-transverse
+crossings and replacing a crossing consisting of an interval of double points by a single transverse
+point or the empty set. See Figure 2, where the crossings in the right ﬁgures three and four
+get eliminated. Then γ∗ forms a graph G withc vertices of degree 4 and hence 2c edges joining
+the vertices.
+Since the Euler characteristic of the plane is one, we see that γ∗ must have c + 1 bounded
+complementary regions. Now by Proposition 2.7 if γ∗ is a ribbon projection, then each bounded
+complementary region contains a unit disk, i.e the projection is a disk diagram. Hence each of
+the bounded complementary regions has area at least at leastπ. By the isoperimetric inequality,
+each bounded complementary region has boundary length at least 2 π. Adding up the lengths
+of the boundaries of the bounded complementary regions gives at least 2( c + 1)π.
+Let us denote by ∂G the subgraph of G consisting of edges which are in the boundary of
+a single bounded complementary region of γ. The edges of ˆG = G\ ∂G will be referred
+to as internal edges of G and clearly are in the boundary of two bounded complementary
+regions of γ. Hence the sum of the lengths of the boundaries of the bounded complementary
+regions is∥∂G∥ + 2∥ ˆG∥. Combining, we get 2 ℓ = 2∥γ∥≥ 2∥γ∗∥ = 2∥G∥ = 2∥∂G∥ + 2∥ ˆG∥≥
+2(c + 1)π +∥∂G∥.
+Next, we know that the area enclosed by ∂G is at least ( c + 1)π. By another application
+of the isoperimetric inequality, this implies ∥∂G∥≥ 2
+√
+(c + 1)π. Putting this together with
+the inequality above, we get 2 ℓ≥ 2(c + 1)π + 2
+√
+(c + 1)π. This can be rewritten as ℓ
+π ≥
+c + 1 +
+√
+(c + 1). Now this quadratic inequality is easily solved giving the ﬁnal result c≤
+ℓ
+π− 1
+2
+(√
+(1 + 4ℓ
+π )− 1
+)
+.
+□
+
+IMMERSED FLAT RIBBON KNOTS 21
+Example 7.2. For the standard projection of the trefoil knot, we found in 6.2 that the minimum
+ribbon length is 6 + 2π. So putting twice this length into Theorem 7.1
+c≤ 12 + 4π
+π − 1
+2
+(√
+1 + 4(12 + 4π)
+π − 1
+)
+≈ 5.47
+So to verify that the minimum ribbon length is that of the standard projection, it suﬃces to
+check diagrams of the trefoil with at most 5 crossings.
+Example 7.3. For the standard projection of the Hopf link, we found in 6.3 that the minimum
+ribbon length is 4 + 2π. So putting twice this length into Theorem 7.1 gives
+c≤ 8 + 4π
+π − 1
+2
+(√
+1 + 4(8 + 4π)
+π − 1
+)
+≈ 4.43
+So to verify that the minimum ribbon length is that of the standard projection, it suﬃces
+to check diagrams of the Hopf links with at most 4 crossings. The standard diagram has 2
+crossings.
+8. Discussion
+There are three diﬀerent classes of planar knot and link diagrams considered in this paper.
+The ﬁrst class are ribbon knots and links which satisfy the separation bound and crossing
+condition. The second are diagrams which lie in disk space, i.e there is a unit disk in each
+complementary bounded region. Finally, a link which is a ﬁnite collection of ribbon knot
+diagrams gives a weaker condition than for ribbon links. So this gives a third class of diagrams.
+However, to obtain the crucial Proposition 2.7 it is clear that the weaker property of a link
+being a ﬁnite union of ribbon knots is not suﬃcient. Hence we cannot embed our problem into
+disk space using this weaker property. The advantage of using disk space is Theorem 4.1. This
+result shows that if a disk space length minimiser is ribbon, then this diagram is a concatenation
+of arcs of circles of radius one and straight line segments.
+Note also that the proof of Proposition 2.7 uses an important property of ribbon knots and
+links, namely that the ribbon deformation retracts onto the core of the knot or link. This latter
+property is implied by the crossing condition. In fact, we chose the crossing condition with this
+property in mind.
+In work in progress, the ﬁrst and third authors will introduce a new mathematical model
+of physical knots and links. The current paper is related to this project in that we have tried
+to produce a model of ribbon knots and links in the plane with similar properties to the 3-
+dimensional model, which is harder to solve. However, two nice features of the 3-dimensional
+model are that ‘ropelength’ minimisers always exist and have good regularity properties for
+any knot or link type. Moreover for the Sussmann problem, see [13], namely ﬁnding a shortest
+length path between two nearby points with initial and ﬁnal directions not diﬀering too much,
+in our 3-dimensional model the solution is a concatenation of arcs of circles of radius one and
+straight line segments. However we are not able to compute length minimisers for any knots
+and links, except for the unknot.
+Next, the bound obtained in Theorem 7.1 is most likely not optimal. It would be interesting
+to reﬁne the bound, using more properties of ribbon and disk space length minimisers. The
+proof of Theorem 7.1 only uses the isoperimetric inequality. By bringing the bound closer to
+the minimum crossing number, e.g for alternating knots and links, this would give a much more
+eﬃcient approach to computing the minimum ribbon and disk length over all planar diagrams.
+
+22 JOS ´E AYALA, DAVID KIRSZENBLAT, AND JOACHIM HYAM RUBINSTEIN
+References
+[1] J. Ayala, D. Kirszenblat, J.H. Rubinstein, A geometric approach to shortest bounded curvature paths,
+Communications in Analysis and Geometry, 26, (4), (2018), 679–697.
+[2] J. Cantarella, R.B. Kusner, J.M. Sullivan, On the minimum ropelength of knots and links, Invent. Math.
+150 (2002) 257–286.
+[3] E. Denne, Folded ribbon knots in the plane, arXiv:1807.00691v1.
+[4] E. Denne, J. M. Sullivan and N. C. Wrinkle, The ribbonlength of knot diagrams, Preliminary report 1132-
+54-316, https://www.ams.org/amsmtgs/2240_abstracts/1132-54-316.pdf
+[5] Y. Diao, C. Ernst, and E. J. Janse van Rensburg, Thickness of knots, Math. Proc. Camb. Phil. Soc. 126,
+(1999), 293–310.
+[6] O. Gonzalez, J.H. Maddocks, Global curvature, thickness, and the ideal shapes of knots. Proc. Nat. Acad.
+Sci. (USA) 96, (1999), 4769–4773.
+[7] L.H. Kauﬀman, Minimal ﬂat knotted ribbons, Physical and numerical models in knot theory, Singapore,
+World Sci. Publ. (2005), Vol 36 Ser. Knots Everything, 495–506.
+[8] D. Kirszenblat and K. G. Sirinanda, M. Brazil, P. A. Grossman, J. H. Rubinstein and D. A. Thomas,
+Minimal curvature-constrained networks, J. Global Optimization 72 (2018), 71–87.
+[9] R.A. Litherland, J. Simon, O. Durumeric, E. Rawdon, Thickness of Knots, Topology and its Applications
+91, (1999), 233–244.
+[10] W. Meeks and S.T. Yau, Topology of three dimensional manifolds and the embedding problems in minimal
+surface theory. Annals of Mathematics. 112 (3): (1982), 441–484.
+[11] J. Munkres, Topology (2nd ed.) Prentice Hall.,(1999) pp. 280–281.
+[12] J. H. Rubinstein, D. A. Thomas, A variational approach to the Steiner ratio conjecture, 33, Ann Oper Res
+(1991) 481–499. https://doi.org/10.1007/BF02071984
+[13] H. Sussmann, Shortest 3-dimensional paths with a prescribed curvature bound, Proceedings of the 34th
+IEEE conference on Decision and Control, 1995,
+[14] L. Younes. Shapes and Diﬀeomorphisms. Springer, 2010.
+F acultad de Ciencias, Universidad Arturo Prat, Iquique, Chile
+School of Mathematics and Statistics, University of Melbourne Parkville, VIC 3010 Aus-
+tralia
+E-mail address : jayalhoff@gmail.com
+School of Mathematics and Statistics, University of Melbourne Parkville, VIC 3010 Aus-
+tralia
+E-mail address : d.kirszenblat@student.unimelb.edu.au
+School of Mathematics and Statistics, University of Melbourne Parkville, VIC 3010 Aus-
+tralia
+E-mail address : joachim@unimelb.edu.au
+

@@ -63,7 +63,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         rollingState.isActive && d.id === rollingState.rollingDiskId && rollingPos
           ? rollingPos
           : d.center,
-      radius: d.visualRadius, // CRITICAL FIX: Use visual radius for envelope calculation!
+      radius: ribbonState.state.isActive ? (ribbonState.state.width / 2) : d.visualRadius, // CRITICAL FIX: Use visual/ribbon radius for envelope calculation!
       regionId: 'temp',
       color: d.color || 'blue',
     }));
@@ -73,6 +73,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     rollingState.rollingDiskId,
     rollingState.theta,
     rollingState.getCurrentPosition,
+    ribbonState.state.isActive,
+    ribbonState.state.width,
   ]);
 
   const graph = useContactGraph(contactDisksForGraph);
@@ -442,7 +444,12 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const { savedKnotPaths, accumulatedObstacles } = useMemo(() => {
     // Build a lookup map for current disk positions
     const diskLookup = new Map<string, { center: { x: number; y: number }; radius: number }>();
-    diskBlocks.forEach((d) => diskLookup.set(d.id, { center: d.center, radius: d.visualRadius }));
+    diskBlocks.forEach((d) =>
+      diskLookup.set(d.id, {
+        center: d.center,
+        radius: ribbonState.state.isActive ? (ribbonState.state.width / 2) : d.visualRadius
+      })
+    );
 
     // Also include rolling positions
     if (rollingState.isActive && rollingState.rollingDiskId) {
@@ -450,7 +457,10 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       if (pos) {
         const rolling = diskBlocks.find((d) => d.id === rollingState.rollingDiskId);
         if (rolling) {
-          diskLookup.set(rolling.id, { center: pos, radius: rolling.visualRadius });
+          diskLookup.set(rolling.id, {
+            center: pos,
+            radius: ribbonState.state.isActive ? (ribbonState.state.width / 2) : rolling.visualRadius
+          });
         }
       }
     }
@@ -518,6 +528,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     rollingState.isActive,
     rollingState.rollingDiskId,
     rollingState.getCurrentPosition,
+    ribbonState.state.isActive,
+    ribbonState.state.width,
   ]);
 
   // Map CSDisk to ContactDisk for Dubins logic
@@ -531,7 +543,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         rollingState.isActive && d.id === rollingState.rollingDiskId && rollingPos
           ? rollingPos
           : d.center,
-      radius: d.visualRadius,
+      radius: ribbonState.state.isActive ? (ribbonState.state.width / 2) : d.visualRadius, // CRITICAL FIX: Use visual/ribbon radius for Dubins rendering
       color: 'blue',
       regionId: 'temp',
     }));
@@ -541,6 +553,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     rollingState.rollingDiskId,
     rollingState.theta,
     rollingState.getCurrentPosition,
+    ribbonState.state.isActive,
+    ribbonState.state.width,
   ]);
 
   const dubinsState = useDubinsState(contactDisks); // Pass disks
@@ -550,6 +564,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const knotState = useKnotState({
     blocks: diskBlocks,
     obstacleSegments: accumulatedObstacles,
+    ribbonMode: ribbonState.state.isActive,
+    ribbonWidth: ribbonState.state.width,
   });
 
   const hullMetrics = useMemo(() => {

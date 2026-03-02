@@ -26,6 +26,8 @@ import type { Point2D } from '../../../core/types/cs';
 interface UseKnotStateProps {
   blocks: CSDisk[]; // We need disks to build the graph
   obstacleSegments?: { p1: { x: number; y: number }; p2: { x: number; y: number } }[]; // [NEW] Obstacles
+  ribbonMode?: boolean; // [NEW] If ribbon mode is active
+  ribbonWidth?: number; // [NEW] The width of the ribbon
 }
 
 export interface DynamicAnchor {
@@ -33,7 +35,7 @@ export interface DynamicAnchor {
   angle: number; // Angle relative to disk center
 }
 
-export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProps) {
+export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false, ribbonWidth = 20 }: UseKnotStateProps) {
   const [mode, setMode] = useState<'hull' | 'knot'>('hull'); // 'hull' = off/hidden, 'knot' = active
   const [diskSequence, setDiskSequence] = useState<string[]>([]);
 
@@ -65,10 +67,14 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
       blocks.map((d) => ({
         id: d.id,
         center: d.center,
-        radius: d.visualRadius,
+        // Mathematical Core from the Paper: "When length minimisers in disk diagram space are ribbon...
+        // ...The ribbon width is 2 as can be done by a suitable homothety...
+        // ...the radius of these empty disks is 1 (W/2)".
+        // Override the obstacle radius to precisely half the ribbon width if ribbon mode is active.
+        radius: ribbonMode ? (ribbonWidth / 2) : d.visualRadius,
         regionId: 'default',
       })),
-    [blocks],
+    [blocks, ribbonMode, ribbonWidth],
   );
 
   // Cleanup sequence if disks are removed
@@ -275,8 +281,17 @@ export function useKnotState({ blocks, obstacleSegments = [] }: UseKnotStateProp
         });
       }
 
+      // Create a mapped array of CSDisks with the overwritten radius for Dubins
+      const mathDisks: CSDisk[] = contactDisks.map(d => {
+        const original = blocks.find(b => b.id === d.id);
+        return {
+          ...(original as CSDisk),
+          visualRadius: d.radius, // Pass the mathematically exact radius
+        };
+      });
+
       dubinsPaths = calculator.calculateKnotPath(
-        blocks,
+        mathDisks,
         diskSequence,
         fullChiralities,
         true, // Closed

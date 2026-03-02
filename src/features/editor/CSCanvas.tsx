@@ -1264,11 +1264,12 @@ export function CSCanvas({
 
       {/* Ribbon Mode Layer */}
       <RibbonLayer
-        visible={ribbonState?.isActive}
+        visible={ribbonState?.isActive === true}
         path={knotPath}
-        width={ribbonState?.width || 20}
-        opacity={ribbonState?.opacity || 0.3}
-        showEdges={ribbonState?.showEdges}
+        savedPaths={savedKnotPaths}
+        width={ribbonState?.width || 100}
+        opacity={ribbonState?.opacity ?? 1}
+        showCenterPath={ribbonState?.showCenterPath ?? true}
         color={envelopeColor}
         context={{ width: 800, height: 600 }}
       />

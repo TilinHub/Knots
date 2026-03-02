@@ -4,7 +4,7 @@ import { Button } from '../../../ui/Button';
 interface RibbonState {
     isActive: boolean;
     width: number;
-    showEdges: boolean;
+    showCenterPath: boolean;
     opacity: number;
 }
 
@@ -14,7 +14,7 @@ interface RibbonPanelProps {
         toggleMode: () => void;
         setWidth: (w: number) => void;
         setOpacity: (o: number) => void;
-        toggleEdges: () => void;
+        toggleCenterPath: () => void;
     };
 }
 
@@ -99,16 +99,16 @@ export const RibbonPanel: React.FC<RibbonPanelProps> = ({ state, actions }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
                         type="checkbox"
-                        id="showEdges"
-                        checked={state.showEdges}
-                        onChange={actions.toggleEdges}
+                        id="showCenterPath"
+                        checked={state.showCenterPath}
+                        onChange={actions.toggleCenterPath}
                         style={{ cursor: 'pointer' }}
                     />
                     <label
-                        htmlFor="showEdges"
+                        htmlFor="showCenterPath"
                         style={{ fontSize: '12px', color: 'var(--text-primary)', cursor: 'pointer' }}
                     >
-                        Show Ribbon Edges
+                        Show Center Path
                     </label>
                 </div>
 

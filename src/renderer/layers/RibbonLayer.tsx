@@ -6,9 +6,10 @@ import { PathLayer } from './PathLayer';
 interface RibbonLayerProps {
     visible: boolean;
     path: EnvelopeSegment[];
+    savedPaths?: { id: string; color: string; path: EnvelopeSegment[] }[];
     width: number;
     opacity: number;
-    showEdges: boolean;
+    showCenterPath: boolean; // Renamed from showEdges
     color?: string;
     context?: { width: number; height: number };
 }
@@ -58,13 +59,15 @@ function segmentsToPath(segments: EnvelopeSegment[]): string {
 export const RibbonLayer: React.FC<RibbonLayerProps> = ({
     visible,
     path,
+    savedPaths = [],
     width,
     opacity,
-    showEdges,
-    color = '#F6AD55',
+    showCenterPath,
+    color = '#EAF4FC', // Light blue fill matching paper
     context,
 }) => {
-    if (!visible || !path || path.length === 0) return null;
+    if (!visible) return null;
+    if ((!path || path.length === 0) && (!savedPaths || savedPaths.length === 0)) return null;
 
     const { width: canvasWidth = 800, height: canvasHeight = 600 } = context || {};
     const centerX = canvasWidth / 2;
@@ -75,7 +78,19 @@ export const RibbonLayer: React.FC<RibbonLayerProps> = ({
     return (
         <BaseLayer visible={visible} zIndex={5}>
             <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-                {/* Ribbon Body (Thick Stroke) */}
+                {/* Ribbon Outline (Black, slightly wider than width) */}
+                <path
+                    d={svgPath}
+                    fill="none"
+                    stroke="black"
+                    strokeWidth={width + 2}
+                    strokeOpacity={opacity}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    style={{ pointerEvents: 'none' }}
+                />
+
+                {/* Ribbon Body (Solid Fill) */}
                 <path
                     d={svgPath}
                     fill="none"
@@ -87,20 +102,61 @@ export const RibbonLayer: React.FC<RibbonLayerProps> = ({
                     style={{ pointerEvents: 'none' }}
                 />
 
-                {/* Ribbon Edges (Optional) */}
-                {showEdges && (
-                    <>
-                        <path
-                            d={svgPath}
-                            fill="none"
-                            stroke={color}
-                            strokeWidth={width + 1}
-                            strokeOpacity={opacity + 0.2}
-                            strokeDasharray={`${width / 5}, ${width / 5}`}
-                            style={{ pointerEvents: 'none' }}
-                        />
-                    </>
+                {/* Ribbon Center Path (Dotted) */}
+                {showCenterPath && (
+                    <path
+                        d={svgPath}
+                        fill="none"
+                        stroke="black"
+                        strokeWidth={1.5}
+                        strokeOpacity={opacity}
+                        strokeDasharray="4, 4"
+                        style={{ pointerEvents: 'none' }}
+                    />
                 )}
+                {/* Saved Knots Ribbons */}
+                {savedPaths.map((saved) => {
+                    if (!saved.path || saved.path.length === 0) return null;
+                    const savedSvgPath = segmentsToPath(saved.path);
+                    return (
+                        <g key={`ribbon-saved-${saved.id}`}>
+                            {/* Outline */}
+                            <path
+                                d={savedSvgPath}
+                                fill="none"
+                                stroke="black"
+                                strokeWidth={width + 2}
+                                strokeOpacity={opacity}
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                                style={{ pointerEvents: 'none' }}
+                            />
+                            {/* Body */}
+                            <path
+                                d={savedSvgPath}
+                                fill="none"
+                                stroke={color}
+                                strokeWidth={width}
+                                strokeOpacity={opacity}
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                                style={{ pointerEvents: 'none' }}
+                            />
+                            {/* Center Path */}
+                            {showCenterPath && (
+                                <path
+                                    d={savedSvgPath}
+                                    fill="none"
+                                    stroke="black"
+                                    strokeWidth={1.5}
+                                    strokeOpacity={opacity}
+                                    strokeDasharray="4, 4"
+                                    style={{ pointerEvents: 'none' }}
+                                />
+                            )}
+                        </g>
+                    );
+                })}
             </g>
         </BaseLayer>
     );
