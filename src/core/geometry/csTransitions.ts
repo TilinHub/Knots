@@ -54,7 +54,21 @@ export function createMathematicalStateFromPath(
     }
 
     // 2. Parse Path to extract Lines
-    const lines = path.filter(seg => seg.type !== 'ARC') as TangentSegment[];
+    // Sentinel IDs usados por findEnvelopePathFromPoints para puntos libres (no discos reales)
+    const SENTINEL_IDS = new Set(['start', 'end', 'point']);
+
+    const originalLines = path.filter(seg => seg.type !== 'ARC') as TangentSegment[];
+
+    // Si la ruta contiene sentinels, no es un circuito cerrado de discos real, abortar.
+    // Esto previene discontinuidades.
+    const hasSentinels = originalLines.some(seg =>
+        (seg.startDiskId && SENTINEL_IDS.has(seg.startDiskId)) ||
+        (seg.endDiskId && SENTINEL_IDS.has(seg.endDiskId))
+    );
+    if (hasSentinels) return null;
+
+    const lines = originalLines;
+
     if (lines.length === 0) return null;
 
     let tIndex = 0;
@@ -200,7 +214,14 @@ export function transitionCSDiagramState(
 ): CSDiagramState {
 
     // Create a deep copy assuming optimistic pass
-    const nextState: CSDiagramState = JSON.parse(JSON.stringify(currentState));
+    // JSON parse/stringify destroys Map structures. We must copy manually:
+    const nextState: CSDiagramState = {
+        disks: new Map(Array.from(currentState.disks.entries()).map(([k, v]) => [k, { ...v, center: { ...v.center } }])),
+        contacts: currentState.contacts.map(c => ({ ...c })),
+        tangencies: new Map(Array.from(currentState.tangencies.entries()).map(([k, v]) => [k, { ...v, point: { ...v.point }, normal: { ...v.normal }, tangent: { ...v.tangent } }])),
+        segments: currentState.segments.map(s => ({ ...s })),
+        arcs: currentState.arcs.map(a => ({ ...a }))
+    };
 
     // Apply changes directly as an abstract assumption
     // (In a full real-world engine, we apply solveCSDiagramDelta and push points by delta p)
@@ -218,15 +239,19 @@ export function transitionCSDiagramState(
             return { id: id, center: cd, radius: 1, regionId: 'topology_jump' };
         });
 
-        // Robust re-calculation
-        const graph = buildBoundedCurvatureGraph(contactDisks, true);
-        const fallbackPath = findEnvelopePath(graph, diskSequence, chiralities, false);
+        try {
+            // Robust re-calculation
+            const graph = buildBoundedCurvatureGraph(contactDisks, true);
+            const fallbackPath = findEnvelopePath(graph, diskSequence, chiralities, false);
 
-        const diskMap = new Map<string, ContactDisk>();
-        contactDisks.forEach(cd => diskMap.set(cd.id, cd));
+            const diskMap = new Map<string, ContactDisk>();
+            contactDisks.forEach(cd => diskMap.set(cd.id, cd));
 
-        const recoveredState = createMathematicalStateFromPath(fallbackPath.path, diskMap, diskSequence);
-        if (recoveredState) return recoveredState;
+            const recoveredState = createMathematicalStateFromPath(fallbackPath.path, diskMap, diskSequence);
+            if (recoveredState) return recoveredState;
+        } catch (e) {
+            Logger.warn('csTransitions', 'Topological Stratum Jump failed', e);
+        }
     }
 
     // Optismistic pass success or jump failure returns optimistic anyway.

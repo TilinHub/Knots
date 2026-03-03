@@ -1,4 +1,5 @@
 import React from 'react';
+import { resolveOverlapsSingleMove } from '@/core/geometry/resolveOverlaps';
 
 import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
 import {
@@ -265,6 +266,9 @@ export function CSCanvas({
   // If we are rolling, the parent's knotPath is stale (based on static blocks).
   // We must recompute it using the *displayed* disks (which have the rolling position).
   const knotPath = React.useMemo(() => {
+    // Guard: no recalcular durante drag — evita spam de warnings en cada MouseMove
+    if (dragState) return staticKnotPath;
+
     if (rollingMode && knotMode) {
       // 1. Priority: True Elastic Envelope (Sequence + Chirality)
       // This respects the topology (L/R sequence) but re-solves the geometry continuously.
@@ -345,6 +349,7 @@ export function CSCanvas({
     displayedDisks,
     rollingDiskId,
     rollingDiskPosition,
+    dragState,
   ]);
 
   // ── LAYERS LOGIC ────────────────────────────────────────────────
@@ -797,19 +802,42 @@ export function CSCanvas({
         newCenter = collision;
       }
 
-      if (!checkDiskOverlap(block.id, newCenter)) {
-        onUpdateBlock(block.id, { center: newCenter } as Partial<CSBlock>);
+      // 1. Mover el disco arrastrado a la posición deseada incondicionalmente
+      // 2. Correr solver PBD para resolver solapamientos en cadena
+      const pointsForSolver = disks.map((d) => ({
+        id: d.id,
+        x: d.id === block.id ? newCenter.x : d.center.x,
+        y: d.id === block.id ? newCenter.y : d.center.y,
+      }));
 
-        const rect = svgRef.current!.getBoundingClientRect();
-        const svgX = (e.clientX - rect.left) * (width / rect.width);
-        const svgY = (e.clientY - rect.top) * (height / rect.height);
-        const moveDist = Math.sqrt(
-          Math.pow(svgX - dragState.startX, 2) + Math.pow(svgY - dragState.startY, 2),
-        );
+      const resolved = resolveOverlapsSingleMove({
+        movedId: block.id,
+        points: pointsForSolver,
+        radius: block.visualRadius, // Asume radio uniforme
+        iterations: 20,
+      });
 
-        if (!dragState.hasMoved && moveDist > 2) {
-          setDragState((prev) => (prev ? { ...prev, hasMoved: true } : null));
+      // Aplicar posiciones resueltas a todos los discos que cambiaron
+      resolved.forEach((p: { id: string; x: number; y: number }) => {
+        const original = disks.find((d) => d.id === p.id);
+        if (!original) return;
+        const dx = p.x - original.center.x;
+        const dy = p.y - original.center.y;
+        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+          onUpdateBlock(p.id, { center: { x: p.x, y: p.y } } as Partial<CSBlock>);
         }
+      });
+
+      // Tracking hasMoved para distinción click vs drag
+      const rect = svgRef.current!.getBoundingClientRect();
+      const svgX = (e.clientX - rect.left) * (width / rect.width);
+      const svgY = (e.clientY - rect.top) * (height / rect.height);
+      const moveDist = Math.sqrt(
+        Math.pow(svgX - dragState.startX, 2) + Math.pow(svgY - dragState.startY, 2),
+      );
+
+      if (!dragState.hasMoved && moveDist > 2) {
+        setDragState((prev) => (prev ? { ...prev, hasMoved: true } : null));
       }
     }
   }

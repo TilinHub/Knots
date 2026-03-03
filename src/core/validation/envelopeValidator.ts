@@ -25,7 +25,8 @@ export function validateNoSelfIntersection(path: EnvelopeSegment[]): {
       const seg2 = path[j];
 
       if (segmentsIntersect(seg1, seg2)) {
-        Logger.warn('Validator', `Self-intersection detected`, { segment1: i, segment2: j });
+        // NO Logger.warn aquí — se llama en cada frame, causa spam masivo.
+        // El caller decide si loggear.
         return { valid: false, error: `Self-intersection between segment ${i} and ${j}` };
       }
     }

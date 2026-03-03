@@ -1,47 +1,69 @@
 export type XYPoint = { id: string; x: number; y: number };
 
 export function resolveOverlapsSingleMove<T extends XYPoint>(args: {
-  movedId: string;
+  movedId?: string;
   points: T[];
   radius: number;
   iterations?: number;
 }): T[] {
   const { movedId, points, radius } = args;
-  const iterations = args.iterations ?? 6;
+  const iterations = args.iterations ?? 10;
 
-  const movedIndex = points.findIndex((p) => p.id === movedId);
-  if (movedIndex < 0) return points;
+  const positions = points.map((p) => ({ id: p.id, x: p.x, y: p.y }));
 
-  // Copia mutable solo del movido
-  let mx = points[movedIndex].x;
-  let my = points[movedIndex].y;
+  const minD = 2 * radius;
 
   for (let it = 0; it < iterations; it++) {
-    for (let i = 0; i < points.length; i++) {
-      if (i === movedIndex) continue;
+    for (let i = 0; i < positions.length; i++) {
+      for (let j = i + 1; j < positions.length; j++) {
+        const p1 = positions[i];
+        const p2 = positions[j];
 
-      const other = points[i];
-      const dx = mx - other.x;
-      const dy = my - other.y;
-      const d = Math.hypot(dx, dy);
+        const dx = p1.x - p2.x;
+        const dy = p1.y - p2.y;
+        const d = Math.hypot(dx, dy);
 
-      const minD = 2 * radius;
+        if (d < 1e-9) {
+          if (p1.id === movedId) {
+            p1.x += minD;
+          } else if (p2.id === movedId) {
+            p2.x += minD;
+          } else {
+            p1.x += minD / 2;
+            p2.x -= minD / 2;
+          }
+          continue;
+        }
 
-      if (d < 1e-9) {
-        mx += minD;
-        continue;
-      }
+        if (d < minD) {
+          const push = minD - d;
+          const ux = dx / d;
+          const uy = dy / d;
 
-      if (d < minD) {
-        const push = minD - d;
-        const ux = dx / d;
-        const uy = dy / d;
-        mx += ux * push;
-        my += uy * push;
+          if (p1.id === movedId) {
+            p1.x += ux * push;
+            p1.y += uy * push;
+          } else if (p2.id === movedId) {
+            p2.x -= ux * push;
+            p2.y -= uy * push;
+          } else {
+            const halfPush = push / 2;
+            p1.x += ux * halfPush;
+            p1.y += uy * halfPush;
+            p2.x -= ux * halfPush;
+            p2.y -= uy * halfPush;
+          }
+        }
       }
     }
   }
 
-  // Devuelve el mismo tipo T, preservando todas las props (kind, etc.)
-  return points.map((p) => (p.id === movedId ? ({ ...p, x: mx, y: my } as T) : p));
+  return points.map((p) => {
+    const finalPos = positions.find((pos) => pos.id === p.id);
+    if (!finalPos) return p;
+    if (finalPos.x !== p.x || finalPos.y !== p.y) {
+      return { ...p, x: finalPos.x, y: finalPos.y };
+    }
+    return p;
+  });
 }

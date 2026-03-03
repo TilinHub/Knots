@@ -227,8 +227,20 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     // Uses the DYNAMICALLY updated positions or just points
     const legacyResult = findEnvelopePathFromPoints(activeAnchors, contactDisks);
 
-    // [CS PROTOCOL] Snapshot into strict format if not dragging and valid
-    if (!isDragging && legacyResult.path.length > 0 && diskSequence.length > 1) {
+    // [CS PROTOCOL] Snapshot — SOLO si el path tiene discos reales (no puntos libres)
+    // findEnvelopePathFromPoints genera segmentos con sentinel IDs ('start','end','point')
+    // que no corresponden a discos en state.disks → createMathematicalStateFromPath falla.
+    const pathHasRealDisks = legacyResult.path.some((seg: any) => {
+      if (seg.type === 'ARC') return diskSequence.includes(seg.diskId);
+      return (
+        seg.startDiskId != null &&
+        seg.endDiskId != null &&
+        diskSequence.includes(seg.startDiskId) &&
+        diskSequence.includes(seg.endDiskId)
+      );
+    });
+
+    if (!isDragging && legacyResult.path.length > 0 && diskSequence.length > 1 && pathHasRealDisks) {
       const dMap = new Map<string, any>();
       contactDisks.forEach(d => dMap.set(d.id, d));
       const strictState = createMathematicalStateFromPath(legacyResult.path, dMap, diskSequence);

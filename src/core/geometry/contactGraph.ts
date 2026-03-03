@@ -401,16 +401,40 @@ export function findEnvelopePath(
         if (!prevEntry) continue;
         if (prevEntry.cost === Infinity) continue;
 
-        // Find matching edge in graph — only outer tangents (LSL/RSR)
-        // to prevent the envelope from crossing between disks.
-        const matchingEdges = graph.edges.filter(
+        // Buscar aristas con chirality exacta (fromChir -> toChir)
+        let matchingEdges = graph.edges.filter(
           (e) =>
             e.startDiskId === fromDiskId &&
             e.endDiskId === toDiskId &&
-            // Allow ALL tangent types (Outer AND Inner) to support crossings/chiral swaps
             e.type.startsWith(fromChir) &&
             e.type.endsWith(toChir),
         );
+
+        // Fallback 1: Si no hay arista exacta y modo no-estricto, usar cualquier arista entre esos discos
+        if (matchingEdges.length === 0 && !strictChirality) {
+          matchingEdges = graph.edges.filter(
+            (e) => e.startDiskId === fromDiskId && e.endDiskId === toDiskId,
+          );
+        }
+
+        // Fallback 2: Buscar en dirección inversa y revertir (el grafo puede tener solo una dirección)
+        if (matchingEdges.length === 0) {
+          matchingEdges = graph.edges
+            .filter(
+              (e) =>
+                e.startDiskId === toDiskId &&
+                e.endDiskId === fromDiskId &&
+                e.type.startsWith(toChir) &&
+                e.type.endsWith(fromChir),
+            )
+            .map((e) => ({
+              ...e,
+              start: e.end,
+              end: e.start,
+              startDiskId: e.endDiskId,
+              endDiskId: e.startDiskId,
+            }));
+        }
 
         const allEdges = matchingEdges;
 
