@@ -260,15 +260,27 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
       // Type assertion to handle 'type' discriminator safely
       const s = seg as any;
       if (s.type === 'ARC') {
-        if (s.diskId) derivedChiralities.set(s.diskId, s.chirality);
+        if (s.diskId && !derivedChiralities.has(s.diskId)) {
+          derivedChiralities.set(s.diskId, s.chirality);
+        }
       } else if (['LSL', 'LSR', 'RSL', 'RSR'].includes(s.type)) {
         // Tangent Segment
         const type = s.type as string; // e.g. 'LSL'
-        if (s.startDiskId && s.startDiskId !== 'point' && s.startDiskId !== 'start') {
+        if (s.startDiskId && s.startDiskId !== 'point' && s.startDiskId !== 'start' && !derivedChiralities.has(s.startDiskId)) {
           derivedChiralities.set(s.startDiskId, type.charAt(0) as 'L' | 'R');
         }
-        if (s.endDiskId && s.endDiskId !== 'point' && s.endDiskId !== 'end') {
+        if (s.endDiskId && s.endDiskId !== 'point' && s.endDiskId !== 'end' && !derivedChiralities.has(s.endDiskId)) {
           derivedChiralities.set(s.endDiskId, type.charAt(2) as 'L' | 'R');
+        }
+      } else if (s.type.startsWith('PTD-')) {
+        const type = s.type as string;
+        if (s.endDiskId && s.endDiskId !== 'point' && s.endDiskId !== 'end' && !derivedChiralities.has(s.endDiskId)) {
+          derivedChiralities.set(s.endDiskId, type.charAt(4) as 'L' | 'R');
+        }
+      } else if (s.type.startsWith('DTP-')) {
+        const type = s.type as string;
+        if (s.startDiskId && s.startDiskId !== 'point' && s.startDiskId !== 'start' && !derivedChiralities.has(s.startDiskId)) {
+          derivedChiralities.set(s.startDiskId, type.charAt(4) as 'L' | 'R');
         }
       }
     });
