@@ -156,10 +156,10 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
     const segmentLen = Math.sqrt(segmentLenSq);
     const chordLen = (t2 - t1) * segmentLen;
 
-    // If chord is less than 10% of radius (grazing/touching)
-    // 0.01 was too strict (numerical noise rejected valid packed configurations).
-    // 0.10 rejects visible overlaps while tolerating numerical noise.
-    if (chordLen < r * 0.10) {
+    // If chord is less than 1% of radius (grazing/touching)
+    // 0.10 rejects visible overlaps but is too loose, allowing visual clipping.
+    // 0.01 provides strict visual boundaries while tolerating numerical noise.
+    if (chordLen < r * 0.01) {
       // Grazing/Touching -> Allowed
       return false;
     }
@@ -489,7 +489,8 @@ export function findEnvelopePath(
   }
 
   if (!bestFinal) {
-    Logger.warn('ContactGraph', 'No valid envelope path found');
+    // Silenced 'No valid envelope path found' to prevent console spam
+    // during continuous EditorPage evaluation of constrained topologies.
     return { path: [], chiralities: [] };
   }
 
@@ -600,7 +601,7 @@ function isArcBlocked(
     const chordLen = 2 * disk.radius * Math.sin(gamma);
 
     // Only block if the chord is substantive (not just a grazing touch from numerical noise)
-    if (chordLen < disk.radius * 0.10) continue;
+    if (chordLen < disk.radius * 0.01) continue;
 
     const b1 = norm(phi - gamma);
     const b2 = norm(phi + gamma);

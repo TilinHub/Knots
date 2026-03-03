@@ -101,9 +101,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       fy = ay - cy;
     const a = dx * dx + dy * dy;
     if (a < 1e-12) return false; // Degenerate segment
-    // Shrink effective radius to avoid false positives for tangents
-    // that merely graze a disk boundary
-    const effectiveR = r * 0.8;
+    // Shrink effective radius minimally to avoid false positives for perfect tangents
+    // that merely graze a disk boundary without cutting into it.
+    const effectiveR = r * 0.99;
     const b = 2 * (fx * dx + fy * dy);
     const c = fx * fx + fy * fy - effectiveR * effectiveR;
     const disc = b * b - 4 * a * c;
@@ -112,7 +112,8 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     const t1 = (-b - sqrtDisc) / (2 * a);
     const t2 = (-b + sqrtDisc) / (2 * a);
     // Chord must be inside the segment (not just touching endpoints)
-    const EPS = 0.08;
+    // Lowered EPS from 0.08 to 0.005 to prevent endpoints overlapping heavily
+    const EPS = 0.005;
     if (t1 > EPS && t1 < 1 - EPS) return true;
     if (t2 > EPS && t2 < 1 - EPS) return true;
     const tEnter = Math.max(t1, EPS);

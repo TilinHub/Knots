@@ -545,20 +545,27 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     return knotPath;
   }, [knotPath, currentAnchors, contactDisks]);
 
-  const toggleDisk = useCallback((diskId: string) => {
-    setDiskSequence((prev) => {
-      if (prev.length > 0 && prev[prev.length - 1] === diskId) {
-        // Remove last
-        setLastAnchorPoint(null);
-        setAnchorSequence((prevA) => prevA.slice(0, -1));
-        setChiralities((prevC) => prevC.slice(0, -1));
-        return prev.slice(0, -1);
-      }
-      // Add new
-      setChiralities((prevC) => [...prevC, 'L']); // Default to Left
-      return [...prev, diskId];
-    });
-  }, []);
+  const toggleDisk = useCallback(
+    (diskId: string) => {
+      setDiskSequence((prev) => {
+        if (prev.length > 0 && prev[prev.length - 1] === diskId) {
+          // Remove last
+          setTimeout(() => {
+            setLastAnchorPoint(null);
+            setAnchorSequence((prevA) => prevA.slice(0, -1));
+            setChiralities((prevC) => prevC.slice(0, -1));
+          }, 0);
+          return prev.slice(0, -1);
+        }
+        // Add new
+        setTimeout(() => {
+          setChiralities((prevC) => [...prevC, 'L']); // Default to Left
+        }, 0);
+        return [...prev, diskId];
+      });
+    },
+    []
+  );
 
   const toggleMode = useCallback(() => {
     setMode((prev) => (prev === 'hull' ? 'knot' : 'hull'));
@@ -580,7 +587,6 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
           Math.pow(point.x - lastAnchorPoint.x, 2) + Math.pow(point.y - lastAnchorPoint.y, 2),
         );
         if (dist < 1.0) {
-          // 1px tolerance
           Logger.warn('KnotState', 'Duplicate Point Extension Ignored', { diskId, point, dist });
           return;
         }
@@ -593,16 +599,13 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
       const angle = Math.atan2(point.y - disk.center.y, point.x - disk.center.x);
 
       setAnchorSequence((prev) => [...prev, { diskId, angle }]);
-
       setChiralities((prev) => [...prev, 'L']); // Default to Left
 
       // We still track diskSequence for metadata/UI feedback
-      setDiskSequence((prev) => {
-        Logger.info('KnotState', 'Extended Sequence with Point', { diskId, point });
-        return [...prev, diskId];
-      });
+      setDiskSequence((prev) => [...prev, diskId]);
+      Logger.info('KnotState', 'Extended Sequence with Point', { diskId, point });
 
-      setLastAnchorPoint(point); // This might be slightly off if disk moves immediately, but acts as "last click"
+      setLastAnchorPoint(point);
     },
     [blocks, lastAnchorPoint],
   );

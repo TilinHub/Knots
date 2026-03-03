@@ -215,21 +215,17 @@ export function intersectArcArc(
 
     // 1. Check endpoints of Arc1 inside Arc2
     if (strictInterval(th1_s, th2_s, th2_e)) {
-      Logger.warn('Geometry', 'G3 Concentric Intersection (Arc1 inside Arc2)');
       return true;
     }
     if (strictInterval(th1_e, th2_s, th2_e)) {
-      Logger.warn('Geometry', 'G3 Concentric Intersection (Arc1 inside Arc2)');
       return true;
     }
 
     // 2. Check endpoints of Arc2 inside Arc1 (covers containment)
     if (strictInterval(th2_s, th1_s, th1_e)) {
-      Logger.warn('Geometry', 'G3 Concentric Intersection (Arc2 inside Arc1)');
       return true;
     }
     if (strictInterval(th2_e, th1_s, th1_e)) {
-      Logger.warn('Geometry', 'G3 Concentric Intersection (Arc2 inside Arc1)');
       return true;
     }
 
@@ -240,7 +236,6 @@ export function intersectArcArc(
     const d_e1e2 = Math.min(Math.abs(wrap0_2pi(th1_e - th2_e)), Math.abs(wrap0_2pi(th2_e - th1_e)));
 
     if (d_s1s2 < tolerance && d_e1e2 < tolerance) {
-      Logger.warn('Geometry', 'G3 Concentric Identity Intersection');
       return true; // Identical
     }
 
@@ -291,11 +286,11 @@ export function intersectArcArc(
   };
 
   if (checkPoint(P1)) {
-    Logger.warn('Geometry', 'G3 Intersection at P1', { P1, C1, C2 });
+    // Logger.warn('Geometry', 'G3 Intersection at P1', { P1, C1, C2 });
     return true;
   }
   if (dist(P1, P2) > tolerance && checkPoint(P2)) {
-    Logger.warn('Geometry', 'G3 Intersection at P2', { P2, C1, C2 });
+    // Logger.warn('Geometry', 'G3 Intersection at P2', { P2, C1, C2 });
     return true;
   }
 

@@ -147,9 +147,9 @@ export function createMathematicalStateFromPath(
 
         const diskId = currCtx.line.endDiskId;
         if (diskId !== nextCtx.line.startDiskId) {
-            Logger.warn('csTransitions', 'Path line discontinuity found between segments!', { curr: diskId, next: nextCtx.line.startDiskId });
-            // For now, assume it's still mathematically connected on the same disk due to topology solver.
-            // A more robust implementation might handle intermediate missing disks.
+            // Silenced discontinuity warning because active knot paths are often 
+            // non-closed open paths during drawing/dragging.
+            // Logger.warn('csTransitions', 'Path line discontinuity found between segments!', { curr: diskId, next: nextCtx.line.startDiskId });
         }
 
         const incomingId = currCtx.tInId;
