@@ -4,6 +4,7 @@ import { blockLength, getCurveLengthInfo } from '../../../core/geometry/arcLengt
 import type { CSArc, CSBlock, CSDisk, CSSegment } from '../../../core/types/cs';
 import { validateContinuity } from '../../../core/validation/continuity';
 import type { DynamicAnchor } from '../../knot/logic/useKnotState';
+import { PRELOADED_KNOTS } from '../../gallery/preloaded';
 
 interface InitialKnot {
   id: number;
@@ -19,6 +20,9 @@ export interface SavedKnot {
   anchorSequence?: DynamicAnchor[]; // [NEW] Store exact anchor points
   chiralities?: ('L' | 'R')[];
   frozenPath?: any[]; // [NEW] Frozen path segments at save time (immutable)
+  blocks: CSBlock[]; // [NEW] Store ALL blocks for restoration
+  thumbnail?: string; // [NEW] DataURL
+  createdAt: number; // [NEW] Timestamp
   color: string;
 }
 
@@ -31,10 +35,10 @@ export function useEditorState(initialKnot?: InitialKnot) {
   const [savedKnots, setSavedKnots] = useState<SavedKnot[]>(() => {
     try {
       const stored = localStorage.getItem('knots_saved_envelopes');
-      return stored ? JSON.parse(stored) : [];
+      return stored ? JSON.parse(stored) : PRELOADED_KNOTS;
     } catch (e) {
       console.error('Failed to load saved knots:', e);
-      return [];
+      return PRELOADED_KNOTS;
     }
   });
 
@@ -187,6 +191,8 @@ export function useEditorState(initialKnot?: InitialKnot) {
       chiralities: chiralities ? [...chiralities] : undefined,
       anchorSequence: anchorSequence ? [...anchorSequence] : undefined,
       frozenPath: enrichedPath ? JSON.parse(JSON.stringify(enrichedPath)) : undefined,
+      blocks: JSON.parse(JSON.stringify(blocks)), // Capture CURRENT scene state
+      createdAt: Date.now(),
       color: activeColor || '#FF4500',
     };
     setSavedKnots((prev) => [...prev, newKnot]);

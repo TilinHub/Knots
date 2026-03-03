@@ -24,6 +24,8 @@ import { useContactGraph } from './hooks/useContactGraph';
 import { useEditorState } from './hooks/useEditorState';
 import { usePersistentDubins } from './hooks/usePersistentDubins';
 import { useRibbonMode } from '../ribbon/logic/useRibbonMode';
+import { KnotGallery } from '../gallery/KnotGallery';
+
 
 interface EditorPageProps {
   onBackToGallery?: () => void;
@@ -44,8 +46,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const { state: editorState, actions: editorActions } = useEditorState(initialKnot);
   const rollingState = useRollingMode({ blocks: editorState.blocks });
   const ribbonState = useRibbonMode();
-  // New Catalog Mode
+  // New View Modes
   const [catalogMode, setCatalogMode] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<'editor' | 'gallery'>('editor');
 
   // Only pass disks to knot state for graph building
   const diskBlocks = React.useMemo(
@@ -653,14 +656,43 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // Use simple toggle
   const handleToggleKnotMode = knotState.actions.toggleMode;
 
-  // 2. Event Handlers (can be simple wrappers or passed directly)
+  const handleLoadKnot = (saved: any) => {
+    // 1. Restore Blocks (Physical Positions)
+    editorActions.setBlocks(saved.blocks);
+
+    // 2. Restore Sequence and Chiralities
+    if (knotState.actions.setSequence) {
+      knotState.actions.setSequence(saved.diskSequence);
+    }
+    if (saved.chiralities && knotState.actions.setChiralities) {
+      knotState.actions.setChiralities(saved.chiralities);
+    }
+
+    // 3. Close Gallery
+    setViewMode('editor');
+    Logger.info('EditorPage', `Restored knot: ${saved.name}`);
+  };
 
   // 3. Render
+  if (viewMode === 'gallery') {
+    return (
+      <div style={{ height: '100vh', width: '100vw' }}>
+        <KnotGallery
+          knots={editorState.savedKnots}
+          onLoadKnot={handleLoadKnot}
+          onDeleteKnot={editorActions.deleteSavedKnot}
+          onBack={() => setViewMode('editor')}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <EditorHeader
         initialKnotName={initialKnot?.name}
         onBackToGallery={onBackToGallery}
+        onOpenGallery={() => setViewMode('gallery')}
         rollingMode={rollingState.isActive}
         onToggleRollingMode={rollingState.toggleMode}
         knotMode={knotState.mode === 'knot'}

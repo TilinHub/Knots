@@ -49,6 +49,8 @@ interface EditorHeaderProps {
   // Transparency
   transparentDisks: boolean; // [NEW]
   onToggleTransparentDisks: () => void; // [NEW]
+  // Gallery
+  onOpenGallery?: () => void; // [NEW]
 }
 
 export const EditorHeader = ({
@@ -89,6 +91,7 @@ export const EditorHeader = ({
   onToggleCatalogMode,
   transparentDisks,
   onToggleTransparentDisks,
+  onOpenGallery,
 }: EditorHeaderProps) => {
   const [showLengthDetails, setShowLengthDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -250,6 +253,21 @@ export const EditorHeader = ({
           }}
         >
           🎡 Rolling Mode
+        </button>
+
+        {/* GALLERY BUTTON - NEW */}
+        <button
+          onClick={onOpenGallery}
+          style={{
+            ...commonBtnStyle,
+            background: 'var(--bg-tertiary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+          }}
+          title="Open Knot Gallery"
+        >
+          📂 Gallery
         </button>
 
 
