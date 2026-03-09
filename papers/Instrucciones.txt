@@ -1,0 +1,592 @@
+PRIMERA VARIACION DEL LARGO PARA DIAGRAMAS CS
+JOS´E AYALA AND TOM´AS AYALA
+1.Parte conceptual: primera variaci ´on para diagramas cs
+1.1.Lo que vas a lograr con este documento.La meta es que puedas hacer lo siguiente,
+sin adivinar nada:
+•Construir la matriz completaL(c) de restricciones lineales de primer orden.
+•Calcular el funcional lineal de primera variacion de longitud Φ(δc, ω).
+•Decidir criticidad: el diagrama es critico si y solo si Φ se anula en todas las direcciones
+admisibles.
+•(Opcional) Calcular una segunda variacion (forma cuadratica) sobre direcciones admis-
+ibles.
+Lo importante:L(c) solo describe movimientos permitidos (primer orden). La longitud entra
+por separado en Φ.
+1.2.Datos del diagrama cs y convenciones.
+Discos. HayNdiscos unitariosD 1, . . . , DN con centrosc i ∈R 2 y radioR= 1.
+Piezas cs. El diagrama csγesta compuesto por:
+•segmentos rectos (en el complemento de los discos) cuyos extremos son tangencias con
+discos,
+•arcos circulares sobre fronteras∂D k cuyos extremos son tangencias con el mismo disco.
+Conjuntos indice (combinatoria fija).
+•E= conjunto de contactos disco–disco, cada elemento es un par no ordenado{i, j}.
+•T= conjunto de tangencias curva–disco, cada elemento es una etiquetaα.
+•S= conjunto de segmentos, cada segmento es un par ordenadoα→βde tangencias.
+•A= conjunto de arcos, cada arco es un triple (α→β, k, σ a): extremosα, βsobre el
+mismo discoD k y un signoσ a ∈ {+1,−1}.
+Datos geometricos minimos (esto SI es entrada). Para poder construir matrices y longitud,
+necesitas:
+•los centrosc 1, . . . , cN,
+•para cada tangenciaα∈T: el discok(α)∈ {1, . . . , N}y el puntop α ∈∂D k(α),
+•la listaSde segmentosα→β,
+•la listaAde arcos (α→β, k, σ a).
+Convencion de rotacion 90 ◦. UsamosJ(x, y) = (−y, x).
+Normal y tangente en una tangencia (calculable desdecyp). Siα∈Tocurre en el disco
+k=k(α):
+•normal unitarion α :=p α −c k,
+•tangente unitariot α :=ε αJn α conε α ∈ {+1,−1}.
+El signoε α lo fijas para quet α apunte en la direccion de recorrido deγenα.
+2000Mathematics Subject Classification.57M25, 57M27, 49Q10, 53C42.
+Key words and phrases.Knots, links, ribbons, ribbonlength, ropelength.
+1
+
+2 JOS ´E AYALA AND TOM´AS AYALA
+Chequeos inmediatos (si falla, la entrada esta mal).
+•Para todoα∈T:∥p α −c k(α)∥= 1.
+•Para todoα∈T:⟨n α, tα⟩= 0 y∥t α∥= 1.
+•Para todo{i, j} ∈E:∥c i −c j∥= 2.
+1.3.Variables de primer orden.
+Variacion de centros (incognita).δc= (δc 1, . . . , δcN)∈R 2N conδc i ∈R 2.
+Variables auxiliares por tangencia (incognita).ω= (ω α)α∈T ∈R |T|.
+Modelo cinematico (esto es una definicion operacional). El movimiento de cada punto de tan-
+gencia se modela porδp α =δc k(α) +ω αtα.
+Comentario honesto: esta es la forma mas simple y util para convertir variacion de longitud
+en una forma lineal en (δc, ω), y es la que se usa en el protocolo.
+1.4.Bloque de contactos disco–disco: construccion deA(c).
+Vector unitario de contacto. Para cada contacto{i, j} ∈Edefineu ij := (ci −c j)/∥ci −c j∥.
+Restriccion de primer orden. Como∥c i−cj∥= 2 se mantiene constante en el estrato de contacto,
+la derivada da⟨u ij, δci −δc j⟩= 0.
+Construccion de la fila.A(c) tiene|E|filas y 2Ncolumnas (bloques de tama˜ no 2 por disco). La
+fila de{i, j}tiene:
+•bloqueu ⊤
+ij en las columnas del discoi,
+•bloque−u ⊤
+ij en las columnas del discoj,
+•ceros en las demas columnas.
+Espacio de rodadura. Roll(c) := kerA(c).
+1.5.Bloques de tangencia: construccion deT c(c)yT ω(c).
+Ecuacion por tangencia. Para cadaα∈Timponemos⟨t α, δck(α)⟩+ω α = 0.
+Aclaracion para tu duda:
+•t α SI es calculable (desdep α yc k(α), mas el signo de orientacion).
+•δcyωNO se conocen a priori: son las incognitas del sistema lineal.
+•La ecuacion no es un dato, es una restriccion.
+Fila enT c(c). La fila deT c(c) asociada aαtiene un unico bloque no nulo:
+•bloquet ⊤
+α en las columnas del discok(α),
+•ceros en los otros discos.
+Fila enT ω(c). La fila deT ω(c) asociada aαtiene:
+•un 1 en la columna deω α,
+•ceros en las demas columnas.
+Conclusion. Con esta convencionT ω(c) =I.
+1.6.Operador lineal completo de restricciones:L(c).
+Definicion.L(c) es la matriz por bloquesL(c) =
+
+A(c) 0
+Tc(c)T ω(c)
+
+que actua sobre (δc, ω)∈R 2N ×
+R|T|.
+Significado deL(c). Las direcciones admisibles a primer orden son exactamente kerL(c) =
+{(δc, ω) :L(c)(δc, ω) = 0}.
+Eliminacion explicita deω. ComoT ω =I, la segunda linea daω=−T c(c)δc. Entonces, en este
+modelo, todaδc∈Roll(c) tiene un lift unico a kerL(c), dado porω=−T c(c)δc.
+
+3
+Correccion importante (esto arregla un error frecuente). No es correcto escribir un teorema de
+primera variacion que dependa solo decy contactos sin usarp α, tα y la descomposicionS,A.
+La longitud del diagrama no depende solo del grafo de contacto; depende de la geometria del
+trazoγ.
+1.7.Longitud del diagrama y funcional de primera variacionΦ.
+Longitud. Len(γ) es la suma de longitudes de:
+•segmentoss∈S(distancia entre extremos),
+•arcosa∈A(longitud angular sobre∂D k, conR= 1).
+Definicion de Φ. El funcional de primera variacion es Φ(δc, ω) :=DLen(γ)[δγ(δc, ω)] evaluado
+en una direccion admisible (δc, ω)∈kerL(c).
+Criticidad en el estrato cs significa: Φ(δc, ω) = 0 para todo (δc, ω)∈kerL(c).
+1.8.Contribucion de un segmento y de un arco (formulas correctas).
+Segmentos:α→β.
+Datos del segmento.v s :=p β −p α,ℓ s :=∥v s∥, ˆvs :=v s/ℓs.
+Primera variacion del segmento.DLen(s) =⟨ˆv s, δpβ −δp α⟩.
+Usandoδp α =δc k(α) +ω αtα:DLen(s) =⟨ˆv s, δck(β) −δc k(α)⟩+⟨ˆvs, ωβtβ −ω αtα⟩.
+Arcoa= (α→β, k, σ a)sobre∂D k.
+Primera variacion del arco. En este modelo:DLen(a) =σ a(ωβ −ω α).
+Nota de sanidad. Esta formula NO produce un termino directo enδcantes de eliminarω. Si
+luego sustituyesω=−T cδc, entonces si aparece dependencia enδc, pero eso es despues de la
+eliminacion.
+1.9.Ensamblaje mecanico deΦ: reglas de acumulacion.
+Forma general. Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ωpara ciertos coeficientesg c ∈R 2N yg ω ∈R |T|.
+Inicializacion. Partir cong c = 0 yg ω = 0.
+Regla por segmentos:α→β.
+•En el bloque del discok(α) sumar−ˆv s ag c.
+•En el bloque del discok(β) sumar +ˆv s ag c.
+•Sumar−⟨ˆv s, tα⟩ag ω[α].
+•Sumar +⟨ˆvs, tβ⟩ag ω[β].
+Regla por arcoa= (α→β, k, σ a).
+•Sumar−σ a ag ω[α].
+•Sumar +σ a ag ω[β].
+Resultado. Despues de procesar todas las piezas, Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ω.
+1.10.Test de criticidad en algebra lineal (dos metodos equivalentes).
+Metodo 1: base de kerL(c).
+(1) Calcula una base de kerL(c) y juntala como columnas de una matrizK.
+(2) Calcula (g c, gω)⊤K.
+(3) El diagrama es critico si y solo si (g c, gω)⊤K= 0.
+Metodo 2: criterio de espacio fila. El diagrama es critico si y solo si existeλtal que (g c, gω) =
+L(c)⊤λ. Esto es resolver un sistema lineal paraλ.
+
+4 JOS ´E AYALA AND TOM´AS AYALA
+Explicacion para abuela (sin perder verdad).L(c) dice que movimientos pequenos estan per-
+mitidos sin romper contactos ni tangencias. Φ dice si esos movimientos pequenos hacen que la
+curva se alargue o se acorte al primer orden. Critico significa: ningun movimiento permitido
+cambia la longitud al primer orden.
+1.11.Segunda variacion: version util para pregrado.Aqui hay una forma correcta y
+ejecutable de segunda variacion, sin afirmar cosas falsas.
+Idea. Primero construyes una forma cuadraticaQ amb(δc, ω) (segunda variacion en el espacio
+extendido). Luego la restringes a (δc, ω)∈kerL(c).
+Segunda variacion de un segmento.Para un segmentos:α→βconv s =p β −p α yℓ s =∥v s∥,
+la segunda variacion de la distancia euclidea (formula estandar) se escribe como:
+D2 Len(s) = 1
+ℓs
+∥(I−ˆv sˆv⊤
+s )(δpβ −δp α)∥ 2 +⟨ˆvs, δ2pβ −δ 2pα⟩.
+En un protocolo de pregrado, normalmente se usa la aproximacion consistente de primer
+orden: se ignoraδ 2py se trabaja con la parte cuadratica positiva:
+Qs(δc, ω) := 1
+ℓs
+∥(I−ˆv sˆv⊤
+s )(δpβ −δp α)∥ 2.
+Esto es una forma cuadratica explicita en (δc, ω) porqueδpes lineal en (δc, ω).
+Segunda variacion de un arco.En este modelo,DLen(a) =σ a(ωβ −ω α) es lineal, por lo tanto
+su segunda variacion en las variables (δc, ω) es cero:Q a(δc, ω) = 0.
+Forma cuadratica total.DefineQ amb(δc, ω) :=P
+s∈S Qs(δc, ω).
+La segunda variacion reducida sobre el estrato cs es la restriccion:Q red :=Q amb|kerL(c) .
+Comentario honesto. Esta segunda variacion capta de manera limpia la curvatura de la parte de
+segmentos y es suficiente para tests de estabilidad linealizados en muchos ejemplos. Si quieres
+la formula completa conδ 2p, hay que fijar un modelo de segundo orden del movimiento de
+puntos de tangencia; eso es mas avanzado.
+1.12.Correcciones clave al borrador original (para que no se meta un error).
+(K1) Bien: definicion deA γ(c) como proyeccion de kerL(c). Eso es correcto y es la forma
+intrinseca.
+(K2) Bien: advertencia de que una matriz centro-soloB(c) no es canonica. Eso es correcto.
+(K3) Mal: usarTcomo “pares de discos que son extremos de segmentos” para imponer con-
+tactos. Los extremos de un segmento pueden estar en discos que NO son contactos disco–disco.
+La lista de contactos debe serE, separada deS.
+(K4) Mal: derivada de contacto usando⟨c j −c i, δcj −δc i⟩= 0. La forma correcta es con el
+unitario:⟨u ij, δci −δc j⟩= 0 dondeu ij = (ci −c j)/∥ci −c j∥.
+(K5) Mal: un “teorema reducido” que daDLen solo conu ij yn ⊥ sin usarωni la listaS,A.
+La primera variacion correcta depende de los segmentos y arcos viap α, tα y del lift (δc, ω)∈
+kerL(c). Por eso aqui la primera variacion se define por piezas y se ensambla en Φ.
+(K6) Mal: suponer que Len(c) = P ℓij(dij) cond ij =∥c i −c j∥como si todo dependiera solo de
+distancias entre centros. En cs–diagramas hay dependencia angular (arcos) y dependencia en
+puntos de tangencia. Por eso aqui la segunda variacion se construye por piezas usandoδp.
+1.13.Checklist final (lo que debes mostrar al final, sin excepciones).
+•Centrosc 1, . . . , cN.
+•Lista de contactosEy verificacion∥c i −c j∥= 2 para{i, j} ∈E.
+•Lista de tangenciasTconk(α) yp α y verificacion∥p α −c k(α)∥= 1.
+•Vectoresn α yt α (con signosε α fijados).
+•Matrices numericasA(c),T c(c),T ω(c) yL(c).
+
+5
+•Lista de segmentosSy arcosAcon signosσ a.
+•Coeficientesg c, gω y la formula Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ω.
+•Test de criticidad por Metodo 1 o Metodo 2.
+
+6 JOS ´E AYALA AND TOM´AS AYALA
+2.Parte num ´erica: primera variaci ´on para diagramas cs
+2.1.Lo que vas a lograr con este documento.Este texto es una receta ejecutable. Si
+sigues cada paso y haces los chequeos, al final vas a poder:
+•Construir una matriz de restricciones de primer ordenL(c), completamente numerica.
+•Construir la primera variacion de longitud como un funcional lineal Φ(δc, ω) =g ⊤
+c δc+
+g⊤
+ω ω.
+•Decidir criticidad dentro del estrato csdefinido por este protocolo: el diagrama es
+critico si y solo si Φ se anula en todas las direcciones admisibles, es decir, sobre kerL(c),
+despues de quitar movimientos rigidos.
+•(Opcional) Construir untest cuadraticoQ red sobre direcciones admisibles como evi-
+dencia de estabilidad linealizada dentro del estrato.
+La idea clave, en una frase:
+L(c) describeque movimientos estan permitidos(segun esta definicion de
+admisibilidad al primer orden), y Φ describeque hace la longitudcuando te
+mueves en esas direcciones.
+No hay magia: todo se reduce a algebra lineal con entradas geometricas concretas.
+2.2.Tolerancias numericas (obligatorio).Fija tres tolerancias positivas:
+tolmet,tol geo,tol lin .
+Regla:
+•chequeos metricos usan tol met,
+•chequeos geometricos de interseccion usan tol geo,
+•residuos algebraicos usan tol lin.
+Reporte obligatorio: toda funcion de chequeo retorna residuo y su norma.
+2.3.Datos del diagrama cs y convenciones.
+Discos. HayNdiscos unitariosD 1, . . . , DN con centrosc i ∈R 2 y radio fijoR= 1.
+Piezas cs. El diagrama csγse compone de:
+•segmentos rectos en el complemento de los discos, con extremos en puntos de tangencia,
+•arcos circulares contenidos en fronteras∂D k, con extremos en puntos de tangencia del
+mismo disco.
+Conjuntos indice (combinatoria fija). Estos son datos combinatorios que debes tener en tu
+codigo:
+•E: contactos disco–disco. Cada elemento es un par no ordenado{i, j}.
+•T: tangencias curva–disco. Cada elemento es una etiquetaα.
+•S: segmentos. Cada segmento es un par ordenadoα→βde tangencias.
+•A: arcos. Cada arco se codifica como
+a= (α→β, k,∆θ a),
+dondekes el disco y ∆θ a ∈(0,2π) es elincremento angular orientado(CCW)
+desdep α hastap β.
+Entradas geometricas minimas (esto SI es entrada). Para hacer cuentas numericas, necesitas
+exactamente:
+•los centrosc 1, . . . , cN,
+•para cadaα∈T: el indicek(α)∈ {1, . . . , N}y el puntop α ∈∂D k(α),
+•la listaSde segmentosα→β,
+
+7
+•la listaAde arcos (α→β, k,∆θ a).
+Convencion de rotacion 90 ◦. DefinimosJ:R 2 →R 2 porJ(x, y) = (−y, x).
+Normal en una tangencia (calculable desdecyp). Paraα∈T, seak=k(α) y definimos
+nα :=p α −c k.
+Este vector debe ser unitario.
+Chequeos metricos inmediatos (si falla, la entrada esta mal). Antes de cualquier matriz, exigir:
+•Para todoα∈T: ∥pα −c k(α)∥ −1
+ ≤tol met .
+•Para todo{i, j} ∈E: ∥ci −c j∥ −2
+ ≤tol met .
+2.4.Orientacion computable: como fijart α sin ambiguedad.
+Principio. En este paquete,t α se definedesde la pieza salienteen el ciclo orientado, y luego
+se chequea tangencia de manera dura. Esto elimina ambiguedades de signo.
+Caso 1: desdeαsale un segmentos:α→β. Definimos
+tα := \(pβ −p α).
+Chequeos duros:
+|⟨tα, nα⟩| ≤tol lin,
+∥tα∥ −1
+ ≤tol lin .
+Caso 2: desdeαsale un arcoa= (α→β, k,∆θ a). Seak=k(α) =k(β). En este protocolo,
+todo arco se interpreta CCW, luego la tangente saliente enp α es
+tα :=Jn α.
+Chequeos duros:
+|⟨tα, nα⟩| ≤tol lin,
+∥tα∥ −1
+ ≤tol lin .
+Regla computable para ∆θ a (recomendado: no lo ingreses a mano). Paraa= (α→β, k,∆θ a)
+define
+θα := atan2((pα −c k)2,(p α −c k)1), θ β := atan2((pβ −c k)2,(p β −c k)1).
+Define
+wrap[0,2π)(x) :=x+ 2πmcon el unicom∈Ztal que wrap [0,2π)(x)∈[0,2π).
+Entonces fija
+∆θa := wrap[0,2π)(θβ −θ α).
+Chequeo duro:
+tollin <∆θ a <2π−tol lin .
+Nota. Si necesitas permitir arcos CW, entonces debes codificarlos con un dato distinto. En este
+protocolo,todo arco se codifica CCW.
+2.5.Variables de primer orden y definicion operacional de admisibilidad.
+Variacion de centros (incognita).δc= (δc 1, . . . , δcN)∈R 2N conδc i ∈R 2.
+Variables auxiliares por tangencia (incognita).ω= (ω α)α∈T ∈R |T|.
+Modelo cinematico (definicion operacional). El movimiento de cada punto de tangencia se mod-
+ela por:
+δpα =δc k(α) +ω αtα.
+
+8 JOS ´E AYALA AND TOM´AS AYALA
+Definicion (admisibilidad cs al primer orden). En este protocolo,definimosque (δc, ω) es
+cs–admisible si:
+•preserva contactos disco–disco al primer orden:A(c)δc= 0,
+•satisface compatibilidad de tangencia:
+⟨tα, δck(α)⟩+ω α = 0∀α∈T.
+Aviso de seguridad. La ecuacion⟨t α, δck⟩+ω α = 0 es parte de ladefinicion del protocolo.
+2.6.Convencion paraω(necesaria paraDLen(a) =ω β −ω α).En este protocolo,ω α es
+desplazamiento tangencial escalaren unidades de longitud sobre∂D k(α), medido en la
+direcciont α. En particular, sia= (α→β, k,∆θ a) es CCW, entonces
+DLen(a) =ω β −ω α.
+Esta formula depende de esta convencion.
+2.7.Bloque de contactos disco–disco: construccion deA(c).
+Vector unitario de contacto. Para cada contacto{i, j} ∈Edefine:
+uij := ci −c j
+∥ci −c j∥ .
+Restriccion de primer orden. Como∥c i −c j∥= 2 se mantiene en el estrato:
+⟨uij, δci −δc j⟩= 0.
+Construccion deA(c).A(c)∈R |E|×2N tiene una fila por{i, j} ∈E:
+•bloqueu ⊤
+ij en columnas del discoi,
+•bloque−u ⊤
+ij en columnas del discoj,
+•ceros en las demas columnas.
+Espacio de rodadura.
+Roll(c) := kerA(c)⊂R 2N .
+Chequeos algebraicos duros. SiUes una base ortonormal de Roll(c):
+∥A(c)U∥ ≤tol lin,∥U ⊤U−I∥ ≤tol lin,dim Roll(c) = 2N−rankA(c).
+2.8.Bloques de tangencia: construccion deT c(c)yT ω(c).
+Ecuacion por tangencia. Para cadaα∈Timponemos:
+⟨tα, δck(α)⟩+ω α = 0.
+Construccion deT c(c).T c(c)∈R |T|×2N tiene una fila porαcon un solo bloque no nulo:
+bloquet ⊤
+α en las columnas del discok(α).
+Construccion deT ω(c). En este protocolo:
+Tω(c) =I |T|.
+Chequeo duro:∥T ω −I∥= 0.
+2.9.Operador lineal completo de restricciones:L(c).
+Definicion por bloques.
+L(c) =
+
+A(c) 0
+Tc(c)T ω(c)
+
+∈R (|E|+|T|)×(2N+|T|) .
+Direcciones admisibles.
+kerL(c) ={(δc, ω) :L(c)(δc, ω) = 0}.
+
+9
+Eliminacion explicita deω. ComoT ω =I:
+ω=−T c(c)δc,
+y por tanto
+(δc, ω)∈kerL(c)⇐ ⇒δc∈Roll(c) yω=−T c(c)δc.
+2.10.Chequeos geometricos cs (duros) y chequeos globales de no interseccion.Estos
+chequeos convierten tu entrada en un cs–diagrama real.
+(C0) Chequeo combinatorio de cs (DURO).Exigir:
+•cadaα∈Taparece exactamente como inicio de una pieza y exactamente como fin de
+una pieza,
+•el grafo dirigido de piezas (tangencias como nodos, piezas como flechas) forma un solo
+ciclo orientado.
+Chequeos duros para cada segmentos:α→β.Seav s :=p β −p α yℓ s :=∥v s∥.
+(S1) Tangencia en los extremos. Exigir:
+|⟨vs, nα⟩| ≤tol geo,|⟨v s, nβ⟩| ≤tol geo .
+(S2) No interseccion con discos (despeje). Para cada discoD i, exigir que la distancia del centro
+ci al segmento [p α, pβ] sea≥1, salvo en discos extremos donde se permite igualdad en el
+endpoint correspondiente:
+dist(ci,[p α, pβ])≥1−tol geo .
+Chequeos duros para cada arcoa= (α→β, k,∆θ a).
+(A1) Endpoints en el disco correcto. Exigir:
+k(α) =k(β) =k,
+∥pα −c k∥ −1
+ ≤tol met,
+∥pβ −c k∥ −1
+ ≤tol met .
+(A2) Incremento angular bien definido. Exigir:
+tollin <∆θ a <2π−tol lin .
+(A3) Consistencia con el ciclo orientado. Chequear que el arcoaes exactamente la pieza saliente
+desdeαy entrante aβen el ciclo.
+Bug tip (arcos). Para un arcoa= (α→β, k,∆θ a), exigir tambien:
+k(α) =k(β) =k,∥t α −Jn α∥ ≤tol lin,∥t β −Jn β∥ ≤tol lin .
+Chequeos globales de no interseccion (DUROS si quieres validez geometrica completa).
+(G0) Lista de piezas geometricas. Representa cada pieza como un objeto geometrico:
+•segmento cerrado [p α, pβ],
+•arco sobre∂D k con intervalo angular de longitud ∆θ a.
+(G1) Segmento–segmento. Para dos segmentos distintos:
+int([pα, pβ])∩int([p α′, pβ′]) =∅,
+permitiendo interseccion solo en endpoints que sean la misma tangencia declarada.
+(G2) Segmento–arco. Un segmento y un arco no se cruzan, salvo en endpoints compartidos
+declarados.
+(G3) Arco–arco. Dos arcos no se cruzan, salvo en endpoints compartidos declarados.
+2.11.Longitud del diagrama y funcional de primera variacionΦ.
+Longitud total.
+Len(γ) =
+X
+s∈S
+Len(s) +
+X
+a∈A
+Len(a),Len(s) =∥p β −p α∥,Len(a) = ∆θ a.
+
+10 JOS ´E AYALA AND TOM´AS AYALA
+Definicion operacional de primera variacion.
+Φ(δc, ω) :=DLen(γ)[δγ(δc, ω)], δp α =δc k(α) +ω αtα.
+Criticidad en el estrato cs.
+γes critico⇐ ⇒Φ(δc, ω) = 0∀(δc, ω)∈kerL(c),
+despues de eliminar movimientos rigidos.
+2.12.Contribucion de un segmento y de un arco (formulas de primer orden).
+Segmentos:α→β.
+Datos.
+vs :=p β −p α, ℓ s :=∥v s∥,ˆv s := vs
+ℓs
+.
+Primera variacion del segmento.
+DLen(s) =⟨ˆvs, δpβ −δp α⟩, δp α =δc k(α) +ω αtα.
+Arcoa= (α→β, k,∆θ a).
+Primera variacion del arco (convencion del protocolo). Con arcos CCW yωcomo desplaza-
+miento tangencial escalar (longitud):
+DLen(a) =ω β −ω α.
+2.13.Ensamblaje mecanico deΦ: reglas de acumulacion.
+Objetivo. Construirg c ∈R 2N yg ω ∈R |T| tales que:
+Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ω.
+Inicializacion.
+gc = 0, g ω = 0.
+Regla por segmentos:α→β.
+•En el bloque del discok(α): sumar−ˆv s ag c.
+•En el bloque del discok(β): sumar +ˆv s ag c.
+•En la componenteαdeg ω: sumar−⟨ˆvs, tα⟩.
+•En la componenteβdeg ω: sumar +⟨ˆvs, tβ⟩.
+Regla por arcoa= (α→β, k,∆θ a).
+•En la componenteαdeg ω: sumar−1.
+•En la componenteβdeg ω: sumar +1.
+Resultado final.
+Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ω.
+Version reducida (solo enδc). En kerL(c),ω=−T cδc, entonces:
+Φ(δc, ω) =
+ 
+gc −T c(c)⊤gω
+⊤
+δc.
+Definimos
+gred :=g c −T c(c)⊤gω ∈R 2N .
+Sobre direcciones admisibles:
+Φ =g ⊤
+redδc, δc∈Roll(c).
+2.14.Gauge: como eliminar traslaciones y rotacion antes de declarar criticidad.
+Movimientos rigidos en el espacio ambiente. DefineV∈R 2N×3 cuyas columnas son:
+v(x) :δc i = (1,0), v (y) :δc i = (0,1), v (rot) :δc i =Jc i.
+
+11
+Proyeccion de rigidos a Roll(c). SeaU∈R 2N×d una base ortonormal de Roll(c). Define
+VRoll :=U U ⊤V.
+SeaWuna base ortonormal de im(V Roll), obtenida por QR o SVD, descartando columnas con
+norma≤tol lin.
+Construccion de la base con gauge. Define
+P⊥ :=I−W W ⊤.
+Luego define
+Ug := orth(P⊥U),
+donde orth(·) significa re-ortonormalizar por QR o SVD.
+Chequeos duros del gauge (obligatorio reportar). Reporte obligatorio:
+∥A(c)U∥,∥U ⊤U−I∥,∥W ⊤W−I∥,∥U ⊤
+g W∥.
+Exigir que todas estas normas sean≤tol lin.
+Criterio de criticidad con gauge. Define
+r:=U ⊤
+g gred.
+Critico si y solo si
+∥r∥ ≤tol lin ∥gred∥.
+2.15.Test de criticidad en algebra lineal (dos metodos equivalentes).
+Metodo 1 (coordenadas con gauge).
+r:=U ⊤
+g gred.
+Critico si y solo si∥r∥ ≤tol lin ∥gred∥.
+Metodo 2 (proyector, robusto). Define
+Pg :=U gU ⊤
+g .
+Critico si y solo si
+∥Pggred∥ ≤tol lin ∥gred∥.
+Reporte obligatorio:∥P ggred∥y∥g red∥.
+Explicacion para abuela.A(c) dice como se pueden mover los discos sin romper los contactos.
+Luegog red mide hacia donde quiere cambiar la longitud. Critico significa: para cualquier
+movimiento permitido, despues de quitar traslaciones y rotacion, la longitud no cambia al
+primer orden.
+2.16.Test cuadratico opcional de estabilidad linealizada.Esta parte es opcional. La
+afirmacion correcta es:construimos una forma cuadratica transversal asociada a seg-
+mentos.
+Definicion del test cuadratico en el espacio extendido.
+Qamb(δc, ω) :=
+X
+s∈S
+Qs(δc, ω),
+donde paras:α→β:
+Qs(δc, ω) := 1
+ℓs
+Ps(δpβ −δp α)
+2
+, P s :=I−ˆv sˆv⊤
+s .
+Reduccion a direcciones admisibles. Comoω=−T cδcen kerL(c):
+Qred(δc) :=Q amb
+ 
+δc,−T cδc
+
+, δc∈Roll(c).
+Luego aplica gauge: escribeδc=U gzy estudiaQ red(Ugz) enz.
+
+12 JOS ´E AYALA AND TOM´AS AYALA
+Uso correcto.
+•Si el diagrama es critico yQ red es positiva definida en el espacio con gauge, eso es
+evidencia fuerte de estabilidad linealizada dentro del estrato.
+•Si existe una direccion admisible con gauge tal queQ red <0, eso indica inestabilidad
+linealizada.
+2.17.Plantilla de implementacion (paso a paso, sin decisiones ocultas).
+(F0) Entrada.  
+N, c,E,T, k(α), p α,S,A
+
+,
+con arcosa= (α→β, k,∆θ a) y ∆θ a calculado por atan2+wrap.
+(F1) Geometria local. Calcularn α =p α −c k(α), fijart α por pieza saliente y chequear ortogo-
+nalidad.
+(F2) MatrizA(c). Construir filas por contactos{i, j}usandou ij.
+(F3) MatricesT c(c) yT ω(c). ConstruirT c yT ω =I.
+(F4) Chequeos duros. Ejecutar metricos, (C0), (S1)–(S2), (A1)–(A3) y (G1)–(G3), reportando
+residuos.
+(F5) Ensamble deg c, gω. Acumular con reglas de segmentos y arcos.
+(F6) Reduccion.
+gred =g c −T ⊤
+c gω.
+(F7) Gauge bulletproof. ConstruirUde Roll(c), proyectarVaV Roll, obtenerWy luegoU g.
+(F8) Criticidad.
+r=U ⊤
+g gred,reportar∥r∥y∥g red∥.
+(F9) (Opcional) Test cuadratico. EvaluarQ red en coordenadaszconδc=U gz.
+2.18.Chequeos duros: si alguno falla, la corrida no vale.
+Metricos (duros).
+•Para cadaα:
+∥pα −c k(α)∥ −1
+ ≤tol met.
+•Para cada{i, j} ∈E:
+∥ci −c j∥ −2
+ ≤tol met.
+Combinatorios cs (duros).
+•(C0) el grafo dirigido de piezas es un solo ciclo orientado.
+Piezas (duros).
+•Segmentos: (S1)–(S2).
+•Arcos: (A1)–(A3), tol lin <∆θ a <2π−tol lin, y el bug tip de tangentes.
+Globales (duros si quieres validez geometrica completa).
+•(G1)–(G3) pasan dentro de tol geo.
+Algebraicos (duros).
+•SiUes base ortonormal de Roll(c):∥A(c)U∥ ≤tol lin y∥U ⊤U−I∥ ≤tol lin.
+•SiWes base ortonormal de im(V Roll):∥W ⊤W−I∥ ≤tol lin.
+•SiU g es base con gauge:∥U ⊤
+g W∥ ≤tol lin.
+Chequeo de criticidad (lo que reportas). Reporta siempre:
+∥r∥=∥U ⊤
+g gred∥,∥g red∥, ∥r∥
+∥gred∥.
+Critico significa:∥r∥ ≤tol lin ∥gred∥.
+2.19.Correcciones clave (para que no se meta un error).
+(K1) Contactos sonE, no se infieren desde segmentos. No mezclesSconE.
+
+13
+(K2) La ecuacion correcta de contacto usa unitarios.
+⟨uij, δci −δc j⟩= 0, u ij = ci −c j
+∥ci −c j∥.
+(K3) La longitud no depende solo de centros. Necesitasp α,t α y la descomposicionS,A.
+(K4) El bloque de tangencia es definicional.⟨t α, δck(α)⟩+ω α = 0 define admisibilidad en este
+protocolo.
+(K5) El test cuadratico opcional no es una segunda variacion completa. Es un test transversal
+asociado a segmentos.
+2.20.Mini ejemplo de sanidad (para probar el codigo antes de un ejemplo grande).
+Antes de correr un ejemplo grande, corre un ejemplo pequeno:
+•N= 2 discos con un contacto{1,2},
+•dos tangenciasα, βen el disco 1 y dos tangenciasγ, δen el disco 2,
+•un segmentoα→γy un segmentoδ→β,
+•un arco (γ→δ,2,∆θ) en el disco 2 y un arco (β→α,1,∆θ ′) en el disco 1, con
+tollin <∆θ,∆θ ′ <2π−tol lin.
+Verifica que:
+•construyesA, T c, Tω, L,
+•pasas chequeos metricos, (C0), piezas y globales,
+•ensamblasg c, gω y luegog red,
+•obtienes∥r∥/∥g red∥.
+2.21.Checklist final (lo que se entrega, sin excepciones).
+•Tabla conN,c i,E,|E|,|T|,|S|,|A|.
+•Verificaciones metricas: residuos de
+∥pα −c k(α)∥ −1
+ y
+∥ci −c j∥ −2
+.
+•(C0) verificacion del ciclo orientado (si o no, y si no, donde falla).
+•Chequeos de piezas: (S1)–(S2) y (A1)–(A3), con residuos.
+•Chequeos globales: (G1)–(G3), con tolerancia declarada.
+•MatricesA(c),T c(c),T ω(c),L(c) (o dimensiones, rangos y normas de residuos).
+•Vectoresg c, gω y el reducidog red.
+•Gauge:U,V Roll,W, yU g, con normas de chequeo.
+•Criticidad:r=U ⊤
+g gred,∥r∥,∥g red∥, y∥r∥/∥g red∥.
+•(Opcional) Evaluacion deQ red en coordenadas sobreU g.
+

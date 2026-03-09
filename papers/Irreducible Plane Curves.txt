@@ -1,0 +1,763 @@
+Irreducible Plane Curv es
+Jason E/. Durham
+/#03
+Oregon State Univ ersit y
+Corv allis/, Oregon
+durhamj/@ucs/.orst/.edu
+August /2/4/, /1/9/9/9
+Abstract
+Progress in the classi/#0Ccation of plane curv es in the last /#0Cv ey ears has
+cen tered largely around the w ork of Arnold/, V assiliev/, and Aicardi/. The
+classical index theorem of H/. Whitney /#28/1/9/3/7/#29 classi/#0Ces curv es b y index/,
+up to isotop y /. Arnold has recen tly prop osed new curv ei n v arian ts /#28 J
+/+
+/,
+J
+/,
+/, and St /#29 with the aim of /#0Cnding classi/#0Ccations of curv es with the same
+index/, up to am bien t di/#0Beomorphisms of the plane and reparametrizations
+of the curv e/.
+Since these new in v arian ts still do not uniquely determine curv es/, new
+w a ys of classifying curv es up to di/#0Beomorphisms ha v e b een sough t/. A
+certain class of curv es /#28so called /#5Creducible/" curv es/#29 app ears to b e classi/-
+/#0Cable b y direct consideration via relativ ely simple com binatorial metho ds
+in v olving com binations of irreducible curv es/. This shifts the fo cus to the
+classi/#0Ccation of the irreducible curv es/, whose c haracterization app ears to
+b e simpli/#0Ced b y asso ciation with certain t yp es of planar graphs/.
+/1 Reducibilit y of Curv es
+Throughout this article/, /#5Cam bien t di/#0Beomorphisms of the plane and reparame/-
+trizations of the curv e/" ma y b e shortened to /#5Cdi/#0Beomorphisms/./" /#5CDistinct/" is
+short for /#5Cdistinct up to di/#0Beomorphisms/./"
+De/#0Cnition /1/./1/. An immersion of a cir cle into the plane is a smo oth mapping
+of a circle in to the plane /#0D /: S
+/1
+/! R
+/2
+whose deriv ativ e nev er v anishes/.
+De/#0Cnition /1/./2/. A double p oint /#28resp ectiv ely /, n /-p oint /#29 on an immersion of a
+circle in to the plane is a p oin t that is the image of exactly t w o /#28resp ectiv ely /,
+n /#29 p oin ts on S
+/1
+under /#0D /. The term cr ossing will b e used in terc hangeably with
+double p oin t/.
+/#03
+Under the guidance of Professor Juha P ohjanp elto of Oregon State Univ ersit y
+/3/5
+
+Figure /1/: An in v erted sum of t w o curv es/.
+De/#0Cnition /1/./3/. A curve shall b e de/#0Cned as an immersion of a circle in to the
+plane that con tains no self/-tangencies and where ev ery n /-p oin t is a double p oin t/.
+De/#0Cnition /1/./4/. A str and of a curv e is a segmen t of the curv e that runs from
+one crossing to another with no crossings in b et w een/. F or consistency w e also
+consider the whole image of S
+/1
+to b e a strand ev en though it has no crossings/.
+Note /1/. Let St r
+/#0D
+denote the n um b er of strands on a curv e /#0D /, and R
+/#0D
+denote the
+n um b er of regions in to whic h the curv e divides the plane/. F or ev ery n /-crossing
+curv e b esides S
+/1
+/, St r
+/#0D
+/=/2 n /. Recall that St r
+S
+/1
+is de/#0Cned to b e /1/.
+De/#0Cnition /1/./5/. The inverte d sum be t w een t w o strands of t w o curv es is the
+new curv e sho wn in Figure /1/.
+De/#0Cnition /1/./6/. A r e duction cut at a crossing on a curv e is a surgery and sub/-
+sequen t smo othing that separates the image of the curv ei n to t w o disjoin t/, w ell/-
+de/#0Cned curv es /#28see Figure /2/#29/.
+Note that the reduction cut has the opp osite e/#0Bect of the in v erted sum
+pro cedure /#28see Figure /2/#29/.
+De/#0Cnition /1/./7/. A r e duction p oint is a double p oin t on a curv e at whic h a
+reduction cut can b e p erformed/.
+De/#0Cnition /1/./8/. A curv e is said to b e r e ducible if it has a reduction p oin t/. That
+is/, there exists some crossing on the curv e that divides the image of the curv e
+in to t w o curv es with no other p oin ts in common/. A curv ei s c ompletely r e ducible
+/3/6
+
+INVERTED SUM
+REDUCTION CUT
+Figure /2/: Opp osite pro cedures/.
+if ev ery crossing on the curv e is a reduction p oin t/. A curv ei s p artial ly r e ducible
+if it has a reduction p oin t and also has a crossing that is not a reduction p oin t/.
+A curv ei s irr e ducible if it has no reduction p oin ts/.
+Figure /3 sho ws a list of the irreducible curv es with /#0Cv eo rf e w er crossings/.
+The n um b ers asso ciated with the curv es will b e used later to aid in referring to
+them/.
+Prop osition /1/./1/. The inverte d sum of two immersions always has a r e duction
+p oint /| the double p oint cr e ate d by the inverte d sum pr o c e dur e/.
+Pr o of/. Eviden t/, b y doing the reduction cut pro cedure corresp onding to whatev er
+in v erted sum pro cedure yielded the in v erted sum/.
+Note /2/. Let /#0D
+/1
+and /#0D
+/2
+be t w o arbitrary curv es/. After taking an yi n v erted sum
+of /#0D
+/1
+and /#0D
+/2
+/,a n y crossings that had b een reduction p oin ts on /#0D
+/1
+or /#0D
+/2
+will b e
+reduction p oin ts on the curv e resulting from the in v erted sum/, and an y crossings
+on /#0D
+/1
+and /#0D
+/2
+that had not b een reduction p oin ts will not b e reduction p oin ts
+on the resulting curv e/. The new crossing formed b y the in v erted sum pro cedure
+will b y Prop osition /1/./1 b e a reduction p oin t/. Similarly /, p erforming a reduction
+cut pro cedure at a crossing on a curv e cannot c hange the status of an yo ft h e
+other double p oin ts with resp ect to reducibilit y /.
+Prop osition /1/./2/. A ny c ompletely r e ducible curve c an b e expr esse d as a se/-
+quenc e of inverte d sums of standar d cir cles/. Conversely/, every se quenc eo f in/-
+verte d sums of standar d cir cles yields a c ompletely r e ducible curve/.
+Pr o of/. Consider an arbitrary completely reducible curv e with n crossings /#28hence
+n reduction p oin ts/#29/. P erform a reduction cut at ev ery crossing/; this yields a set
+of n /+ /1 circles/. No wi t is clear that p erforming the in v erted sums that undo
+the reduction cuts will pro duce the original curv e/.
+/3/7
+
+4.1 4.2 5.1
+5.2 5.3 5.4
+5.5 5.6
+3.1 3.20.1
+Figure /3/: The irreducible curv es with n /#14 /5 double p oin ts/. The n um b er to the
+left of the decimal indicates the n um b er of crossings/. The n um b er to the righ t
+is just an arbitrary indexing n um b er/.
+/3/8
+
+F or the con v erse/, w e pro ceed b y induction/: taking one in v erted sum b et w een
+t w o standard circles can only result in t w o p ossible curv es/, b oth of whic hh a v e
+one crossing and are completely reducible b y Prop osition /1/./1 /#28see Figure /5/#29/.
+It follo ws directly from Note /2 that an in v erted sum of an y t w o completely
+reducible curv es m ust yield a completely reducible curv e/. By induction/, ev/-
+ery sequence of in v erted sums of standard circles m ust pro duce a completely
+reducible curv e/.
+Corollary /1/./3/. A ny se quenc e of inverte d sums of c ompletely r e ducible curves
+must r esult in a c ompletely r e ducible curve/.
+Pr o of/. Eviden t/, via the theorem/.
+Prop osition /1/./4/. Every r e ducible curve c an b e expr esse d a sas e quenc eo f in/-
+verte d sums of irr e ducible curves/; ther ei sn o s e quenc e of inverte d sums of curves
+that yields an irr e ducible curve/.
+Pr o of/. Consider an n /-crossing reducible curv e with m reduction p oin ts/. P erform
+the reduction cut at ev ery reduction p oin t/; this m ust yield m /+ /1 curv es/, and
+b y Note /2/, no crossings on an y of these m /+ /1 curv es can b e reduction p oin ts/,
+so eac h of the curv es m ust b e irreducible/. No w it is clear that p erforming the
+in v erted sums that undo the reduction cuts w e made b efore will pro duce the
+original curv e/.
+Consider an arbitrary sequence of in v erted sums of curv es/. By Prop osi/-
+tion /1/./1 and Note /2/, the resulting curv em ust ha v e a reduction p oin t/, hence it
+is reducible/.
+Prop osition /1/./5/. A ny p artial ly r e ducible curve c an b e expr esse da s as e quenc e
+of inverte d sums of curves wher e at le ast one of the factor curves is not c om/-
+pletely r e ducible/. Conversely/, every se quenc eo f inverte d sums of curves wher e
+at le ast one of the factor curves is not c ompletely r e ducible yields a p artial ly
+r e ducible curve/.
+Pr o of/. Consider an arbitrary partially reducible curv e/. Since it has a reduction
+p oin t it can b e reduced in to t w o curv es/, so it is clear that it is the result of some
+in v erted sum of curv es/. The question is whether it is necessary that one of the
+factor curv es not b e completely reducible/. Corollary /1/./3 sho ws that it is/.
+F or the con v erse/, consider an arbitrary sequence of in v erted sums of curv es
+where at least one of the factor curv es is not completely reducible/. By Prop osi/-
+tion /1/./4/, this sequence of sums cannot yield an irreducible curv e/. Note /2 sho ws
+additionally that the resulting curv e cannot b e completely reducible/. The re/-
+sulting curv e is therefore partially reducible/.
+/2 Irreducible Curv es as Building Blo c ks
+W ew ould lik e to b e able to write ev ery reducible curv e as a set of n irreducible
+curv es together with n /, /1 pairs of strands from those curv es that indicate
+/3/9
+
+Figure /4/: The decomp osition of a reducible curv e/.
+whic hi n v erted sums w ould need to b e tak en to reconstruct the reducible curv e
+in question/. Figure /4 sho ws a complicated reducible curv e reduced do wn to
+its constituen t irreducible curv es and recip e of connected sums/. But is this
+decomp osition unique/? That is/, is there an y other set of irreducible curv es or
+recip e of in v erted sums that w ould yield the same reducible curv e/? The follo wing
+theorem sho ws there is not/.
+Theorem /2/./1/. Up on de c omp osition/, every r e ducible curve gives rise to a unique
+set of irr e ducible curves to gether with a unique set of inverte d sums among those
+curves that yields the curve in question/.
+Pr o of/. Consider an arbitrary reducible curv e with m reduction p oin ts/. Recall
+from Note /2 that p erforming the reduction cut at these reduction p oin ts do esn/'t
+c hange the status of an yo f the other double p oin ts with resp ect to reducibil/-
+it y /. Th us after p erforming the m p ossible reduction cuts/, w e will ha v e m /+/1
+irreducible curv es/, as w ell as a set of m reduction cuts to repair with m sp eci/#0Cc
+in v erted sums/. Since these reduction cuts can only b e made in one w a y /, the ir/-
+reducible factor curv es are uniquely determined/; the in v erted sums are uniquely
+determined as the rev erse pro cedures of the reduction cuts/. This pro v es the
+theorem/.
+Assuming the ab o v e theorems/, if one w ere to kno w all the irreducible curv es
+with n/#3Ck crossings/, then the problem of constructing all of the curv es with
+/4/0
+
+Figure /5/: All the distinct in v erted sums of t w o copies of S
+/1
+yields all the distinct
+curv es with one double p oin t/.
+n /#14 k crossings comes do wn to more basic com binatorics/. One w ould try to /#0Cnd
+the distinct com binations of in v erted sums in v olving irreducible curv es with n/#3C
+k crossings/; this should pro duce all the reducible curv es with n /#14 k crossings/.
+As a simple example/, w e can deriv e all the /1/-crossing curv es b y taking all the
+p ossible in v erted sums of t w o copies of S
+/1
+/. Since eac h circle has only one strand/,
+there are only t w o distinct w a ys of taking their in v erted sum /#28see Figure /5/#29/.
+De/#0Cnition /2/./1/. A reducible curv e is n /-r e ducible if it has n reduction p oin ts/.
+Note that suc h a curv e has exactly n /+ /1 irreducible factor curv es/.
+De/#0Cnition /2/./2/. The inverte d sum set /#28ISS/#29 of t w o irreducible curv es /#28denoted
+IS S /#28 /#0D
+/1
+/;/#0D
+/2
+/#29/#29 is the set of all distinct curv es that can result from an yi n v erted
+sum b et w een /#0D
+/1
+and /#0D
+/2
+/. F or example/, Figure /5 sho ws IS S /#28 S
+/1
+/;S
+/1
+/#29/.
+Prop osition /2/./2/. We c an put an upp er b ound on the c ar dinality of IS S /#28 /#0D
+/1
+/;/#0D
+/2
+/#29 /,
+wher e /#0D
+/1
+is an m /-cr ossing curve and /#0D
+/2
+is an n /-cr ossing curve/, by
+Ca r d /#28 IS S /#28 /#0D
+/1
+/;/#0D
+/2
+/#29/#29 /#14 St r
+/#0D
+/1
+/#01 St r
+/#0D
+/2
+/#01 /#28 m /+ n /+/3 /#29
+and/, pr ovide d that neither /#0D
+/1
+nor /#0D
+/2
+is S
+/1
+/,
+Ca r d /#28 IS S /#28 /#0D
+/1
+/;/#0D
+/2
+/#29/#29 /#14 /4 mn /#28 m /+ n /+/3 /#29
+Pr o of/. The form ula deriv es easily b y considering the p ossible cases/: /#0Crst con/-
+sider the case where the t w o curv es are unnested /#28i/.e/./, one in the left half/-plane
+and the other in the righ t half/-plane/#29/. The w orst case scenario w ould be for
+neither curv e to ha v e an y kind of symmetry /, forcing ev ery strand to be con/-
+sidered individually /. Then ev ery unique pair of strands/, one from /#0D
+/1
+and the
+other from /#0D
+/2
+/, could ha v e an asso ciated in v erted sum b et w een the t w o curv es
+and ev ery one of those in v erted sums could result in a distinct curv e/. So far
+this giv es St r
+/#0D
+/1
+St r
+/#0D
+/2
+as an upp er b ound/. No w consider the cases where one
+curv e is nested inside one of the b ounded regions of the plane delineated b y the
+other/. The w orst case again giv es St r
+/#0D
+/1
+St r
+/#0D
+/2
+as the upp er b ound/. There are an
+additional n /+ /1 cases for /#0D
+/1
+nested in /#0D
+/2
+/, and m /+ /1 cases for /#0D
+/2
+nested in /#0D
+/1
+/.
+The total cases are /#28 n /+/1 /#29/+/#28 m /+/1 /#29/+ /1 /= m /+ n /+ /3/, whic h is exhaustiv e/.
+/4/1
+
+R emark /2/./1/. This upp er b ound is v ery generous and there are probably v ery
+simple considerations that could b e tak en in to accoun t to mak e it tigh ter/. F or
+example/, Ca r d /#28 IS S /#28 S
+/1
+/; /3 /: /1/#29/#29/, where /3 /: /1 is the three/-crossing trefoil curv e/, is
+giv en an upp er b ound of /3/6 b y the form ula/, when the actual n um be r is only
+/5/. It is nice/, ho w ev er/, to be able to con/#0Cden tly giv e an upp er b ound on the
+n um b er of /1/-reducible /6/-crossing curv es/. The only in v erted sum sets that yield
+suc h curv es are sets where one curv e has one crossing and the other has /#0Cv e/,
+or where b oth curv es ha v e three crossings /#28there are no /2/-crossing irreducible
+curv es to pair with an y of the /4/-crossing irreducibles/#29/. The ab o v e form ula giv es
+/1/4/5/2 as the maxim um p ossible n um b e ro fs u c h curv es/. Similar metho ds could b e
+applied to /#0Cnd upp er b ounds for /2/-reducible curv es and b ey ond/, whic h/, together
+with an upp er b ound on the n um b er of irreducibles/, w ould yield upp er b ounds
+on the total n um b er of curv es with a giv en n um b er of crossings/.
+Note ho w/, in Figure /5/, the symmetry of the t w o curv es /#28in this case/, the
+/#5Csymmetry/" is the fact that the t w o factor curv es are iden tical/#29 has made one
+of the p ossible three cases equiv alen t /| the in v erted sum with circle A inside
+of circle B and the in v erted sum with circle B inside of circle A are equiv alen t
+cases/. In general/, an y symmetry within either of the curv es in v olv ed or b et w een
+the t w o curv es seems to reduce the n um b er of distinct in v erted sums/. The fact
+that man y curv es ha v e sev eral symmetries is another reason the upp er b ound
+giv en ab o v e is so generous/.
+When w e can iden tify ho w man y symmetrically distinct regions irreducible
+curv es ha v e and ho w man y symmetrically distinct strands b order eac h region
+/#28this seems v ery easy /, at least for curv es with lo wn um b ers of crossings/#29/, w e can
+giv e an exact n um b er for the cardinalit yo f a n y ISS in v olving these curv es/.
+Notation/. F or an y irreducible curv e /#0D /, let U be the un b ounded region of the
+plane delineated b y /#0D and lab el the rest of the symmetrically distinct regions
+A/; B /; C /; /#01/#01/#01 /. Let u b e the n um b er of symmetrically distinct strands b ordering
+U /, and a/; b/; c /#01/#01/#01 be the n um be r of symmetrically distinct strands b ordering
+A/; B /; C /; /#01/#01/#01 /, resp ectiv ely /.
+Prop osition /2/./3/. The c ar dinality of IS S /#28 /#0D
+/1
+/;/#0D
+/2
+/#29 is given by
+Ca r d /#28 IS S /#28 /#0D
+/1
+/;/#0D
+/2
+/#29/#29 /= u
+/1
+u
+/2
+/+ u
+/1
+/#28 a
+/2
+/+ b
+/2
+/+ /#01/#01/#01 /+ j
+/2
+/#29/+ u
+/2
+/#28 a
+/1
+/+ b
+/1
+/+ /#01/#01/#01 /+ k
+/1
+/#29
+if /#0D
+/1
+and /#0D
+/2
+ar e di/#0Ber ent curves/, and
+Ca r d /#28 IS S /#28 /#0D
+/1
+/;/#0D
+/2
+/#29/#29 /= /#28 u
+/1
+/2
+/+ u
+/1
+/#29 /= /2/+ u
+/1
+/#28 a
+/2
+/+ b
+/2
+/+ /#01/#01/#01 /+ j
+/2
+/#29
+if the two curves ar e identic al/.
+Pr o of/. This pro of follo ws the pro of of Prop osition /2/./2/, reducing the n um be r
+of regions and strands to the symmetrically distinct ones/. The argumen ts are
+analogous except where noted/. The u
+/1
+u
+/2
+term deriv es from the case where the
+t w o curv es are unnested/. The u
+/1
+/#28 a
+/2
+/+ b
+/2
+/+ /#01/#01/#01 /+ j
+/2
+/#29 term accoun ts for the cases
+where /#0D
+/1
+is nested in /#0D
+/2
+/, and the u
+/2
+/#28 a
+/1
+/+ b
+/1
+/+ /#01/#01/#01 /+ k
+/1
+/#29 term accoun ts for the
+/4/2
+
+cases where /#0D
+/2
+is nested in /#0D
+/1
+/. When /#0D
+/1
+and /#0D
+/2
+are iden tical curv es/, the cases
+where /#0D
+/1
+is nested in /#0D
+/2
+are not distinct from the cases where /#0D
+/2
+is nested in
+/#0D
+/1
+/, so w e drop the u
+/2
+/#28 a
+/1
+/+ b
+/1
+/+ /#01/#01/#01 /+ k
+/1
+/#29 term/. When they are unnested the
+redundan t com binations of distinct strands end up eliminating half of the cases
+where t w o di/#0Beren t strands are in v olv ed/, giving the /#28 u
+/1
+/2
+/+ u
+/1
+/#29 /= /2 term/.
+F or example/, to v erify that Ca r d /#28 IS S /#28 S
+/1
+/;S
+/1
+/#29/#29 /= /2/, lab el the region inside
+the /#0Crst circle A
+/1
+/, the region inside the second circle A
+/2
+/. Then u
+/1
+/= u
+/2
+/= a
+/1
+/=
+a
+/2
+/= /1 /,s ow eh a v e
+Ca r d /#28 IS S /#28 S
+/1
+/;S
+/1
+/#29 /#29 /= /1/+/1 /= /2
+It is helpful to ha v e a listing of the v alues of u/; a/; b/; c/; /#01/#01/#01 for the irreducible
+curv es/. These are the v alues for the irreducible curv es up to /#0Cv e crossings/.
+curv e u a b c d e
+/0/./1 /1 /1 /- /- /- /-
+/3/./1 /1 /2 /1 /- /- /-
+/3/./2 /1 /2 /1 /- /- /-
+/4/./1 /2 /3 /2 /2 /1 /-
+/4/./2 /1 /2 /2 /1 /- /-
+/5/./1 /1 /2 /1 /- /- /-
+/5/./2 /1 /3 /1 /1 /- /-
+/5/./3 /1 /2 /2 /1 /- /-
+/5/./4 /2 /4 /2 /2 /1 /1
+/5/./5 /1 /4 /2 /2 /2 /1
+/5/./6 /2 /3 /2 /2 /1 /-
+With this table w e can easily compute/, for example/,
+Ca r d /#28 IS S /#28/5 /: /5 /; /5 /: /6 /#29 /#29 /= /2/+/1 /#28 /3/+/2/+/2/+/1 /#29/+/2 /#28 /4/+/2/+/2/+/2/+/1 /#29 /= /3 /2
+As noted ab o v e/, the upp er b ound form ula for the ISS giv es /1/4/5/2 as an upp er
+b ound on the n um be r of /1/-reducible /6/-crossing curv es/. No w w e can compute
+the exact n um b er/:
+Ca r d /#28 IS S /#28/3 /: /1 /; /3 /: /1/#29/#29 /= /4
+Ca r d /#28 IS S /#28/3 /: /1 /; /3 /: /2/#29/#29 /= /7
+Ca r d /#28 IS S /#28/3 /: /2 /; /3 /: /2/#29/#29 /= /4
+Ca r d /#28 IS S /#28/5 /: /1 /; /0 /: /1/#29/#29 /= /5
+Ca r d /#28 IS S /#28/5 /: /2 /; /0 /: /1/#29/#29 /= /7
+/4/3
+
+Ca r d /#28 IS S /#28/5 /: /3 /; /0 /: /1/#29/#29 /= /7
+Ca r d /#28 IS S /#28/5 /: /4 /; /0 /: /1 /#29 /#29/=/1 /4
+Ca r d /#28 IS S /#28/5 /: /5 /; /0 /: /1 /#29 /#29/=/1 /3
+Ca r d /#28 IS S /#28/5 /: /6 /; /0 /: /1 /#29 /#29/=/1 /2
+/#28 T otal /= /7/3/#29
+F or the determination of the set of distinct in v erted sums of curv es with
+lo wn um b ers of crossings using few in v erted sums/, the com binatorics in v olv ed in
+constructing the reducible curv es is simple/, but for higher n um b ers of crossings
+or more in v erted sums the com binatorics problem is di/#0Ecult/, as it is at least
+as hard as the problem of /#0Cnding the distinct trees with n v ertices/. In /#5B /2 /#5D/,
+F/. Aicardi discusses com binatorial structures for completely reducible curv es in
+terms of trees/; it app ears that the com binatorics for the completely reducible
+curv es can b e easily adapted for partially reducible curv es/. Suc h a mo di/#0Ccation
+of Aicardi/'s theory seems a promising direction for future researc h/.
+/3 Finding the Irreducibles
+So w e see that in some sense the irreducible curv es are the building blo c ks for
+the space of plane curv es/, for if w e kno w them w e can construct the other curv es
+b y com binatorial metho ds based on the nesting of the factor irreducible curv es
+and the c hoice of whic h of their strands to join with the in v erted sum/. F rom here
+the most imp erativ e problem seems to b e to /#0Cnd/, c haracterize/, and classify the
+irreducible curv es/. The most promising approac h so far has b een to asso ciate
+a certain t yp e of planar graph with irreducible curv es and then to /#0Cnd all the
+distinct graphs of that t yp e/.
+De/#0Cnition /3/./1/. A close d planar gr aph is a graph in whic h none of the edges
+in tersect and where remo ving an y edge w ould decrease the n um be r o f regions
+formed b y the graph b y one/.
+It will b ecome clear later that ev ery irreducible curv e has a corresp onding
+closed planar graph that is unique to that curv e/. The nature of that corre/-
+sp ondence is w ell kno wn/; the follo wing explanation and claims are based on
+information from pp/. /5/1/-/5/5 of /#5B /1 /#5D/. /#28The v alidit y of the follo wing metho d seems
+in tuitiv ely correct and has so far b een v ery successful in deriving irreducible
+curv es/, but pro ving the legitimacy of the metho d rigorously w ould ha v e tak en
+more time than w as a v ailable /| p erhaps future w ork could be done to /#0Cll in
+the details/, assuming similar w ork has not already b een carried out/./#29
+Ev ery n /-crossing curv e divides the plane in to n /+/2 regions that are /2/-
+colorable/. That is/, the regions can b e colored so that no lik e colored regions are
+adjacen t /#28see Figure /6/#29/. /#28T o readers of /#5B /3 /#5D a new pro of of this fact is eviden t
+using Arnold/'s p erestroik as on the K
+i
+curv es/, b y sho wing that the mo v es J
+/+
+/,
+J
+/,
+/, and St do not c hange the colorabilit y /./#29 W e call a region b ounded b y a curv e
+/4/4
+
+Figure /6/: A /2/-coloration of an irreducible curv e/.
+Figure /7/: The closed planar graph asso ciated with an /6/-crossing irreducible
+curv e/.
+an exterior region if it m ust receiv e the same color as the un b ounded region in
+a /2/-coloration/; w e call a region interior if it is not exterior/.
+A closed planar graph asso ciated with an irreducible curv e is constructed
+as follo ws/. Place a v ertex inside eac hi n terior region and then place edges that
+connect the v ertices through the crossings without letting the edges cross/, as
+in Figure /7/. Notice that ev ery crossing is tra v ersed b y exactly one edge/, and
+that ev ery region of the graph encloses exactly one exterior region of the curv e
+/#28with the exception of the un b ounded region/#29/. It is not di/#0Ecult to see that an
+irreducible a curv e can alw a ys b e constructed uniquely from its graph/, and that
+ev ery irreducible curv e has a unique asso ciated closed planar graph/.
+This represen tation of irreducible curv es as closed planar graphs reduces the
+problem of /#0Cnding all the irreducible curv es to an apparen tly simpler com bi/-
+natorics problem/: /#0Cnd all the distinct closed planar graphs with certain re/-
+/4/5
+
+strictions/. These restrictions fall out easily from basic prop erties of irreducible
+curv es/. In the follo wing/, V shall denote the n um be r o f v ertices of a graph/, E
+the n um b er of edges/, R the n um b er of /#28b ounded/#29 regions enclosed b y the graph/,
+n the n um b er of crossings on the curv e/, r
+e
+the n um b er of exterior regions of the
+curv e /#28excluding the un b ounded region/#29/, and r
+i
+the n um be r o f i n terior regions
+of the curv e/.
+F rom the Euler equation w eh a v e
+V /+ R /, /1/= E /= n
+and it is clear from the construction /#28of a curv e from its graph/#29 that
+V /= r
+i
+/#15 /1
+and
+R /= r
+e
+for ev ery irreducible curv e/. Also note that ev ery curv e that is not completely
+reducible m ust clearly ha v e at least one exterior region/.
+R emark /3/./1/. It w ould be helpful to kno w/, b efore attempting to /#0Cnd all the
+closed planar graphs/, whether ev ery graph with these restrictions corresp onds
+to an irreducible curv e/. Unfortunately /, there are more of suc h graphs than there
+are irreducible curv es/, since man y of the graphs corresp ond to immersions of
+more than one circle /#28call these immersions of m circles/, m/#3E /1/, m /-curv es/#29/. So
+far a w a y of determining whether a giv en closed planar graph will corresp ond
+to an m /-curv e has not b een found/, other than actually constructing the curv e/.
+This just means w e will ha v e to test more cases/, but pro vided w e can /#0Cnd
+all the distinct planar graphs with n edges with the necessary restrictions/, w e
+can simply construct all the corresp onding curv es to /#0Cnd all the irreducible n /-
+crossing curv es /#28and as a b on us w e will ha v e found all the irreducible n /-crossing
+m /-curv es/#29/.
+In /#5B /3 /#5D/, Arnold giv es a complete listing of all the curv es with n /#14 /5 crossings/.
+A sound goal for this pro ject w ould be to /#0Cnd a metho d of deriving all the
+curv es with n /#14 /7 crossings /#28whic h I estimate n um b er in the tens of thousands/#29/.
+As sho wn ab o v e/, if w e could /#0Cnd all the irreducible curv es with n /= /6 crossings/,
+the rest w ould be a simpler com binatorical issue that could p ossibly ev en be
+handled b y a computer/. T o that end/, w en o w attempt to deriv e the /6/-crossing
+irreducible curv es/.
+An irreducible /6/-crossing curv em a yh a v e from t w o to six in terior regions/, so
+w e pro ceed b y cases of the n um b ers of in terior regions of the curv e/. T o obtain
+all the /6/-crossing irreducible curv es with t w oi n terior regions/, w e lo ok at closed
+planar graphs with t w ov ertices and six edges/, whic h from the Euler equation
+w e kno w will create /#0Cv e b ounded regions/. F or the curv es with three in terior
+regions/, w e lo ok at graphs with three v ertices and six edges/, and so on /#28see
+Figure /9/, Figure /1/0/, and Figure /1/1 /| the graphs corresp onding to immersions
+of more than one circle ha v e b een omitted/#29/. This list is probably not exhaustiv e/,
+/4/6
+
+since a com binatorial metho d of /#0Cnding all the distinct graphs has not y et b een
+found/. Using curren tly kno wn or unkno wn com binatorical theory to understand
+the com binatorics of these closed planar graphs is another p ossible direction for
+future w ork/.
+/4 Irreducible Curv es and Alternating Knots
+De/#0Cnition /4/./1/. The pr eimages on S
+/1
+of a double p oin t a on a curv e /#0D are the
+t w o p oin ts on S
+/1
+that get sen tb y the map /#0D /: S
+/1
+/! R
+/2
+to the same p oin t a /.
+De/#0Cnition /4/./2/. The Gauss diagr am of an n /-crossing curv e is an image of S
+/1
+with a collection of n c hords/, where eac hc hord connects the t w o preimages of
+a double p oin t of the curv e /#28see Figure /8/#29/.
+De/#0Cnition /4/./3/. A bise ction diagr am of a curv e is an image of S
+/1
+together with
+a collection of the c hords that are the p erp endicular bisectors of the c hords
+in the curv e/'s Gauss diagram /#28w e m ust add that the preimages on the Gauss
+diagram m ust b e ev enly spaced/#29/, with m ultiplicit y noted/.
+Note that a bisection diagram is just a Gauss diagram with ev enly spaced
+preimages where eac hc hord has b een mo v ed normal to its direction so that it
+crosses the cen ter of S
+/1
+/, noting m ultiplicities /#28see Figure /8/#29/.
+Prop osition /4/./1/. A curve is irr e ducible i/#0B every chor d in its Gauss diagr am
+p articip ates in an interse ction with another chor d /#28its Gauss diagr am is then
+totally non/-planar /#29/.
+/#28This holds for all curv es listed in /#5B /3 /#5D/./#29
+Pr o of of the pr op osition/. Recall that a reduction p oin t on a curv e is a double
+p oin t that divides the curv ei n to t w o pieces with no other common p oin ts/. If a
+Gauss diagram has a non/-in tersecting c hord/, it means /#28from the construction/#29
+that the part of the circle on one side of the c hord has no p oin ts in common
+with the part of the circle on the other side of the c hord after b eing mapp ed b y
+the function /#0D that de/#0Cnes the curv e whose Gauss diagram w e are examining/.
+W e kno w/, then/, that an y non/-in tersecting c hord on a Gauss diagram m ust cor/-
+resp ond to a reduction p oin t on the curv e/. This pro v es that ev ery irreducible
+curv em ust ha v e a totally non/-planar Gauss diagram/. As for the con v erse/, as/-
+sume w e are giv en a curv e with a totally non/-planar Gauss diagram/. If this curv e
+has a reduction p oin t/, its Gauss diagram m ust ha v e a corresp onding c hord/. But
+ev ery c hord on the Gauss diagram is in tersected b y another c hord/, so the Gauss
+diagram is suc h that some p oin t on the part of the circle on one side of an y
+c hord in the diagram m ust get mapp ed to the same p oin t as some p oin t on the
+part of the circle that is on the other side of the c hord/. Hence no p oin ts on the
+curv e are reduction p oin ts/, so the curv e is irreducible/.
+De/#0Cnition /4/./4/. An irreducible curv e is called c omp osite if a new c hord can b e
+dra wn on the curv e/'s Gauss diagram that /1/#29 divides the diagram/'s circle in to
+/4/7
+
+   2  2
+  3
+Figure /8/: The Gauss and bisection diagrams of a completely reducible curv e/, a
+partially reducible curv e/, and an irreducible curv e/.
+/4/8
+
+V = 3:  
+V = 2:    NONE
+4
+2
+4
+2
+4
+2
+Figure /9/: /6/-crossing irreducible curv es with V v ertices as deriv ed from closed
+planar graphs/, listed with their Gauss and bisection diagrams/.
+/4/9
+
+2 2
+2 2
+2 2
+2 2
+V = 4:
+Figure /1/0/: /6/-crossing irreducible curv es with V v ertices as deriv ed from closed
+planar graphs/, listed with their Gauss and bisection diagrams/.
+/5/0
+
+2V = 5:
+2
+ 2
+4
+ 2
+4
+2
+2
+2
+2
+V = 6:    NONE
+Figure /1/1/: /6/-crossing irreducible curv es with V v ertices as deriv ed from closed
+planar graphs/, listed with their Gauss and bisection diagrams/.
+/5/1
+
+t w o regions/, b oth of whic h con tain c hords and /2/#29 do es not in tersect an y of the
+diagram/'s c hords/. An irreducible curv e is called prime if it is not comp osite/.
+/#28This de/#0Cnition is motiv ated b y the pro jections of prime and comp osite
+knots and the Gauss diagrams so far observ ed as b eing asso ciated with those
+pro jections/./#29
+It is ob vious that ev ery irreducible curv e can b e made in to an alternating
+knot/, simply b yc ho osing eac h crossing to b e an under/- or o v er/-strand alternately
+while tra v ersing the curv e/. It app ears that there is a natural bijection b et w een
+the set of irreducible curv es and the set of reduced alternating pro jections of
+alternating knots/. In this sense/, it seems that studying irreducible curv es is lik e
+studying pro jections of knots/. The question naturally arises/, is there an ything
+w e ha v e learned ab out plane curv es that can tell us something ab out knots/?
+Of particular in terest has b een the question of whic hc haracteristics irreducible
+curv es that are di/#0Beren t pro jections of the same alternating knot migh t share/.
+The t w o curv es listed as /3 /: /1 and /3 /: /2 in Figure /3 ha v e the same Gauss diagram/,
+and if made in to alternating knots they turn in to t w o reduced alternating pro/-
+jections of the alternating knot kno wn as /3
+/1
+/#28refer to /#5B /1 /#5D for more information/#29/.
+Lik ewise/, the curv es /4 /: /1 and /4 /: /2h a v e iden tical Gauss diagrams and corresp ond
+to reduced alternating pro jections of the knot /4
+/1
+/. Similar facts hold for the
+irreducible curv es of /#0Cv e crossings/. /#28Inciden tally /, it has b een observ ed that
+comp osite irreducible curv es /#28as they are de/#0Cned ab o v e/#29 corresp ond to reduced
+alternating pro jections of comp osite alternating knots/./#29 Could Gauss diagrams
+be an in v arian t for alternating knots/? F urther in v estigation sho ws that there
+are some /7/-crossing irreducible curv es that has di/#0Beren t Gauss diagrams/, but
+corresp ond to alternating pro jections of the same alternating knot/. Still/, for the
+prime irreducible curv es/, the Gauss diagrams seem to retain a certain similarit y
+when they corresp ond to pro jections of the same knot/. This observ ation led to
+the form ulation of the bisection diagram/.
+So far the bisection diagram seems lik e a p ossible in v arian t for knots/, al/-
+though it ma y simply be an in v arian t that is already understo o d/, but in a
+di/#0Beren t manifestation/. It also ma y b e that it is an in v arian t that is not par/-
+ticularly useful/. F uture researc h migh t rev eal whether this is truly an in v arian t
+for knots and wh y /, and whether it is of an y use/.
+References
+/#5B /1/#5D C/. Adams/, The Knot Bo ok /, W/.H/. F reeman and Co/./, New Y ork/, /1/9/9/4/.
+/#5B /2/#5D F/. Aicardi/, T ree/-lik e curv es/, Adv ances in So viet Mathematics /2/1 /, Amer/.
+Math/. So c/./, Pro vidence/, /1/9/9/4/, pp/. /1/-/3/1/.
+/#5B /3/#5D V/.I/. Arnold/, Plane curv es/, their in v arian ts/, p erestroik as and classi/#0Ccations/,
+Adv ances in So viet Mathematics /2/1 /, Amer/. Math/. So c/./, Pro vidence/, /1/9/9/4/,
+pp/. /3/3/-/9/.
+/5/2
+
+/#5B /4/#5D H/. Whitney /, On regular closed curv es in the plane/, Comp ositio Math /4 /,
+/1/9/3/7/, pp/. /2/7/6/-/2/8/4/.
+/5/3
+

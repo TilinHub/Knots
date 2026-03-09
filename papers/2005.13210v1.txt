@@ -1,0 +1,1233 @@
+CENSUS OF BOUNDED CUR V ATURE PATHS
+JEAN D´IAZ AND JOS ´E AYALA
+Abstract. A bounded curvature path is a continuously diﬀerentiable piece-wise C2 path with
+bounded absolute curvature connecting two points in the tangent bundle of a surface. These
+paths have been widely considered in computer science and engineering since the bound on cur-
+vature models the trajectory of the motion of robots under turning circle constraints. Analyzing
+global properties of spaces of bounded curvature paths is not a simple matter since the length
+variation between length minimizers of arbitrary close endpoints or directions is in many cases
+discontinuous. In this note, we develop a simple technology allowing us to partition the space
+of spaces of bounded curvature paths into one-parameter families. These families of spaces are
+classiﬁed in terms of the type of connected components their elements have (homotopy classes,
+isotopy classes, or isolated points) as we vary a parameter deﬁned in the reals. Consequently,
+we answer a question raised by Dubins (Pac J Math 11(2):471481, 1961).
+1. Prelude
+It is well known that any two plane curves both closed or with diﬀerent endpoints are homo-
+topic. Graustein, and Whitney in 1937, independently proved that not any two planar closed
+curves are regularly homotopic (homotopic through immersions) [31]. Markov in 1857 consid-
+ered several optimization problems relating a bound on curvature with the design of railroads
+[22]. But, it was only in 1957 that bounded curvature paths were rigorously introduced by
+Dubins when bounded curvature paths of minimal length were ﬁrst characterized [15].
+Fix two elements in the tangent bundle of the Euclidean plane ( x,X ), (y,Y )∈ T R2. Infor-
+mally, a planar bounded curvature path is a C 1 and piecewise C 2 path starting at x, ﬁnishing
+at y; with tangent vectors at these points X and Y respectively, having absolute curvature
+bounded by κ = 1
+r > 0. Here r is the minimum allowed radius of curvature. The piecewise C 2
+property comes naturally due to the nature of the length minimizers [15] 1.
+In 1961 Dubins raised fundamental questions about the topology of the spaces of bounded
+curvature paths [16]. “Here we only begin the exploration, raise some questions that we hope
+will prove stimulating, and invite others to discover the proofs of the deﬁnite theorems, proofs
+that have eluded us” see pp. 471 in [16]. Fifty years later the fundamental questions proposed
+by Dubins were answered through the papers [2, 4, 5, 6]. In addition, the classiﬁcation of
+the homotopy classes of curves with bounded absolute curvature, having ﬁxed initial and ﬁnal
+positions, and variable initial and ﬁnal directions was achieved in [3].
+In this note, we develop an elementary framework enabling us to parametrize families of
+spaces of bounded curvature paths. These families share similar types of connected components,
+being these: isolated points, homotopy, or isotopy classes, see Theorem 8.5 and Deﬁnition 8.4.
+In particular, we answer a question raised by Dubins in 1961 [16] by explicitly describing the
+set of endpoints (x,X ), (y,Y )∈T R2 so that the space of bounded curvature paths starting at
+x, ﬁnishing at y; with tangent vectors at these points X and Y respectively admits a bounded
+isotopy class, see Theorem 8.6 and Corollary 8.7. We conclude by presenting an updated
+(parametric) version of the classiﬁcation theorem for homotopy classes of bounded curvature
+paths in [6], by incorporating the results here obtained, see Theorem 9.1. Our results can be
+extended without much eﬀort for paths in the hyperbolic 2-space.
+1Dubins proved that bounded curvature paths of minimal length are concatenations of two arcs of a circle
+with a line segment in between, or three arcs of a circle, or any subset of these. The so-called csc-ccc paths.
+1
+arXiv:2005.13210v1  [math.MG]  27 May 2020
+
+2 JEAN D ´IAZ AND JOS ´E AYALA
+This article is the culmination of a program devoted to classify the homotopy classes of
+bounded curvature paths [5, 6], and the minimal length elements in homotopy classes [2, 4].
+We recommend the reader from time to time refer to our previous work [2, 3, 4, 5, 6]. We
+conclude by presenting an Appendix that can be read independently. This Appendix considers
+further examples and questions about computational aspects of connected components, and
+deformations of piecewise constant bounded curvature paths.
+There is a vast literature on bounded curvature paths from the theoretical computer science
+point of view. We encourage the reader to refer to [1, 7, 9, 11, 18, 19, 12, 25, 27]. Bounded
+curvature paths have been applied to many real-life problems since a bound on curvature models
+the trajectory of the motion of wheeled vehicles, and drones also called unmanned aerial vehicles
+(UAV). We mention only [10, 13, 17, 21, 23, 28, 30]. Literature on the topology and geometry
+of spaces of bounded curvature paths can be found in [2, 3, 4, 5, 6, 15, 16, 24, 26, 29].
+The illustrations here presented have been imported from Dubins Explorer, a software for
+bounded curvature paths [14].
+2. On spaces of bounded curvature paths
+For the convenience of the reader, we include relevant material from our previous work in
+[2, 3, 4, 5, 6]. Denote by T R2 the tangent bundle of R2. Recall that the elements in T R2 are
+pairs (x,X ) denoted here for short by x. The ﬁrst coordinate of such a pair corresponds to a
+point in R2 and the second to a tangent vector to R2 at x.
+Deﬁnition 2.1. Given (x,X ), (y,Y )∈T R2, a path γ : [0,s ]→ R2 connecting these points is
+a bounded curvature path if:
+• γ is C 1 and piecewise C 2;
+• γ is parametrized by arc length (i.e ||γ′(t)|| = 1 for all t∈ [0,s ]);
+• γ(0) =x, γ′(0) =X; γ(s) =y, γ′(s) =Y ;
+•|| γ′′(t)||≤ κ, for all t∈ [0,s ] when deﬁned, κ> 0 a constant.
+The ﬁrst item means that a bounded curvature path has continuous ﬁrst derivative and
+piecewise continuous second derivative. Minimal length elements in spaces of paths satisfying
+the last three items in Deﬁnition 2.1 are in fact C 1 and piecewise C 2. For the third item,
+without loss of generality, we extend the domain of γ to (−ϵ,s +ϵ) for ϵ > 0. Sometimes
+we describe the third item as the endpoint condition. The fourth item means that bounded
+curvature paths have absolute curvature bounded above by a positive constant. Without loss
+of generality, we consider κ = 1.
+The unit tangent bundle UT R2 is equipped with a natural projection p :UT R2→ R2. Note
+that p−1(y) is S1 for all y∈ R2. The space of endpoints is a circle bundle over R2.
+Remark 2.2. (Coordinate system and angle orientation).
+• For the given (x,X ), (y,Y )∈T R2 in Deﬁnition 2.1 we consider a coordinate system so
+that the origin is identiﬁed withx, andX with the ﬁrst canonical vector in the standard
+basis{X =e1,e 2} for R2.
+• When measuring angles we consider the positive orientation to be traveled counterclock-
+wise.
+Dubins [15] proved that the length minimizer bounded curvature paths are necessarily a
+concatenation of an arc of a unit radius circle, followed by a line segment, followed by an arc
+of a unit radius circle, the so-called csc paths. Or, a concatenation of three arcs of unit radius
+circles, the so-called ccc paths. After considering r be a circle traveled to the right and l a
+circle travelled to the left we obtain six possible types of paths, namely lsl, rsr, lsr, rsl,
+lrl and rlr. Paths having one of these types are here called Dubins paths. Note that we are
+considering Dubins path to be local not necessarily global minimum of length.
+In the following paragraphs, we illustrate through examples the richness of the theory of
+bounded curvature paths. Its features come from the constraints these curves satisfy. These
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 3
+constraints lead to interesting interactions between metric geometry and computational math-
+ematics.
+Example 2.3.
+(1) Recall that length minimizers are considered for establishing distance between points in
+a manifold. This approach is not suitable when considering bounded curvature paths,
+since in many cases, the length variation between length minimizers of arbitrarily close
+endpoints or directions is discontinuous.
+Consider (x,X ), (y,Yθ)∈T R2, θ∈ R, with κ = 1:
+• x = (0, 0); X =e2πi∈TxR2.
+• y = (1, 1); Yθ =eθi∈TyR2.
+Discontinuities for the length of the length minimizers happen when perturbing around
+Y π
+2
+, see Fig. 1. The sudden jumps in length suggest the existence of isolated points, see
+Theorem 3.9 in [5]. In fact, the path in Fig. 1 left is an isolated point in the space of
+bounded curvature paths from (x,X ) to (y,Y π
+2
+).
+The path in Fig. 1 right illustrates a discontinuity after perturbing the ﬁnal location
+toy′ = (1−ϵ, 1−ϵ) forϵ> 0 small. Note that length minimisers may not be embedded
+paths.
+Figure 1. Examples of length minimizers in their respective path space. The
+three paths at the right are the result of small perturbations to the ﬁnal position
+or direction of ( y,Y π
+2
+), for ϵ > 0. After applying Dubins’ characterization for
+the length minimizers [15] a simple numerical experiment shows the existence of
+length discontinuities.
+(2) Spaces of bounded curvature paths have several local minima of length, see Fig. 2.
+Consider x = (x,X ), y = (y,Y )∈T R2 with κ = 1:
+• x = (0, 0); X =e2πi∈TxR2.
+• y = (−2, 1); Y =e− π
+4i∈TyR2.
+By recursively applying the methods in [4] for obtaining thecsc-ccc charactarization
+for the length minimizers [2, 4, 8, 15, 20] we obtain all the local minima of length.
+By Proposition 4.4 in [6] the paths γ0 and γ5 are homotopic without violating the
+curvature bound throughout the deformation. The same applies for γ1 and γ4. By
+Proposition 4.3 in [6] the paths γ2 and γ3 lie in the same homotopy class of bounded
+curvature paths.
+(3) Another interesting feature is that the symmetry property metrics satisfy is in general
+violated. For example, the length minimizer from ( x,X ) to (y, Y π
+2
+) has lenght π
+4 , see
+Fig. 1 left. On the other hand, the length minimizer from ( y, Y π
+2
+) to (x,X ) has length
+3π
+4 , see Theorem 4.6 in [2].
+(4) The classiﬁcation of the homotopy classes of bounded curvature paths was obtained
+in [6]. A crucial step was to prove that for certain ( x,X ), (y,Y )∈ T R2 there exists
+
+4 JEAN D ´IAZ AND JOS ´E AYALA
+Figure 2. Spaces of bounded curvature paths have several local minima of
+length. Paths with matching colors are homotopic without violating the curvature
+bound throughout the deformation.
+a bounded region Ω ⊂ R2 that “traps” embedded bounded curvature paths. That is,
+no embedded bounded curvature path whose image is in Ω can be deformed (while
+preserving the curvature bound throughout the deformation) to a path having a point
+not in Ω, see Deﬁnition 4.1 in [5]. In [6] we proved that these “trapped regions” are the
+domain of elements in isotopy classes of bounded curvature paths, we refer to these as
+bounded isotopy classes. Discontinuities may also occur in the formation of trapped
+regions. These ideas will be discussed in subsection 2.3.
+Consider (x,X ), (y,Y )∈ T R2 with κ = 1. For ϵ >0 small, the spaces of bounded
+curvature paths satisfying:
+• x = (0, 0); X =e2πi∈TxR2
+• y = (1 +ϵ, 1 +ϵ); Y =e
+π
+2i∈TyR2
+have associated a region that “traps” embedded bounded curvature paths, see Fig. 3
+right. More generally, spaces satisfying the previous two conditions admit a bounded
+isotopy class of bounded curvature paths, see Theorem 5.4. in [6]. If ϵ = 0, the space
+satisfying the previous two conditions admit an isolated point, see Fig. 1 left.
+(5) Consider (x,X ), (y,Y )∈T R2 with κ = 1:
+• x = (0, 0); X =e2πi∈TxR2.
+• y = (4−ϵ, 0); 0 <ϵ< 4; Y =e2πi∈TyR2.
+Intimately related to the previous observation is that the path γ shown in Fig. 3 (a
+non-embedded path) is not homotopic (while preserving the curvature bound throughout
+the deformation) to the line segment connecting ( x,X ) to (y,Y ), see Corollary 7.13 in
+[5]. In contrast, if ϵ≤ 0, then these two paths are homotopic without violating the
+curvature bound [6]. This fact is related with the existence of trapped regions [5]. If a
+bound on curvature is not under consideration then, γ and the line segment connecting
+(x,X ) to (y,Y ) are regular homotopic, see Fig. 3.
+2.1. Spaces of bounded curvature paths.
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 5
+Figure 3. Right: A (zoomed out) trapped region Ω ⊂ R2 obtained after per-
+turbing the ﬁnal position of a bounded curvature path being an isolated point,
+see Fig. 1 left. Suddenly, the topology of the path space changes from a space
+of paths admitting an isolated point into a space of paths admitting a bounded
+isotopy class with non-empty interior. The elements of this isotopy class are only
+deﬁned in Ω. Left: An illustration of (5) in Example 2.3. If d(x,y )< 4, then γ
+is not homotopic while preserving the curvature bound through the deformation
+to the line segment (the length minimizer) from ( x,X ) to (y,Y ).
+Deﬁnition 2.4. Given x,y∈ T R2. The space of bounded curvature paths from x to y is
+denoted by Γ(x,y).
+In this note we consider Γ( x,y) with the topology induced by the C 1 metric. It is important
+to note that properties (among many others) such as types of connected components, or the
+number of local (global) minima in Γ(x,y) depend on the endpoints inT R2 under consideration.
+Next, we make use of the ﬁbre bundle structure of T R2 to describe families of spaces of
+bounded curvature paths.
+Deﬁnition 2.5. Choose x∈T R2 and y∈ R2. Consider the family of pairs x, yθ∈T R2 with
+yθ = (y,Yθ);Yθ =eθi∈TyR2,θ∈ R. The one-parameter family of spaces of bounded curvature
+paths starting at x and ﬁnishing at yθ is called a ﬁber and is denoted by Γ( x, yθ).
+Whenever we write: x, yθ∈ T R2, θ∈ R, we mean a family of pairs of endpoints so that:
+x∈ T R2 and y∈ R2 are arbitrary but ﬁxed while θ varies in the reals. Note that a space
+Γ(x,y) is a representative of a family of spaces parametrized in the reals.
+Deﬁnition 2.6. Given x∈T R2 we deﬁne:
+Γ =
+⋃
+y∈R2
+θ∈R
+Γ(x, yθ).
+In this note we develop a method for parametrizing the ﬁbers in Γ in terms of the types of
+connected components in Γ( x, yθ), θ∈ R.
+When a path is continuously deformed under parameter p we reparametrize each of the
+deformed paths by its arc-length. In this fashion, γ : [0,sp]→ R2 represents a deformed path
+at parameter p, with sp corresponding to its arc-length.
+Deﬁnition 2.7. Givenγ,η ∈ Γ(x,y). A bounded curvature homotopy betweenγ : [0,s 0]→ R2
+and η : [0,s 1]→ R2 corresponds to a continuous one-parameter family of immersed paths
+Ht : [0, 1]→ Γ(x,y) such that:
+• Ht(p) : [0,sp]→ R2 for t∈ [0,sp] is an element of Γ( x,y) for all p∈ [0, 1].
+
+6 JEAN D ´IAZ AND JOS ´E AYALA
+• Ht(0) =γ(t) for t∈ [0,s 0] and Ht(1) =η(t) for t∈ [0,s 1].
+A bounded-curvature isotopy is a continuous one-parameter family of embedded bounded
+curvature paths. Two paths in Γ( x,y) are bounded-homotopic (bounded-isotopic) if there exists
+a bounded curvature homotopy (isotopy) from one to the other. A homotopy (isotopy) class is
+a maximal path connected set in Γ( x,y).
+Deﬁnition 2.8. Let ∆(x,y) be a non-empty bounded isotopy class of paths in Γ( x,y). Let B
+denote the set of pairs x,y∈T R2 for which Γ(x,y) possesses such a bounded isotopy class.
+In [5] we proved that B̸=∅ by establishing the existence of non-empty bounded isotopy
+classes. Whenever we refer to ∆( x,y) we imply that ∆(x,y) is non-empty. In this note, we give
+necessary and suﬃcient conditions so that x, y∈ T R2 is an element in B. As a consequence,
+we answer a question raised by Dubins in pp. 480 in [16]. We establish that B is a bounded
+neither open nor closed subset in T R2, see Theorem 8.6 and Corollary 8.7.
+2.2. Proximity of endpoints. Here we analyze the conﬁgurations of distinguished pairs of
+circles in R2. This approach permits us to reduce the conﬁgurations of endpoints in T R2 into
+a ﬁnite number of cases up to isometries.
+Consider x∈ T R2. Let Cl(x) be the unit radius circle tangent to x and to the left of X.
+The meaning of Cr(x), Cl(y) and Cr(y) should be obvious. These circles are called adjacent
+circles. Denote the centers of the adjacent circles with lowercase letters. So, the center of Cl(x)
+is cl(x), see Fig. 5 right. The other cases are analogous.
+We concentrate on the following conﬁgurations for the adjacent circles.
+(i) d(cl(x),cl(y))≥ 4 and d(cr(x),cr(y))≥ 4
+(ii) d(cl(x),cl(y))< 4 and d(cr(x),cr(y))≥ 4
+(iii) d(cl(x),cl(y))≥ 4 and d(cr(x),cr(y))< 4
+(iv) d(cl(x),cl(y))< 4 and d(cr(x),cr(y))< 4
+The conditions (i)-(iv) have being used in diﬀerent contexts through [2, 4, 5, 6]. They give
+information about the topology and geometry of Γ( x,y). Note that as planar conﬁgurations,
+(ii) and (iii) are equivalent up to isometries.
+2.3. Trapped regions and bounded isotopy classes. In Theorem 5.4 in [6] we proved that
+for certain x,y∈T R2, the associated space Γ( x,y) admits a bounded isotopy class ∆( x,y). It
+turns out that paths in ∆( x,y) are deﬁned exclusively in a bounded region Ω⊂ R2. The shape
+of Ω depends on the initial and ﬁnal positions and directions in T R2, see Fig. 6.
+For a precise explanation on how these regions Ω ⊂ R2 are constructed, we strongly suggest
+the reader refer to Section 4 in [5]. We call these regions trapped regions.
+It is important to note that:
+• Embedded paths in Ω cannot be deformed without violating the curvature bound to a
+path with a self-intersection, see Corollary 7.13 in [5].
+• Embedded paths in Ω are not bounded-homotopic to paths having a point not in Ω, see
+Theorem 8.1 in [5].
+• The proof of the existence of isolated points in spaces of bounded curvature paths
+was given in Theorem 3.9 in [5]. These correspond to arcs of a unit circle of length
+less to π, called c isolated points . Similarly, a concatenation of two arcs of unit
+circle, each of length less to π, are called cc isolated points . Isolated points in
+Γ(x,y) are bounded isotopy classes with empty interior, see Fig. 1 left, and Fig. 7
+left. In addition, bounded curvature paths of length zero are also isolated points. This
+observation becomes interesting after recalling the concept of simple connectedness.
+Closed bounded curvature paths are not bounded-homotopic to a single point.
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 7
+Remark 2.9. Suppose that for x,y∈ T R2 we have that Γ( x,y) does not admit a bounded
+isotopy class ∆( x,y). Then, embedded trapped paths cannot exist. We adopt the notation
+∆(x,y), rather than ∆(Ω) as we did in [5, 6], since our emphasis now is on the endpoints rather
+than the regions Ω⊂ R2. We prefer to write Ω instead of Ω( x,y).
+The classiﬁcation theorem for the homotopy classes in [6] required the proximity conditions
+A, B, C, and D, see [5, 6]. Next, we redeﬁne conditions C and D in terms of the existence of
+bounded isotopy classes, see Fig. 4.
+Ω
+Figure 4. Examples of bounded curvature paths in spaces satisfying conditions
+A, B, C and D.
+Deﬁnition 2.10. If x,y∈T R2 satisﬁes:
+• (i) then Γ( x,y) is said to satisfy proximity condition A.
+• (ii) or (iii) then Γ( x,y) is said to satisfy proximity condition B.
+• (iv) and there is no bounded isotopy class ∆(x,y) then Γ(x,y) is said to satisfy proximity
+condition C.
+• (iv) and there exists a bounded isotopy class ∆( x,y) then Γ( x,y) is said to satisfy
+proximity condition D.
+In Theorem 8.5 we clarify for what x,y∈T R2 we have that ∆(x,y)⊂ Γ(x,y). To this end, we
+group spaces of bounded curvature paths in terms of the type of connected components that
+they have.
+3. An underlying discrete structure
+Next, we describe the coordinates of distinguished points in R2. The conﬁgurations of these
+points reveal interesting features of Γ( x,y), x,y∈T R2. In particular, these points completely
+characterize the regions Ω⊂ R2 whenever they exist.
+Consider unit radius circles A and B with centers a = (a1,a 2) and b = (b1,b 2) respectively.
+Consider a unit radius circle C with center c tangent to A and B at p and q respectively, see
+Figure 5 left. Also, set x,y∈T R2 so that a ccc path is obtained. Suppose the coordinates of
+a and b are known. Next we determine the coordinates of the points p and q.
+Consider the triangle whose vertices are a, b, and c. Denote by θ the smallest angle made
+by the line passing through a and b and the horizontal axis according to Remark 2.2, see
+Figure 5 left. Here ℓ1 and ℓ2 are parallel to the horizontal axis. Denote by δ the smallest
+
+8 JEAN D ´IAZ AND JOS ´E AYALA
+Figure 5. Right: Notation associated with Ω ⊂ R2. Left: The angles involved
+when computing the coordinates of p,q∈ R2.
+angle made by the line passing through b and c and the horizontal axis. It is easy to see that
+d(a,c ) =d(c,b ) = 2.
+After applying the law of cosines we immediately obtain that:
+α = arccos
+(√
+(b1−a1)2 + (b2−a2)2
+4
+)
+θ = arctan
+(b2−a2
+b1−a1
+)
+δ = arctan
+(b2−c2
+b1−c1
+)
+c = (a1 + 2 cos(α +θ),a 2 + 2 sin (α +θ))
+(3.1) p = (a1 + cos(α +θ),a 2 + sin(α +θ))
+(3.2) q = (b1 + cosδ,b 2 + sinδ)
+By letting A = Cr(x) and B = Cr(y) we ﬁnd explicit formulas for the point p between A
+andC andq betweenC andB, see Fig. 5 left. Observe that the coordinates of cr(x) andcr(y)
+are easily obtained since x,y∈T R2 are given.
+Analogously, by letting A = Cl(x) and B = Cl(y), and by applying the same reasoning as
+before, we ﬁnd formulas for the points p′ betweenA andC′ andq′ betweenC′ andB (see Fig.
+5 right):
+α′ = arccos
+(√
+(b1−a1)2 + (b2−a2)2
+4
+)
+θ′ = arctan
+(b2−a2
+b1−a1
+)
+δ′ = arctan
+(b2−c2
+b1−c1
+)
+c′ = (a1 + 2 cos(α′ +θ′),a 2 + 2 sin (α′ +θ′))
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 9
+(3.3) p′ = (a1 + cos(α′ +θ′),a 2 + sin(α′ +θ′))
+(3.4) q′ = (b1 + cosδ′,b 2 + sinδ′)
+Deﬁnition 3.1. Let:
+• w1 be the rlr path consisting of an arc from x to p in Cr(x); an arc from p to q in C;
+and an arc from q to y in Cr(y), see equations (3.1) and (3.2).
+• w2 be the lrl path consisting of an arc from x to p′ in Cl(x); arc from p′ to q′ in C′;
+and an arc from p′ to y in Cl(y), see equations (3.3) and (3.4).
+Next we make use of the formaulae (3.1)-(3.4) to characterize Ω ⊂ R2 in terms of the
+coordinates of distinguished points.
+Deﬁnition 3.2. Assume Γ( x, y) satisﬁes condition D. Let Ω ⊂ R2 be the bounded region
+whose boundary is given by the union of w1 and w2 in Deﬁnition 3.1, see Fig. 5 right. In this
+case we say that x,y∈T R2 carries a region.
+4. Motivation through examples
+In narrative terms, here we present facts in reverse-chronology. By considering this strategy,
+we are telling the reader “the end of the story” through various examples, with the intention
+to motivate the more technical steps and proofs.
+We study the ﬁbers in Γ by ﬁxingx = (x,X )∈T R2 and a ﬁnal positiony∈ R2 while varying
+the ﬁnal direction Yθ∈ TyR2, θ∈ R. In Section 7 we construct a function, called the class
+range, that assigns to each ﬁnal position y∈ R2 a non-negative real number. This number is
+called the class value and gives the range θ can vary so that the spaces Γ( x, yθ) have the same
+types of connected components.
+Firstly, we would like to point out that for a ﬁxed θ∈ R, the spaces Γ( x, ykθ) and Γ( x, yjθ)
+may eventually be diﬀerent for j̸= k∈ Z. Secondly, consider x, yθ∈ T R2, so that θ =±π.
+Since the initial and ﬁnal tangent vectors are parallel having opposite sense, the pairs x, y±π∈
+T R2 do not carry a region Ω ⊂ R2. This is due to the existence of parallel tangents, see [3].
+Deﬁnition 4.1. Consider x, yθ∈T R2,θ∈ (−π,π ), so that Γ(x, yθ) satisfy proximity condition
+D. Let
+• ω− be the smallest value in (−π,π ) so that there exits a bounded isotopy class ∆(x, yθ);
+• ω+ be the greatest value in (−π,π ) so that there exits a bounded isotopy class ∆(x, yθ).
+An interval whose endpoints are ω− and ω+ is denoted by I(y). We refer to ω− and ω+ as
+critical angles.
+Remark 4.2.
+• The critical angles ω− and ω+ depend on y∈ R2 since in Remark 2.2 we established
+that (x,X )∈T R2 is ﬁxed. Sometimes we write ω− =ω−(y) and ω− =ω−(y).
+• From the way we construct the class range function (see Deﬁnition 7.1) the existence of
+ω− and ω+ is guaranteed.
+The examples in 4.3 and the illustrations in Fig. 6 have been obtained computationally [14] by
+evaluating the class range function in Deﬁnition 7.1 via equations (7.7) and (7.8). Throughout
+this note, whenever we consider examples obtained computationally, angles will be measured
+in degrees. The following ideas will be formalized in Sections 7 and 8, compare Deﬁnition 8.4.
+Example 4.3 (parametrizing ﬁbers). In Fig. 6 top, we show a sequence for the variation
+of x, yθ∈T R2 while θ ranges over I(y) ⊊ (−180◦, 180◦) illustrating the following example.
+Consider x = (0, 0)∈ R2, X = (1, 0)∈ TxR2, y = (2.82, 0)∈ R2,Yθ = eiθ ∈ TyR2. We
+determine thatI(y) = [−109.47◦, 109.47◦] and conclude that Γ(x, yθ) admits (from left to right
+and counterclockwise) spaces of bounded curvature paths being:
+
+10 JEAN D ´IAZ AND JOS ´E AYALA
+• An isolated point for θ =−109.47◦, see Theorem 3.9 in [5].
+• There exists a bounded isotopy class ∆( x, yθ) for θ∈ (−109.47◦, 109.47◦) i.e., a one-
+parameter family of bounded isotopy classes, see Theorem 8.3. Also see Theorem 8.1 in
+[5].
+• An isolated point for θ = 109.47◦.
+• If θ /∈ [−109.47◦, 109.47◦] then there is no bounded ∆( x, yθ).
+In this case we say that Γ( x, yθ) is a ﬁber of type I .
+Figure 6. The grey regions are examples of Ω⊂ R2. We illustrate the examples
+in Remark 4.3 computed and plotted according to Deﬁnition 7.1 via equations
+(7.7) and (7.8). The range where θ can vary is depicted in dark green.
+In Fig. 6 middle we show a sequence for the variation of x, yθ∈ T R2 while θ ranges over
+I(y) ⊊ (−180◦, 180◦) illustrating the following example.
+Consider x = (0, 0)∈ R2, X = (1, 0)∈ TxR2, y = (2.5,−2)∈ R2, Yθ = eiθ∈ TyR2. We
+determine that I(y) = [−48.36◦, 30.30◦) and conclude that Γ( x, yθ) contains (from left to right
+and counterclockwise) spaces of bounded curvature paths such that:
+• There exists a bounded isotopy class ∆( x, yθ) for θ ∈ [−48.36◦, 30.30◦) i.e., a one-
+parameter family of bounded isotopy classes.
+• An isolated point for θ = 30.30◦.
+• If θ /∈ [−48.36◦, 30.30◦) then there is no bounded ∆( x, yθ).
+In this case we say that Γ( x, yθ) is a ﬁber of type II .
+In Fig. 6 bottom we show a sequence for the variation of x, yθ∈ T R2 while θ ranges over
+I(y) ⊊ (−180◦, 180◦) illustrating the following example.
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 11
+Consider x = (0, 0)∈ R2, X = (1, 0)∈ TxR2, y = (3, 0.5)∈ R2 and Yθ = eiθ∈ TyR2 we
+determine that I(y) = [−80.42◦, 60.55◦] and conclude that Γ( x, yθ) contains (from left to right
+and counterclockwise) spaces of bounded curvature paths being:
+• There exists a bounded isotopy class ∆( x, yθ) for θ ∈ [−80.42◦, 60.55◦] i.e., a one-
+parameter family of bounded isotopy classes.
+• If θ /∈ [−80.42◦, 60.55◦] then there is no bounded ∆( x, yθ).
+In this case we say that Γ( x, yθ) is a ﬁber of type III .
+There are two more types of ﬁbers, these will be discussed in Deﬁnition 8.4.
+In Section 8 we characterize a region B⊂ R2 so that the class range is well deﬁned. This
+plane region corresponds exactly to the location for the ﬁnal positions y∈ R2 so that Γ( x, yθ)
+admits a family of bounded isotopy classes of bounded curvature paths.
+Next we explain two types of conﬁgurations that will be of relevance when determining the
+extreme values of the class range function.
+5. Topological transitions
+Consider a cc isolated point as shown in Fig. 7 left. After a small clockwise continuous
+perturbation on the ﬁnal direction (while ﬁxing the ﬁnal position) the resultant endpoints
+deﬁne a space that does not admit an isolated point, see Fig. 7 middle and right. This is true
+since the paths at middle and right (the length minimisers in their respective space) are parallel
+homotopic to paths of arbitrary length due to the existence of parallel tangents, see Corollary
+3.4 and Proposition 3.8 in [3]. By Corollary 7.13 in [5] these paths are not elements in bounded
+isotopy classes.
+It is fairly easy to see that a small counterclockwise perturbation on the ﬁnal direction of the
+cc isolated point in Fig. 7 leads to spaces admitting a bounded isotopy class.
+(1) For certain ﬁbers, the cc isolated points are transitions between spaces with diﬀerent
+types of connected components.
+The previous observations say implicitly that for certain ﬁbers the critical values ω− andω+
+are achieved at spaces admitting cc isolated points.
+Figure 7. Two types of discontinuities. When varying the ﬁnal vector of an
+isolated point (at the left) we obtain a length discontinuity. The third path
+shows that length discontinuities not only happen when perturbing directions of
+isolated points. Here x = (0, 0)∈ R2, X = (1, 0)∈ TxR2, y = (2, 2)∈ R2, and
+eiθ =Yθ∈TyR2 with θ0 = 0◦, θ1 =−6◦, θ2 =−12◦.
+Recall that a necessary condition for the existence of a bounded isotopy class ∆( x, y) is that
+x,y∈T R2 satisfy:
+d(cl(x),cl(y))< 4 and d(cr(x),cr(y))< 4.
+This is easy to see since: if d(cl(x),cl(y))≥ 4, then a unit disk can be placed in the line
+joining cl(x) to cl(y) without overlapping with Cl(x) or Cl(y). This implies that bounded
+
+12 JEAN D ´IAZ AND JOS ´E AYALA
+curvature paths may escape Ω⊂ R2 (after applying an operation of type II in [6] to the length
+minimiser in Ω) contradicting Theorem 8.1 in [5]. For details we recommend the reader refer
+to Section 4 in [5]. The same applies for d(cr(x),cr(y))≥ 4.
+(2) For certain ﬁbers, the condition
+(5.1) d(cl(x),cl(y)) = 4 and d(cr(x),cr(y)) = 4
+is considered as a transition between spaces with diﬀerent types of connected components. We
+proved in Theorem 5.3 in [6] that spaces Γ( x, y) satisfying proximity condition A, that is:
+d(cl(x),cl(y))≥ 4 or d(cr(x),cr(y))≥ 4
+do not admit isotopy classes. Therefore, Ω = ∅.
+6. Angular formulae
+We describe two types auxiliary triangles that allow us to obtain (via continuous variations
+of their angles) the values of the class range function. These triangles are constructed out of
+information obtained from the given endpoints in T R2. We establish a correlation between the
+angle variation in these auxiliary triangles and the types of connected components in Γ( x, yθ),
+x, yθ∈T R2, for each θ∈ (−π,π ).
+Next we consider ﬁbers whose critical values ω− andω+ are achieved at spaces admitting cc
+isolated points as disscused in (1) in Section 5.
+6.1. Short triangles. Suppose x, yθ∈T R2,θ∈ (−π,π ) is such that for some θ∈ (−π,π ) the
+adjacent circles Cl(x) and Cr(yθ) intersect at a single point. We have thatθ =ω− orθ =ω+, see
+Fig. 8. For θ =ω−, construct a triangle whose vertices arecl(x),cr(yω−) andy. It is immediate
+thatd(cl(x),cr(yω−)) = 2 and that d(cr(yω−),y ) = 1. For θ =ω+, construct the triangle whose
+vertices are cr(x),cl(yω+) and y, see Fig 9. It is immediate that d(cr(x),cl(yω+)) = 2 and that
+d(cl(yω+),y ) = 1.
+The obvious observation: A triangle with sides of length 1 and 2 cannot have a third side of
+length greater to 3 leads us to analyze the transitions in (2) in Section 5.
+6.2. Long triangles. Consider x, yθ∈ T R2, θ∈ (−π,π ) so that the adjacent circles Cl(x)
+and Cr(yθ) do not intersect. We construct the triangle whose vertices are cl(x),cl(yθ) and y,
+see Fig. 10. Note that d(cl(yθ),y ) = 1, and d(cl(x),y )> 3, see Fig. 10.
+In case the adjacent circlesCr(x) and Cl(yθ) do not intersect, we construct the triangle whose
+vertices are cr(x),cr(yθ) and y, see Fig. 11. Note that d(cr(yθ),y ) = 1, and d(cr(x),y )> 3.
+Next, we look closely at short and long triangles. Their sides are denoted in capital letters
+while the length of their sides are denoted in lowercase i.e., the side Si has length si.
+We keep a certain degree of detail for short triangles and subsequently reduce the details
+in the discussions for long triangles assuming the analogy in ideas and notation with short
+triangles.
+6.3. Angular formulae for short triangles. To avoid confusion, the abscissa and ordinate
+in the coordinate system in Remark 2.2 are denoted by u-axis and v-axis respectively.
+Using the notaion from Fig. 8 left, consider the triangle whose vertices are cl(x),cr(y) and
+y. It is easy to see that this triangle has sides of length a1 = 2, b1 = 1, and c1 = d(cl(x),y ).
+In addition, since the endpoints are given, we can easily obtain the coordinates of the vertices
+of the triangle under consideration. By the law of cosines we can obtain the angles α1,β1, and
+γ1.
+Let δ1 be the smallest angle made by the line joining cl(x) to y and the u-axis. The angle
+δ1 = arctan
+(v+1
+u
+)
+is easy to obtain since y = (u,v )∈ R2 is given.
+Remark 6.1. (Ruling out indeterminancies). Note that the standard arctan function allow us
+to compute angles in (−π
+2, π
+2 ). Since our computations involve angles in ( −π,π ) we make use
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 13
+Figure 8. Notation for short triangles. Right: The angular formulae applies
+whenδ1 andω− (orω+) have same and opposite sign. Here ℓ is a line parallel to
+the horizontal axis.
+of the arctan2 function that allows us to calculate the arctangent in all four quadrants, see
+equations (7.1) and (7.2).
+Depending on the ﬁnal position, the angles δ1 and ω− may have the same or diﬀerent sign.
+In Fig. 8 left we illustrate the case when δ1 < 0 and ω− < 0. In Fig. 8 right we illustrate the
+case where δ1 < 0 and ω− > 0. Since α1 and α′
+1 are supplementary we have that α′
+1 =π−α1.
+From the previous analysis we obtain that ω− =δ1−α′
+1 + π
+2 or equivalently:
+(6.1) ω− =δ1 +α1− π
+2.
+Figure 9. A critical conﬁguration for short triangles. Note that δ2 > 0 and ω+ > 0.
+
+14 JEAN D ´IAZ AND JOS ´E AYALA
+Now we obtain a formula for ω+, see Fig. 9. Since α2 and α′
+2 are supplementary we have
+that α′
+2 =π−α2.
+We obtain that ω+ =δ2 +α′
+2− π
+2 or equivalently:
+(6.2) ω+ =δ2−α2 + π
+2.
+Here δ2 is the smaller angle made by the u-axis and the line joining cr(x) to y. It is easy to
+obtain the length of the side C2.
+Figure 10. Notation for long triangles.
+6.4. Angular formulae for long triangles. Using the notation from Fig. 10 we present the
+following formulae:
+(6.3) ω− =δ3−α3 + π
+2.
+Similarly we obtain,
+(6.4) ω+ =δ4 +α4− π
+2.
+We put together equations (6.1)-(6.4) to give explicit formulae for ω− and ω+.
+(6.5) ω− =
+{
+δ1 +α1− π
+2 if d(cl(x),y )< 3
+δ3−α3 + π
+2 if d(cl(x),y )≥ 3
+(6.6) ω+ =
+{
+δ2−α2 + π
+2 if d(cr(x),y )< 3
+δ4 +α4− π
+2 if d(cr(x),y )≥ 3
+7. The class range
+Choose (x,X ), (y,Y )∈ T R2 so that the origin is identiﬁed with x as in Remark 2.2. We
+consider the formulae (6.5) and (6.6) as starting point for obtaining the class range function.
+The class value gives the range that θ can continuously vary so that the spaces Γ( x, yθ) have
+the same types of connected components. The class value corresponds to the length of the
+maximal subintervalI(y)⊂ (−π,π ) so that there is a bounded isotopy class ∆(x, yθ),θ∈I(y).
+Next we express the angles δi and αi in (6.5) and (6.6) in terms of generic y = (u,v )∈ R2.
+Observe that δ1 =δ3 since both are the acute angles made by the line joining cl(x) and y with
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 15
+Figure 11. Notation for long triangles.
+the u-axis. In addition, δ2 =δ4 since both are the acute angles made by the line joining cr(x)
+and y with the u-axis. Note that tan(δ1) = v+r
+u , and tan(δ2) = v−r
+u .
+We use arctan2 function in (7.1) and (7.2) instead of the standard arctan function to deter-
+mine angles δ1 and δ2, see Remark 6.1. We obtain the following formulae:
+(7.1) δ1(u,v ) =
+
+
+
+arctan v+1
+u if u> 0
+arctan v+1
+u +π if u< 0 and v≥− 1
+arctan v+1
+u −π if u> 0 and v <−1
+π
+2 if u = 0 and v >−1
+−π
+2 if u = 0 and v <−1
+(7.2) δ2(u,v ) =
+
+
+
+arctan v−1
+u if u> 0
+arctan v−1
+u +π if u< 0 and v≥ 1
+arctan v−1
+u −π if u> 0 and v <1
+π
+2 if u = 0 and v >1
+−π
+2 if u = 0 and v <1
+Now we determine the angles αi in (6.5) and (6.6). To this end, we apply the law of cosines.
+Here we are not considering degenerate triangles, so the following formulae are never undeter-
+mined.
+αi = arccos
+(b2
+i +c2
+i−a2
+i
+2bici
+)
+Since the initial and ﬁnal positions are given, the coordinates of the adjacent circles are
+easily obtained. In consequence, the length of the sides of the short and long triangles are
+easily obtained.
+We can express the angles αi as a function of y = (u,v )∈ R2. That is:
+(7.3) α1(u,v ) = arccos
+(u2 + (−1−v)2− 3
+2
+√
+u2 + (−1−v)2
+)
+(7.4) α2(u,v ) = arccos
+(u2 + (1−v)2− 3
+2
+√
+u2 + (1−v)2
+)
+
+16 JEAN D ´IAZ AND JOS ´E AYALA
+(7.5) α3(u,v ) = arccos
+(u2 + (−1−v)2− 15
+2
+√
+u2 + (−1−v)2
+)
+(7.6) α4(u,v ) = arccos
+(u2 + (1−v)2− 15
+2
+√
+u2 + (1−v)2
+)
+Note that we have expressed all the angles αi and δi as functions of the variables u and
+v. In addition, recall that in Deﬁnition 4.1 we considered the concept of critical angles ω−
+and ω+. We abuse notation and deﬁne the functions ω− : R2→ R and ω+ : R2→ R. They
+have been constructed to match Deﬁnition 4.1. These functions assign to each ﬁnal position
+y = (u,v )∈ R2 its respective critical angle ω−(y) and ω−(y).
+We consider equations (7.1)-(7.6) according to equations (6.5) and (6.6) to obtain:
+(7.7)
+ω−(u,v ) =
+
+
+
+
+
+
+arctan(v−1
+u ) + arccos((u2+(1−v)2)−3
+2
+√
+u2+(1−v)2 )− π
+2 if u> 0
+
+
+
+arctan(v−1
+u ) +π + arccos((u2+(1−v)2)−3
+2
+√
+u2+(1−v)2 )− π
+2 if v≥ 1
+arctan(v−1
+u )−π + arccos((u2+(1−v)2)−3
+2
+√
+u2+(1−v)2 )− π
+2 if v <1 if u< 0
+
+
+
+π
+2 + arccos((u2+(1−v)2)−3
+2
+√
+u2+(1−v)2 )− π
+2 if v >1
+−π
+2 + arccos((u2+(1−v)2)−3
+2
+√
+u2+(1−v)2 )− π
+2 if v <1 if u = 0
+if d(cl(x),y )< 3
+
+
+
+arctan(v−1
+u )− arccos( (u2+(1−v)2)−15
+2
+√
+u2+(1−v)2 ) + π
+2 if u> 0
+
+
+
+arctan(v−1
+u ) +π− arccos( (u2+(1−v)2)−15
+2
+√
+u2+(1−v)2 ) + π
+2 if v≥ 1
+arctan(v−1
+u )−π− arccos( (u2+(1−v)2)−15
+2
+√
+u2+(1−v)2 ) + π
+2 if v <1 if u< 0
+
+
+
+π
+2− arccos( (u2+(1−v)2)−15
+2
+√
+u2+(1−v)2 ) + π
+2 if v >1
+−π
+2− arccos( (u2+(1−v)2)−15
+2
+√
+u2+(1−v)2 ) + π
+2 if v <1 if u = 0
+if d(cl(x),y )≥ 3
+(7.8)
+ω+(u,v ) =
+
+
+
+
+
+
+arctan(v+1
+u )− arccos( (u2+(−1−v)2)−3
+2
+√
+u2+(−1−v)2 ) + π
+2 if u> 0
+
+
+
+arctan(v+1
+u ) +π− arccos( (u2+(−1−v)2)−3
+2
+√
+u2+(−1−v)2 ) + π
+2 if v≥− 1
+arctan(v+1
+u )−π− arccos( (u2+(−1−v)2)−3
+2
+√
+u2+(−1−v)2 ) + π
+2 if v <−1 if u< 0
+
+
+
+π
+2− arccos( (u2+(−1−v)2)−3
+2
+√
+u2+(−1−v)2 ) + π
+2 if v >−1
+−π
+2− arccos( (u2+(−1−v)2)−3
+2
+√
+u2+(−1−v)2 ) + π
+2 if v <−1 if u = 0
+if d(cr(x),y )< 3
+
+
+
+arctan(v+1
+u ) + arccos((u2+(−1−v)2)−15
+2
+√
+u2+(−1−v)2 )− π
+2 if u> 0
+
+
+
+arctan(v+1
+u ) +π + arccos((u2+(−1−v)2)−15
+2
+√
+u2+(−1−v)2 )− π
+2 if v≥− 1
+arctan(v+1
+u )−π + arccos((u2+(−1−v)2)−15
+2
+√
+u2+(−1−v)2 )− π
+2 if v <−1 if u< 0
+
+
+
+π
+2− arccos( (u2+(−1−v)2)−15
+2
+√
+u2+(−1−v)2 ) + π
+2 if v >−1
+−π
+2− arccos( (u2+(−1−v)2)−15
+2
+√
+u2+(−1−v)2 ) + π
+2 if v <−1 if u = 0
+if d(cr(x),y )≥ 3
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 17
+The undetermined expression u
+v for u = v = 0 can only happen at the centres of Cl(x) and
+Cr(x). By Corollary 3.4 in [3], no path in a bounded isotopy class can satisfy the points (0 , 1)
+or (0,−1). This is due the existence of parallel tangents; contradicting Theorem 7.12 in [5].
+Deﬁnition 7.1. The class range function Θ : R2→ R is deﬁned to be:
+Θ(y) =ω+(y)−ω−(y)≥ 0.
+It is important to note that the critical angles ω−(y) and ω+(y) are chosen so that ω+(y)≥
+ω−(y), see Deﬁnition 4.1. In addition, note that ω−(y) and ω+(y) are in the boundary or the
+closure of the interval I(y). Of course, if ω+(y)−ω−(y) < 0 we have that I(y) =∅, and so
+Ω =∅, and so there is no bounded isotopy class ∆( x,y). The case where Θ(y) = 0 is discussed
+bellow.
+The interior, closure, boundary and complement of a set B are denoted by int(B), cl(B),
+∂(B), and Bc respectively.
+Next we present data obtained after plotting the values of ω+(y)−ω−(y).
+7.1. Facts about the class range function. (see Fig. 12).
+• Θ is continuous.
+• The domain of Θ is a bounded set B ⊂ R2. In Section 8 we determine B and its
+subdivisions. In these subdivisions lie the ﬁnal positions y∈ R2 so that Γ( x, yθ) are
+ﬁbers of the same type, yθ = (y,Yθ), see Deﬁnition 8.4.
+• If y∈int(B), then Θ(y)> 0.
+• If y∈∂(cl(B)), then Θ(y) = 0.
+• Ify∈Bc, then ω+(y)−ω−(y)< 0. In this case, I(y) =∅, and so Ω =∅ or equivalently
+there is no bounded isotopy class ∆( x,y).
+• The range of Θ is the interval [0, arctan
+(1
+4
+√
+2
+)
++π].
+• Θ attains the minima at the ﬁnal positions y∈ R2 for c (or cc) isolated points. Here
+we have that Θ(y) = 0.
+• Θ attains a maximum at y = (0, 2
+√
+2) with Θ(y) = arctan
+(1
+4
+√
+2
+)
++π. In Fig. 6 top we
+illustrate the class range for y = (0, 2
+√
+2).
+Figure 12. The graph of the class range function, see Deﬁnition 7.1. Note that
+the class range is constructed out of (7.7) and (7.8) and that these functions are
+obtained by combining (6.5) and (6.6).
+
+18 JEAN D ´IAZ AND JOS ´E AYALA
+8. Class domain
+The obvious observation that a triangle with sides of length 1 and 2 cannot have a third side
+of length greater to 3 leads us to study the cases:
+(8.1) d(cl(x),y )< 3
+(8.2) d(cl(x),y )≥ 3
+(8.3) d(cr(x),y )< 3
+(8.4) d(cr(x),y )≥ 3
+After looking at the four possible combinations for:
+(8.5) ω− =ω+
+in equations (6.5) and (6.6) we obtain:
+(8.6) δ1 +α1− π
+2 =δ2−α2 + π
+2
+(8.7) δ3−α3 + π
+2 =δ2−α2 + π
+2
+(8.8) δ1 +α1− π
+2 =δ4 +α4− π
+2
+(8.9) δ3−α3 + π
+2 =δ4 +α4− π
+2
+The following observations regarding the circles (8.10)-(8.14) can be checked by a mere eval-
+uation. We leave the details to the reader.
+Consider x∈T R2 according to Remark 2.2. The locus of the circle (8.10) is satisﬁed by the
+ﬁnal positions y = (u,v )∈ R2 with u≥ 0. In this case, the angles in the associated triangles
+(according to Section 6) satisfy (8.9), see Figs. 10-11. In addition, Θ( u,v ) = 0 for points in
+(8.10) for u≥ 0.
+(8.10) u2 +v2 = 16.
+The loci of the circles (8.11) and (8.12) for u≥ 0 are satisﬁed by the ﬁnal positionsy = (u,v )∈
+R2 so that its associated angles according to subsection 6.1 satisfy (8.6). In addition, Θ( y) = 0
+for points in (8.11) and (8.12) with u≥ 0.
+(8.11) u2 + (v− 1)2 = 1
+(8.12) u2 + (v + 1)2 = 1
+The locus of the circle (8.13) is satisﬁed by the ﬁnal positions y = (u,v )∈ R2 with for u≤ 0
+so that its associated angles according to subsections 6.1 and 6.2 satisfy (8.7).
+The locus of the circle (8.14) is satisﬁed by the ﬁnal positions y = (u,v )∈ R2 with for u≤ 0
+so that its associated angles according to subsections 6.1 and 6.2 satisfy (8.8). In addition,
+Θ(y) = 0 for points in (8.13) and (8.14) with u≤ 0.
+(8.13) u2 + (v− 3)2 = 1
+(8.14) u2 + (v + 3)2 = 1
+The circles (8.15) and (8.16) are trivially extracted out of relations (8.1)-(8.4)
+(8.15) u2 + (v− 1)2 = 9
+(8.16) u2 + (v + 1)2 = 9
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 19
+Figure 13. Left: The domain B⊂ R2 of Θ. Note that B is bounded by the
+circles (8.10)-(8.16). Right: The temperature give the length of I(y) for y∈B.
+8.1. Description of B⊂ R2. We obtain the domain of the class range function by evaluating
+(7.7) and (7.8) according to Deﬁnition 7.1, this planar set is represented by the colored portion
+in Fig. 13 left. In Fig. 13 right we show a Heatmap for the class values.
+Deﬁnition 8.1. The domain B⊂ R2 of the class range function Θ : R2→ R corresponds to
+the open bounded portion enclosed by the simple closed curve corresponding to the union of
+the semicircles (8.11) and (8.12) for u≥ 0; (8.13) and (8.14) for u≤ 0; and (8.10) for u≥ 0,
+union the semicircles (8.11) and (8.12) for u> 0, union the origin.
+Observe that the semicircles (8.11) and (8.12) for u >0 are the location where c isolated
+points are deﬁned. In addition, Θ is continuous but not diﬀerentiable at B intersection the
+circles (8.13) and (8.14), see the list of facts in 7.1.
+Deﬁnition 8.2. Let x,y∈T R2. Then
+• y∈B1⊂B then, d(cl(x),y )< 3 and d(cr(x),y )< 3 are satisﬁed.
+• y∈B2⊂B then, d(cl(x),y )< 3 and d(cr(x),y )≥ 3 or,
+d(cl(x),y )≥ 3 and d(cr(x),y )< 3 are satisﬁed.
+• y∈B3⊂B then, d(cl(x),y )≥ 3 and d(cr(x),y )≥ 3 are satisﬁed.
+• set B4 =Bc.
+Theorem 8.3. Given x∈T R2 andy∈B. There exists a family eiθ =Yθ∈TyR2,θ∈ (−π,π ),
+such that for x, yθ∈T R2 we have that ∆(x, yθ) is a one-parameter family of bounded isotopy
+classes.
+Proof. Consider x∈T R2. Recall that the values of Θ are determined by a combination of short
+and long triangles, according to subsections 6.1 and 6.2.
+Since y∈B then Θ(y)≥ 0, see the facts in 7.1.
+Suppose that Θ(y)> 0, then we have that ω−̸=ω+. This immediately implyies that Yω−̸=
+Yω+. We conclude that the bounded classes ∆( x, yω−)̸= ∆(x, yω+). Since θ is continuous, by
+the intermediate value theorem the result follows. If Θ( y) = 0 then ∆( x, yθ) is a c isolated
+point with I(y) being a single point. □
+
+20 JEAN D ´IAZ AND JOS ´E AYALA
+Deﬁnition 8.4.
+(1) A family of spaces Γ( x, yθ) such that:
+• for θ =ω− we have that ∆(x, yω−) is a cc isolated point in Γ( x, yω−);
+• for θ∈ (ω−,ω +) there exists a bounded ∆( x, yθ);
+• for θ =ω+ we have that ∆(x, yω+) is a cc isolated point in Γ( x, yω+);
+• for θ /∈ [ω−,ω +] there is no bounded ∆( x, yθ)
+is called a ﬁber of type I .
+(2) A family of spaces Γ( x, yθ) such that:
+• for θ =ω− we have that ∆(x, yω−) is a cc isolated point in Γ( x, yω−);
+• for θ∈ (ω−,ω +] there exists a bounded ∆( x, yθ);
+• for θ /∈ (ω−,ω +] there is no bounded ∆( x, yθ).
+Or,
+• for θ =ω+ we have that ∆(x, yω+) is a cc isolated point in Γ( x, yω+);
+• for θ∈ [ω−,ω +) there exists a bounded ∆( x, yθ);
+• for θ /∈ [ω−,ω +) there is no bounded ∆( x, yθ)
+is called a ﬁber of type II .
+(3) A family of spaces Γ( x, yθ) such that:
+• for θ∈ [ω−,ω +] there exists a bounded ∆( x, yθ);
+• for θ /∈ [ω−,ω +] there is no bounded ∆( x, yθ)
+is called a ﬁber of type III .
+(4) A family of spaces Γ( x, yθ) such that:
+• there is no bounded ∆( x, yθ) for all θ∈ (−π,π ]
+is called a ﬁber of type IV .
+(5) A family of spaces Γ( x, yθ) is called a ﬁber of type V if x = y. In this case, each
+Γ(x, yθ), θ∈ (−π,π ] admit an isolated point, being a path of length zero. In addition,
+there is no bounded ∆( x, yθ) for all θ∈ (−π,π ].
+Theorem 8.5. Consider x, yθ∈T R2 with x̸=y.
+Supposey∈B⊂ R2, then:
+• If y∈B1, then Γ(x, yθ) is a ﬁber of type I.
+• If y∈B2, then Γ(x, yθ) is a ﬁber of type II.
+• If y∈B3, then Γ(x, yθ) is a ﬁber of type III.
+If y∈B4 =Bc, then Γ(x, yθ) is a ﬁber of type IV.
+If x =y, then Γ(x, yθ) is a ﬁber of type V.
+Proof. If y∈ B1, the endpoints x, yθ ∈ T R2 have associated two short triangles, according
+to equations (6.1) and (6.2). Via equations (7.7) and (7.8) we obtain the values ω− and ω+.
+Since Θ(y) > 0 (see the facts in 7.1) Theorem 8.3, guarantees the existence of a family of
+bounded isotopy classes ∆(x, yθ)⊂ Γ(x, yθ) forθ∈ (ω−,ω +) =I(y). Note that by construction
+Γ(x, yω−) and Γ( x, yω+) admit a cc isolated point each.
+Ify∈B2, then the endpoints x, yθ∈T R2 have associated one short and one long triangle via
+a combination of the equations (6.1) or (6.2), and (6.3), or (6.4). Via equations (7.7) and (7.8)
+we obtain the valuesω− andω+. Since Θ(y)> 0 (see the facts in 7.1) Theorem 8.3, guarantees
+the existence of a family ∆( x, yθ)⊂ Γ(x, yθ) for θ∈ [ω−,ω +) = I(y) (or θ∈ (ω−,ω +]). Note
+that by construction Γ( x, yω−) or Γ( x, yω+) admit a cc isolated point.
+If y ∈ B3, the endpoints x, yθ ∈ T R2 have associated two long triangles, according to
+equations (6.3) and (6.4). Via equations (7.7) and (7.8) we obtain the values ω− andω+. Since
+Θ(y) > 0, again Theorem 8.3, guarantees the existence of a family ∆( x, yθ)⊂ Γ(x, yθ) for
+θ∈ [ω−,ω +] =I(y).
+If y∈B4 =Bc we have that ω+−ω− < 0, implying that there is no bounded isotopy class.
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 21
+Ifx =y then by Theorem 3.9 in [5] we conclude that Γ(x, yθ),θ∈ [−π,π ] admits an isolated
+point, being a path of length zero. Since Γ( x, yθ) admits only closed paths, they have parallel
+tangents, see [3]. Therefore, these closed paths are bounded-homotopic to paths of arbitrary
+length, see Proposition 3.8 in [3]. By Theorem 7.12 in [5] none of these paths can be in a
+bounded isotopy class. Therefore, there is no bounded isotopy class for all θ∈ (−π,π ). □
+It is easy to see that there is a natural correspondence betweenB×I(y) and B. Equivalently
+a correspondence between B×I(y) and the elements in x, yθ∈ T R2 so that there exists a
+bounded isotopy class.
+Theorem 8.6. The set of endpoints x, yθ∈T R2 so that Γ(x, yθ) is a ﬁber of type:
+• I, II, or III is bounded, neither open nor closed in T R2.
+• IV is unbounded, neither open nor closed in T R2.
+• V is a unit circle.
+Proof. Consider x∈T R2 and y∈B. Since B⊂ R2 and I(y)⊂ (−π,π ) are both bounded we
+have thatB×I(y) is bounded. Note that B is not open, since it contains the positive abscissa
+of the circles (8.16) and (8.11) i.e., the image of c isolated points. The set B is not closed since
+the point y = (0, 1) is in the closure of B but not inB, due the existence of parallel tangents,
+see Proposition 3.8 in [3].
+For the second statement, note that the set of endpoints x, yθ∈ T R2 so that Γ( x, yθ) is a
+ﬁber of type IV is unbounded since the ﬁbers of type IV have their ﬁnal positions in B4 =Bc
+being this set unbounded. Since B is neither open nor closed, so its complement. Therefore
+B4× (−π,π ] is unbounded neither open nor closed.
+Recall that the set of endpoints ( x,X ), (y,Yθ)∈T R2 with x =y are such that Γ( x, yθ) is a
+ﬁber of type V . Since (x,X ) remains ﬁxed while Yθ =eθi, θ∈ (−π,π ] the result follows. □
+Next, we establish that B is bounded neither open nor closed, answering a question raised
+by Dubins in pp. 480 in [16].
+Corollary 8.7. B⊂T R2 is neither open nor closed.
+Proof. Immediate from Theorem 8.6 and the obvious correspondence between B and B×
+I(y). □
+Corollary 8.8. Consider x, yθ∈T R2 with y∈B. Then:
+• isolated points of zero length are parametrized in the unit circle.
+• isolated points of type c are parametrized in (0,π )⊔ (0,π ).
+• isolated points of type cc are parametrized in
+(0,π )× (0,π )⊔ (0,π )× (0,π ).
+• The bounded isotopy classes are parametrized in B×I(y).
+Proof. The ﬁrst and fourth statements were proven in Theorem 8.6. The second and third
+statements are immediate. □
+9. On the classification of the homotopy classes of bounded curvature paths
+Next we present an updated version of Theorem 6.2 in [6] by considering the existence of
+isotopy classes in terms of the values of the class range function.
+We ﬁrst revise Remark 2.6. Given x∈T R2,
+Γ =
+⋃
+y∈R2
+θ∈(−π,π]
+Γ(x, yθ).
+Given x, y∈T R2. Let,
+Γ(x, y) =
+⋃
+n∈Z
+Γ(n)
+
+22 JEAN D ´IAZ AND JOS ´E AYALA
+where
+Γ(n) ={γ∈ Γ(x,y) :τ(γ) =n,n∈ Z},
+with τ(γ) being the turning number 2 of γ, see Deﬁnition 4.1 in [2].
+For eachθ∈ (−π,π ] we have that,
+Γn(x, yθ) ={γ∈ Γ(x, yθ) :τ(γ) =n,n∈ Z}.
+Suppose that ∆( x, yθ)⊂ Γk(x, yθ), for some θ ∈ (−π,π ], k ∈ Z. The space ∆ ′(x, yθ)⊂
+Γk(x, yθ) is the space of paths bounded-homotopic to paths with self-intersections. In [6] we
+proved that:
+∆(x, yθ)∪ ∆′(x, yθ) = Γk(x, yθ).
+The proof of Theorem 9.1 is immediate from the facts in 7.1, Theorem 8.6 and Theorem 6.2
+in [6].
+Theorem 9.1. Choose x, yθ∈T R2 we have that:
+(9.1) Γ( x, yθ) =
+⋃
+n∈Z
+Γn(x, yθ), θ∈ (−π,π ].
+(1) If Θ(y)> 0 there exists a family of bounded isotopy classes ∆(x, yθ) so that:
+(9.2) Γ k(x, yθ) = ∆(x, yθ)∪ ∆′(x, yθ), for θ∈I(y), and some k∈ Z.
+In particular, if:
+• If y∈B1 then Γ(x, yθ) is a ﬁber to type I.
+• If y∈B2 then Γ(x, yθ) is a ﬁber to type II.
+• If y∈B3 then Γ(x, yθ) is a ﬁber to type III.
+• If y∈B4 then Γ(x, yθ) is a ﬁber to type IV.
+• If y =x then Γ(x, yθ) is a ﬁber to type V.
+(2) If y∈B, y̸=x and Θ(y) = 0 we may have a c or a cc isolated point.
+(3) If ω+(y)−ω−(y)< 0 we have that there is no bounded isotopy class.
+Appendix
+Homotopy classes and deformations of Dubins paths
+We would like to motivate a theory analyzing algorithmic aspects of deformations of piecewise
+bounded curvature paths of constant curvature. Many standard questions in computational
+geometry can be adapted for this class of paths.
+In [6] we deﬁned operations on bounded curvature paths being a ﬁnite number of concatena-
+tions of line segments and arcs of unit radius circles, the so-called cs paths. The line segments
+and arcs of circles are called components. The number of components is called the complexity
+of the path 3. Also in [6], we proved that a cs path can be constructed arbitrarily close to
+any given bounded curvature path. It is of interest to study the computational complexity of
+deforming cs paths.
+It is not hard to see that for any given x,y∈ T R2 the space Γ( x,y) has a ﬁnite number of
+Dubins paths. In Example 9.2 we index Dubins paths according to their length. The length
+minimizer in Γ( x,y) is denoted by γ0.
+Next, we relate the types of connected components, the number of local minima, number of
+global minima, existence of local maxima, and deformations of cs paths. In Fig. 14 we consider
+seven illustrations, and in Example 9.2 we consider seven items. We associate illustrations and
+items in an obvious way.
+Example 9.2. Considerx = (0, 0),X =e2πi∈TxR2. In Figure 14 we illustrate spaces Γ( x,y)
+such that:
+2In [6] we used the analogous idea of turning number by considering closed path.
+3Dubins paths have complexity at most 3.
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 23
+Figure 14. A schematic representation for spaces of bounded curvature paths.
+Each of the seven illustrations represent the connected components Γ( n) ⊂
+Γ(x,y) admitting Dubins paths, here represented by points. Points with the
+same color suggest that the associated paths are bounded-homotopic, see Figs.
+2, 15-17.
+(1) y = (z, 0), z ∈ R+, Y = e2πi ∈ TyR2. This example corresponds to the Euclidean
+geometry case (up to isometries) where the single length minimizer between any two
+points is a line segment.
+(2) y = (4,−8), Y = e2πi ∈ TyR2. There are four Dubins paths, γ0 being the length
+minimizer, see Fig. 15. The paths γ0 and γ3 are bounded-homotopic. This is checked
+in Proposition 4.3 and Fig. 13 in [6].
+(3) y = (z, 0), z≥ 4, Y =eπi∈TyR2. There are four Dubins paths, with γ0 and γ1 being
+length minimizers. These four paths are not bounded-homotopic one to the other. In
+Fig. 1 in [2] we illustrate the two length minimizers.
+(4) y = (−2, 1), Y = e− π
+4i ∈ TyR2. There are six Dubins paths, one being the length
+minimizer, see Fig. 2. The paths γ0 and γ5; γ1 and γ4, and γ2 and γ3 are pair-wise
+bounded-homotopic. This can be veriﬁed by applying Proposition 4.4 in [6].
+(5) y = (3, 0), Y =e
+π
+3i∈TyR2. Since y∈B, then Θ(y)> 0, so we have that there exists a
+bounded isotopy class ∆(x,y), or equivalently Ω̸=∅. In this case, the length minimiser
+in Γ(x,y) is a unique csc path and it is an element in ∆( x,y). This is a consequence
+of Proposition 2.13 in [4] and Theorem 8.1 in [5].
+Note that there are eight Dubins paths, one being the length minimizer (γ0 lies in Ω),
+see Fig. 16. In addition, the paths γ0,w1 andw2 are bounded-isotopic one to the other
+since they are paths in ∆( x,y), see Theorem 5.4 in [6]. It seems plausible to think that
+w1 and w2 are local maxima (not local minima) of length. In addition, the path γ3 is
+the length minimizer in ∆′(x,y).
+(6) there are six Dubins paths, the length minimizer being an isolated point, see Fig. 17
+and Theorem 3.9 in [5]. By a similar argument as the one in Proposition 4.4 in [6] we
+conclude that γ1 is bounded-homotopic to γ4.
+
+24 JEAN D ´IAZ AND JOS ´E AYALA
+(7) x = y and X = Y . Closed bounded curvature paths are not bounded-homotopic to a
+single point. In this case, the length minimiser γ0 is an isolated point of length zero, see
+Theorem 3.9 in [5]. There are two non-trivial length minimisers, say γ1 and γ2. These
+paths lie in the adjacent circles Cl(x) and Cr(x) respectively. It is easy to see that
+γ1 and γ2 lie in diﬀerent homotopy classes since they have winding number 1 and −1
+respectively, see Theorem 4.6 in [2].
+After the previous examples, a natural task would be to determine for any pair of endpoints
+x,y∈ T R2 the exact number of homotopy classes admitting Dubins paths. This should be
+done after ﬁrst describing all the possible scenarios for homotopies between Dubins paths.
+A closely related problem is the following. Given x, yθ∈T R2,θ∈ (−π,π ]. Describe how the
+number of Dubins paths vary, as we varyθ∈ (−π,π ]. Also, describe how the type of all (up to
+eight?) Dubins paths vary for all the ﬁbers. A description of the type of the global minimum
+(ﬁrst Dubins path) has been obtained in [11].
+Given x, y∈T R2. What are the complexity n> 3 cs paths of minimal length? For certain
+pairs the answer is trivial. What if d(x,y )< 4?
+Given twocs paths with prescribed complexity and lying in the same homotopy class. What
+is the minimal number of operations (or moves) to deform one path into the other? What are
+these moves?
+Figure 15. Spaces of bounded curvature paths may have four local minima of
+length. Note that γ0 and γ3 are bounded-homotopic, see Proposition 4.3 in [6].
+References
+1. P. K. Agarwal, T. Biedl, S. Lazard, S. Robbins, S. Suri, and S. Whitesides. Curvature-constrained shortest
+paths in a convex polygon. SIAM J. Comput., 31(6):1814-1851 (electronic), 2002.
+2. J. Ayala, Length minimising bounded curvature paths in homotopy classes, Topology and its Applications,
+v.193:140-151, 2015.
+3. J. Ayala. On the topology of the spaces of curvature constrained plane curves. Advances in Geometry, Vol
+17, No 3, pp.283-292, 2017.
+4. J. Ayala, D. Kirszenblat, and J.H. Rubinstein. A geometric approach to shortest bounded curvature paths.
+Communications in Analysis and Geometry, Vol. 26, No 4, 2018.
+5. J. Ayala and J.H. Rubinstein, Non-uniqueness of the Homotopy Class of Bounded Curvature Paths (2014)
+arXiv:1403.4911 [math.MG].
+
+CENSUS OF BOUNDED CUR V ATURE PATHS 25
+Figure 16. Spaces of bounded curvature paths may have up to eight csc-ccc
+paths, local minima (or maxima) of length. Note that γ3 and γ6 are bounded-
+homotopic.
+Figure 17. Spaces of bounded curvature paths may have six local minima of
+length. Note that γ1 and γ4 are bounded-homotopic. It is of interest to classify
+the ﬁbers Γ( x, yθ) in terms of the way the type and number of Dubins paths
+changes as θ varies, see also Figs. 2, 15 and 16.
+6. J. Ayala and J.H. Rubinstein. The classiﬁcation of homotopy classes of bounded curvature paths. Israel
+Journal of Mathematics, Vol. 213, No 1, pp 79-107, 2016.
+
+26 JEAN D ´IAZ AND JOS ´E AYALA
+7. J. Backer and D. Kirkpatrick, Finding curvature-constrained paths that avoid polygonal obstacles. In SCG
+07: Proceedings of the twenty-third annual symposium on Computational geometry, pages 66-73, New York,
+NY, USA, 2007. ACM Press.
+8. J.-D. Boissonat, A. Cerezo; K. Leblond (May 1992). ”Shortest Paths of Bounded Curvature in the Plane”.
+Proceedings of the IEEE International Conference on Robotics and Automation. 3. Piscataway, NJ. pp.
+2315-2320.
+9. J.-D. Boissonnat and S. Lazard. A polynomial-time algorithm for computing shortest paths of bounded
+curvature amidst moderate obstacles. Internat. J. Comput. Geom. Appl., 13(3):189-229, 2003.
+10. M. Brazil, P.A. Grossman, D.A. Thomas, J.H. Rubinstein, D. Lee, N.C. Wormald, Constrained Path Op-
+timisation for Underground Mine Layout, The 2007 International Conference of Applied and Engineering
+Mathematics (ICAEM07), London, (2007),856-861
+11. X.-N. Bui, P. Soueres, J.-D. Boissonnat, and J.-P. Laumond. The Shortest Path Synthesis for Non-holonomic
+Robots Moving Forwards. Technical Report 2153, INRIA, Nice-Sophia-Antipolis, 1994.
+12. H. Chitsaz and S. M. LaValle, Time-optimal paths for a Dubins airplane, in 2007 46th IEEE Conference on
+Decision and Control. IEEE, 2007, pp. 2379-2384.
+13. A. Chang, M. Brazil, D.A. Thomas, J.H. Rubinstein, Curvature-constrained directional-cost paths in the
+plane. Journal of Global Optimization, Volume 53 Issue 4, August (2012), 663-681.
+14. J. Diaz and J. Ayala, Dubins Explorer: A software for bounded curvature paths, http://joseayala.org/
+dubins_explorer.html, 2014.
+15. L.E. Dubins, On Curves of Minimal Length with Constraint on Average Curvature, and with Prescribed
+Initial and Terminal Positions and Tangents, American Journal of Mathematics 79 (1957), 139-155.
+16. L.E. Dubins, On Plane Curve with Curvature, Paciﬁc J. Math. Volume 11, Number 2 (1961), 471-481.
+17. V. Duindam,J. Xu, R. Alterovitz, S. Sastry and K. Goldberg, 3D Motion Planning Algorithms for Steerable
+Needles Using Inverse Kinematics, Int J Rob Res. 2009; 57: 535-549.
+18. S. Fortune and G. Wilfong. Planning constrained motion. Ann. Math. Artiﬁcial Intelligence, 3(1):21-82,
+1991. Algorithmic motion planning in robotics.
+19. P. Jacobs and J. Canny, Planning smooth paths for mobile robots. In Nonholonomic Motion Planning,
+pages 271-342. Kluwer Academic, Norwell, MA, 1992.
+20. H. H. Johnson. An application of the maximum principle to the geometry of plane curves. Proceedings of
+the American Mathematical Society, 44(2):432-435, 1974.
+21. J. L. Ny, E. Feron, and E. Frazzoli,On the Dubins Traveling Salesman Problem, IEEE Transactions on
+Automatic Control, vol. 57, no. 1, pp. 265-270, 2012.
+22. A. A. Markov. Some examples of the solution of a special kind of problem on greatest and least quantities.
+Soobshch. Karkovsk. Mat. Obshch., 1:250-276, 1887.
+23. M. Owen, R. W. Beard , T. W. McLain. Implementing Dubins Airplane Paths on Fixed-Wing UAVs.
+Handbook of Unmanned Aerial Vehicles Ed. P. Valavanis, P. Kimon and G. Vachtsevanos, 2015.
+24. J. A. Reeds and L. A. Shepp, Optimal paths for a car that goes both forwards and backwards, Paciﬁc
+Journal of Mathematics, vol. 145, no. 2, pp. 367-393, 1990.
+25. J. Reif and H. Wang. The complexity of the two dimensional curvature-constrained shortest-path problem.
+In WAFR 98: Proceedings of the third workshop on the algorithmic foundations of robotics on Robotics :
+the algorithmic perspective, pages 49-57, Natick, MA, USA, 1998. A. K. Peters, Ltd.
+26. N. Saldanha and P. Zulkhe, Components of spaces of curves with constrained curvature on ﬂat surfaces.
+Paciﬁc J. Math. 281 (2016), No. 1, 185-242.
+27. A. M. Shkel, V. Lumelsky, Classiﬁcation of the Dubins set. Robot. Auton. Syst. 2001, 34, 179-202.
+28. P. Soueres and J. P. Laumond, Shortest paths synthesis for a car-like robot, IEEE Transactions on Automatic
+Control 41(5):672-688.
+29. H. J. Sussmann, Shortest 3-dimensional paths with a prescribed curvature bound, from: Proc. 34th IEEE
+Conf. on Decision and Control (New Orleans) (1995) 3306-3312
+30. A. Tsourdos, B. White, and M. Shanmugavel, Wiley: Cooperative Path Planning of
+31. Whitney, H. On regular closed curves in the plane. Compositio Math. 4 (1937), 276-284.
+FIA, Universidad Arturo Prat, Iquique, Chile
+E-mail address : jayalhoff@gmail.com - jeanpdp@gmail.com
+

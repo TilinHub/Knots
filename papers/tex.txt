@@ -1,0 +1,177 @@
+1.Un paquete completo de primera y segunda variacion para diagramas cs
+1.1.Lo que vas a lograr con este documento.La meta es que puedas hacer lo siguiente,
+sin adivinar nada:
+•Construir la matriz completaL(c) de restricciones lineales de primer orden.
+•Calcular el funcional lineal de primera variacion de longitud Φ(δc, ω).
+•Decidir criticidad: el diagrama es critico si y solo si Φ se anula en todas las direcciones
+admisibles.
+•(Opcional) Calcular una segunda variacion (forma cuadratica) sobre direcciones admis-
+ibles.
+Lo importante:L(c) solo describe movimientos permitidos (primer orden). La longitud entra
+por separado en Φ.
+1.2.Datos del diagrama cs y convenciones.
+Discos. HayNdiscos unitariosD 1, . . . , DN con centrosc i ∈R 2 y radioR= 1.
+Piezas cs. El diagrama csγesta compuesto por:
+•segmentos rectos (en el complemento de los discos) cuyos extremos son tangencias con
+discos,
+•arcos circulares sobre fronteras∂D k cuyos extremos son tangencias con el mismo disco.
+Conjuntos indice (combinatoria fija).
+•E= conjunto de contactos disco–disco, cada elemento es un par no ordenado{i, j}.
+•T= conjunto de tangencias curva–disco, cada elemento es una etiquetaα.
+•S= conjunto de segmentos, cada segmento es un par ordenadoα→βde tangencias.
+•A= conjunto de arcos, cada arco es un triple (α→β, k, σ a): extremosα, βsobre el
+mismo discoD k y un signoσ a ∈ {+1,−1}.
+Datos geometricos minimos (esto SI es entrada). Para poder construir matrices y longitud,
+necesitas:
+•los centrosc 1, . . . , cN,
+•para cada tangenciaα∈T: el discok(α)∈ {1, . . . , N}y el puntop α ∈∂D k(α),
+•la listaSde segmentosα→β,
+•la listaAde arcos (α→β, k, σ a).
+Convencion de rotacion 90 ◦. UsamosJ(x, y) = (−y, x).
+Normal y tangente en una tangencia (calculable desdecyp). Siα∈Tocurre en el disco
+k=k(α):
+•normal unitarion α :=p α −c k,
+•tangente unitariot α :=ε αJn α conε α ∈ {+1,−1}.
+El signoε α lo fijas para quet α apunte en la direccion de recorrido deγenα.
+Chequeos inmediatos (si falla, la entrada esta mal).
+•Para todoα∈T:∥p α −c k(α)∥= 1.
+•Para todoα∈T:⟨n α, tα⟩= 0 y∥t α∥= 1.
+•Para todo{i, j} ∈E:∥c i −c j∥= 2.
+1.3.Variables de primer orden.
+Variacion de centros (incognita).δc= (δc 1, . . . , δcN)∈R 2N conδc i ∈R 2.
+Variables auxiliares por tangencia (incognita).ω= (ω α)α∈T ∈R |T|.
+Modelo cinematico (esto es una definicion operacional). El movimiento de cada punto de tan-
+gencia se modela porδp α =δc k(α) +ω αtα.
+Comentario honesto: esta es la forma mas simple y util para convertir variacion de longitud
+en una forma lineal en (δc, ω), y es la que se usa en el protocolo.
+1.4.Bloque de contactos disco–disco: construccion deA(c).
+Vector unitario de contacto. Para cada contacto{i, j} ∈Edefineu ij := (ci −c j)/∥ci −c j∥.
+1
+
+2
+Restriccion de primer orden. Como∥c i−cj∥= 2 se mantiene constante en el estrato de contacto,
+la derivada da⟨u ij, δci −δc j⟩= 0.
+Construccion de la fila.A(c) tiene|E|filas y 2Ncolumnas (bloques de tama˜ no 2 por disco). La
+fila de{i, j}tiene:
+•bloqueu ⊤
+ij en las columnas del discoi,
+•bloque−u ⊤
+ij en las columnas del discoj,
+•ceros en las demas columnas.
+Espacio de rodadura. Roll(c) := kerA(c).
+1.5.Bloques de tangencia: construccion deT c(c)yT ω(c).
+Ecuacion por tangencia. Para cadaα∈Timponemos⟨t α, δck(α)⟩+ω α = 0.
+Aclaracion para tu duda:
+•t α SI es calculable (desdep α yc k(α), mas el signo de orientacion).
+•δcyωNO se conocen a priori: son las incognitas del sistema lineal.
+•La ecuacion no es un dato, es una restriccion.
+Fila enT c(c). La fila deT c(c) asociada aαtiene un unico bloque no nulo:
+•bloquet ⊤
+α en las columnas del discok(α),
+•ceros en los otros discos.
+Fila enT ω(c). La fila deT ω(c) asociada aαtiene:
+•un 1 en la columna deω α,
+•ceros en las demas columnas.
+Conclusion. Con esta convencionT ω(c) =I.
+1.6.Operador lineal completo de restricciones:L(c).
+Definicion.L(c) es la matriz por bloquesL(c) =
+
+A(c) 0
+Tc(c)T ω(c)
+
+que actua sobre (δc, ω)∈R 2N ×
+R|T|.
+Significado deL(c). Las direcciones admisibles a primer orden son exactamente kerL(c) =
+{(δc, ω) :L(c)(δc, ω) = 0}.
+Eliminacion explicita deω. ComoT ω =I, la segunda linea daω=−T c(c)δc. Entonces, en este
+modelo, todaδc∈Roll(c) tiene un lift unico a kerL(c), dado porω=−T c(c)δc.
+Correccion importante (esto arregla un error frecuente). No es correcto escribir un teorema de
+primera variacion que dependa solo decy contactos sin usarp α, tα y la descomposicionS,A.
+La longitud del diagrama no depende solo del grafo de contacto; depende de la geometria del
+trazoγ.
+1.7.Longitud del diagrama y funcional de primera variacionΦ.
+Longitud. Len(γ) es la suma de longitudes de:
+•segmentoss∈S(distancia entre extremos),
+•arcosa∈A(longitud angular sobre∂D k, conR= 1).
+Definicion de Φ. El funcional de primera variacion es Φ(δc, ω) :=DLen(γ)[δγ(δc, ω)] evaluado
+en una direccion admisible (δc, ω)∈kerL(c).
+Criticidad en el estrato cs significa: Φ(δc, ω) = 0 para todo (δc, ω)∈kerL(c).
+1.8.Contribucion de un segmento y de un arco (formulas correctas).
+Segmentos:α→β.
+Datos del segmento.v s :=p β −p α,ℓ s :=∥v s∥, ˆvs :=v s/ℓs.
+Primera variacion del segmento.DLen(s) =⟨ˆv s, δpβ −δp α⟩.
+Usandoδp α =δc k(α) +ω αtα:DLen(s) =⟨ˆv s, δck(β) −δc k(α)⟩+⟨ˆvs, ωβtβ −ω αtα⟩.
+Arcoa= (α→β, k, σ a)sobre∂D k.
+Primera variacion del arco. En este modelo:DLen(a) =σ a(ωβ −ω α).
+
+3
+Nota de sanidad. Esta formula NO produce un termino directo enδcantes de eliminarω. Si
+luego sustituyesω=−T cδc, entonces si aparece dependencia enδc, pero eso es despues de la
+eliminacion.
+1.9.Ensamblaje mecanico deΦ: reglas de acumulacion.
+Forma general. Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ωpara ciertos coeficientesg c ∈R 2N yg ω ∈R |T|.
+Inicializacion. Partir cong c = 0 yg ω = 0.
+Regla por segmentos:α→β.
+•En el bloque del discok(α) sumar−ˆv s ag c.
+•En el bloque del discok(β) sumar +ˆv s ag c.
+•Sumar−⟨ˆv s, tα⟩ag ω[α].
+•Sumar +⟨ˆvs, tβ⟩ag ω[β].
+Regla por arcoa= (α→β, k, σ a).
+•Sumar−σ a ag ω[α].
+•Sumar +σ a ag ω[β].
+Resultado. Despues de procesar todas las piezas, Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ω.
+1.10.Test de criticidad en algebra lineal (dos metodos equivalentes).
+Metodo 1: base de kerL(c).
+(1) Calcula una base de kerL(c) y juntala como columnas de una matrizK.
+(2) Calcula (g c, gω)⊤K.
+(3) El diagrama es critico si y solo si (g c, gω)⊤K= 0.
+Metodo 2: criterio de espacio fila. El diagrama es critico si y solo si existeλtal que (g c, gω) =
+L(c)⊤λ. Esto es resolver un sistema lineal paraλ.
+Explicacion para abuela (sin perder verdad).L(c) dice que movimientos pequenos estan per-
+mitidos sin romper contactos ni tangencias. Φ dice si esos movimientos pequenos hacen que la
+curva se alargue o se acorte al primer orden. Critico significa: ningun movimiento permitido
+cambia la longitud al primer orden.
+1.11.Segunda variacion: version util para pregrado.Aqui hay una forma correcta y
+ejecutable de segunda variacion, sin afirmar cosas falsas.
+Idea. Primero construyes una forma cuadraticaQ amb(δc, ω) (segunda variacion en el espacio
+extendido). Luego la restringes a (δc, ω)∈kerL(c).
+Segunda variacion de un segmento.Para un segmentos:α→βconv s =p β −p α yℓ s =∥v s∥,
+la segunda variacion de la distancia euclidea (formula estandar) se escribe como:
+D2 Len(s) = 1
+ℓs
+∥(I−ˆv sˆv⊤
+s )(δpβ −δp α)∥ 2 +⟨ˆvs, δ2pβ −δ 2pα⟩.
+En un protocolo de pregrado, normalmente se usa la aproximacion consistente de primer
+orden: se ignoraδ 2py se trabaja con la parte cuadratica positiva:
+Qs(δc, ω) := 1
+ℓs
+∥(I−ˆv sˆv⊤
+s )(δpβ −δp α)∥ 2.
+Esto es una forma cuadratica explicita en (δc, ω) porqueδpes lineal en (δc, ω).
+Segunda variacion de un arco.En este modelo,DLen(a) =σ a(ωβ −ω α) es lineal, por lo tanto
+su segunda variacion en las variables (δc, ω) es cero:Q a(δc, ω) = 0.
+Forma cuadratica total.DefineQ amb(δc, ω) :=P
+s∈S Qs(δc, ω).
+La segunda variacion reducida sobre el estrato cs es la restriccion:Q red :=Q amb|kerL(c) .
+Comentario honesto. Esta segunda variacion capta de manera limpia la curvatura de la parte de
+segmentos y es suficiente para tests de estabilidad linealizados en muchos ejemplos. Si quieres
+la formula completa conδ 2p, hay que fijar un modelo de segundo orden del movimiento de
+puntos de tangencia; eso es mas avanzado.
+
+4
+1.12.Checklist final (lo que debes mostrar al final, sin excepciones).
+•Centrosc 1, . . . , cN.
+•Lista de contactosEy verificacion∥c i −c j∥= 2 para{i, j} ∈E.
+•Lista de tangenciasTconk(α) yp α y verificacion∥p α −c k(α)∥= 1.
+•Vectoresn α yt α (con signosε α fijados).
+•Matrices numericasA(c),T c(c),T ω(c) yL(c).
+•Lista de segmentosSy arcosAcon signosσ a.
+•Coeficientesg c, gω y la formula Φ(δc, ω) =g ⊤
+c δc+g ⊤
+ω ω.
+•Test de criticidad por Metodo 1 o Metodo 2.
+

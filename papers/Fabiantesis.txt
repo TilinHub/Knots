@@ -1,0 +1,1251 @@
+Per´ ımetros extremos en empaquetamientos de discos
+congruentes
+Fabi´ an Henry Vilaxa
+19 de diciembre de 2025
+Resumen
+Mi investigaci´ on est´ a enmarcada en el problema del per´ ımetro minimo de la en-
+volvente convexa de empaquetamientos de discos congruentes. Concretamente, busco
+resolver el siguiente problema: Dado un grafo de contacto conexo de discos congruentes
+en el plano, determinar si dicho grafo constituye un punto cr´ ıtico del per´ ımetro de la
+envolvente convexa de su clase de contacto. De ser as´ ı, indicar si corresponde a un
+m´ ınimo o m´ aximo. En este documento describo y fundamento los elementos esencia-
+les del procedimiento basado en el c´ alculo variacional que propongo para resolver este
+problema.
+1. El problema del per´ ımetro de la envolvente convexa
+El problema central que motiva esta investigaci´ on es bastante visual. Supongamos que
+tenemos un mont´ on de discos del mismo radio sobre una mesa y les ponemos una banda
+el´ astica alrededor. Lo que nos interesa es encontrar la disposici´ on (o configuraci´ on) de estos
+discos que hace que esa banda el´ astica tenga la menor longitud posible. Es decir, buscamos
+minimizar el per´ ımetro de la envolvente convexa de los discos.
+En lugar de intentar buscar la mejor configuraci´ on entre las infinitas posibilidades (lo
+cual es computacionalmente infactible), nos enfocamos en un problema distinto, pero en la
+misma l´ ınea.
+No buscaremos el m´ ınimo global directamente. En su lugar, tomaremos un grafo de con-
+tacto espec´ ıfico (una ”forma”de conectar los discos) y utilizaremos herramientas de c´ alculo
+variacional para responder dos preguntas fundamentales sobre ´ el:
+1. Criticidad: Si posicionamos los discos de una forma espec´ ıfica, ¿Ser´ a que esa dispoci´ on
+entrega un punto cr´ ıtico del per´ ımetro? (Primera Variaci´ on).
+2. Estabilidad: Si es as´ ı, ¿Qu´ e clase de estabilidad tiene ese punto cr´ ıtico? (Segunda
+Variaci´ on).
+1
+
+2. Preliminares
+2.1. Representaci´ on de empaquetamientos
+Los empaquetamientos los representamos mediante grafos de contacto. Definimos a un
+grafo como una estructura G que tiene aristas E y vertices V . Por ejemplo, el siguiente grafo
+tiene vertices V = {v1, v2, v3} y aristas E = {(v1, v2), (v2, v3), (v3, v1)}.
+v1 v2
+v3
+En un grafo de contacto, los vertices se “expanden” de manera que cada uno se transforme
+en un disco. En nuestro caso, concretamente en un disco de radio 1. En cuanto a las aristas del
+grafo, se representan como un “contacto” entre dos discos, es decir, los discos que representan
+los vertices conectados por una arista son tangentes entre s´ ı.
+c1 c2
+c3
+Para nuestra investigacion, cada realizaci´ on de uno de estos grafos en el plano le llamamos
+configuraci´ on, y la representamos mediante un vector c de R2n, donde n es el n´ umero de
+discos en la configuraci´ on.
+c = (c1, c2, ..., cn) ∈ R2n. (1)
+Entonces, si tenemos 3 discos, la configuraci´ on se representa como un vector
+c = (c1, c2, c3),
+donde cada ci representa un par ordenado ( xi, yi) que indica la posici´ on del centro del
+disco ci en el plano. En forma expandida:
+c = (x1, y1, x2, y2, x3, y3).
+2
+
+2.2. Espacio de Configuraciones
+¿Con qu´ e configuraciones exactamente estamos trabajando? ¿Que propiedades tienen?
+En primer lugar, nuestras configuraciones:
+Son conexas: el grafo de contacto asociado a la configuraci´ on es conexo.
+Son no superpuestas: ning´ un par de discos se intersecta
+Que el grafo sea conexo significa que no puede existir un vertice o conjunto de vertices
+“aislados”, o que no est´ e conectado al resto del grafo. Dicho de otra forma, todos los discos
+deben tener al menos un contacto con otro disco.
+Debido a que estamos trabajando con empaquetamientos, no tiene sentido considerar que
+nuestros grafos puedan tener discos que se intersecten entre s´ ı, por lo que nuestra restricci´ on
+principal es que todo centro del grafo debe estar a una distancia minima de 2. Es decir, la
+distancia del disco cj y ci debe ser ≥ 2, o = 2 si existe contacto entre cj y ci.
+As´ ı, todas las configuraciones “admisibles” pueden definirse como un conjunto de grafos
+conexos dado por:
+Dn = {c ∈ R2n | ||ci − cj|| ≥ 2, ∀i ̸= j} (2)
+En esta definici´ on,||ci − cj|| denota la distancia euclidiana entre los centros de los discos
+ci y cj, y Dn es el espacio de configuraciones de n discos congruentes en el plano.
+Podemos descomponer el espacio Dn en conjuntos que contienen todos los grafos de
+contacto cuya estructura combinatoria es la misma; es decir, “agrupar” todos los grafos que
+tienen las mismas aristas y vertices, pero con diferentes posiciones en el plano. A cada uno
+de estos conjuntos los llamamos clases de contacto o estratos, denotados como C(G).
+Podemos definir una clase de contacto como:
+C(G) = {c ∈ D n : ||cj − ci|| = 2, ∀(i, j) ∈ E(G)} (3)
+2.3. Bordes de la envolvente convexa
+Para calcular el per´ ımetro de la envolvente de una configuraci´ on, es necesario primero que
+determinemos qu´ e es la envolvente convexa exactamente. Consideramos que la envolvente
+son las lineas que forman el per´ ımetro exterior del conjunto de discos de la configuraci´ on.
+Concretamente, es la suma de las distancias entre los vertices que forman parte del per´ ımetro
+exterior, en orden ciclico, + 2 π (la longitud de los arcos de los discos que forman parte del
+per´ ımetro).
+Supongamos que el per´ ımetro conecta una secuencia de discos identificados por los ´ ındices
+v1, v2, . . . , vh. Definimos B como el conjunto de pares ordenados de ´ ındices que conforman
+este ciclo:
+3
+
+B = {(v1, v2), (v2, v3), . . . ,(vh−1, vh), (vh, v1)}. (4)
+Cada elemento (u, v) ∈ B es un par de enteros que indica que existe una conexi´ on dirigida
+desde el disco con ´ ındiceu hacia el disco con ´ ındicev.
+Consideremos a modo de ejemplo una configuraci´ on c = {c1, c2, c3}, con contactos E =
+{(c1, c2), (c2, c3), (c3, c1)}, y centros ubicados en:
+c1 = (0, 0), c 2 = (2, 0), c 3 = (1,
+√
+3).
+c1 c2
+c3
+La envolvente convexa est´ a dada porB = {(1, 2), (2, 3), (3, 1)}. Podemos diferenciar entre
+la envolvente de los centros y la envolvente de los discos. Para efectos pr´ acticos son esencial-
+mente lo mismo, pero en casos como la cadena colineal es importante hacer la distinci´ on.
+2.4. Funcional Per´ ımetro
+Con todo esto en mente, definimos el funcional per´ ımetro como la suma de las aristas
+que conforman la envolvente convexa de los centros m´ as la longitud de los arcos:
+Per(c) =
+X
+(u,v)∈B
+||cv − cu|| + 2π. (5)
+Siguiendo nuestro ejemplo anterior ( B = {(1, 2), (2, 3), (3, 1)}), tenemos que el per´ ımetro
+de la configuraci´ onc = {c1, c2, c3} es:
+Per(c) = ||c2 − c1|| + ||c3 − c2|| + ||c1 − c3|| + 2π = 6 + 2π.
+3. Primera Variaci´ on: Determinando criticidad
+Cuando buscamos obtener puntos cr´ ıticos de una funci´ on, por lo general aplicamos la
+derivada y buscamos los puntos donde esta sea hace cero o se indetermina. Como nuestra
+funci´ on depende de multiples variables (los 2 n valores que representan la configuraci´ on),
+4
+
+utilizamos la derivada direccional, que nos indica la tasa de cambio de la funci´ on en una
+direcci´ on que nosotros especifiquemos. Esa “direcci´ on” la representamos mediante un vector
+δc, que en la pr´ actica representa una perturbaci´ on a la configuraci´ on tal que la forma en la
+que los discos estaban inicialmente dispuestos cambie un poco.
+Concretamente, buscamos configuraciones de C(G) tales que para cualquier variaci´ on ad-
+misible δc que mantenga la configuraci´ on dentro de la clase de contacto, la primera variaci´ on
+del per´ ımetro sea cero:
+DPer(c)[δc] = 0. (6)
+3.1. ¿Qu´ e es una variaci´ on admisible?
+Cuando hablamos de una variaci´ on omovimiento admisible, nos referimos a una pertur-
+baci´ on que si bien modifica la posici´ on inicial de los discos, mantiene los contactos originales
+entre ellos. Dicho de otra forma, la configuraci´ on resultante de aplicar la variaci´ on debe se-
+guir perteneciendo a la misma clase de contacto C(G).
+Todo el conjunto de variaciones admisibles constituye un subespacio vectorial de R2n,
+denotado como TcC(G), y llamado el espacio tangente a la clase de contacto C(G) en el
+punto c. Este espacio representa todas las posibles direcciones en las que podemos movernos
+desde la configuraci´ onc sin salir de la clase de contacto.
+Debido a que fisicamente estos movimientos se corresponden con la idea de “rodar”
+un disco por sobre otro, en adelante denotaremos a este espacio Roll( c). Para calcularlo,
+utilizamos las restricciones de contacto sobre las que hablamos antes:
+||ci − cj|| = 2, ∀(i, j) ∈ E(G).
+y las derivaremos. Esto nos da un sistema de ecuaciones lineales que podemos representar
+como una matriz. El kernel de esta matriz es precisamente el espacio tangente.
+3.2. El gradiente y el espacio tangente
+El gradiente de una funci´ on es un vector que apunta en la direcci´ on de mayor aumento
+de la funci´ on. Convenientemente, el gradiente es una herramienta muy ´ util para saber “hacia
+donde podemos movernos” dentro de una funci´ on con restricciones.
+Supongamos que tenemos una funci´ on que define una esfera de radio 3:
+f(x, y, z) = x2 + y2 + z2 = 9.
+Si nos ubicamos en un punto arbitrario de la esfera, y decidimos movernos permanentemen-
+te en linea recta en alguna direcci´ on... eventualmente nuestros pies saldr´ an de la esfera, y
+quedaremos flotando.
+Aqu´ ı es donde entra el concepto de planitud local . Si hicieramos un zoom potente al
+punto en el que estamos parados, la superficie de la esfera se ver´ ıa perfectamente plana.
+Este “plano” imaginario sobre el que podemos movernos infinitesimalmente sin salir de la
+5
+
+esfera es el Espacio Tangente a la esfera en ese punto.
+Lo que queremos es encontrar los movimientos que nos permitan permanecer sobre la
+superficie de la esfera. Para ello, utilizamos el gradiente ∇f:
+∇f(x, y, z) =
+ ∂f
+∂x , ∂f
+∂y , ∂f
+∂z
+
+= (2x, 2y, 2z).
+El gradiente apunta en la direcci´ on perpendicular al Espacio Tangente en el punto (x, y, z).
+Por lo tanto, si queremos movernos sobre ese “suelo” sin salirnos, el movimiento debe ser
+perpendicular al gradiente. Es decir, si δc = ( δx, δy, δz) es nuestro movimiento, entonces
+debe cumplirse que:
+∇f(x, y, z) · δc = 0.
+Esto asegura que el movimiento es v´ alido “instantaneamente”; si queremos movimientos
+largos, debemos recalcular el plano en cada paso.
+3.3. La Matriz de Contacto
+Llevando el ejemplo del gradiente a nuestras restricciones, tenemos que cada restricci´ on
+de contacto entre dos discos ci y cj forma una superficie cuya intersecci´ on restringe las di-
+recciones en las que podemos perturbar la configuraci´ on sin salir de la clase de contactoC(G).
+Al calcular el gradiente de cada una de estas funciones de restricci´ on, obtenemos un
+conjunto de vectores que representan las direcciones en las que la distancia entre los discos
+ci y cj cambia m´ as r´ apidamente. Estos vectores forman las filas de una matriz llamada la
+Matriz de Contacto A(c). Cada fila de A(c) corresponde a una restricci´ on de contacto, y
+cada columna corresponde a una coordenada de los discos en la configuraci´ on.
+El espacio tangente Roll( c) es entonces el n´ ucleo (kernel) de la Matriz de Contacto:
+Roll(c) = ker(A(c)) = TcC(G).
+Esto significa que cualquier vector δc en el espacio tangente satisface la ecuaci´ on
+A(c) · δc = 0. (7)
+Es decir, las variaciones admisibles son aquellas que no alteran las restricciones de con-
+tacto impuestas por el grafo G.
+Siguiendo esta definici´ on, la matriz de contactoA tiene la forma:
+A(c) =
+
+
+∇h(c)1
+∇h(c)2
+...
+∇h(c)n
+
+
+Donde cada ∇h(c)k = ||cj − ci|| −2 es el gradiente de la funci´ on de restricci´ on correspon-
+diente al contacto entre dos discos ci y cj.
+6
+
+3.3.1. Deducci´ on geom´ etrica del gradiente de restricciones
+En nuestro estudio, en lugar de derivar anal´ ıticamente cada funci´ on de restricci´ on para
+obtener su gradiente, utilizamos las caracteristicas geom´ etricas de los discos en contacto para
+deducir la estructura del gradiente.
+Consideremos dos discos en contacto, ci y cj y definamos el vector unitario que apunta en
+la direcci´ on del contacto comouij = cj −ci
+||cj −ci||. Si aplicamos perturbaciones infinitesimales δci
+y δcj a los centros de los discos, la unica manera de que el contacto se mantenga es que los
+desplazamientos a lo largo de la l´ ınea que une los centros se cancelen mutuamente. Es decir,
+la proyecci´ on del movimiento deci sobre uij debe ser igual a la proyecci´ on del movimiento
+de cj sobre uij:
+⟨uij, δcj⟩ = ⟨uij, δci⟩.
+Ilustramos esta condici´ on en la siguiente figura:
+ci cj
+uij
+δci
+pi
+δcj
+pj
+Donde p i = ⟨uij, δci⟩ y p j = ⟨uij, δcj⟩ son las proyecciones de las perturbaciones sobre el
+vector unitario uij.
+Si reordenamos los t´ erminos, obtenemos:
+⟨uij, δcj⟩ − ⟨uij, δci⟩ = 0 ⇒ ⟨ uij, δcj − δci⟩ = 0. (8)
+Que constituye exactamente el gradiente de la restricci´ on de contacto entre los discos ci
+y cj. Al expandir el producto interno:
+⟨uij, δcj − δci⟩ = uij · δcj − uij · δci = 0,
+se revela que los coeficientes que acompa˜ nan a las variaciones de la restricci´ on son−uij para
+el disco ci y +uij para el disco cj.
+3.3.2. Estructura de la Matriz de Contacto
+Considerando lo anterior, si descomponemos el vector unitario uij en sus componentes:
+uij = cj − ci
+||cj − ci|| =
+"
+ux
+ij
+uy
+ij
+#
+,
+7
+
+podemos expresar expl´ ıcitamente la estructura de la fila k de la matriz A(c). Recordemos
+primero que el vector de configuraci´ onc intercala las coordenadas x e y de cada disco:
+c = (. . . , xi, yi|{z}
+ci
+, . . . , xj, yj|{z}
+cj
+, . . .).
+Si existe una restricci´ on de contacto entre los discosci y cj, entonces la fila correspondiente
+de la matriz de contacto A(c) se define como:
+row(A(c))k =
+h
+· · ·0 · · · , −ux
+ij, −uy
+ij| {z }
+Cols. xi,yi
+, · · ·0 · · · , u x
+ij, u y
+ij| {z }
+Cols. xj ,yj
+, · · ·0 · · ·
+i
+. (9)
+Notemos que:
+Las columnas correspondientes al disco ci contienen las componentes del vector unitario
+con signo negativo ( −uij).
+Las columnas correspondientes al disco cj contienen las componentes con signo positivo
+(+uij).
+Todas las dem´ as columnas (correspondientes a discos no involucrados en este contacto
+espec´ ıfico) son cero.
+3.3.3. Ejemplo
+Construyamos la matriz de contacto para la configuraci´ on triangular. Consideremos los
+siguientes datos:
+Disco Centro (x, y) Restricci´ on
+c1 (0, 0) ||c2 − c1|| − 2 = 0
+c2 (2, 0) ||c3 − c2|| − 2 = 0
+c3 (1,
+√
+3) ||c1 − c3|| − 2 = 0
+Tenemos 3 restricciones y 6 variables, por lo que la matriz de contacto A(c) ser´ a de
+tama˜ no 3× 6.
+Paso 1: C´ alculo de vectores unitarios
+Primero calculamos los vectores de direcci´ onuij para cada contacto:
+u12 = c2 − c1
+||c2 − c1|| = (1, 0)
+u23 = c3 − c2
+||c3 − c2|| =
+ 
+−1
+2 ,
+√
+3
+2
+!
+u31 = c1 − c3
+||c1 − c3|| =
+ 
+−1
+2 , −
+√
+3
+2
+!
+8
+
+Paso 2: Construcci´ on de las filas
+Aplicando la estructura definida en la ecuaci´ on (9), ensamblamos cada fila asignando los
+componentes negativos y positivos a las columnas de los discos correspondientes:
+row(A)1 =
+h
+−1, 0|{z}
+Cols. c1
+, 1, 0|{z}
+Cols. c2
+, 0, 0
+i
+row(A)2 =
+h
+0, 0, 1
+2 , −
+√
+3
+2| {z }
+Cols. c2
+, −1
+2 ,
+√
+3
+2| {z }
+Cols. c3
+i
+row(A)3 =
+h
+−1
+2 , −
+√
+3
+2| {z }
+Cols. c1
+, 0, 0, 1
+2 ,
+√
+3
+2| {z }
+Cols. c3
+i
+Paso 3: Matriz de Contacto completa
+Apilando estas filas, obtenemos la matriz final. Incluimos encabezados para identificar bien
+las contribuciones para cada disco:
+A(c) =
+
+
+c1 c2 c3
+x1 y1 x2 y2 x3 y3
+−1 0 1 0 0 0
+0 0 1
+2 −
+√
+3
+2 − 1
+2
+√
+3
+2
+− 1
+2 −
+√
+3
+2 0 0 1
+2
+√
+3
+2
+
+
+3.4. Condici´ on de criticidad
+Volvamos a la condici´ on de criticidad (6) que queremos satisfacer:
+DPer(c)[δc] = 0
+Como ya sabemos que δc es un vector que existe en el espacio de restricciones Roll( c),
+podemos reformular la condici´ on de criticidad como:
+DPer(c)[δc] = 0, ∀δc ∈ Roll(c). (10)
+Esto significa que la primera variaci´ on del per´ ımetro debe ser cero para cualquier pertur-
+baci´ on dentro del espacio tangente a la clase de contacto en el punto c.
+¿Cu´ al es exactamente la forma de la primera derivada del per´ ımetro? La calcularemos
+explicitamente a continuaci´ on.
+9
+
+3.5. La primera variaci´ on del per´ ımetro
+Recordemos que el per´ ımetro est´ a definido como:
+Per(c) =
+X
+(u,v)∈B
+||cv − cu|| + 2π. (11)
+Para calcular la primera variaci´ on del per´ ımetro, aplicamos la definici´ on de derivada direc-
+cional:
+DPer(c)[δc] = d
+dtPer(c + tδc).
+Por definici´ on, la forma de la derivada direccional en nuestro caso es:
+DPer(c)[δc] = ⟨∇Per(c), δc⟩. (12)
+Procederemos a calcular la derivada expl´ ıcitamente.
+Al sustituir el parametro c + tδc en la expresi´ on del per´ ımetro, obtenemos:
+Per(c + tδc) =
+X
+(u,v)∈B
+||(cv + tδcv) − (cu + tδcu)|| + 2π.
+Y luego, la forma de la derivada es:
+d
+dtPer(c + tδc) = d
+dt
+X
+(u,v)∈B
+||(cv + tδcv) − (cu + tδcu)||.
+Sabemos que la derivada de la sumatoria es la suma de las derivadas, por lo que podemos
+centrarnos solo en: d
+dt ||(cv + tδcv) − (cu + tδcu)||.
+Para conveniencia, reordenaremos los terminos para que separar los c de los δc:
+d
+dt ||(cv − cu) + t(δcv − δcu)||.
+Y hacemos que x = (cv − cu) + t(δcv − δcu):
+d
+dt ||x(t)|| = d
+dt
+p
+x1(t)2 + x2(t)2.
+Por regla de la cadena (f(g(x))’ = f’(g(x))g’(x)):
+d
+dt ||x(t)|| = 1
+2(x1(t)2 + x2(t)2)− 1
+2 · 2(x1(t)x′
+1(t) + x2(t)x′
+2(t)).
+Simplificamos la fracci´ on y reescribimos:
+d
+dt ||x(t)|| = x1(t)x′
+1(t) + x2(t)x′
+2(t)
+||x(t)|| .
+10
+
+Notamos que el numerador tiene la forma de un producto interno ( a1b1 + a2b2 = ⟨a, b⟩):
+d
+dt ||x(t)|| = ⟨x(t), x′(t)⟩
+||x(t)|| .
+La bilinealidad del producto interno nos permite escribir:
+d
+dt ||x(t)|| =
+ x(t)
+||x(t)|| , x′(t)
+
+.
+Finalmente, recordamos que x(t) = (cv − cu) + t(δcv − δcu) y x′(t) = (δcv − δcu), por lo que:
+d
+dt ||(cv + tδcv) − (cu + tδcu)|| =
+ (cv − cu) + t(δcv − δcu)
+||(cv − cu) + t(δcv − δcu)|| , (δcv − δcu)
+
+.
+Evaluando en t = 0, obtenemos la expresi´ on final para la primera variaci´ on del per´ ımetro:
+DPer(c)[δc] =
+X
+(u,v)∈B
+ (cv − cu)
+||cv − cu|| , (δcv − δcu)
+
+.
+Si consideramos el primer termino del producto interno como un vector unitario tuv =
+(cv − cu)
+||cv − cu||, la expresi´ on se puede reescribir como:
+DPer(c)[δc] =
+X
+(u,v)∈B
+⟨tuv, (δcv − δcu)⟩. (13)
+Si bien la expresi´ on se “parece’ a (12), no es exactamente igual. Para llegar a esa forma,
+necesitamos reordenar los la sumatoria para nuestra conveniencia. Consideramos en primer
+lugar separar el producto interno en dos terminos:
+DPer(c)[δc] =
+X
+(u,v)∈B
+⟨tuv, δcv⟩ −
+X
+(u,v)∈B
+⟨tuv, δcu⟩.
+Luego, reordenamos cada sumatoria para agrupar los terminos por disco:
+DPer(c)[δc] =
+X
+(u,k)∈B
+⟨tuk, δck⟩ −
+X
+(k,v)∈B
+⟨tkv, δck⟩.
+Finalmente, combinamos las dos sumatorias en una sola:
+DPer(c)[δc] =
+X
+k∈V
+⟨tin − tout, δck⟩. (14)
+Donde tin es el vector tangente que entra al disco ck y tout es el vector tangente que sale
+del disco ck. V es el conjunto de discos que forman parte de la envolvente convexa. tin y
+−tout permiten representar la contribuci´ on neta de cada disco al gradiente del per´ ımetro. Al
+efectuar la sumatoria, la forma final es exactamente igual a la ecuaci´ on (12).
+Finalmente, tenemos que la condici´ on de criticidad (10) se puede reescribir como1:
+⟨∇Per(c), δc⟩ = 0, ∀δc ∈ Roll(c). (15)
+1Como P
+(u,k)∈B⟨tuv, δcv − δcu⟩ = ⟨∇Per(c), δc⟩, es correcto decir que la suma de tuv es, de hecho, el
+gradiente.
+11
+
+3.5.1. Ejemplo
+Consideremos nuevamente la configuraci´ on triangular de antes. Recordando sus datos:
+Disco Centro (x, y) Vector Unitario tin / tout
+c1 (0, 0) uij = (1, 0)
+c2 (2, 0) uij = (− 1
+2 ,
+√
+3
+2 )
+c3 (1,
+√
+3) uij = (− 1
+2 , −
+√
+3
+2 )
+Los contactos coinciden con los bordes de la envolvente convexa, por lo que cada vector
+t es:
+Para el disco c1: tin =
+
+− 1
+2 , −
+√
+3
+2
+
+, tout = (1, 0)
+Para el disco c2: tin = (1, 0), tout =
+
+− 1
+2 ,
+√
+3
+2
+
+Para el disco c3: tin =
+
+− 1
+2 ,
+√
+3
+2
+
+, tout =
+
+− 1
+2 , −
+√
+3
+2
+
+Luego, los gradientes netos para cada disco son:
+∇Per(c1) = tin − tout =
+ 
+−1
+2 , −
+√
+3
+2
+!
+− (1, 0) =
+ 
+−3
+2 , −
+√
+3
+2
+!
+∇Per(c2) = tin − tout = (1, 0) −
+ 
+−1
+2 ,
+√
+3
+2
+!
+=
+ 
+3
+2 , −
+√
+3
+2
+!
+∇Per(c3) = tin − tout =
+ 
+−1
+2 ,
+√
+3
+2
+!
+−
+ 
+−1
+2 , −
+√
+3
+2
+!
+= (0,
+√
+3)
+Por lo tanto, el gradiente completo del per´ ımetro es:
+∇Per(c)⊤ =
+"
+−3
+2 , −
+√
+3
+2 , 3
+2 , −
+√
+3
+2 , 0,
+√
+3
+#
+.
+La condici´ on de criticidad (15) requiere que este gradiente sea ortogonal a cualquier variaci´ on
+admisible δc en el espacio Roll( c). Es decir, la proyecci´ on del gradiente sobre el espacio
+tangente debe ser cero. Si consideramos Z como una base de Roll( c), entonces la condici´ on
+se puede expresar como:
+Z T ∇Per(c) = 0.
+Consideramos la siguiente base:
+Z =
+
+
+√
+3 1 −
+√
+3
+−1 0 2
+√
+3 1 −
+√
+3
+1 0 0
+0 0 0
+0 0 1
+
+
+.
+12
+
+Calculamos la proyecci´ on:
+Z T ∇Per(c) =
+
+
+√
+3 −1
+√
+3 1 0 0
+1 0 1 0 0 0
+−
+√
+3 2 −
+√
+3 0 0 1
+
+
+
+
+− 3
+2
+−
+√
+3
+2
+3
+2
+−
+√
+3
+2
+0
+√
+3
+
+
+=
+
+
+0
+0
+0
+
+ .
+As´ ı, se verifica que el gradiente del per´ ımetro es efectivamente ortogonal al espacio tan-
+gente, confirmando que la configuraci´ on triangular es un punto cr´ ıtico del funcional per´ ımetro
+en su clase de contacto.
+4. Segunda Variaci´ on: Determinando estabilidad
+Para saber si una configuraci´ on cr´ ıtica es un m´ ınimo, m´ aximo o punto de silla, necesi-
+tamos analizar la segunda derivada del funcional per´ ımetro. El objetivo de este an´ alisis es
+construir una matriz Hessiana, cuyos autovalores nos indicar´ an las direcciones de estabilidad
+e inestabilidad alrededor del punto cr´ ıtico.
+Partiendo de nuestro resultado anterior (15), la segunda variaci´ on del per´ ımetro se define
+como:
+D2Per(c)[δc] = d
+dt ⟨∇Per(c), δc⟩. (16)
+Similar a la primera variaci´ on, evaluamos la derivada ent = 0 y consideramos solo variacio-
+nes admisibles δc ∈ Roll(c).
+Al aplicar la regla del producto:
+d
+dt ⟨∇Per(c), δc⟩ = ⟨ d
+dt ∇Per(c(t)), c(t)⟩ + ⟨∇Per(c(t)), c(t)′′⟩.
+Esto divide la segunda variaci´ on en dos t´ erminos. El primer t´ ermino involucra los aspectos
+euclidianos de la configuraci´ on, mientras que el segundo t´ ermino captura las contribuciones
+de las restricciones de contacto que aseguran que el movimiento se mantenga a lo largo de
+la trayectoria curva impuesta por C(G).
+4.1. Calculo del termino euclidiano
+Cambiamos el punto de partida de la derivada para mayor conveniencia. Utilizamos la
+ecuaci´ on (13):
+D2Per(c)[δc] = d
+dt
+X
+(u,v)∈B
+⟨tuv, (δcv − δcu)⟩.
+13
+
+Aplicando la regla del producto:
+D2Per(c)[δc] =
+X
+(u,v)∈B
+
+⟨ d
+dt tuv, (δcv − δcu)⟩ + ⟨tuv, d
+dt(δcv − δcu)⟩
+
+.
+Nos enfocamos en el primer termino. Recordando que tuv = (cv − cu)
+||cv − cu||, y definiendo x =
+cv − cu, calculamos su derivada:
+d
+dt tuv = d
+dt
+ x(t)
+||x(t)||
+
+.
+Por regla del cuociente:
+x′(t) · ||x(t)|| − x(t) · d
+dt ||x(t)||
+||x(t)||2 .
+A partir del resultado anterior, sabemos que d
+dt ||x(t)|| = ⟨tuv, x′(t)⟩. Sustituyendo, y simplfi-
+cando:
+= x′(t)
+||x(t)|| − x(t)
+||x(t)||2 ⟨tuv, x′(t)⟩ .
+Notamos que en el segundo termino tenemos la forma x(t)
+||x(t)||, que corresponde a tuv:
+= x′(t)
+||x(t)|| − tuv ⟨tuv, x′(t)⟩
+||x(t)|| .
+= 1
+||x(t)|| (x′(t) − tuv ⟨tuv, x′(t)⟩) .
+Al extraer el t´ erminox′(t), reconocemos la forma del operador proyecci´ on ortogonal:
+= 1
+||x(t)||
+ 
+I − t⊤
+uvtuv
+
+x′(t).
+Finalmente, recordamos que x′(t) = δcv − δcu y ||x(t)|| = ||cv − cu||:
+= 1
+||cv − cu||
+ 
+I − t⊤
+uvtuv
+
+(δcv − δcu). (17)
+Sustituyendo este resultado en el primer t´ ermino de la segunda variaci´ on, obtenemos:
+ 1
+||cv − cu||
+ 
+I − t⊤
+uvtuv
+
+(δcv − δcu), (δcv − δcu)
+
+.
+= 1
+||cv − cu|| ⟨(δcv − δcu),
+ 
+I − t⊤
+uvtuv
+
+(δcv − δcu)⟩.
+Al resolver esta expresi´ on, obtenemos un escalar que representa la contribuci´ on euclidiana.
+No nos interesa realmente un escalar, sino una matriz que nos permita construir la Hessiana
+del sistema. Por lo tanto, aislamos el t´ ermino dentro del producto interno para formar el
+bloque:
+∇2Per(c)(u,v) = Muv = 1
+||cv − cu||
+ 
+I − t⊤
+uvtuv
+
+. (18)
+La matriz Heucl se construye posicionando cada bloque Muv seg´ un una regla estilo laplaciano:
+14
+
+Las diagonales de los bloques correspondientes a los discos cu y cv recibenP Muv.
+Los bloques fuera de la diagonal correspondientes a los pares ( cu, cv) reciben −Muv.
+Los bloques correspondientes a pares de discos sin contacto reciben la matriz nula.
+4.2. Calculo del termino geom´ etrico / de restricciones
+El termino ⟨∇Per(c(t)), c(t)′′⟩ captura las contribuciones de las restricciones de contacto.
+Nuestro objetivo es expresar c”(t) en t´ erminos de las variaciones admisiblesδc y las propie-
+dades geom´ etricas de la configuraci´ on.
+4.2.1. Multiplicadores de Lagrange
+Utilizaremos Multiplicadores de Lagrange para ayudarnos a resolver esto.
+Teorema 1 (Multiplicadores de Lagrange). Sea X una subvariedad conocida por medio de
+una funci´ on vectorialF . Si una funci´ onφ restringida a X tiene un punto cr´ ıtico ena ∈ X ,
+entonces existen valores λ1, ..., λm tal que la derivada de φ en a es una combinaci´ on lineal
+de las derivadas de las funciones de restricci´ on:
+[Dφ(a)] = λ1[DF1(a)] + ... + λm[DFm(a)]
+En nuestro caso, la variedad X es la clase de contacto C(G), la funci´ onφ es el funcional
+per´ ımetro Per(c), y las funciones de restricci´ on son las restricciones de contacto entre los
+discos.
+Aplicando el teorema, tenemos que en un punto cr´ ıtico c ∈ C (G), existen valores λij
+asociados a cada restricci´ on de contactohij = ||cj − ci|| − 2, (i, j) ∈ E(G), tales que:
+∇Per(c) =
+X
+(i,j)∈E(G)
+λij∇hij(c). (19)
+Sustituyendo en el t´ ermino geom´ etrico de (16):
+⟨∇Per(c(t)), c(t)′′⟩ =
+* X
+(i,j)∈E(G)
+λij∇hij(c), c(t)′′
++
+.
+=
+X
+(i,j)∈E(G)
+λij⟨∇hij(c), c(t)′′⟩.
+4.2.2. Despejando ⟨∇hij(c), c(t)′′⟩
+Derivaremos hij dos veces respecto al tiempo. Siguiendo el resultado de la ecuaci´ on (14),
+tenemos que la primera derivada es:
+d
+dt hij(c(t)) =
+ cj(t) − ci(t)
+||cj(t) − ci(t)|| , c′
+j(t) − c′
+i(t)
+
+= ⟨∇hij(c), c′(t)⟩.
+15
+
+Por regla del producto, tenemos luego que la segunda derivada es:
+d
+dt ⟨∇hij(c), c′(t)⟩ = ⟨ d
+dt ∇hij(c), c′(t)⟩ + ⟨∇hij(c), c(t)′′⟩.
+Evidenciamos en (18) que d
+dt ∇f(x) es ∇2f(x) · x′. Por lo tanto:
+d
+dt ⟨∇hij(c), c′(t)⟩ = ⟨∇2hij(c) · c′(t), c′(t)⟩ + ⟨∇hij(c), c(t)′′⟩.
+Reordenando para despejar ⟨∇hij(c), c(t)′′⟩:
+⟨∇hij(c), c(t)′′⟩ = d
+dt ⟨∇hij(c), c′(t)⟩ − ⟨∇2hij(c) · c′(t), c′(t)⟩.
+Notamos que la derivada del primer t´ ermino es cero, ya que hij(c) = 0 para todo t (la
+restricci´ on se mantiene). Por lo tanto:
+⟨∇hij(c), c(t)′′⟩ = −⟨∇2hij(c) · c′(t), c′(t)⟩.
+Evaluando en 0, y reescribiendo matricialmente:
+⟨∇hij(c), c′′(0)⟩ = −δc⊤∇2hij(c)δc. (20)
+4.2.3. Matriz geom´ etrica de restricciones
+Sustituyendo (20) en el segundo t´ ermino de la segunda variaci´ on, obtenemos:
+⟨∇Per(c(t)), c(t)′′⟩ = −
+X
+(i,j)∈E(G)
+λijδc⊤∇2hij(c)δc.
+Calculamos ∇2hij(c). Seg´ un lo que obtuvimos en la ecuaci´ on (18), tenemos que:
+∇2hij(c) = 1
+||cj − ci||
+ 
+I − u⊤
+ijuij
+
+.
+La distancia entre los discos en contacto es constante e igual a 2, por lo que:
+∇2hij(c) = 1
+2
+ 
+I − u⊤
+ijuij
+
+.
+Sustituyendo en la expresi´ on de la segunda variaci´ on:
+⟨∇Per(c(t)), c(t)′′⟩ = −
+X
+(i,j)∈E(G)
+λijδc⊤
+1
+2
+ 
+I − u⊤
+ijuij
+
+δc.
+Aislamos el t´ ermino cuadr´ atico enδc para definir la matriz geom´ etrica de restricciones:
+Hgeom = −
+X
+(i,j)∈E(G)
+λij
+2
+ 
+I − u⊤
+ijuij
+
+. (21)
+El Hessiano geom´ etrico se construye a partir de estos bloques, siguiendo un esquema
+similar al del Hessiano euclidiano:
+Las diagonales de los bloques correspondientes a los discosci y cj recibenP λij
+2
+ 
+I − u⊤
+ijuij
+
+.
+Los bloques fuera de la diagonal correspondientes a los pares (ci, cj) reciben − λij
+2
+ 
+I − u⊤
+ijuij
+
+.
+Los bloques correspondientes a pares de discos sin contacto reciben la matriz nula.
+16
+
+4.2.4. Hessiano Total y Hessiano Intr´ ınseco
+Finalmente, combinamos los dos t´ erminos para obtener el Hessiano total del sistema:
+Htotal = Heucl + Hgeom. (22)
+Restringimos esta matriz al espacio tangente Roll( c) para obtener el Hessiano intr´ ınseco:
+Hintr = Z ⊤HtotalZ (23)
+Donde Z es una base de Roll( c).
+El an´ alisis de los autovalores deHintr nos permitir´ a determinar la estabilidad. Los mo-
+vimientos con autovalor 0 corresponden a direcciones dentro del espacio tangente que no
+modifican el per´ ımetro. Siempre encontraremos como m´ ınimo 3 autovalores 0, correspon-
+dientes a las traslaciones y rotaci´ on. Cualquier autovalor adicional 0 indica una direcci´ on
+plana.
+Si todos los autovalores son positivos, la configuraci´ on es un m´ ınimo local (estable).
+Si todos son negativos, es un m´ aximo local (inestable). Si hay m´ as de 3 autovalores 0,
+hablamos de una direcci´ on plana.
+4.2.5. Ejemplo
+Consideraremos una configuraci´ on cuadrada de 4 discos en contacto. Los centros de los
+discos son:
+Disco Centro (x, y)
+c1 (0, 0)
+c2 (2, 0)
+c3 (2, 2)
+c4 (0, 2)
+Al igual que con el triangulo, las aristas de le envolvente coinciden con los contactos:
+Vector Unitario uij Vector Unitario tuv
+u12 = (1, 0) t12 = (1, 0)
+u23 = (0, 1) t23 = (0, 1)
+u34 = (−1, 0) t34 = (−1, 0)
+u41 = (0, −1) t41 = (0, −1)
+La matriz de contacto de esta configuraci´ on es:
+A =
+
+
+−1 0 1 0 0 0 0 0
+0 0 0 −1 0 1 0 0
+0 0 0 0 1 0 −1 0
+0 −1 0 0 0 0 0 1
+
+
+17
+
+Y su gradiente:
+∇Per(c)⊤ =
+
+−1 −1 1 −1 1 1 −1 1
+
+Calculamos los bloques del Hessiano euclidiano utilizando la ecuaci´ on (18). Como ||cj −
+ci|| = 2 para todos los contactos, tenemos:
+M12 = 1
+2
+1 0
+0 1
+
+−
+1
+0
+
+1 0
+
+= 1
+2
+0 0
+0 1
+
+M23 = 1
+2
+1 0
+0 1
+
+−
+0
+1
+
+0 1
+
+= 1
+2
+1 0
+0 0
+
+M34 = 1
+2
+1 0
+0 1
+
+−
+−1
+0
+
+−1 0
+
+= 1
+2
+0 0
+0 1
+
+M41 = 1
+2
+1 0
+0 1
+
+−
+ 0
+−1
+
+0 −1
+
+= 1
+2
+1 0
+0 0
+
+Siguiendo la estructura de ensamblaje que mencionamos antes, podemos construir la matriz
+Euclidiana de la siguiente manera:
+Heucl =
+
+
+M12 + M41| {z }
+Disco 1
+−M12 0 −M41
+−M12 M12 + M23| {z }
+Disco 2
+−M23 0
+0 −M23 M23 + M34| {z }
+Disco 3
+−M34
+−M41 0 −M34 M34 + M41| {z }
+Disco 4
+
+
+Sustituyendo cada bloque, obtenemos el Hessiano euclidiano:
+Heucl =
+
+
+1
+2 0 0 0 0 0 − 1
+2 0
+0 1
+2 0 − 1
+2 0 0 0 0
+0 0 1
+2 0 − 1
+2 0 0 0
+0 − 1
+2 0 1
+2 0 0 0 0
+0 0 − 1
+2 0 1
+2 0 0 0
+0 0 0 0 0 1
+2 0 − 1
+2
+− 1
+2 0 0 0 0 0 1
+2 0
+0 0 0 0 0 − 1
+2 0 1
+2
+
+
+Para el Hessiano geom´ etrico, calculamos los multiplicadores de Lagrange por medio del
+Teorema 1. Consideramos a la matriz de contacto A como la matriz que agrupa las derivadas
+de las restrcciones. Luego:
+A(c)⊤λ = ∇Per(c)
+18
+
+Al resolver el sistema, obtenemos el vector columna λ:
+
+
+−1 0 0 0
+0 0 0 −1
+1 0 0 0
+0 −1 0 0
+0 0 1 0
+0 1 0 0
+0 0 −1 0
+0 0 0 1
+
+
+·
+
+
+λ12
+λ23
+λ34
+λ41
+
+ =
+
+
+−1
+−1
+1
+−1
+1
+1
+−1
+1
+
+
+Para cada λ tenemos dos ecuaciones:
+(
+−λ12 = −1
+λ12 = 1
+(
+−λ23 = −1
+λ23 = 1
+(
+λ34 = 1
+−λ34 = −1
+(
+−λ41 = −1
+λ41 = 1
+Todas ellas son consistentes, por lo que obtenemos:
+λ12 = λ23 = λ34 = λ41 = 1.
+Nuestro bloque del Hessiano Geometrico toma la forma:
+Kij = −1
+2
+ 
+I − u⊤
+ijuij
+
+.
+Como en este caso uij y tuv coinciden, los bloques son iguales a los del Hessiano Euclidiano
+pero con signo negativo:
+K12 = −1
+2
+0 0
+0 1
+
+, K 23 = −1
+2
+1 0
+0 0
+
+, K 34 = −1
+2
+0 0
+0 1
+
+, K 41 = −1
+2
+1 0
+0 0
+
+.
+Apilando los bloques, obtenemos el Hessiano Geom´ etrico completo:
+Hgeom =
+
+
+− 1
+2 0 0 0 0 0 1
+2 0
+0 − 1
+2 0 1
+2 0 0 0 0
+0 0 − 1
+2 0 1
+2 0 0 0
+0 1
+2 0 − 1
+2 0 0 0 0
+0 0 1
+2 0 − 1
+2 0 0 0
+0 0 0 0 0 − 1
+2 0 1
+2
+1
+2 0 0 0 0 0 − 1
+2 0
+0 0 0 0 0 1
+2 0 − 1
+2
+
+
+19
+
+A continuaci´ on calculamos el Hessiano Total sumando ambos t´ erminos. Como los bloques
+son iguales pero con signo contrario, el Hessiano Total es la matriz nula de 8 × 8:
+Htotal = Heucl + Hgeom =
+
+
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0
+
+
+Para restringir a Roll(c) consideramos una base Z. Al multiplicar esta base por la matriz
+nula, obtenemos nuevamente la matriz nula pero con la dimensi´ on reducida:
+Hintr = Z ⊤ · Htotal · Z =
+
+
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+
+
+El Hessiano intr´ ınseco es la matriz nula de dimensi´ on 4× 4. Esto implica que tiene 4 au-
+tovalores 0, lo que indica que la configuraci´ on cuadrada es un punto cr´ ıtico con m´ ultiples
+direcciones planas.
+Autovalores de Hintr : 0 , 0, 0, 0
+3 de estos autovalores corresponden a las simetr´ ıas de traslaci´ on y rotaci´ on, mientras que
+el cuarto indica una direcci´ on plana adicional, que corresponde a una familia de rombos con
+el mismo per´ ımetro.
+20
+
