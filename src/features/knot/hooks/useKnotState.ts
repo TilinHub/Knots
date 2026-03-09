@@ -11,7 +11,7 @@ import {
 } from '../../../core/geometry/contactGraph';
 import type { DubinsPath } from '../../../core/geometry/dubins'; // Fixed import
 import type { CSDisk } from '../../../core/types/cs';
-import { Logger } from '../../../app/utils/Logger';
+import { Logger } from '../../../app/store/Logger';
 import {
   validateNoObstacleIntersection,
   validateNoSelfIntersection,
@@ -23,17 +23,8 @@ import { solveCSDiagramDelta } from '../../../core/geometry/csSolver';
 import { convertStateToPath } from '../../../core/geometry/csConverter';
 import type { Point2D } from '../../../core/types/cs';
 
-interface UseKnotStateProps {
-  blocks: CSDisk[]; // We need disks to build the graph
-  obstacleSegments?: { p1: { x: number; y: number }; p2: { x: number; y: number } }[]; // [NEW] Obstacles
-  ribbonMode?: boolean; // [NEW] If ribbon mode is active
-  ribbonWidth?: number; // [NEW] The width of the ribbon
-}
+import type { UseKnotStateProps, DynamicAnchor } from '../types';
 
-export interface DynamicAnchor {
-  diskId: string;
-  angle: number; // Angle relative to disk center
-}
 
 export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false, ribbonWidth = 20 }: UseKnotStateProps) {
   const [mode, setMode] = useState<'hull' | 'knot'>('hull'); // 'hull' = off/hidden, 'knot' = active

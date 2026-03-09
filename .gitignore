@@ -29,3 +29,9 @@ debug_*.py
 build_log.txt
 output*.txt
 debug_output.txt
+
+# Logs analysis
+*.output.txt
+eslint_output.txt
+lint_output.txt
+*_output.txt

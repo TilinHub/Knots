@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Logger } from '../../../app/utils/Logger';
+import { Logger } from '../../../app/store/Logger';
 
 import {
   buildBoundedCurvatureGraph,
@@ -15,7 +15,7 @@ import {
 } from '../../../core/geometry/diskHull';
 import type { CSDisk } from '../../../core/types/cs';
 import { useDubinsState } from '../../dubins/logic/useDubinsState';
-import { useKnotState } from '../../knot/logic/useKnotState';
+import { useKnotState } from '../../knot/hooks/useKnotState';
 import { useRollingMode } from '../../rolling/logic/useRollingMode';
 import { EditorHeader } from './EditorHeader';
 import { EditorSidebar } from './EditorSidebar';

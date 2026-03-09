@@ -4,7 +4,7 @@ import { calculateJacobianMatrix } from '../../../core/geometry/contactGraph';
 import type { CSDisk } from '../../../core/types/cs';
 import { Button } from '../../../ui/Button';
 import { analyzeDiagram } from '../../analysis/first_variation/analyzer';
-import { convertDisksToDiagram } from '../utils/diagramAdapter';
+import { convertDisksToDiagram } from '../logic/diagramAdapter';
 
 interface ContactMatrixViewerProps {
   disks: CSDisk[];

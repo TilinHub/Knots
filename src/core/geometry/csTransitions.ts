@@ -9,7 +9,7 @@
 
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
-import { Logger } from '../../app/utils/Logger';
+import { Logger } from '../../app/store/Logger';
 import type { ArcSegment, EnvelopeSegment, TangentSegment } from './contactGraph';
 import { buildBoundedCurvatureGraph, findEnvelopePath } from './contactGraph';
 import type { CSDiagramState } from './csProtocol';

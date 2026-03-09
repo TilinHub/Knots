@@ -9,7 +9,7 @@ import {
   findEnvelopePathFromPoints,
 } from '../../../core/geometry/contactGraph'; // [Updated Import]
 import type { CSDisk, Point2D } from '../../../core/types/cs';
-import type { DynamicAnchor } from '../../knot/logic/useKnotState';
+import type { DynamicAnchor } from '../../knot/types';
 import { calculateDeltaTheta, dist, wrap0_2pi } from './geometry';
 import type { Arc, Contact, CSDiagram, Disk, Point, Segment, Tangency } from './types';
 

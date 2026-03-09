@@ -19,7 +19,7 @@ import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
 import { computeRobustConvexHull } from '@/core/geometry/robustHull';
 import type { CSArc, CSBlock, CSDisk, Point2D } from '@/core/types/cs';
 import type { KnotDiagram } from '@/core/types/knot';
-import { Logger } from '@/app/utils/Logger';
+import { Logger } from '@/app/store/Logger';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
 import { DubinsLayer } from '@/ui/renderer/layers/DubinsLayer';
 import { KnotLayer } from '@/ui/renderer/layers/KnotLayer';

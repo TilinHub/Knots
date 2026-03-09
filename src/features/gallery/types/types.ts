@@ -1,5 +1,5 @@
 import type { CSBlock } from '@/core/types/cs';
-import type { DynamicAnchor } from '../../knot/logic/useKnotState';
+import type { DynamicAnchor } from '../../knot/types';
 
 /**
  * Enhanced entry for the professional Knot Gallery.
