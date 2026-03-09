@@ -1,4 +1,4 @@
-import { Logger } from '../../core/utils/Logger';
+import { Logger } from '../../app/utils/Logger';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 

@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { blockLength, getCurveLengthInfo } from '../../../core/geometry/arcLength';
 import type { CSArc, CSBlock, CSDisk, CSSegment } from '../../../core/types/cs';
-import { validateContinuity } from '../../../core/validation/continuity';
+import { validateContinuity } from '../../../core/geometry/validation/continuity';
 import type { DynamicAnchor } from '../../knot/logic/useKnotState';
-import { PRELOADED_KNOTS } from '../../gallery/preloaded';
+import { PRELOADED_KNOTS } from '../../gallery/logic/preloaded';
 
 interface InitialKnot {
   id: number;

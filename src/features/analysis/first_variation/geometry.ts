@@ -1,4 +1,4 @@
-import { Logger } from '../../../core/utils/Logger';
+import { Logger } from '../../../app/utils/Logger';
 /**
  * Geometric Utilities for CS Diagram Protocol
  */

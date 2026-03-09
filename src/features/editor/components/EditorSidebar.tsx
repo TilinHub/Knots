@@ -6,7 +6,7 @@ import { Button } from '../../../ui/Button';
 import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
 import { type AnalysisReport, analyzeDiagram } from '../../analysis/first_variation/analyzer';
 import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
-import { CatalogPanel } from '../../catalog/CatalogPanel';
+import { CatalogPanel } from '../../catalog/components/CatalogPanel';
 import { KnotPanel } from '../../knot/components/KnotPanel';
 import { RollingPanel } from '../../rolling/components/RollingPanel';
 import { BlockList } from './BlockList';

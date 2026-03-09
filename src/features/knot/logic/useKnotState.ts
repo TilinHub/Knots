@@ -11,11 +11,11 @@ import {
 } from '../../../core/geometry/contactGraph';
 import type { DubinsPath } from '../../../core/geometry/dubins'; // Fixed import
 import type { CSDisk } from '../../../core/types/cs';
-import { Logger } from '../../../core/utils/Logger';
+import { Logger } from '../../../app/utils/Logger';
 import {
   validateNoObstacleIntersection,
   validateNoSelfIntersection,
-} from '../../../core/validation/envelopeValidator';
+} from '../../../core/geometry/validation/envelopeValidator';
 import { EnvelopePathCalculator } from '../../dubins/logic/EnvelopePathCalculator';
 import type { CSDiagramState } from '../../../core/geometry/csProtocol';
 import { createMathematicalStateFromPath, transitionCSDiagramState } from '../../../core/geometry/csTransitions';
