@@ -18,6 +18,7 @@
 import type { Point2D } from '../types/cs';
 import { Logger } from '../../app/store/Logger';
 import type { ArcSegment, EnvelopeSegment, TangentSegment, TangentType } from './contactGraph';
+import { calculateBitangent } from './bitangents';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -268,7 +269,7 @@ export function reconstructGeometry(
         continue;
       }
 
-      const tangent = computeBitangent(fromDisk, toDisk, seg.tangentType);
+      const tangent = calculateBitangent(fromDisk, toDisk, seg.tangentType) as TangentSegment | null;
       if (!tangent) {
         Logger.warn('ElasticEnvelope', 'Bitangent computation failed', {
           type: seg.tangentType,
@@ -334,83 +335,6 @@ export function reconstructGeometry(
   }
 
   return resolved;
-}
-
-// ── Bitangent Computation ─────────────────────────────────────────
-
-/**
- * Computes a specific bitangent between two disks.
- * Replicates the math from contactGraph.calculateBitangents but for a single type.
- */
-function computeBitangent(
-  d1: DiskGeometry,
-  d2: DiskGeometry,
-  tangentType: TangentType,
-): TangentSegment | null {
-  const dx = d2.center.x - d1.center.x;
-  const dy = d2.center.y - d1.center.y;
-  const D = Math.sqrt(dx * dx + dy * dy);
-  const phi = Math.atan2(dy, dx);
-
-  if (D < 1e-9) return null; // Coincident centers
-
-  const pOnC = (c: Point2D, r: number, angle: number): Point2D => ({
-    x: c.x + r * Math.cos(angle),
-    y: c.y + r * Math.sin(angle),
-  });
-
-  const EPSILON = 1e-4;
-
-  if (tangentType === 'LSL' || tangentType === 'RSR') {
-    // Outer tangents
-    if (D < Math.abs(d1.radius - d2.radius) - EPSILON) return null;
-
-    const val = (d1.radius - d2.radius) / D;
-    const gamma = Math.acos(Math.max(-1, Math.min(1, val)));
-    if (isNaN(gamma)) return null;
-
-    const alpha = tangentType === 'RSR' ? phi + gamma : phi - gamma;
-    const p1 = pOnC(d1.center, d1.radius, alpha);
-    const p2 = pOnC(d2.center, d2.radius, alpha);
-
-    return {
-      type: tangentType,
-      start: p1,
-      end: p2,
-      length: Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2),
-      startDiskId: d1.id,
-      endDiskId: d2.id,
-    };
-  } else {
-    // Inner tangents (LSR, RSL)
-    if (D < 1e-9) return null; // Coincident centers
-
-    const val = (d1.radius + d2.radius) / D;
-    const beta = Math.acos(Math.max(-1, Math.min(1, val))); // Safe acos even if overlapping
-    if (isNaN(beta)) return null;
-
-    let alpha1: number, alpha2: number;
-    if (tangentType === 'LSR') {
-      alpha1 = phi - beta;
-      alpha2 = phi - beta + Math.PI;
-    } else {
-      // RSL
-      alpha1 = phi + beta;
-      alpha2 = phi + beta + Math.PI;
-    }
-
-    const p1 = pOnC(d1.center, d1.radius, alpha1);
-    const p2 = pOnC(d2.center, d2.radius, alpha2);
-
-    return {
-      type: tangentType,
-      start: p1,
-      end: p2,
-      length: Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2),
-      startDiskId: d1.id,
-      endDiskId: d2.id,
-    };
-  }
 }
 
 // ── Arc Length Helper ──────────────────────────────────────────────

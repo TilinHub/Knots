@@ -298,3 +298,114 @@ export function checkDubinsPathCollision(path: DubinsPath, obstacles: Obstacle[]
 
   return false;
 }
+
+
+import type { Point2D } from '../types/cs';
+import type { ContactDisk } from '../types/contactGraph';
+/**
+ * Checks if a line segment intersects a disk (strictly interior).
+ * Hybrid approach:
+ *   1. Quadratic formula: detects boundary crossings (line enters/exits disk)
+ *   2. Midpoint check: detects segments fully inside or chord-like paths
+ */
+export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boolean {
+  const cx = disk.center.x;
+  const cy = disk.center.y;
+  const r = disk.radius;
+
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+  const fx = p1.x - cx;
+  const fy = p1.y - cy;
+
+  const a = dx * dx + dy * dy;
+
+  if (a < 1e-9) {
+    // Zero-length segment: check if point is inside disk
+    return fx * fx + fy * fy < (r * 0.95) ** 2;
+  }
+
+  // --- Method 1: Quadratic (Boundary Crossing) ---
+  const bCoeff = 2 * (fx * dx + fy * dy);
+  const cCoeff = fx * fx + fy * fy - r * r;
+  const discriminant = bCoeff * bCoeff - 4 * a * cCoeff;
+
+  if (discriminant > 0) {
+    const sqrtD = Math.sqrt(discriminant);
+    const t1 = (-bCoeff - sqrtD) / (2 * a);
+    const t2 = (-bCoeff + sqrtD) / (2 * a);
+
+    // [FIX] Allow grazing (shallow intersections)
+    // If the chord length is very small, we treat it as a touch/graze, not a collision.
+    // Chord length in parametric space: dt = t2 - t1 = sqrtD/a (roughly)
+    // Actual chord length approx: dt * segmentLength
+    const segmentLenSq = a; // 'a' IS the squared length of the segment (dx*dx + dy*dy)
+    const segmentLen = Math.sqrt(segmentLenSq);
+    const chordLen = (t2 - t1) * segmentLen;
+
+    // If chord is less than 1% of radius (grazing/touching)
+    // 0.10 rejects visible overlaps but is too loose, allowing visual clipping.
+    // 0.01 provides strict visual boundaries while tolerating numerical noise.
+    if (chordLen < r * 0.01) {
+      // Grazing/Touching -> Allowed
+      return false;
+    }
+
+    // Strictly interior crossing: t in (epsilon, 1-epsilon)
+    const eps = 0.005;
+    if ((t1 > eps && t1 < 1 - eps) || (t2 > eps && t2 < 1 - eps)) {
+      return true;
+    }
+  }
+
+  // --- Method 2: Midpoint Inside Check ---
+  // Catches chords where both endpoints are on/near boundary
+  const mx = (p1.x + p2.x) / 2;
+  const my = (p1.y + p2.y) / 2;
+  const midDistSq = (mx - cx) ** 2 + (my - cy) ** 2;
+  if (midDistSq < (r * 0.96) ** 2) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Checks if two line segments intersect strictly (excluding endpoints).
+ * Uses robust cross-product orientation test.
+ */
+export function intersectsSegment(p1: Point2D, p2: Point2D, q1: Point2D, q2: Point2D): boolean {
+  const orientation = (p: Point2D, q: Point2D, r: Point2D): number => {
+    const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+    if (Math.abs(val) < 1e-9) return 0; // Collinear
+    return val > 0 ? 1 : 2; // Clockwise or Counterclockwise
+  };
+
+  const o1 = orientation(p1, p2, q1);
+  const o2 = orientation(p1, p2, q2);
+  const o3 = orientation(q1, q2, p1);
+  const o4 = orientation(q1, q2, p2);
+
+  // General case: strictly crossing
+  if (o1 !== o2 && o3 !== o4) {
+    // Exclude endpoints: if any orientation is 0, it means touching
+    if (o1 === 0 || o2 === 0 || o3 === 0 || o4 === 0) return false;
+    return true;
+  }
+
+  return false;
+}
+
+export function intersectsAnyDiskStrict(
+  p1: Point2D,
+  p2: Point2D,
+  disks: ContactDisk[],
+  ignoreId1?: string,
+  ignoreId2?: string,
+): boolean {
+  for (const d of disks) {
+    if (d.id === ignoreId1 || d.id === ignoreId2) continue;
+    if (intersectsDisk(p1, p2, d)) return true;
+  }
+  return false;
+}
