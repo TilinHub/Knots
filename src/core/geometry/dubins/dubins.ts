@@ -1,4 +1,16 @@
 /**
+ * @module dubins
+ * @description Implementación funcional especializada de curvas Dubins.
+ *
+ * Maneja trayectorias escaladas por rho con soporte para:
+ * - Bitangentes entre discos de radio asimétrico
+ * - Detección de obstáculos y colisiones
+ * - Grafo de contactos del sistema de envolvente
+ *
+ * @see {@link core/math/DubinsPath.ts} para la implementación
+ * OOP teórica orientada al cálculo abstracto y longitud de nudos.
+ */
+/**
  * @file dubins.ts
  * @description [DISTINCIÓN] Solvers optimizados de Dubins para la lógica crítica del motor del Grafo de Contacto (`contactGraph`).
  * Incluye variantes avanzadas de bitangentes reales con radios asimétricos y validaciones lógicas contra arreglos de obstáculos.

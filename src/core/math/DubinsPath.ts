@@ -1,4 +1,15 @@
 /**
+ * @module DubinsPath
+ * @description Implementación OOP teórica de curvas Dubins.
+ *
+ * Modela trayectorias como una secuencia de segmentos explícitos
+ * (arcos L/R y rectas S) con longitud total exacta.
+ * Diseñado para cálculo abstracto y longitud de nudos.
+ *
+ * @see {@link core/geometry/dubins/dubins.ts} para la implementación
+ * funcional especializada en bitangentes, obstáculos y grafo de contactos.
+ */
+/**
  * @file DubinsPath.ts
  * @description [DISTINCIÓN] Implementación OOP teórica matemática basada en Díaz y Ayala (2020).
  * Calcula caminos retornando primitivas geométricas puras. Útil para visualizadores aislados
