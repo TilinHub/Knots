@@ -4,7 +4,7 @@ import {
   type BoundedCurvatureGraph,
   type EnvelopeSegment,
   findEnvelopePath,
-} from '../../../core/geometry/contactGraph';
+} from '../../../core/geometry/envelope/contactGraph';
 
 export function useContactPath(graph: BoundedCurvatureGraph) {
   const [diskSequence, setDiskSequence] = useState<string[]>([]);

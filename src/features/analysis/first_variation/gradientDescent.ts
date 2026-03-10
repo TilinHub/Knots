@@ -2,7 +2,7 @@ import {
   buildBoundedCurvatureGraph,
   type EnvelopePathResult,
   findEnvelopePath,
-} from '../../../core/geometry/contactGraph';
+} from '../../../core/geometry/envelope/contactGraph';
 import { calculateRollingPosition, findNextCollision } from '../../../core/geometry/rolling';
 import type { CSDiagram, CSDisk } from '../../../core/types/cs';
 

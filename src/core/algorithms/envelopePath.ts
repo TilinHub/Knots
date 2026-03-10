@@ -1,7 +1,7 @@
 import { Logger } from '../../app/store/Logger';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
-import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, ArcSegment } from '../geometry/contactGraph';
+import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, ArcSegment } from '../geometry/envelope/contactGraph';
 export type EnvelopePathResult = {
   path: EnvelopeSegment[];
   chiralities: ('L' | 'R')[];

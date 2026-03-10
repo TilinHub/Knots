@@ -1,21 +1,21 @@
 import React from 'react';
 import { resolveOverlapsSingleMove } from '@/core/geometry/hull';
 
-import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
+import type { EnvelopeSegment } from '@/core/geometry/envelope/contactGraph';
 import {
   buildBoundedCurvatureGraph,
   findEnvelopePath,
   findEnvelopePathFromPoints,
-} from '@/core/geometry/contactGraph';
+} from '@/core/geometry/envelope/contactGraph';
 import { type Disk } from '@/core/geometry/hull';
 import type { Config, DubinsPath } from '@/core/geometry/dubins';
 import {
   type DiskContact,
   findAllCrossings,
   findDiskContacts,
-} from '@/core/geometry/intersections';
+} from '@/core/geometry/primitives';
 import { computeOuterContour } from '@/core/geometry/curve';
-import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
+import { detectRegionsWithDisks } from '@/core/geometry/curve';
 import { computeRobustConvexHull } from '@/core/geometry/hull';
 import type { CSArc, CSBlock, CSDisk, Point2D } from '@/core/types/cs';
 import type { KnotDiagram } from '@/core/types/knot';

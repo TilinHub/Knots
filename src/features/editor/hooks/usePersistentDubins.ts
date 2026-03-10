@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { findShortestContactPath } from '../../../core/algorithms/pathfinder';
 import { type DiskAnchor, solveAngularDubins } from '../../../core/geometry/dubins/angularDubins';
-import { buildBoundedCurvatureGraph } from '../../../core/geometry/contactGraph';
+import { buildBoundedCurvatureGraph } from '../../../core/geometry/envelope/contactGraph';
 import {
   calculateBitangentPaths,
   checkPathCollision,

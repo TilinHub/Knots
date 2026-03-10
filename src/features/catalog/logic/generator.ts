@@ -1,4 +1,4 @@
-import { graphToContactScene } from '@/core/geometry/contactLayout';
+import { graphToContactScene } from '@/core/geometry/envelope';
 import type { CSDisk } from '@/core/types/cs';
 import {
   calculateEnergy,

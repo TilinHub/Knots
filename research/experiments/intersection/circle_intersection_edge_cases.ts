@@ -1,4 +1,4 @@
-import { findEnvelopePathFromPoints, buildBoundedCurvatureGraph } from './src/core/geometry/contactGraph';
+import { findEnvelopePathFromPoints, buildBoundedCurvatureGraph } from '../../../src/core/geometry/envelope/contactGraph';
 
 const R = 50;
 const obstacles = [

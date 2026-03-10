@@ -5,8 +5,8 @@
  * Both contactGraph.ts and ElasticEnvelope.ts import from here.
  */
 
-import type { Point2D } from '../types/cs';
-import type { TangentType } from './contactGraph';
+import type { Point2D } from '../../types/cs';
+import type { TangentType } from '../envelope/contactGraph';
 
 export interface DiskLike {
     id: string;

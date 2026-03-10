@@ -3,11 +3,11 @@ import { MinHeap } from './MinHeap';
 import type { ContactDisk } from '../types/contactGraph';
 import type { SearchNode, PathCandidate } from '../types/pathfinding';
 import type { Point2D } from '../types/cs';
-import type { BoundedCurvatureGraph, EnvelopeSegment, TangentType } from '../geometry/contactGraph';
+import type { BoundedCurvatureGraph, EnvelopeSegment, TangentType } from '../geometry/envelope/contactGraph';
 import { calcArc, calcShortArc } from './envelopePath';
 import type { EnvelopePathResult } from './envelopePath';
-import { intersectsAnyDiskStrict } from '../geometry/collision';
-import { buildBoundedCurvatureGraph } from '../geometry/contactGraph';
+import { intersectsAnyDiskStrict } from '../geometry/envelope/collision';
+import { buildBoundedCurvatureGraph } from '../geometry/envelope/contactGraph';
 
 // Helper: Check if an arc on 'disk' is blocked by any 'other' disk in 'obstacles'
 function isArcBlocked(

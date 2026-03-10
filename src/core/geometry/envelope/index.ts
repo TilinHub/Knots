@@ -3,5 +3,6 @@
  */
 export * from './ElasticEnvelope';
 export * from './EnvelopeComputer';
-export * from './contactGraph';
 export * from './collision';
+export * from './contactGraph';
+export * from './contactLayout';

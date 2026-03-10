@@ -3,7 +3,7 @@ import { useMemo, useRef } from 'react';
 import {
   type BoundedCurvatureGraph,
   buildBoundedCurvatureGraph,
-} from '../../../core/geometry/contactGraph';
+} from '../../../core/geometry/envelope/contactGraph';
 import type { ContactDisk } from '../../../core/types/contactGraph';
 
 export function useContactGraph(disks: ContactDisk[]) {

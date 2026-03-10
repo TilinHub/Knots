@@ -1,5 +1,5 @@
-import type { Region } from '../types/contactGraph';
-import type { CSBlock, Point2D } from '../types/cs';
+import type { Region } from '../../types/contactGraph';
+import type { CSBlock, Point2D } from '../../types/cs';
 
 /**
  * Calcula el centroide de un polígono

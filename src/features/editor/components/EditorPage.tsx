@@ -7,7 +7,7 @@ import {
   calculateBitangents,
   findEnvelopePath,
   findEnvelopePathFromPoints,
-} from '../../../core/geometry/contactGraph';
+} from '../../../core/geometry/envelope/contactGraph';
 import {
   computeDiskHull,
   computeHullLength,

@@ -1,5 +1,5 @@
-import type { BoundedCurvatureGraph, TangentSegment } from '../geometry/contactGraph';
-import type { DubinsPath } from '../geometry/dubins';
+import type { BoundedCurvatureGraph, TangentSegment } from '../geometry/envelope/contactGraph';
+import type { DubinsPath } from '../geometry/dubins/dubins';
 import type { ContactDisk } from '../types/contactGraph'; // Correct import
 
 /**

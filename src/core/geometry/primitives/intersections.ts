@@ -2,7 +2,7 @@
  * Detección de intersecciones (cruces) entre bloques CS
  */
 
-import type { CrossPoint, CSArc, CSBlock, CSDisk, CSSegment, Point2D } from '../types/cs';
+import type { CrossPoint, CSArc, CSBlock, CSDisk, CSSegment, Point2D } from '../../types/cs';
 
 const EPSILON = 1e-6;
 

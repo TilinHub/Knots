@@ -2,7 +2,7 @@ import { Logger } from '../../../app/store/Logger';
 import { intersectsDisk, intersectsSegment } from './collision';
 import type { ContactDisk } from '../../types/contactGraph';
 import type { Point2D } from '../../types/cs';
-import { calculateAllBitangents } from '../bitangents';
+import { calculateAllBitangents } from '../primitives/bitangents';
 export type TangentType = 'LSL' | 'RSR' | 'LSR' | 'RSL' | 'PTD-L' | 'PTD-R' | 'DTP-L' | 'DTP-R';
 
 export interface TangentSegment {

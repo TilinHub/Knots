@@ -1,5 +1,5 @@
 (global as any).window = global;
-import { findEnvelopePathFromPoints } from './src/core/geometry/contactGraph';
+import { findEnvelopePathFromPoints } from '../../../src/core/geometry/envelope/contactGraph';
 type Point2D = { x: number; y: number };
 type ContactDisk = { id: string; center: Point2D; radius: number; regionId: string; };
 

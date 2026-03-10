@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
+import type { EnvelopeSegment } from '@/core/geometry/envelope/contactGraph';
 
 interface ContactPathRendererProps {
   path: EnvelopeSegment[];

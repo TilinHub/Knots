@@ -8,7 +8,7 @@ import {
   type TangentSegment,
   findEnvelopePath,
   findEnvelopePathFromPoints,
-} from '../../../core/geometry/contactGraph';
+} from '../../../core/geometry/envelope/contactGraph';
 import type { DubinsPath } from '../../../core/geometry/dubins'; // Fixed import
 import type { CSDisk } from '../../../core/types/cs';
 import { Logger } from '../../../app/store/Logger';

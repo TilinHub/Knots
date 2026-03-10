@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { graphToContactScene } from '../../../core/geometry/contactLayout';
+import { graphToContactScene } from '../../../core/geometry/envelope';
 import type { Graph } from '../../../io/parseGraph6';
 
 interface GraphPreviewProps {
