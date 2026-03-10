@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { computeDiskHull } from '../../../core/geometry/diskHull';
+import { computeDiskHull } from '../../../core/geometry/hull';
 import type { Point, Primitive, Scene } from '../../../core/types/entities';
 
 export type BBox = { x: number; y: number; width: number; height: number };

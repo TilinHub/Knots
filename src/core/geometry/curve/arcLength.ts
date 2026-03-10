@@ -1,5 +1,5 @@
-import type { CSArc, CSBlock, CSSegment } from '../types/cs';
-import { findContinuousChains } from './validation/continuity';
+import type { CSArc, CSBlock, CSSegment } from '../../types/cs';
+import { findContinuousChains } from '../validation/continuity';
 
 /**
  * Calcula la longitud de un segmento

@@ -1,6 +1,6 @@
 import * as math from 'mathjs';
 
-import type { Point2D } from '../types/cs';
+import type { Point2D } from '../../types/cs';
 import type { CSDiagramState } from './csProtocol';
 
 // Vector operations

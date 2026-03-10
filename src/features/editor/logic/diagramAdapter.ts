@@ -1,4 +1,4 @@
-import { computeDiskHull, type HullSegment } from '../../../core/geometry/diskHull';
+import { computeDiskHull, type HullSegment } from '../../../core/geometry/hull';
 import type { CSDisk } from '../../../core/types/cs';
 import { dist } from '../../analysis/first_variation/geometry';
 import type {

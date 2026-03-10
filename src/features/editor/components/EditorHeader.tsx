@@ -1,7 +1,7 @@
 import { type FC, useEffect, useState } from 'react';
 
 import Logo from '../../../assets/LOGO.png';
-import { formatArcLength } from '../../../core/geometry/arcLength';
+import { formatArcLength } from '../../../core/geometry/curve';
 
 interface EditorHeaderProps {
   initialKnotName?: string;

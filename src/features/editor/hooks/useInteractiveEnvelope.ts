@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { type Circle, SmoothCSEnvelope } from '../../../core/geometry/CSEnvelope';
+import { type Circle, SmoothCSEnvelope } from '../../../core/geometry/cs';
 import type { Point2D } from '../../../core/types/cs';
 import { EnvelopeRenderer, type EnvelopeRenderOptions } from '../../../ui/renderer/EnvelopeRenderer';
 

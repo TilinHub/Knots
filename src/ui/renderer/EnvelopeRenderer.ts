@@ -3,7 +3,7 @@
  * Dibuja la envolvente con efectos visuales mejorados y animaciones fluidas
  */
 
-import { SmoothCSEnvelope } from '../../core/geometry/CSEnvelope';
+import { SmoothCSEnvelope } from '../../core/geometry/cs';
 import type { Point2D } from '../../core/types/cs';
 
 export interface EnvelopeRenderOptions {

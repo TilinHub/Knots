@@ -15,7 +15,7 @@
  * adapts continuously, no ordering dependency.
  */
 
-import type { Point2D } from '../types/cs';
+import type { Point2D } from '../../types/cs';
 
 export interface Circle {
   center: Point2D;
@@ -144,26 +144,26 @@ export class SmoothCSEnvelope {
           segs =
             vc < 0
               ? [
-                  [0, 1],
-                  [2, 3],
-                ] // inside connected → wrap BR and TL separately
+                [0, 1],
+                [2, 3],
+              ] // inside connected → wrap BR and TL separately
               : [
-                  [3, 0],
-                  [1, 2],
-                ]; // inside separated → wrap BL and TR separately
+                [3, 0],
+                [1, 2],
+              ]; // inside separated → wrap BL and TR separately
         } else if (ci === 10) {
           const vc = (v0 + v1 + v2 + v3) / 4;
           // Case 10 (1010): c1(BR) in, c3(TL) in, c0(BL) out, c2(TR) out
           segs =
             vc < 0
               ? [
-                  [3, 0],
-                  [1, 2],
-                ] // inside connected → wrap BL and TR separately
+                [3, 0],
+                [1, 2],
+              ] // inside connected → wrap BL and TR separately
               : [
-                  [0, 1],
-                  [2, 3],
-                ]; // inside separated → wrap BR and TL separately
+                [0, 1],
+                [2, 3],
+              ]; // inside separated → wrap BR and TL separately
         } else {
           segs = MS[ci];
         }

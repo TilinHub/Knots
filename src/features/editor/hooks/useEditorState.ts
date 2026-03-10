@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { blockLength, getCurveLengthInfo } from '../../../core/geometry/arcLength';
+import { blockLength, getCurveLengthInfo } from '../../../core/geometry/curve';
 import type { CSArc, CSBlock, CSDisk, CSSegment } from '../../../core/types/cs';
 import { validateContinuity } from '../../../core/geometry/validation/continuity';
 import type { DynamicAnchor } from '../../knot/types';

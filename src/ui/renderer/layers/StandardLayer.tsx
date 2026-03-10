@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { computeDiskHull, type DiskHull } from '../../../core/geometry/diskHull';
+import { computeDiskHull, type DiskHull } from '../../../core/geometry/hull';
 import type { CSDisk } from '../../../core/types/cs';
 import { EditorEnvelopeComputer } from '../../../features/editor/logic/EditorEnvelopeComputer';
 import type { LayerProps } from '../types/Layer';

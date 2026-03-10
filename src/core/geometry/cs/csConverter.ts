@@ -6,8 +6,8 @@
  */
 
 import type { CSDiagramState } from './csProtocol';
-import type { EnvelopeSegment, ArcSegment, TangentSegment } from './contactGraph';
-import type { Point2D } from '../types/cs';
+import type { EnvelopeSegment, ArcSegment, TangentSegment } from '../envelope/contactGraph';
+import type { Point2D } from '../../types/cs';
 
 export function convertStateToPath(state: CSDiagramState): EnvelopeSegment[] {
     const path: EnvelopeSegment[] = [];

@@ -1,4 +1,4 @@
-import type { CSDisk } from '../types/cs';
+import type { CSDisk } from '../../types/cs';
 import type { EnvelopeSegment } from './contactGraph';
 
 /**

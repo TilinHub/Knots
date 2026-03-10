@@ -6,7 +6,7 @@
  * decoupled from the dynamic drawing logic.
  */
 
-import type { Point2D } from '../types/cs';
+import type { Point2D } from '../../types/cs';
 
 export interface CSTangency {
     id: string; // The label α

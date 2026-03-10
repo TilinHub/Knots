@@ -3,7 +3,7 @@
  * the mathematical constraints of a CS Diagram as per the protocol.
  */
 
-import type { Point2D } from '../types/cs';
+import type { Point2D } from '../../types/cs';
 import type { CSDiagramState } from './csProtocol';
 
 const TOL_MET = 1.0; // metric tolerance (1px)

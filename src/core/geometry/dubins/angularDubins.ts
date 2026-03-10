@@ -1,6 +1,6 @@
 import { DubinsPathCalculator, type Pose2D } from '../../math/DubinsPath';
 import { type Point2D } from '../../types/cs'; // Fixed relative import
-import { checkDubinsPathCollision } from '../collision';
+import { checkDubinsPathCollision } from '../envelope/collision';
 import { calculateDubinsPaths, type Config, type DubinsPath } from './dubins';
 
 /**

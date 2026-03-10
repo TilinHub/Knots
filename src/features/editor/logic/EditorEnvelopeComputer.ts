@@ -1,6 +1,6 @@
 import type { EnvelopeSegment } from '../../../core/geometry/contactGraph';
 import type { EnvelopeComputer } from '../../../core/geometry/EnvelopeComputer';
-import { computeOuterContour } from '../../../core/geometry/outerFace';
+import { computeOuterContour } from '../../../core/geometry/curve';
 import type { CSDisk } from '../../../core/types/cs';
 
 /**

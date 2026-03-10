@@ -12,7 +12,7 @@ import {
   computeDiskHull,
   computeHullLength,
   computeHullMetrics,
-} from '../../../core/geometry/diskHull';
+} from '../../../core/geometry/hull';
 import type { CSDisk } from '../../../core/types/cs';
 import { useDubinsState } from '../../dubins/logic/useDubinsState';
 import { useKnotState } from '../../knot/hooks/useKnotState';

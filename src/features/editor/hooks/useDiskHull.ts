@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-import type { Disk, DiskHull } from '../../../core/geometry/diskHull';
-import { computeDiskHull } from '../../../core/geometry/diskHull';
+import type { Disk, DiskHull } from '../../../core/geometry/hull';
+import { computeDiskHull } from '../../../core/geometry/hull';
 
 export function useDiskHull(disks: Disk[]): DiskHull {
   return useMemo(() => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { resolveOverlapsSingleMove } from '@/core/geometry/resolveOverlaps';
+import { resolveOverlapsSingleMove } from '@/core/geometry/hull';
 
 import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
 import {
@@ -7,16 +7,16 @@ import {
   findEnvelopePath,
   findEnvelopePathFromPoints,
 } from '@/core/geometry/contactGraph';
-import { type Disk } from '@/core/geometry/diskHull';
+import { type Disk } from '@/core/geometry/hull';
 import type { Config, DubinsPath } from '@/core/geometry/dubins';
 import {
   type DiskContact,
   findAllCrossings,
   findDiskContacts,
 } from '@/core/geometry/intersections';
-import { computeOuterContour } from '@/core/geometry/outerFace';
+import { computeOuterContour } from '@/core/geometry/curve';
 import { detectRegionsWithDisks } from '@/core/geometry/regionDetection';
-import { computeRobustConvexHull } from '@/core/geometry/robustHull';
+import { computeRobustConvexHull } from '@/core/geometry/hull';
 import type { CSArc, CSBlock, CSDisk, Point2D } from '@/core/types/cs';
 import type { KnotDiagram } from '@/core/types/knot';
 import { Logger } from '@/app/store/Logger';

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { buildBoundedCurvatureGraph, findEnvelopePath } from '@/core/geometry/contactGraph';
-import { SmoothCSEnvelope } from '@/core/geometry/CSEnvelope';
+import { SmoothCSEnvelope } from '@/core/geometry/cs';
 import type { CSDisk } from '@/core/types/cs';
 import { EnvelopeRenderer } from '@/ui/renderer/EnvelopeRenderer';
 

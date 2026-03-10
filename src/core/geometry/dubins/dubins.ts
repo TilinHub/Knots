@@ -1,4 +1,4 @@
-import { checkDubinsPathCollision } from '../collision';
+import { checkDubinsPathCollision } from '../envelope/collision';
 
 export type Point = { x: number; y: number };
 export type Config = { x: number; y: number; theta: number };

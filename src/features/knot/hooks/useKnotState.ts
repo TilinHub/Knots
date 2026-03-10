@@ -17,10 +17,10 @@ import {
   validateNoSelfIntersection,
 } from '../../../core/geometry/validation/envelopeValidator';
 import { EnvelopePathCalculator } from '../../dubins/logic/EnvelopePathCalculator';
-import type { CSDiagramState } from '../../../core/geometry/csProtocol';
-import { createMathematicalStateFromPath, transitionCSDiagramState } from '../../../core/geometry/csTransitions';
-import { solveCSDiagramDelta } from '../../../core/geometry/csSolver';
-import { convertStateToPath } from '../../../core/geometry/csConverter';
+import type { CSDiagramState } from '../../../core/geometry/cs';
+import { createMathematicalStateFromPath, transitionCSDiagramState } from '../../../core/geometry/cs';
+import { solveCSDiagramDelta } from '../../../core/geometry/cs';
+import { convertStateToPath } from '../../../core/geometry/cs';
 import type { Point2D } from '../../../core/types/cs';
 
 import type { UseKnotStateProps, DynamicAnchor } from '../types';

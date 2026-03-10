@@ -1,4 +1,4 @@
-import type { CSBlock, Point2D } from '../types/cs';
+import type { CSBlock, Point2D } from '../../types/cs';
 import { blockLength } from './arcLength';
 
 const TAU = Math.PI * 2;

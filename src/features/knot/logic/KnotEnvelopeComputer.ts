@@ -1,7 +1,7 @@
 import type { EnvelopeSegment } from '../../../core/geometry/contactGraph';
 import { buildBoundedCurvatureGraph, findEnvelopePath } from '../../../core/geometry/contactGraph';
 import type { EnvelopeComputer } from '../../../core/geometry/EnvelopeComputer';
-import { computeRobustConvexHull } from '../../../core/geometry/robustHull';
+import { computeRobustConvexHull } from '../../../core/geometry/hull';
 import type { CSDisk } from '../../../core/types/cs';
 
 /**

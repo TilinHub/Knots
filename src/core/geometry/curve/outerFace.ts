@@ -15,9 +15,9 @@
  * SCOPE: Envelope display only. Does NOT affect knot-mode, load/save, Dubins.
  */
 
-import type { ContactDisk } from '../types/contactGraph';
-import type { Point2D } from '../types/cs';
-import type { ArcSegment, EnvelopeSegment, TangentSegment } from './contactGraph';
+import type { ContactDisk } from '../../types/contactGraph';
+import type { Point2D } from '../../types/cs';
+import type { ArcSegment, EnvelopeSegment, TangentSegment } from '../envelope/contactGraph';
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -423,7 +423,7 @@ function outerTangentCCW(d1: ContactDisk, d2: ContactDisk): { from: Point2D; to:
 
 // ── Main Public API ─────────────────────────────────────────────
 
-import { computeRobustConvexHull } from './robustHull';
+import { computeRobustConvexHull } from '../hull';
 
 // Flag to toggle the new robust envelope algorithm
 export const USE_NEW_ENVELOPE = false;

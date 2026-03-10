@@ -1,3 +1,5 @@
 export * from './bitangents';
-export * from './collision';
-export * from './contactGraph';
+export * from './bitangents';
+export * from './contactLayout';
+export * from './intersections';
+export * from './regionDetection';

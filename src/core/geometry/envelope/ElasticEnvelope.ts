@@ -15,10 +15,10 @@
  *   I4. C1 continuity at arc/tangent junctions (tangent touches disk circle)
  */
 
-import type { Point2D } from '../types/cs';
-import { Logger } from '../../app/store/Logger';
+import type { Point2D } from '../../types/cs';
+import { Logger } from '../../../app/store/Logger';
 import type { ArcSegment, EnvelopeSegment, TangentSegment, TangentType } from './contactGraph';
-import { calculateBitangent } from './bitangents';
+import { calculateBitangent } from '../bitangents';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -63,7 +63,7 @@ export interface EnvelopeValidation {
 
 // ── Builder ───────────────────────────────────────────────────────
 
-import { type ContactDisk } from '../types/contactGraph';
+import { type ContactDisk } from '../../types/contactGraph';
 import { buildBoundedCurvatureGraph, findEnvelopePath } from './contactGraph';
 
 // Known non-disk IDs produced by findEnvelopePathFromPoints

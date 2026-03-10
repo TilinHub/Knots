@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { getCurveLengthInfo } from '../../../core/geometry/arcLength';
-import { getCurvePointAtLength } from '../../../core/geometry/curveTraversal';
+import { getCurveLengthInfo } from '../../../core/geometry/curve';
+import { getCurvePointAtLength } from '../../../core/geometry/curve';
 import type { CSBlock } from '../../../core/types/cs';
 
 interface RollingDiskProps {

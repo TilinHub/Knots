@@ -1,4 +1,4 @@
-import { blockLength } from '../../../core/geometry/arcLength';
+import { blockLength } from '../../../core/geometry/curve';
 import type { CSBlock } from '../../../core/types/cs';
 import { Button } from '../../../ui/Button';
 import { CoordInput } from '../../../ui/CoordInput';
