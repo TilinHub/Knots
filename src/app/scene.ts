@@ -1,4 +1,4 @@
-import type { Scene } from '../../core/types/entities';
+import type { Scene } from '../core/types/entities';
 
 export function createInitialScene(): Scene {
   return {

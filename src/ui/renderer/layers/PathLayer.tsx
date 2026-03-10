@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { EnvelopeSegment } from '@/core/geometry/contactGraph';
+import type { ArcSegment, EnvelopeSegment, TangentSegment } from '@/core/geometry/envelope/contactGraph';
 import { ContactPathRenderer } from '@/features/editor/components/ContactPathRenderer';
 
 interface PathLayerProps {

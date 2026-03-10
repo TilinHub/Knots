@@ -1,3 +1,9 @@
+/**
+ * @file dubins.ts
+ * @description [DISTINCIÓN] Solvers optimizados de Dubins para la lógica crítica del motor del Grafo de Contacto (`contactGraph`).
+ * Incluye variantes avanzadas de bitangentes reales con radios asimétricos y validaciones lógicas contra arreglos de obstáculos.
+ * Para la implementación educativa o representaciones aisladas de arcos/líneas puras, ver `core/math/DubinsPath.ts`.
+ */
 import { checkDubinsPathCollision } from '../envelope/collision';
 
 export type Point = { x: number; y: number };

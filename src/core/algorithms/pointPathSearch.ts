@@ -1,4 +1,4 @@
-import { Logger } from '../../app/store/Logger';
+import { Logger } from '../../app/Logger';
 import { MinHeap } from './MinHeap';
 import type { ContactDisk } from '../types/contactGraph';
 import type { SearchNode, PathCandidate } from '../types/pathfinding';

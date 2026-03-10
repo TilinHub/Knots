@@ -1,4 +1,4 @@
-import { Logger } from '../../../app/store/Logger';
+import { Logger } from '../../../app/Logger';
 import type { ArcSegment, EnvelopeSegment, TangentSegment } from '../envelope/contactGraph';
 import type { CSArc, CSSegment, Point2D } from '../../types/cs';
 

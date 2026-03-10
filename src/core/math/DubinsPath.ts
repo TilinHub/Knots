@@ -1,4 +1,10 @@
 /**
+ * @file DubinsPath.ts
+ * @description [DISTINCIÓN] Implementación OOP teórica matemática basada en Díaz y Ayala (2020).
+ * Calcula caminos retornando primitivas geométricas puras. Útil para visualizadores aislados
+ * de algoritmos y cálculo puro de longitudes.
+ * Para lógica operacional en el grafo de contactos y bitangentes con obstáculos, usar `core/geometry/dubins/dubins.ts`.
+ *
  * Dubins Path Implementation
  *
  * Based on the theory of bounded curvature paths from:

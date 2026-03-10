@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 
 import { calculateJacobianMatrix } from '../../../core/geometry/envelope/contactGraph';
 import type { CSDisk } from '../../../core/types/cs';
-import { Button } from '../../../ui/Button';
+import { Button } from '../../../ui/components/Button';
 import { analyzeDiagram } from '../../analysis/first_variation/analyzer';
 import { convertDisksToDiagram } from '../logic/diagramAdapter';
 

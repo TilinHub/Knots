@@ -1,4 +1,4 @@
-import { Logger } from '../../app/store/Logger';
+import { Logger } from '../../app/Logger';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, ArcSegment } from '../geometry/envelope/contactGraph';

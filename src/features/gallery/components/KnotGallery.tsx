@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/ui/Button';
+import { Button } from '@/ui/components/Button';
 import type { SavedKnot } from '../../editor/hooks/useEditorState';
 import { KnotThumbnail } from '../../catalog/components/KnotThumbnail';
 import { PRELOADED_KNOTS } from '../logic/preloaded';

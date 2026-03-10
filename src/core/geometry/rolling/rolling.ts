@@ -1,4 +1,4 @@
-import type { CSDisk, Point2D } from '../types/cs';
+import type { CSDisk, Point2D } from '../../types/cs';
 
 /**
  * Calculates the center position of a rolling disk at a given angle theta around a pivot disk.

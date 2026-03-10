@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { Logger } from '../../../app/store/Logger';
+import { Logger } from '../../../app/Logger';
 
 import {
   buildBoundedCurvatureGraph,

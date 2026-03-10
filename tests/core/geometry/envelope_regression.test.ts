@@ -1,5 +1,5 @@
-import { computeRobustConvexHull } from '../../../src/core/geometry/robustHull';
-import { CSDisk } from '../../../src/core/types/cs';
+import { computeRobustConvexHull } from '../../../src/core/geometry/hull/robustHull';
+import type { CSDisk } from '../../../src/core/types/cs';
 
 // Mock CSDisk factory
 const createDisk = (id: string, x: number, y: number, r: number): CSDisk => ({
@@ -31,10 +31,10 @@ try {
       console.log('SUCCESS: Path found');
     } else {
       console.error('FAILURE: Result not ok', result);
-      process.exit(1);
+      throw new Error('Test failed');
     }
   }
 } catch (e) {
   console.error('CRASH:', e);
-  process.exit(1);
+  throw new Error('Test failed');
 }

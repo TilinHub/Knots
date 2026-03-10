@@ -1,4 +1,4 @@
-import type { EnvelopeSegment } from '../geometry/contactGraph';
+import type { BoundedCurvatureGraph, EnvelopeSegment } from '../geometry/envelope/contactGraph';
 
 /** Node in the Dijkstra search graph for bounded curvature paths */
 export interface SearchNode {

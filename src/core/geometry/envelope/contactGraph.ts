@@ -1,4 +1,4 @@
-import { Logger } from '../../../app/store/Logger';
+import { Logger } from '../../../app/Logger';
 import { intersectsDisk, intersectsSegment } from './collision';
 import type { ContactDisk } from '../../types/contactGraph';
 import type { Point2D } from '../../types/cs';

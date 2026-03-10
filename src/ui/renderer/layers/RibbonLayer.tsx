@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { EnvelopeSegment } from '../../../core/geometry/contactGraph';
+import type { EnvelopeSegment } from '../../../core/geometry/envelope/contactGraph';
 import { BaseLayer } from './BaseLayer';
 import { PathLayer } from './PathLayer';
 

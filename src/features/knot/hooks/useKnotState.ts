@@ -11,7 +11,7 @@ import {
 } from '../../../core/geometry/envelope/contactGraph';
 import type { DubinsPath } from '../../../core/geometry/dubins'; // Fixed import
 import type { CSDisk } from '../../../core/types/cs';
-import { Logger } from '../../../app/store/Logger';
+import { Logger } from '../../../app/Logger';
 import {
   validateNoObstacleIntersection,
   validateNoSelfIntersection,

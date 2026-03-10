@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button } from '@/ui/Button';
+import { Button } from '@/ui/components/Button';
 
 import type { CatalogEntry } from '../types/catalogTypes';
 import { CatalogGenerator } from '../logic/generator';

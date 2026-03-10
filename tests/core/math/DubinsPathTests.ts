@@ -5,8 +5,8 @@
  * from "Census of Bounded Curvature Paths" paper
  */
 
-import { DubinsPathCalculator } from './DubinsPath';
-import type { Pose2D, DubinsPath } from './DubinsPath';
+import { DubinsPathCalculator } from '../../../src/core/math/DubinsPath';
+import type { Pose2D, Point2D, DubinsPath } from '../../../src/core/math/DubinsPath';
 
 /**
  * Test configuration and utilities

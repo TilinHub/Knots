@@ -1,0 +1,6 @@
+src/features/editor/hooks/useDiskHull.ts(8,28): error TS2345: Argument of type 'import("C:/Users/tomas/OneDrive/Desktop/Knots/src/core/geometry/hull/diskDistance").Disk[]' is not assignable to parameter of type 'import("C:/Users/tomas/OneDrive/Desktop/Knots/src/core/geometry/hull/diskHull").Disk[]'.
+  Property 'id' is missing in type 'import("C:/Users/tomas/OneDrive/Desktop/Knots/src/core/geometry/hull/diskDistance").Disk' but required in type 'import("C:/Users/tomas/OneDrive/Desktop/Knots/src/core/geometry/hull/diskHull").Disk'.
+src/features/editor/logic/EditorEnvelopeComputer.ts(2,39): error TS2307: Cannot find module '../../../core/geometry/EnvelopeComputer' or its corresponding type declarations.
+src/features/knot/logic/KnotEnvelopeComputer.ts(3,39): error TS2307: Cannot find module '../../../core/geometry/EnvelopeComputer' or its corresponding type declarations.
+tests/core/geometry/envelope_regression.test.ts(34,7): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/core/geometry/envelope_regression.test.ts(39,3): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.

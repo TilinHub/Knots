@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button } from '../../../ui/Button';
+import { Button } from '../../../ui/components/Button';
 import type { CheckResult } from './checks'; // Type-only import
 import type { CriticalityResult } from './criticality'; // Type-only import
 

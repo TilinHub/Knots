@@ -1,7 +1,7 @@
 import { blockLength } from '../../../core/geometry/curve';
 import type { CSBlock } from '../../../core/types/cs';
-import { Button } from '../../../ui/Button';
-import { CoordInput } from '../../../ui/CoordInput';
+import { Button } from '../../../ui/components/Button';
+import { CoordInput } from '../../../ui/components/CoordInput';
 
 export interface BlockListProps {
   blocks: CSBlock[];

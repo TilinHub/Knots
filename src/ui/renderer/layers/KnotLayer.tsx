@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import type { EnvelopeSegment } from '../../../core/geometry/contactGraph'; // Correct import?
+import type { ArcSegment, EnvelopeSegment, TangentSegment } from '../../../core/geometry/envelope/contactGraph'; // Correct import?
 import type { CSDisk } from '../../../core/types/cs';
 import { KnotEnvelopeComputer } from '../../../features/knot/logic/KnotEnvelopeComputer';
 import type { LayerProps } from '../types/Layer';

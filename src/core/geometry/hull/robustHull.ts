@@ -1,6 +1,7 @@
-import type { ContactDisk } from '../types/contactGraph';
-import type { CSDisk, Point2D } from '../types/cs';
-import type { EnvelopeSegment, TangentType } from './contactGraph';
+import type { ContactDisk } from '../../types/contactGraph';
+import type { CSDisk, Point2D } from '../../types/cs';
+import { buildBoundedCurvatureGraph, findEnvelopePath } from '../envelope/contactGraph';
+import type { EnvelopeSegment, TangentType } from '../envelope/contactGraph';
 
 // ── Types ────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 import type { CSDisk } from '../../../core/types/cs';
-import { Button } from '../../../ui/Button';
+import { Button } from '../../../ui/components/Button';
 
 interface RollingModePanelProps {
   pivotDiskId: string | null;

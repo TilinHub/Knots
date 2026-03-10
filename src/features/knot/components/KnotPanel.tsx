@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Button } from '../../../ui/Button';
+import { Button } from '../../../ui/components/Button';
 import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
 import { type AnalysisReport, analyzeDiagram } from '../../analysis/first_variation/analyzer';
 import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
