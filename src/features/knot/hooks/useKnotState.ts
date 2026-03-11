@@ -613,6 +613,13 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     [blocks, lastAnchorPoint],
   );
 
+  const undoLastAction = useCallback(() => {
+    setDiskSequence((prev) => prev.slice(0, -1));
+    setAnchorSequence((prev) => prev.slice(0, -1));
+    setChiralities((prev) => prev.slice(0, -1));
+    setLastAnchorPoint(null);
+  }, []);
+
   return {
     mode,
     diskSequence,
@@ -634,6 +641,7 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
       extendSequenceWithPoint,
       setDragging: setIsDragging,
       setChiralities, // [NEW] Allow setting chiralities directly
+      undoLastAction,
     },
   };
 }

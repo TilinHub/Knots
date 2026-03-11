@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 
 import { Button } from '../../../ui/components/Button';
 import { ContactMatrixViewer } from '../../editor/components/ContactMatrixViewer';
@@ -10,6 +10,34 @@ interface KnotPanelProps {
 }
 
 export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, actions }) => {
+  // Global listener for the mouse back button
+  useEffect(() => {
+    const handleMouseUp = (e: MouseEvent) => {
+      // Mouse Back button is standardly button 3
+      if (e.button === 3) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (knotState.diskSequence.length > 0) {
+          knotState.actions.undoLastAction();
+        }
+      }
+    };
+    
+    // Prevent default browser navigation on mousedown for button 3
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button === 3) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousedown', handleMouseDown);
+    return () => {
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, [knotState.diskSequence.length, knotState.actions]);
 
   return (
     <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
@@ -99,6 +127,14 @@ export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, ac
           disabled={knotState.diskSequence.length < 2}
         >
           Save Envelope
+        </Button>
+        <Button
+          onClick={knotState.actions.undoLastAction}
+          variant="secondary"
+          style={{ width: '80px' }}
+          disabled={knotState.diskSequence.length === 0}
+        >
+          Undo
         </Button>
         <Button
           onClick={knotState.actions.clearSequence}
