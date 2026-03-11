@@ -9,6 +9,8 @@ import {
   findEnvelopePath,
   findEnvelopePathFromPoints,
 } from '../../../core/geometry/envelope/contactGraph';
+import { buildEnvelopeChain } from '../../../core/algorithms/envelopePath';
+import type { EnvelopePoint } from '../../../core/types/knot';
 import type { DubinsPath } from '../../../core/geometry/dubins'; // Fixed import
 import type { CSDisk } from '../../../core/types/cs';
 import { Logger } from '../../../app/Logger';
@@ -95,23 +97,105 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     });
   }, [anchorSequence, blocks]);
 
-  // 2. Compute Path — Anchor-based pathfinding (always visible during construction)
+  // 2. Compute Path — Memory-based pathfinding with EnvelopePoint bridge
   const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
     const activeAnchors = currentAnchors;
 
-    if (activeAnchors.length < 2) {
-      Logger.debug('KnotState', 'Not enough anchors for path', { count: activeAnchors.length });
+    if (activeAnchors.length < 2 || diskSequence.length < 2) {
+      Logger.debug('KnotState', 'Not enough anchors for path', { anchors: activeAnchors.length, disks: diskSequence.length });
       return { path: [], chiralities: [] };
     }
 
-    Logger.debug('KnotState', 'Computing path from anchors', {
-      anchorCount: activeAnchors.length,
-      diskSeq: diskSequence,
-      isDragging,
-      usingElastic: isDragging,
+    // --- STEP 1: Build EnvelopePoints from anchorSequence ---
+    // Each DynamicAnchor becomes an EnvelopePoint with prev/next links
+    const rawEnvelopePoints: EnvelopePoint[] = anchorSequence.map((anchor, i) => {
+      const disk = blocks.find((b) => b.id === anchor.diskId);
+      const radius = disk ? disk.visualRadius : 1;
+      const cx = disk ? disk.center.x : 0;
+      const cy = disk ? disk.center.y : 0;
+      return {
+        id: `ep-${anchor.diskId}-${i}`,
+        diskId: anchor.diskId,
+        position: {
+          x: cx + radius * Math.cos(anchor.angle),
+          y: cy + radius * Math.sin(anchor.angle),
+        },
+        angle: anchor.angle,
+        prev: null,
+        next: null,
+        segmentId: 'main',
+      };
     });
 
-    // Primary path computation: connect anchor points via collision-free routes
+    // Assign prev/next links via buildEnvelopeChain
+    const linkedPoints = buildEnvelopeChain(rawEnvelopePoints);
+
+    // Group EnvelopePoints by diskId
+    const envelopePointsByDisk = new Map<string, EnvelopePoint[]>();
+    linkedPoints.forEach(ep => {
+      const existing = envelopePointsByDisk.get(ep.diskId) || [];
+      existing.push(ep);
+      envelopePointsByDisk.set(ep.diskId, existing);
+    });
+
+    Logger.debug('KnotState', 'Built EnvelopePoints', {
+      total: linkedPoints.length,
+      perDisk: Object.fromEntries(Array.from(envelopePointsByDisk.entries()).map(([k, v]) => [k, v.length])),
+    });
+
+    // --- STEP 2: Build graph and inject envelopePoints into nodes ---
+    const graph = buildBoundedCurvatureGraph(contactDisks, true, [], false);
+
+    graph.nodes.forEach((node, diskId) => {
+      (node as any).envelopePoints = envelopePointsByDisk.get(diskId) ?? [];
+    });
+
+    // --- STEP 3: Use findEnvelopePath (memory-based) as primary ---
+    // Compress consecutive duplicate disks
+    const compressedSeq: string[] = [];
+    diskSequence.forEach((id, i) => {
+      if (i === 0 || id !== diskSequence[i - 1]) compressedSeq.push(id);
+    });
+
+    if (compressedSeq.length >= 2) {
+      // Append first disk to close the loop
+      const closedSeq = [...compressedSeq, compressedSeq[0]];
+
+      Logger.debug('KnotState', 'Calling findEnvelopePath (memory-based)', {
+        closedSeq,
+        graphNodes: graph.nodes.size,
+        graphEdges: graph.edges.length,
+      });
+
+      const memoryResult = findEnvelopePath(graph, closedSeq, undefined, false);
+
+      if (memoryResult.path.length > 0) {
+        Logger.debug('KnotState', 'Memory-based path computed successfully', {
+          segments: memoryResult.path.length,
+          types: memoryResult.path.map((s: any) => s.type),
+        });
+
+        // Derive chiralities from the computed path
+        const derivedChiralities: ('L' | 'R')[] = diskSequence.map(() => 'L');
+        memoryResult.path.forEach((seg: any) => {
+          if (seg.type === 'ARC' && seg.diskId) {
+            const idx = diskSequence.indexOf(seg.diskId);
+            if (idx >= 0) derivedChiralities[idx] = seg.chirality;
+          }
+        });
+
+        return {
+          path: memoryResult.path,
+          chiralities: derivedChiralities,
+          dubinsPaths: [],
+        };
+      }
+
+      Logger.warn('KnotState', 'Memory-based path returned empty, falling back to legacy');
+    }
+
+    // --- FALLBACK: Legacy anchor-based pathfinding ---
+    Logger.debug('KnotState', 'Using legacy findEnvelopePathFromPoints');
     const result = findEnvelopePathFromPoints(activeAnchors, contactDisks);
 
     if (result.path.length === 0) {
@@ -122,12 +206,6 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
           y: a.y.toFixed(2),
           disk: anchorSequence[i]?.diskId || '?',
         })),
-        obstacles: contactDisks.map(d => ({ id: d.id, cx: d.center.x.toFixed(2), cy: d.center.y.toFixed(2), r: d.radius.toFixed(2) })),
-      });
-    } else {
-      Logger.debug('KnotState', 'Path computed successfully', {
-        segments: result.path.length,
-        types: result.path.map((s: any) => s.type),
       });
     }
 
@@ -145,7 +223,7 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
       chiralities: derivedChiralities,
       dubinsPaths: [],
     };
-  }, [currentAnchors, contactDisks, diskSequence, anchorSequence]);
+  }, [currentAnchors, contactDisks, diskSequence, anchorSequence, blocks]);
 
   const prevDraggingRef = useRef(isDragging);
   const lastElasticPathRef = useRef<EnvelopeSegment[]>([]);
