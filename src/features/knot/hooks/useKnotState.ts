@@ -95,235 +95,57 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     });
   }, [anchorSequence, blocks]);
 
-  // 2. Compute Path (Flexible Envelope + Legacy Fallback)
+  // 2. Compute Path — Anchor-based pathfinding (always visible during construction)
   const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
-    if (currentAnchors.length < 2) return { path: [], chiralities: [] };
+    const activeAnchors = currentAnchors;
 
-    let activeAnchors = currentAnchors;
-
-    // [FIX] ELASTIC SOLVER OVERRIDE DURING DRAG
-    // If the user is dragging, rigid anchor angles cause tangles.
-    // Instead, we freeze the derived chiralities, use the topological solver to find the ideal "sliding"
-    // anchor points, and then pass them to the point solver so it can route around obstacles.
-    if (isDragging && diskSequence.length >= 2 && lockedChiralities.length === diskSequence.length) {
-      // Build a collision-free graph to allow sliding over geometry without hallucinated inner tangencies
-      const graph = buildBoundedCurvatureGraph(contactDisks, false, [], false);
-      const elasticResult = findEnvelopePath(graph, diskSequence, lockedChiralities, false);
-
-      if (elasticResult && elasticResult.path.length > 0) {
-        const idealAnchors: { x: number; y: number }[] = [];
-        diskSequence.forEach((diskId) => {
-          const disk = contactDisks.find(d => d.id === diskId);
-          if (!disk) return;
-
-          const arc = elasticResult.path.find((s: any) => s.type === 'ARC' && s.diskId === diskId) as ArcSegment;
-          if (arc) {
-            idealAnchors.push({ x: disk.center.x + disk.radius * Math.cos(arc.startAngle), y: disk.center.y + disk.radius * Math.sin(arc.startAngle) });
-            return;
-          }
-          const outT = elasticResult.path.find((s: any) => s.type !== 'ARC' && s.startDiskId === diskId) as TangentSegment;
-          if (outT) {
-            const angle = Math.atan2(outT.start.y - disk.center.y, outT.start.x - disk.center.x);
-            idealAnchors.push({ x: disk.center.x + disk.radius * Math.cos(angle), y: disk.center.y + disk.radius * Math.sin(angle) });
-            return;
-          }
-          const inT = elasticResult.path.find((s: any) => s.type !== 'ARC' && s.endDiskId === diskId) as TangentSegment;
-          if (inT) {
-            const angle = Math.atan2(inT.end.y - disk.center.y, inT.end.x - disk.center.x);
-            idealAnchors.push({ x: disk.center.x + disk.radius * Math.cos(angle), y: disk.center.y + disk.radius * Math.sin(angle) });
-            return;
-          }
-        });
-
-        if (idealAnchors.length === diskSequence.length) {
-          activeAnchors = idealAnchors;
-        }
-      }
+    if (activeAnchors.length < 2) {
+      Logger.debug('KnotState', 'Not enough anchors for path', { count: activeAnchors.length });
+      return { path: [], chiralities: [] };
     }
 
-    // [CS PROTOCOL ENGINE] Mathematical Evolution
-    if (isDragging && diskSequence.length >= 2 && csStateRef.current) {
-
-      // Calculate continuous deltas
-      const currentDisksMap = new Map<string, Point2D>();
-      contactDisks.forEach(d => currentDisksMap.set(d.id, d.center));
-
-      const targetDisplacements = new Map<string, Point2D>();
-      currentDisksMap.forEach((center, id) => {
-        const prev = prevDisksRef.current.get(id);
-        if (prev) {
-          targetDisplacements.set(id, { x: center.x - prev.x, y: center.y - prev.y } as Point2D);
-        } else {
-          targetDisplacements.set(id, { x: 0, y: 0 } as Point2D);
-        }
-      });
-
-      // Request Solver Delta 
-      const deltaResult = solveCSDiagramDelta(csStateRef.current, targetDisplacements);
-
-      // If valid continuous projection available, try moving, else transition
-      if (deltaResult) {
-        // Generate theoretical pushed disks
-        const theoreticalDisks = new Map<string, Point2D>();
-        csStateRef.current.disks.forEach(d => {
-          const disp = deltaResult.deltaC.get(d.id) || { x: 0, y: 0 };
-          theoreticalDisks.set(d.id, { x: d.center.x + disp.x, y: d.center.y + disp.y });
-        });
-
-        // Validate and Jump if constraints broken
-        csStateRef.current = transitionCSDiagramState(
-          csStateRef.current,
-          theoreticalDisks, // Apply our projection target (not actual mouse, strictly mapped)
-          lockedChiralities,
-          diskSequence
-        );
-      } else {
-        // Forced Jump due to unsolvable matrix (e.g. overlapping disks)
-        csStateRef.current = transitionCSDiagramState(
-          csStateRef.current,
-          currentDisksMap,
-          lockedChiralities,
-          diskSequence
-        );
-      }
-
-      // Sync refs
-      prevDisksRef.current = currentDisksMap;
-
-      // Build output path from rigorous state
-      const strictPath = convertStateToPath(csStateRef.current);
-
-      if (strictPath && strictPath.length > 0) {
-        const parsedAnchors: { x: number; y: number }[] = [];
-        strictPath.forEach(s => {
-          if (s.type === 'ARC') {
-            const a = s as ArcSegment;
-            parsedAnchors.push({ x: a.center.x + a.radius * Math.cos(a.startAngle), y: a.center.y + a.radius * Math.sin(a.startAngle) });
-          }
-        });
-        if (parsedAnchors.length === diskSequence.length) {
-          activeAnchors = parsedAnchors;
-        }
-
-        // Return bypassing legacy pathing
-        return {
-          path: strictPath,
-          chiralities: lockedChiralities,
-          dubinsPaths: [], // To be populated or rely directly on strict
-        };
-      }
-    }
-
-    // A. Legacy Base Path (for initial construction and stable states)
-    // Uses the DYNAMICALLY updated positions or just points
-    const legacyResult = findEnvelopePathFromPoints(activeAnchors, contactDisks);
-
-    // [CS PROTOCOL] Snapshot — SOLO si el path tiene discos reales (no puntos libres)
-    // findEnvelopePathFromPoints genera segmentos con sentinel IDs ('start','end','point')
-    // que no corresponden a discos en state.disks → createMathematicalStateFromPath falla.
-    const pathHasRealDisks = legacyResult.path.some((seg: any) => {
-      if (seg.type === 'ARC') return diskSequence.includes(seg.diskId);
-      return (
-        seg.startDiskId != null &&
-        seg.endDiskId != null &&
-        diskSequence.includes(seg.startDiskId) &&
-        diskSequence.includes(seg.endDiskId)
-      );
+    Logger.debug('KnotState', 'Computing path from anchors', {
+      anchorCount: activeAnchors.length,
+      diskSeq: diskSequence,
+      isDragging,
+      usingElastic: isDragging,
     });
 
-    if (!isDragging && legacyResult.path.length > 0 && diskSequence.length > 1 && pathHasRealDisks) {
-      const dMap = new Map<string, any>();
-      contactDisks.forEach(d => dMap.set(d.id, d));
-      const strictState = createMathematicalStateFromPath(legacyResult.path, dMap, diskSequence);
-      if (strictState) {
-        csStateRef.current = strictState;
-        contactDisks.forEach(d => prevDisksRef.current.set(d.id, d.center));
-      }
-    }
+    // Primary path computation: connect anchor points via collision-free routes
+    const result = findEnvelopePathFromPoints(activeAnchors, contactDisks);
 
-    // B. Flexible Dubins Path (for rendering)
-    // We need chiralities that match the "Natural" path found by the legacy solver.
-    // If we just use default 'L', we might force a loop where a crossing was intended.
-
-    const derivedChiralities = new Map<string, 'L' | 'R'>();
-
-    legacyResult.path.forEach((seg) => {
-      // Type assertion to handle 'type' discriminator safely
-      const s = seg as any;
-      if (s.type === 'ARC') {
-        if (s.diskId && !derivedChiralities.has(s.diskId)) {
-          derivedChiralities.set(s.diskId, s.chirality);
-        }
-      } else if (['LSL', 'LSR', 'RSL', 'RSR'].includes(s.type)) {
-        // Tangent Segment
-        const type = s.type as string; // e.g. 'LSL'
-        if (s.startDiskId && s.startDiskId !== 'point' && s.startDiskId !== 'start' && !derivedChiralities.has(s.startDiskId)) {
-          derivedChiralities.set(s.startDiskId, type.charAt(0) as 'L' | 'R');
-        }
-        if (s.endDiskId && s.endDiskId !== 'point' && s.endDiskId !== 'end' && !derivedChiralities.has(s.endDiskId)) {
-          derivedChiralities.set(s.endDiskId, type.charAt(2) as 'L' | 'R');
-        }
-      } else if (s.type.startsWith('PTD-')) {
-        const type = s.type as string;
-        if (s.endDiskId && s.endDiskId !== 'point' && s.endDiskId !== 'end' && !derivedChiralities.has(s.endDiskId)) {
-          derivedChiralities.set(s.endDiskId, type.charAt(4) as 'L' | 'R');
-        }
-      } else if (s.type.startsWith('DTP-')) {
-        const type = s.type as string;
-        if (s.startDiskId && s.startDiskId !== 'point' && s.startDiskId !== 'start' && !derivedChiralities.has(s.startDiskId)) {
-          derivedChiralities.set(s.startDiskId, type.charAt(4) as 'L' | 'R');
-        }
-      }
-    });
-
-    let dubinsPaths: DubinsPath[] = [];
-
-    let fullChiralities: ('L' | 'R')[] = [];
-
-    // Always compute Dubins to prevent visual glitches/tangles (Image 2) during drag
-    if (diskSequence.length >= 2) {
-      const calculator = new EnvelopePathCalculator();
-
-      if (isDragging && lockedChiralities.length === diskSequence.length) {
-        fullChiralities = lockedChiralities;
-      } else {
-        // Use STATE chiralities if valid
-        fullChiralities = diskSequence.map((id, i) => {
-          // Priority: Derived (Geometry) > State (User Override) > Default 'L'
-          if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
-          if (chiralities.length === diskSequence.length) return chiralities[i];
-          return 'L';
-        });
-      }
-
-      // Create a mapped array of CSDisks with the overwritten radius for Dubins
-      const mathDisks: CSDisk[] = contactDisks.map(d => {
-        const original = blocks.find(b => b.id === d.id);
-        return {
-          ...(original as CSDisk),
-          visualRadius: d.radius, // Pass the mathematically exact radius
-        };
+    if (result.path.length === 0) {
+      Logger.warn('KnotState', 'findEnvelopePathFromPoints returned empty path', {
+        anchors: activeAnchors.map((a, i) => ({
+          i,
+          x: a.x.toFixed(2),
+          y: a.y.toFixed(2),
+          disk: anchorSequence[i]?.diskId || '?',
+        })),
+        obstacles: contactDisks.map(d => ({ id: d.id, cx: d.center.x.toFixed(2), cy: d.center.y.toFixed(2), r: d.radius.toFixed(2) })),
       });
-
-      dubinsPaths = calculator.calculateKnotPath(
-        mathDisks,
-        diskSequence,
-        fullChiralities,
-        true, // Closed
-      );
+    } else {
+      Logger.debug('KnotState', 'Path computed successfully', {
+        segments: result.path.length,
+        types: result.path.map((s: any) => s.type),
+      });
     }
 
-    Logger.debug('KnotState', 'Computed Flexible Envelope', {
-      legacyLen: legacyResult.path.length,
-      dubinsLen: dubinsPaths.length,
+    // Derive chiralities from path segments
+    const derivedChiralities: ('L' | 'R')[] = diskSequence.map(() => 'L');
+    result.path.forEach((seg: any) => {
+      if (seg.type === 'ARC' && seg.diskId) {
+        const idx = diskSequence.indexOf(seg.diskId);
+        if (idx >= 0) derivedChiralities[idx] = seg.chirality;
+      }
     });
 
     return {
-      path: legacyResult.path,
-      chiralities: fullChiralities,
-      dubinsPaths
+      path: result.path,
+      chiralities: derivedChiralities,
+      dubinsPaths: [],
     };
-  }, [currentAnchors, contactDisks, blocks, diskSequence, chiralities, isDragging, lockedChiralities]);
+  }, [currentAnchors, contactDisks, diskSequence, anchorSequence]);
 
   const prevDraggingRef = useRef(isDragging);
   const lastElasticPathRef = useRef<EnvelopeSegment[]>([]);
@@ -452,7 +274,12 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
         return;
       }
 
-      const elasticResult = findEnvelopePath(graph, diskSequence, undefined, false);
+      const uniqueDiskSequence: string[] = [];
+      diskSequence.forEach((id, i) => {
+        if (i === 0 || id !== diskSequence[i - 1]) uniqueDiskSequence.push(id);
+      });
+
+      const elasticResult = findEnvelopePath(graph, uniqueDiskSequence, undefined, false);
 
       if (elasticResult.path.length === 0) {
         Logger.error('KnotState', 'Auto-Correction Failed: Elastic Solver found no path');
@@ -533,14 +360,19 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
   // envelopePath = knotPath + closing segment (from last anchor to first)
   // this ensures the saved envelope is a closed loop, while the drawing UI remains open
   const envelopePath = useMemo(() => {
-    if (knotPath.length === 0 || currentAnchors.length < 3) return knotPath; // Need at least 3 points to form a non-trivial loop
+    if (knotPath.length === 0 || currentAnchors.length < 3) return knotPath;
 
     const lastAnchor = currentAnchors[currentAnchors.length - 1];
     const firstAnchor = currentAnchors[0];
 
     // Compute closing segment
-    // We use the same finding logic as the main path
     const closingResult = findEnvelopePathFromPoints([lastAnchor, firstAnchor], contactDisks);
+
+    Logger.debug('KnotState', 'Closing segment', {
+      from: `(${lastAnchor.x.toFixed(2)},${lastAnchor.y.toFixed(2)})`,
+      to: `(${firstAnchor.x.toFixed(2)},${firstAnchor.y.toFixed(2)})`,
+      segments: closingResult.path.length,
+    });
 
     if (closingResult.path.length > 0) {
       return [...knotPath, ...closingResult.path];

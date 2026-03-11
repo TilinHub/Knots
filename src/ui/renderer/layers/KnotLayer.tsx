@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 
-import type { ArcSegment, EnvelopeSegment, TangentSegment } from '../../../core/geometry/envelope/contactGraph'; // Correct import?
+import type { EnvelopeSegment } from '../../../core/geometry/envelope/contactGraph';
 import type { CSDisk } from '../../../core/types/cs';
-import { KnotEnvelopeComputer } from '../../../features/knot/logic/KnotEnvelopeComputer';
 import type { LayerProps } from '../types/Layer';
 import { BaseLayer } from './BaseLayer';
 import { PathLayer } from './PathLayer';
@@ -104,32 +103,22 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
 
   const disks = useMemo(() => blocks.filter((b): b is CSDisk => b.kind === 'disk'), [blocks]);
 
-  // 1. Compute Knot Envelope (Robust Hull OR Elastic Band)
-  const computer = useMemo(() => new KnotEnvelopeComputer(), []);
-  const knotEnvelopePath = useMemo(() => {
-    if (!showEnvelope || disks.length === 0) return [];
-    if (!knotMode) return [];
-
-    // Use the new topology-aware compute
-    return computer.compute(disks, { sequence: knotSequence, chiralities: knotChiralities });
-  }, [disks, showEnvelope, computer, knotMode, knotSequence, knotChiralities]);
-
   return (
     <BaseLayer visible={visible} zIndex={10}>
       <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-        {/* Robust Envelope (Active) - Only in Knot Mode */}
-        {showEnvelope && knotMode && (
+        {/* Envelope (from knotPath which respects user anchors) - Only in Knot Mode */}
+        {showEnvelope && knotMode && knotPath && knotPath.length > 0 && (
           <>
             {/* Fill */}
             <path
-              d={segmentsToPath(knotEnvelopePath)}
+              d={segmentsToPath(knotPath)}
               fill={envelopeColor || '#5CA0D3'}
               fillOpacity={0.1}
               stroke="none"
-              style={{ pointerEvents: 'none' }} // Let clicks pass through
+              style={{ pointerEvents: 'none' }}
             />
             {/* Stroke */}
-            <PathLayer path={knotEnvelopePath} color={envelopeColor || '#5CA0D3'} width={2} />
+            <PathLayer path={knotPath} color={envelopeColor || '#5CA0D3'} width={2} />
           </>
         )}
 
@@ -146,8 +135,10 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
           />
         ))}
 
-        {/* Active Knot Path - Only in Knot Mode */}
-        {knotMode && <PathLayer path={knotPath} color="#FF0000" width={2} />}
+        {/* Active Knot Construction Path - Always visible in Knot Mode */}
+        {knotMode && knotPath && knotPath.length > 0 && (
+          <PathLayer path={knotPath} color="#FF0000" width={3} />
+        )}
 
         {/* Debug Anchors */}
         {anchorPoints &&

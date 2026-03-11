@@ -66,13 +66,26 @@ export interface Edge {
   crossingId?: string;
 }
 
+// Punto en memoria del envolvente
+export interface EnvelopePoint {
+  id: string;
+  diskId: string;      // Which disk this point lives on
+  position: Point2D;   // Absolute world position
+  angle: number;       // Angle from disk center (radians), for geometric validation only
+  prev: string | null; // ID of previous EnvelopePoint in traversal order (null = first)
+  next: string | null; // ID of next EnvelopePoint in traversal order (null = last)
+  segmentId: string;   // Which envelope segment this point belongs to
+}
+
 // Disco en region
 export interface Disk {
   id: string;
   regionId: string;
   center: Point2D;
   radius: number;
-  contacts: string[];
+  /** @deprecated Use envelopePoints instead */
+  contacts?: string[];
+  envelopePoints: EnvelopePoint[];
   metadata?: {
     genus: number;
     attachmentPoints?: Point2D[];

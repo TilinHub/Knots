@@ -99,6 +99,7 @@ function findSubPathGraph(
   obstacles: ContactDisk[],
   graph: BoundedCurvatureGraph,
   diskMap: Map<string, ContactDisk>,
+  forbiddenDiskIds: Set<string> = new Set(),
 ): EnvelopeSegment[] | null {
   const getPointToDiskTangents = (
     p: Point2D,
@@ -247,6 +248,7 @@ function findSubPathGraph(
       const edges = graph.edges.filter((e) => e.startDiskId === curr.diskId);
       for (const edge of edges) {
         const nextId = edge.endDiskId;
+        if (forbiddenDiskIds.has(nextId)) continue; // Skip forbidden intermediate disks
         const nextDisk = diskMap.get(nextId);
         if (!nextDisk) continue;
 
@@ -311,6 +313,12 @@ export function findEnvelopePathFromPoints(
   // [FIX] outerTangentsOnly = FALSE (Internal tangents allowed for crossings)
   const graph = buildBoundedCurvatureGraph(obstacles, true, [], false);
 
+  Logger.debug('PointPathSearch', 'findEnvelopePathFromPoints starting', {
+    anchors: anchors.length,
+    obstacles: obstacles.length,
+    graphEdges: graph.edges.length,
+  });
+
   for (let i = 0; i < anchors.length - 1; i++) {
     const start = anchors[i];
     const end = anchors[i + 1];
@@ -368,9 +376,11 @@ export function findEnvelopePathFromPoints(
     // Candidate B: DIRECT LINE
     const dist = Math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2);
     let lineBlocked = false;
+    let blockReason = '';
 
     // 1. Check Collisions with OTHER disks
     lineBlocked = intersectsAnyDiskStrict(start, end, obstacles, startDisk?.id, endDisk?.id);
+    if (lineBlocked) blockReason = 'intersects-other-disk';
 
     // 2. Check Valid Departure (Normal check)
     if (!lineBlocked && dist > 1e-6) {
@@ -386,14 +396,14 @@ export function findEnvelopePathFromPoints(
           const nx = (start.x - startDisk.center.x) / startDisk.radius;
           const ny = (start.y - startDisk.center.y) / startDisk.radius;
           // Must go OUT or TANGENT
-          if (nx * dirX + ny * dirY < -0.01) lineBlocked = true;
+          if (nx * dirX + ny * dirY < -0.01) { lineBlocked = true; blockReason = `departure-inward(dot=${(nx * dirX + ny * dirY).toFixed(3)})`; }
         }
 
         if (endDisk && !lineBlocked) {
           const nx = (end.x - endDisk.center.x) / endDisk.radius;
           const ny = (end.y - endDisk.center.y) / endDisk.radius;
           // Must arrive from OUTSIDE
-          if (nx * dirX + ny * dirY > 0.01) lineBlocked = true;
+          if (nx * dirX + ny * dirY > 0.01) { lineBlocked = true; blockReason = `arrival-inward(dot=${(nx * dirX + ny * dirY).toFixed(3)})`; }
         }
       }
     }
@@ -455,7 +465,23 @@ export function findEnvelopePathFromPoints(
     }
 
     // Candidate C: GRAPH SEARCH
-    const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap);
+    // Build forbidden set: all anchor disk IDs EXCEPT this segment's start/end disks.
+    // This prevents graph search from routing through disks used as anchors elsewhere.
+    const forbiddenIds = new Set<string>();
+    for (let j = 0; j < anchors.length; j++) {
+      if (j === i || j === i + 1) continue; // Allow current segment's endpoints
+      const anchorDisk = findDisk(anchors[j]);
+      if (anchorDisk) forbiddenIds.add(anchorDisk.id);
+    }
+    // Also remove start/end disk IDs if they were added by other anchors on the same disk
+    if (startDisk) forbiddenIds.delete(startDisk.id);
+    if (endDisk) forbiddenIds.delete(endDisk.id);
+
+    Logger.debug('PointPathSearch', `Segment ${i}: forbidden intermediates`, {
+      forbidden: Array.from(forbiddenIds),
+    });
+
+    const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, forbiddenIds);
     if (graphPath) {
       const len = graphPath.reduce((sum, s) => sum + s.length, 0);
       candidates.push({
@@ -466,30 +492,53 @@ export function findEnvelopePathFromPoints(
 
     const best = chooseShortestValidPath(candidates);
 
+    Logger.debug('PointPathSearch', `Segment ${i}: ${startDisk?.id || 'pt'} → ${endDisk?.id || 'pt'}`, {
+      directBlocked: lineBlocked,
+      blockReason: blockReason || 'none',
+      candidates: candidates.length,
+      bestLen: best ? best.length.toFixed(2) : 'NONE',
+      bestTypes: best ? best.path.map((s: any) => s.type).join(',') : 'NONE',
+    });
+
     if (best) {
       fullPath.push(...best.path);
     } else {
-      // Fallback with dynamic type
-      const dirX = (end.x - start.x) / dist;
-      const dirY = (end.y - start.y) / dist;
-      let sT = 'L';
-      let eT = 'L';
-      if (startDisk)
-        sT =
-          (start.x - startDisk.center.x) * dirY - (start.y - startDisk.center.y) * dirX > 0
-            ? 'L'
-            : 'R'; // Simplified inline cross
-      if (endDisk)
-        eT = (end.x - endDisk.center.x) * dirY - (end.y - endDisk.center.y) * dirX > 0 ? 'L' : 'R';
+      // SAFETY CHECK: Never draw a line that passes through any disk.
+      // Check if the raw fallback line would intersect ANY disk (excluding start/end).
+      const rawLineBlocked = intersectsAnyDiskStrict(start, end, obstacles, startDisk?.id, endDisk?.id);
 
-      fullPath.push({
-        type: `${sT}S${eT}` as TangentType,
-        start,
-        end,
-        length: dist,
-        startDiskId: startDisk ? startDisk.id : 'point',
-        endDiskId: endDisk ? endDisk.id : 'point',
-      });
+      if (rawLineBlocked) {
+        // The fallback line would go through a disk — SKIP this segment entirely.
+        // A gap is physically more accurate than a line through a solid obstacle.
+        Logger.warn('PointPathSearch', `Segment ${i}: SKIPPED (all candidates failed, raw line blocked by disk)`, {
+          start: `(${start.x.toFixed(2)},${start.y.toFixed(2)})`,
+          end: `(${end.x.toFixed(2)},${end.y.toFixed(2)})`,
+          startDisk: startDisk?.id || 'none',
+          endDisk: endDisk?.id || 'none',
+        });
+      } else {
+        // Raw line doesn't cross any disk — safe to use as fallback
+        const dirX = (end.x - start.x) / dist;
+        const dirY = (end.y - start.y) / dist;
+        let sT = 'L';
+        let eT = 'L';
+        if (startDisk)
+          sT =
+            (start.x - startDisk.center.x) * dirY - (start.y - startDisk.center.y) * dirX > 0
+              ? 'L'
+              : 'R';
+        if (endDisk)
+          eT = (end.x - endDisk.center.x) * dirY - (end.y - endDisk.center.y) * dirX > 0 ? 'L' : 'R';
+
+        fullPath.push({
+          type: `${sT}S${eT}` as TangentType,
+          start,
+          end,
+          length: dist,
+          startDiskId: startDisk ? startDisk.id : 'point',
+          endDiskId: endDisk ? endDisk.id : 'point',
+        });
+      }
     }
   }
 

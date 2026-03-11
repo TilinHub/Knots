@@ -978,10 +978,7 @@ export function CSCanvas({
         knotSequence={knotSequence}
         knotChiralities={knotChiralities}
         anchorPoints={anchorPoints}
-        showEnvelope={
-          showEnvelope &&
-          (!knotState?.flexibleKnotPaths || knotState.flexibleKnotPaths.length === 0)
-        }
+        showEnvelope={showEnvelope}
         envelopeColor={envelopeColor}
         savedEnvelopeColor={savedEnvelopeColor}
         knotMode={knotMode}
@@ -990,27 +987,7 @@ export function CSCanvas({
         context={{ width, height }}
       />
 
-      {/* [NEW] Flexible Knot Envelope (Dubins) */}
-      {knotMode &&
-        knotState?.flexibleKnotPaths &&
-        knotState.flexibleKnotPaths.length > 0 &&
-        showEnvelope && (
-          <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
-            <DubinsRenderer
-              paths={knotState.flexibleKnotPaths}
-              // Use same color as envelope? DubinsRenderer uses path type colors by default usually?
-              // If DubinsRenderer doesn't accept color override, we might need to style it.
-              // But DubinsRenderer usually renders based on Type.
-              // Wait, Knot Envelope should be uniform color (e.g. Blue/Orange).
-              // Let's see if DubinsRenderer accepts visual override.
-              // Typically it uses standard colors.
-              // If the user wants "Envelope Color", we might need to modify DubinsRenderer or wrap it.
-              // For now, let's just render it. The "Orange" lines in screenshot suggest default or specific styling.
-              overrideColor={envelopeColor}
-              width={4} // Thicker for envelope
-            />
-          </g>
-        )}
+      {/* [NEW] Flexible Knot Envelope (Dubins) REMOVED - using rigorous topological KnotLayer renderer instead */}
 
       {/* ROLLING MODE PATH (Flexible Envelope) [NEW] */}
       {rollingMode && currentPath && (

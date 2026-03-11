@@ -2,6 +2,8 @@ import { Logger } from '../../app/Logger';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, ArcSegment } from '../geometry/envelope/contactGraph';
+import type { EnvelopePoint } from '../types/knot';
+
 export type EnvelopePathResult = {
   path: EnvelopeSegment[];
   chiralities: ('L' | 'R')[];
@@ -36,14 +38,228 @@ export function calcShortArc(
   return lLen <= rLen ? { length: lLen, chirality: 'L' } : { length: rLen, chirality: 'R' };
 }
 
-// Original Viterbi-based pathfinder for disk sequences (used by saved knots).
+// -------------------------------------------------------------------------------------------------
+// Helper: match points with small tolerance to avoid strict float equality issues
+function matchPoint(p1: Point2D | undefined, p2: Point2D | undefined): boolean {
+  if (!p1 || !p2) return false;
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return dx * dx + dy * dy < 1e-6; // ~0.001 distance squared
+}
+
+/**
+ * Given an ordered array of EnvelopePoints (in draw order),
+ * assigns prev/next links to form a doubly-linked chain.
+ * Does NOT create a cycle — first.prev = null, last.next = null.
+ * Returns a new array (immutable input).
+ */
+export function buildEnvelopeChain(points: EnvelopePoint[]): EnvelopePoint[] {
+  if (!points || points.length === 0) return [];
+  return points.map((p, i) => ({
+    ...p,
+    prev: i > 0 ? points[i - 1].id : null,
+    next: i < points.length - 1 ? points[i + 1].id : null,
+  }));
+}
+
+// -------------------------------------------------------------------------------------------------
+// Unified Entry Point
 export function findEnvelopePath(
   graph: BoundedCurvatureGraph,
   diskIds: string[],
   fixedChiralities?: ('L' | 'R')[],
   strictChirality: boolean = true,
 ): EnvelopePathResult {
-  Logger.debug('ContactGraph', 'Finding Envelope Path', {
+  // Check if we have sequential memory (all disks must have envelopePoints)
+  const hasEnvelopePoints = diskIds.every(id => {
+    const d = graph.nodes.get(id) as ContactDisk & { envelopePoints?: EnvelopePoint[] };
+    return d && d.envelopePoints && d.envelopePoints.length > 0;
+  });
+
+  if (hasEnvelopePoints) {
+    return findEnvelopePathWithMemory(graph, diskIds, fixedChiralities, strictChirality);
+  } else {
+    return findEnvelopePathLegacy(graph, diskIds, fixedChiralities, strictChirality);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+// New algorithm using EnvelopePoint sequential memory
+function findEnvelopePathWithMemory(
+  graph: BoundedCurvatureGraph,
+  diskIds: string[],
+  fixedChiralities?: ('L' | 'R')[],
+  strictChirality: boolean = true,
+): EnvelopePathResult {
+  Logger.debug('ContactGraph', 'Finding Envelope Path (With Memory)', { diskIds, fixedChiralities, strictChirality });
+  if (diskIds.length < 2) return { path: [], chiralities: [] };
+
+  const CHIRALITY_MISMATCH_PENALTY = 10000;
+
+  // dp[arrivalId] = { cost, path, angle, arrivalChirality }
+  // At step = 0, we don't have an arrival point, we use 'START'.
+  type DPEntry = { cost: number; path: EnvelopeSegment[]; angle: number; arrivalChirality?: 'L' | 'R' };
+  let prev = new Map<string, DPEntry>();
+  prev.set('START', { cost: 0, path: [], angle: 0 });
+
+  for (let step = 1; step < diskIds.length; step++) {
+    const fromDiskId = diskIds[step - 1];
+    const toDiskId = diskIds[step];
+    const fromDisk = graph.nodes.get(fromDiskId) as ContactDisk & { envelopePoints?: EnvelopePoint[] };
+    const toDisk = graph.nodes.get(toDiskId) as ContactDisk & { envelopePoints?: EnvelopePoint[] };
+    
+    if (!fromDisk || !toDisk || !fromDisk.envelopePoints || !toDisk.envelopePoints) continue;
+
+    const next = new Map<string, DPEntry>();
+
+    for (const [arrId, prevEntry] of prev.entries()) {
+      let validQs: EnvelopePoint[] = [];
+
+      if (arrId === 'START') {
+        // At the very first disk, we assume all envelope points are valid potential departure points
+        validQs = fromDisk.envelopePoints;
+      } else {
+        // Arrived at P, the only valid departure is P.next
+        const P = fromDisk.envelopePoints.find(ep => ep.id === arrId);
+        if (P && P.next) {
+          const Q = fromDisk.envelopePoints.find(ep => ep.id === P.next);
+          if (Q) validQs.push(Q);
+        }
+      }
+
+      for (const Q of validQs) {
+        // Find edges STARTING at the designated departure point Q
+        let matchingEdges = graph.edges.filter(
+          (e) =>
+            e.startDiskId === fromDiskId &&
+            e.endDiskId === toDiskId &&
+            matchPoint(e.start, Q.position)
+        );
+
+        // Fallback for reversed edges (common in undirected graphs)
+        if (matchingEdges.length === 0) {
+          matchingEdges = graph.edges
+            .filter(
+              (e) =>
+                e.startDiskId === toDiskId &&
+                e.endDiskId === fromDiskId &&
+                matchPoint(e.end, Q.position)
+            )
+            .map((e) => ({
+              ...e,
+              start: e.end,
+              end: e.start,
+              startDiskId: e.endDiskId,
+              endDiskId: e.startDiskId,
+            }));
+        }
+
+        for (const edge of matchingEdges) {
+          // Identify traversal chiralities based on tangent type
+          const fromChir = edge.type.charAt(0) === 'L' ? 'L' : 'R';
+          const toChir = edge.type.charAt(edge.type.length - 1) === 'L' ? 'L' : 'R';
+          
+          // Legacy support: Add mismatch penalty if fixedChiralities constrain us 
+          // (though memory-based should ideally ignore this)
+          let arrivalPenalty = 0;
+          if (fixedChiralities && fixedChiralities[step] && fixedChiralities[step] !== toChir) {
+            if (strictChirality) continue;
+            arrivalPenalty = CHIRALITY_MISMATCH_PENALTY;
+          }
+
+          const depAngle = Math.atan2(edge.start.y - fromDisk.center.y, edge.start.x - fromDisk.center.x);
+          const arcLen = step > 1 ? calcArc(fromDisk, prevEntry.angle, depAngle, fromChir) : 0;
+
+          const totalCost = prevEntry.cost + arcLen + edge.length + arrivalPenalty;
+          
+          // Find the new arrival state on the target disk
+          const R = toDisk.envelopePoints.find(ep => matchPoint(ep.position, edge.end));
+          if (!R) continue;
+
+          // Select best path to R
+          const existingNext = next.get(R.id);
+          if (!existingNext || totalCost < existingNext.cost) {
+            const newPath = [...prevEntry.path];
+            if (arcLen > 1e-4 && step > 1) {
+              newPath.push({
+                type: 'ARC',
+                center: fromDisk.center,
+                radius: fromDisk.radius,
+                startAngle: prevEntry.angle,
+                endAngle: depAngle,
+                chirality: fromChir,
+                length: arcLen,
+                diskId: fromDiskId,
+              });
+            }
+            newPath.push(edge);
+            
+            next.set(R.id, {
+              cost: totalCost,
+              path: newPath,
+              angle: Math.atan2(edge.end.y - toDisk.center.y, edge.end.x - toDisk.center.x),
+              arrivalChirality: toChir
+            });
+          }
+        }
+      }
+    }
+    prev = next;
+  }
+
+  // Pick best final state
+  let bestFinal: DPEntry | null = null;
+  for (const entry of prev.values()) {
+    if (!bestFinal || entry.cost < bestFinal.cost) bestFinal = entry;
+  }
+
+  if (!bestFinal) return { path: [], chiralities: [] };
+
+  // Continuity logic for closed sequences
+  if (diskIds.length > 2 && diskIds[0] === diskIds[diskIds.length - 1]) {
+    const firstDiskId = diskIds[0];
+    const firstDisk = graph.nodes.get(firstDiskId) as ContactDisk & { envelopePoints?: EnvelopePoint[] };
+    const firstTangent = bestFinal.path.find(s => s.type !== 'ARC' && s.startDiskId === firstDiskId) as TangentSegment | undefined;
+
+    if (firstDisk && firstTangent) {
+      const depAngle = Math.atan2(firstTangent.start.y - firstDisk.center.y, firstTangent.start.x - firstDisk.center.x);
+      const arrAngle = bestFinal.angle;
+      let firstChir: 'L' | 'R' = 'L';
+      if (firstTangent.type.startsWith('R')) firstChir = 'R';
+      
+      const closingArcLen = calcArc(firstDisk, arrAngle, depAngle, firstChir);
+      
+      if (closingArcLen > 1e-4) {
+        bestFinal.path.push({
+          type: 'ARC',
+          center: firstDisk.center,
+          radius: firstDisk.radius,
+          startAngle: arrAngle,
+          endAngle: depAngle,
+          chirality: firstChir,
+          length: closingArcLen,
+          diskId: firstDiskId,
+        });
+      }
+    }
+  }
+
+  Logger.debug('ContactGraph', 'Envelope Path Found (Memory)', {
+    cost: bestFinal.cost,
+    pathLength: bestFinal.path.length,
+  });
+  return { path: bestFinal.path, chiralities: [] };
+}
+
+// -------------------------------------------------------------------------------------------------
+// Original Viterbi-based pathfinder (fallback for old saves without envelopePoints)
+function findEnvelopePathLegacy(
+  graph: BoundedCurvatureGraph,
+  diskIds: string[],
+  fixedChiralities?: ('L' | 'R')[],
+  strictChirality: boolean = true,
+): EnvelopePathResult {
+  Logger.debug('ContactGraph', 'Finding Envelope Path (Legacy)', {
     diskIds,
     fixedChiralities,
     strictChirality,
@@ -53,22 +269,25 @@ export function findEnvelopePath(
   const states: ('L' | 'R')[] = ['L', 'R'];
   const CHIRALITY_MISMATCH_PENALTY = 10000;
 
+  // Compute a geometry-proportional chirality penalty: prefer a chirality flip
+  // over wrapping more than ~180° around any disk.
+  let maxR = 1;
+  graph.nodes.forEach(d => { if (d.radius > maxR) maxR = d.radius; });
+  const DYNAMIC_CHIRALITY_PENALTY = Math.PI * maxR * 1.5;
+
   // dp[chirality] = { cost, path, angle }
   type DPEntry = { cost: number; path: EnvelopeSegment[]; angle: number };
   let prev = new Map<string, DPEntry>();
 
   // Initialize: Start with both chiralities at first disk, cost 0
   states.forEach((s) => {
-    // If strict and mismatch, skip (unless strict=false, then penalty)
     if (fixedChiralities && fixedChiralities[0] && fixedChiralities[0] !== s) {
       if (strictChirality) return;
-      prev.set(s, { cost: CHIRALITY_MISMATCH_PENALTY, path: [], angle: 0 });
+      prev.set(s, { cost: DYNAMIC_CHIRALITY_PENALTY, path: [], angle: 0 });
     } else {
       prev.set(s, { cost: 0, path: [], angle: 0 });
     }
   });
-
-  const chirResult: ('L' | 'R')[] = [];
 
   for (let step = 1; step < diskIds.length; step++) {
     const fromDiskId = diskIds[step - 1];
@@ -78,8 +297,6 @@ export function findEnvelopePath(
     if (!fromDisk || !toDisk) continue;
 
     const next = new Map<string, DPEntry>();
-
-    // Soft Constraint: Iterate ALL states, apply penalty if mismatch
     const possibleStates = states;
 
     for (const toChir of possibleStates) {
@@ -87,11 +304,10 @@ export function findEnvelopePath(
       let bestPath: EnvelopeSegment[] = [];
       let bestAngle = 0;
 
-      // Penalty for Arriving State Mismatch
       let arrivalPenalty = 0;
       if (fixedChiralities && fixedChiralities[step] && fixedChiralities[step] !== toChir) {
-        if (strictChirality) continue; // Skip in strict mode
-        arrivalPenalty = CHIRALITY_MISMATCH_PENALTY;
+        if (strictChirality) continue;
+        arrivalPenalty = DYNAMIC_CHIRALITY_PENALTY;
       }
 
       for (const fromChir of possibleStates) {
@@ -99,7 +315,6 @@ export function findEnvelopePath(
         if (!prevEntry) continue;
         if (prevEntry.cost === Infinity) continue;
 
-        // Buscar aristas con chirality exacta (fromChir -> toChir)
         let matchingEdges = graph.edges.filter(
           (e) =>
             e.startDiskId === fromDiskId &&
@@ -108,14 +323,12 @@ export function findEnvelopePath(
             e.type.endsWith(toChir),
         );
 
-        // Fallback 1: Si no hay arista exacta y modo no-estricto, usar cualquier arista entre esos discos
         if (matchingEdges.length === 0 && !strictChirality) {
           matchingEdges = graph.edges.filter(
             (e) => e.startDiskId === fromDiskId && e.endDiskId === toDiskId,
           );
         }
 
-        // Fallback 2: Buscar en dirección inversa y revertir (el grafo puede tener solo una dirección)
         if (matchingEdges.length === 0) {
           matchingEdges = graph.edges
             .filter(
@@ -137,7 +350,6 @@ export function findEnvelopePath(
         const allEdges = matchingEdges;
 
         for (const edge of allEdges) {
-          // Arc on departure disk
           const depAngle = Math.atan2(
             edge.start.y - fromDisk.center.y,
             edge.start.x - fromDisk.center.x,
@@ -171,11 +383,9 @@ export function findEnvelopePath(
         next.set(toChir, { cost: bestCost, path: bestPath, angle: bestAngle });
       }
     }
-
     prev = next;
   }
 
-  // Pick best final state
   let bestFinal: DPEntry | null = null;
   let bestChir: 'L' | 'R' = 'L';
   for (const s of states) {
@@ -187,17 +397,12 @@ export function findEnvelopePath(
   }
 
   if (!bestFinal) {
-    // Silenced 'No valid envelope path found' to prevent console spam
-    // during continuous EditorPage evaluation of constrained topologies.
     return { path: [], chiralities: [] };
   }
 
-  // [FIX FOR CONTINUITY: Add closing arc if closed sequence]
   if (diskIds.length > 2 && diskIds[0] === diskIds[diskIds.length - 1]) {
     const firstDiskId = diskIds[0];
     const firstDisk = graph.nodes.get(firstDiskId);
-
-    // Find the first tangent segment to get the departure angle
     const firstTangent = bestFinal.path.find(
       (s) => s.type !== 'ARC' && s.startDiskId === firstDiskId,
     ) as TangentSegment | undefined;
@@ -209,11 +414,8 @@ export function findEnvelopePath(
       );
       const arrAngle = bestFinal.angle;
 
-      // Infer starting chirality from the tangent type (e.g., 'RSR' -> 'R', 'LSL' -> 'L')
       let firstChir: 'L' | 'R' = 'L';
-      if (firstTangent.type.startsWith('R')) {
-        firstChir = 'R';
-      }
+      if (firstTangent.type.startsWith('R')) firstChir = 'R';
 
       const closingArcLen = calcArc(firstDisk, arrAngle, depAngle, firstChir);
 
