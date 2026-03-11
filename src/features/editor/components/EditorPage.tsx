@@ -23,6 +23,9 @@ import { CSCanvas } from './CSCanvas';
 import { useContactGraph } from '../hooks/useContactGraph';
 import { useEditorState } from '../hooks/useEditorState';
 import { usePersistentDubins } from '../hooks/usePersistentDubins';
+import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
+import { type AnalysisReport, analyzeDiagram } from '../../analysis/first_variation/analyzer';
+import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
 import { useRibbonMode } from '../../ribbon/logic/useRibbonMode';
 import { KnotGallery } from '../../gallery/components/KnotGallery';
 
@@ -49,6 +52,35 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   // New View Modes
   const [catalogMode, setCatalogMode] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'editor' | 'gallery'>('editor');
+  const [analysisReport, setAnalysisReport] = React.useState<AnalysisReport | null>(null);
+
+  const handleShowAnalysis = () => {
+    let sequenceToAnalyze = knotState.diskSequence;
+    let chiralitiesToAnalyze = knotState.chiralities;
+    let anchorSequenceToAnalyze = knotState.anchorSequence;
+    let frozenPathToAnalyze: any[] | undefined = undefined;
+
+    if (sequenceToAnalyze.length < 2 && editorState.savedKnots.length > 0) {
+      const lastKnot = editorState.savedKnots[editorState.savedKnots.length - 1];
+      sequenceToAnalyze = lastKnot.diskSequence;
+      chiralitiesToAnalyze = lastKnot.chiralities as any;
+      frozenPathToAnalyze = lastKnot.frozenPath;
+      anchorSequenceToAnalyze = [] as any;
+    }
+
+    const diagram = convertEditorToProtocol(
+      editorState.diskBlocks,
+      sequenceToAnalyze,
+      {
+        tolerance: 1e-4,
+        chiralities: chiralitiesToAnalyze,
+        anchorSequence: anchorSequenceToAnalyze,
+        frozenPath: frozenPathToAnalyze,
+      },
+    );
+    const report = analyzeDiagram(diagram);
+    setAnalysisReport(report);
+  };
 
   // Only pass disks to knot state for graph building
   const diskBlocks = React.useMemo(
@@ -768,6 +800,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
         sidebarOpen={editorState.sidebarOpen}
         onToggleSidebar={() => editorActions.setSidebarOpen(!editorState.sidebarOpen)}
         onShowValidationDetails={() => editorActions.setShowValidation(true)}
+        onOpenAnalysis={handleShowAnalysis}
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -892,6 +925,21 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
             </button>
           </div>
         </div>
+      )}
+      {/* ANALYSIS RESULTS MODAL */}
+      {analysisReport && (
+        <AnalysisResultsPanel
+          counts={analysisReport.counts}
+          metrics={analysisReport.metrics}
+          combinatorial={analysisReport.combinatorial}
+          global={analysisReport.global}
+          matrices={analysisReport.matrices}
+          vectors={analysisReport.vectors}
+          gauge={analysisReport.gauge}
+          criticality={analysisReport.criticality}
+          quadratic={analysisReport.quadratic}
+          onClose={() => setAnalysisReport(null)}
+        />
       )}
     </div>
   );

@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 
 import { Button } from '../../../ui/components/Button';
-import { AnalysisResultsPanel } from '../../analysis/first_variation/AnalysisResultsPanel';
-import { type AnalysisReport, analyzeDiagram } from '../../analysis/first_variation/analyzer';
-import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
 import { ContactMatrixViewer } from '../../editor/components/ContactMatrixViewer';
 
 interface KnotPanelProps {
@@ -13,7 +10,6 @@ interface KnotPanelProps {
 }
 
 export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, actions }) => {
-  const [analysisReport, setAnalysisReport] = useState<AnalysisReport | null>(null);
 
   return (
     <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
@@ -118,39 +114,6 @@ export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, ac
         </Button>
       </div>
 
-      <div>
-        <Button
-          onClick={() => {
-            const diagram = convertEditorToProtocol(
-              editorState.diskBlocks,
-              knotState.diskSequence,
-              {
-                tolerance: 1e-4,
-                chiralities: knotState.chiralities,
-                anchorSequence: knotState.anchorSequence, // [NEW]
-              },
-            );
-            const report = analyzeDiagram(diagram);
-            setAnalysisReport(report);
-          }}
-          variant="secondary"
-          style={{
-            marginTop: '8px',
-            width: '100%',
-            borderColor: 'var(--accent-primary)',
-            color: 'var(--accent-primary)',
-          }}
-          disabled={knotState.diskSequence.length < 2}
-          title={
-            knotState.diskSequence.length < 2
-              ? 'Add more disks'
-              : 'Run Full Analysis (First & Second Variation)'
-          }
-        >
-          🔍 Analyze Diagram (Full Protocol)
-        </Button>
-      </div>
-
       {/* Matrix Viewer in Knot Mode */}
       {editorState.diskBlocks.length > 0 && (
         <div
@@ -158,22 +121,6 @@ export const KnotPanel: React.FC<KnotPanelProps> = ({ knotState, editorState, ac
         >
           <ContactMatrixViewer disks={editorState.diskBlocks} />
         </div>
-      )}
-
-      {/* ANALYSIS RESULTS MODAL */}
-      {analysisReport && (
-        <AnalysisResultsPanel
-          counts={analysisReport.counts}
-          metrics={analysisReport.metrics}
-          combinatorial={analysisReport.combinatorial}
-          global={analysisReport.global}
-          matrices={analysisReport.matrices}
-          vectors={analysisReport.vectors}
-          gauge={analysisReport.gauge}
-          criticality={analysisReport.criticality}
-          quadratic={analysisReport.quadratic}
-          onClose={() => setAnalysisReport(null)}
-        />
       )}
     </div>
   );

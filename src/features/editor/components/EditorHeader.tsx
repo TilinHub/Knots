@@ -51,6 +51,8 @@ interface EditorHeaderProps {
   onToggleTransparentDisks: () => void; // [NEW]
   // Gallery
   onOpenGallery?: () => void; // [NEW]
+  // Analysis
+  onOpenAnalysis?: () => void;
 }
 
 export const EditorHeader = ({
@@ -92,6 +94,7 @@ export const EditorHeader = ({
   transparentDisks,
   onToggleTransparentDisks,
   onOpenGallery,
+  onOpenAnalysis,
 }: EditorHeaderProps) => {
   const [showLengthDetails, setShowLengthDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -815,10 +818,34 @@ export const EditorHeader = ({
             cursor: 'pointer',
             fontSize: 'var(--fs-caption)',
             color: 'var(--text-secondary)',
+            height: '32px',
           }}
+          title="Toggle Sidebar"
         >
           {sidebarOpen ? '▶️' : '◀️'}
         </button>
+
+        {onOpenAnalysis && (
+          <button
+            onClick={onOpenAnalysis}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontStyle: 'italic',
+              fontWeight: 'bold',
+              color: 'var(--text-secondary)',
+              fontFamily: 'serif',
+              height: '32px',
+            }}
+            title="Analysis"
+          >
+            i
+          </button>
+        )}
       </div>
     </header>
   );
