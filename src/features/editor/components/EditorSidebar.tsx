@@ -424,6 +424,40 @@ export const EditorSidebar = ({
               <Button onClick={actions.addDisk} variant="secondary" style={{ fontSize: '12px' }}>
                 + Disk
               </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button
+                  onClick={() => {
+                    const lastDisk = editorState.diskBlocks[editorState.diskBlocks.length - 1];
+                    if (lastDisk) actions.deleteBlock(lastDisk.id);
+                  }}
+                  variant="secondary"
+                  style={{
+                    flex: 1,
+                    fontSize: '12px',
+                    borderColor: 'var(--accent-error)',
+                    color: 'var(--accent-error)',
+                  }}
+                  disabled={editorState.diskBlocks.length === 0}
+                >
+                  - Remove Disk
+                </Button>
+                <Button
+                  onClick={() => {
+                    const diskIds = editorState.diskBlocks.map(d => d.id);
+                    diskIds.forEach(id => actions.deleteBlock(id));
+                  }}
+                  variant="secondary"
+                  style={{
+                    flex: 1,
+                    fontSize: '12px',
+                    borderColor: 'var(--accent-error)',
+                    color: 'var(--accent-error)',
+                  }}
+                  disabled={editorState.diskBlocks.length === 0}
+                >
+                  Clear All
+                </Button>
+              </div>
             </div>
           </div>
         </>
