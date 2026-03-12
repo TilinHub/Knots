@@ -23,6 +23,7 @@ import type { CSDiagramState } from '../../../core/geometry/cs';
 import { createMathematicalStateFromPath, transitionCSDiagramState } from '../../../core/geometry/cs';
 import { solveCSDiagramDelta } from '../../../core/geometry/cs';
 import { convertStateToPath } from '../../../core/geometry/cs';
+import { computeSequenceEnvelope } from '../../../core/geometry/hull/sequenceHull';
 import type { Point2D } from '../../../core/types/cs';
 
 import type { UseKnotStateProps, DynamicAnchor } from '../types';
@@ -191,10 +192,32 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
         };
       }
 
-      Logger.warn('KnotState', 'Memory-based path returned empty, falling back to legacy');
+      Logger.warn('KnotState', 'Memory-based path returned empty, defaulting to SequenceHull mathematical resolution');
+
+      // 10. Fallback O(N) Topológico: Forzamos la secuencia explícitamente en lugar del grafo intersecado
+      const sequenceDisks = compressedSeq.map((id) => blocks.find((b) => b.id === id)).filter((b) => b?.kind === 'disk') as CSDisk[];
+
+      if (sequenceDisks.length === compressedSeq.length) {
+          const forcedPath = computeSequenceEnvelope(sequenceDisks, 'L', true);
+          if (forcedPath.length > 0) {
+              const derivedChiralities: ('L' | 'R')[] = diskSequence.map(() => 'L');
+              forcedPath.forEach((seg: any) => {
+                if (seg.type === 'ARC' && seg.diskId) {
+                  const idx = diskSequence.indexOf(seg.diskId);
+                  if (idx >= 0) derivedChiralities[idx] = seg.chirality;
+                }
+              });
+
+              return {
+                  path: forcedPath,
+                  chiralities: derivedChiralities,
+                  dubinsPaths: [],
+              };
+          }
+      }
     }
 
-    // --- FALLBACK: Legacy anchor-based pathfinding ---
+    // --- FALLBACK ULTRA-EMERGENCY: Legacy anchor-based pathfinding ---
     Logger.debug('KnotState', 'Using legacy findEnvelopePathFromPoints');
     const result = findEnvelopePathFromPoints(activeAnchors, contactDisks);
 

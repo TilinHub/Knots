@@ -2,6 +2,7 @@ import type { EnvelopeSegment } from '../../../core/geometry/envelope/contactGra
 import { buildBoundedCurvatureGraph, findEnvelopePath } from '../../../core/geometry/envelope/contactGraph';
 import type { EnvelopeComputer } from '../../../core/geometry/envelope/EnvelopeComputer';
 import { computeRobustConvexHull } from '../../../core/geometry/hull';
+import { computeSequenceEnvelope } from '../../../core/geometry/hull/sequenceHull';
 import type { CSDisk } from '../../../core/types/cs';
 
 /**
@@ -48,6 +49,17 @@ export class KnotEnvelopeComputer implements EnvelopeComputer {
           // console.warn("KnotEnvelope: Strict chirality failed, using relaxed elastic band");
           this.lastGoodEnvelope = relaxedResult.path;
           return relaxedResult.path;
+        }
+
+        // Si fallan ambos (muy común con winding loops extraños o cruces bruscos),
+        // forzamos el cálculo de secuencia ordenada puro de SPDD (bugfix).
+        const sequenceDisks = sequence.map((id: string) => disks.find(d => d.id === id)).filter(Boolean) as CSDisk[];
+        if (sequenceDisks.length === sequence.length) {
+            const seqHull = computeSequenceEnvelope(sequenceDisks, 'L', true);
+            if (seqHull.length > 0) {
+              this.lastGoodEnvelope = seqHull;
+              return seqHull;
+            }
         }
       } catch (e) {
         console.warn('KnotEnvelope: Elastic Band failed, falling back to Hull', e);
