@@ -1,41 +1,75 @@
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/ui/components/Button';
+import { Button } from '../../../ui/components/Button';
 import type { SavedKnot } from '../../editor/hooks/useEditorState';
 import { KnotThumbnail } from '../../catalog/components/KnotThumbnail';
 import { PRELOADED_KNOTS } from '../logic/preloaded';
+import knotTableImg from '../../../assets/knot_table.png';
 
 interface KnotGalleryProps {
     knots: SavedKnot[];
     onLoadKnot: (knot: SavedKnot) => void;
     onDeleteKnot: (id: string) => void;
-    onBack: () => void;
+    isSidebar?: boolean;
 }
 
 export const KnotGallery: React.FC<KnotGalleryProps> = ({
     knots,
     onLoadKnot,
     onDeleteKnot,
-    onBack,
+    isSidebar = false,
 }) => {
-    const [search, setSearch] = useState('');
-    const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
+    // Accordion state - default open '3 crossings'
+    const [expandedSection, setExpandedSection] = useState<string | null>('3 crossings');
+    
+    const toggleSection = (section: string) => {
+        setExpandedSection(prev => prev === section ? null : section);
+    };
 
-    const { standardKnots, userKnots } = useMemo(() => {
-        const searchLower = search.toLowerCase();
+    // Grouping logic
+    const sections = useMemo(() => {
+        // Combine preloaded and user knots
+        const allKnots = [...PRELOADED_KNOTS];
+        
+        // Add user knots that aren't already in PRELOADED
+        knots.forEach(k => {
+            if (!allKnots.some(p => p.id === k.id)) {
+                allKnots.push(k);
+            }
+        });
 
-        const filterFn = (k: SavedKnot) => k.name.toLowerCase().includes(searchLower);
-        const sortFn = (a: SavedKnot, b: SavedKnot) => {
-            if (sortBy === 'date') return (b.createdAt || 0) - (a.createdAt || 0);
-            return a.name.localeCompare(b.name);
+        // Initialize bins
+        const bins: Record<string, SavedKnot[]> = {
+            '3 crossings': [],
+            '4 crossings': [],
+            '5 crossings': [],
+            '6 crossings': [],
+            '7 crossings': [],
+            'Special Knots': [],
         };
 
-        return {
-            standardKnots: PRELOADED_KNOTS.filter(filterFn).sort(sortFn),
-            userKnots: knots.filter(k =>
-                !PRELOADED_KNOTS.some(p => p.id === k.id) && filterFn(k)
-            ).sort(sortFn),
-        };
-    }, [knots, search, sortBy]);
+        allKnots.forEach(knot => {
+            const count = knot.diskSequence.length;
+            if (count === 3) bins['3 crossings'].push(knot);
+            else if (count === 4) bins['4 crossings'].push(knot);
+            else if (count === 5) bins['5 crossings'].push(knot);
+            else if (count === 6) bins['6 crossings'].push(knot);
+            else if (count === 7) bins['7 crossings'].push(knot);
+            else {
+                // Not in 3-7 bins, place them in Special Knots
+                bins['Special Knots'].push(knot);
+            }
+        });
+
+        // Always return these ordered keys
+        return [
+            { label: '3 crossings', knots: bins['3 crossings'] },
+            { label: '4 crossings', knots: bins['4 crossings'] },
+            { label: '5 crossings', knots: bins['5 crossings'] },
+            { label: '6 crossings', knots: bins['6 crossings'] },
+            { label: '7 crossings', knots: bins['7 crossings'] },
+            { label: 'Special Knots', knots: bins['Special Knots'] },
+        ];
+    }, [knots]);
 
     return (
         <div style={{
@@ -45,187 +79,165 @@ export const KnotGallery: React.FC<KnotGalleryProps> = ({
             background: 'var(--bg-primary)',
             color: 'var(--text-primary)'
         }}>
-            {/* Header */}
-            <div style={{
-                padding: '24px 32px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
-                <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>Pro Knot Gallery</h1>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                        {knots.length} knots saved in your collection
-                    </p>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <div style={{ position: 'relative' }}>
-                        <input
-                            type="text"
-                            placeholder="Search knots..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            style={{
-                                padding: '8px 12px 8px 32px',
-                                borderRadius: '8px',
-                                border: '1px solid var(--border)',
-                                background: 'var(--bg-secondary)',
-                                fontSize: '14px',
-                                width: '240px'
-                            }}
-                        />
-                        <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+            {/* Header omitted when in sidebar */}
+            {!isSidebar && (
+                <div style={{
+                    padding: '24px 32px',
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <div>
+                        <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>Gallery</h1>
+                        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                            Browse knots categorized by crossing count
+                        </p>
                     </div>
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        style={{
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border)',
-                            background: 'var(--bg-secondary)',
-                            fontSize: '14px'
-                        }}
-                    >
-                        <option value="date">Newest First</option>
-                        <option value="name">Alphabetical</option>
-                    </select>
-                    <Button onClick={onBack} variant="secondary">Back to Editor</Button>
                 </div>
-            </div>
+            )}
 
-            {/* Grid Content */}
+            {/* Content Sidebar-like Layout */}
             <div style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '32px',
+                padding: isSidebar ? '16px' : '32px',
+                width: '100%',
+                maxWidth: isSidebar ? '100%' : '1200px', // constrain width for better UX
+                margin: '0 auto'
             }}>
-                {/* STANDARD LIBRARY */}
-                <SectionHeader title="📚 Standard Library" count={standardKnots.length} />
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: '24px',
-                    marginBottom: '48px'
-                }}>
-                    {standardKnots.map(knot => (
-                        <KnotCard
-                            key={knot.id}
-                            knot={knot}
-                            isSystem={true}
-                            onLoad={() => onLoadKnot(knot)}
-                            onDelete={() => onDeleteKnot(knot.id)}
-                        />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {sections.map(section => (
+                        <div
+                            key={section.label}
+                            style={{ background: 'var(--bg-secondary)', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}
+                        >
+                            <div
+                                onClick={() => toggleSection(section.label)}
+                                style={{
+                                    padding: '16px 20px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    fontSize: '16px',
+                                    fontWeight: '600',
+                                    userSelect: 'none',
+                                    background: expandedSection === section.label ? 'rgba(0,0,0,0.02)' : 'transparent',
+                                }}
+                            >
+                                <span>{section.label}</span>
+                                <span style={{ fontSize: '14px', opacity: 0.6, background: 'var(--bg-tertiary)', padding: '2px 8px', borderRadius: '12px' }}>
+                                    {section.knots.length}
+                                </span>
+                            </div>
+
+                            {expandedSection === section.label && (
+                                <div style={{ padding: '16px', borderTop: '1px solid var(--border)' }}>
+                                    {section.knots.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-tertiary)', fontSize: '13px' }}>
+                                            No knots yet for this category.
+                                        </div>
+                                    ) : (
+                                        <div style={{ 
+                                            display: 'grid', 
+                                            // Make grid more compact like Contact Graphs
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+                                            gap: '12px' 
+                                        }}>
+                                            {section.knots.map((knot, idx) => (
+                                                <GalleryItem
+                                                    key={knot.id || idx}
+                                                    knot={knot}
+                                                    isUserKnot={!PRELOADED_KNOTS.some(p => p.id === knot.id)}
+                                                    onLoad={() => onLoadKnot(knot)}
+                                                    onDelete={() => onDeleteKnot(knot.id)}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </div>
-
-                {/* USER COLLECTION */}
-                <SectionHeader title="👤 My Collection" count={userKnots.length} />
-                {userKnots.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)', border: '1px dashed var(--border)', borderRadius: '12px' }}>
-                        <p>No user knots saved yet. Use "Save Envelope" in the editor.</p>
-                    </div>
-                ) : (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                        gap: '24px'
-                    }}>
-                        {userKnots.map(knot => (
-                            <KnotCard
-                                key={knot.id}
-                                knot={knot}
-                                isSystem={false}
-                                onLoad={() => onLoadKnot(knot)}
-                                onDelete={() => onDeleteKnot(knot.id)}
-                            />
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );
 };
 
-const SectionHeader: React.FC<{ title: string; count: number }> = ({ title, count }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>{title}</h2>
-        <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '10px', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-            {count}
-        </span>
-    </div>
-);
-
-const KnotCard: React.FC<{ knot: SavedKnot; isSystem?: boolean; onLoad: () => void; onDelete: () => void }> = ({ knot, isSystem, onLoad, onDelete }) => {
-    const dateStr = knot.createdAt ? new Date(knot.createdAt).toLocaleDateString() : 'Unknown date';
-
+const GalleryItem: React.FC<{ knot: SavedKnot; isUserKnot: boolean; onLoad: () => void; onDelete: () => void }> = ({ knot, isUserKnot, onLoad, onDelete }) => {
     return (
-        <div className="knot-card" style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            flexDirection: 'column'
-        }}>
-            {/* Thumbnail Area */}
+        <div 
+            style={{
+                border: '1px solid var(--border)',
+                background: 'var(--bg-primary)',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'all 0.2s ease',
+                position: 'relative',
+                cursor: 'pointer'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+            onClick={onLoad}
+            title={knot.name}
+        >
+            {/* Thumbnail Area - Square aspect ratio */}
             <div style={{
-                height: '200px',
-                background: '#f8f9fa',
+                position: 'relative',
+                aspectRatio: '1',
+                width: '100%',
+                background: 'white',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderBottom: '1px solid var(--border)',
-                position: 'relative',
-                overflow: 'hidden'
+                borderBottom: '1px solid var(--border)' 
             }}>
-                <KnotThumbnail
-                    disks={knot.blocks.filter(b => b.kind === 'disk') as any}
-                    size={200}
-                    showEnvelope={true}
-                    diskSequence={knot.diskSequence}
-                    chiralities={knot.chiralities}
-                />
-                <div style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    background: knot.color || 'var(--accent-primary)',
-                    color: 'white',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase'
-                }}>
-                    {knot.diskSequence.length} Disks
-                </div>
+                {knot.spritePos ? (
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundImage: `url(${knotTableImg})`,
+                        backgroundSize: '500% 300%',
+                        backgroundPosition: knot.spritePos,
+                        backgroundRepeat: 'no-repeat',
+                    }} />
+                ) : (
+                    <KnotThumbnail
+                        disks={(knot.blocks || []).filter(b => b.kind === 'disk') as any}
+                        size={120}
+                        showEnvelope={true}
+                        diskSequence={knot.diskSequence}
+                        chiralities={knot.chiralities}
+                    />
+                )}
             </div>
 
             {/* Info Area */}
-            <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 600 }}>{knot.name}</h3>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-tertiary)' }}>{dateStr}</p>
-
-                <div style={{ marginTop: 'auto', paddingTop: '16px', display: 'flex', gap: '8px' }}>
-                    <Button onClick={onLoad} variant="primary" style={{ flex: 1, fontSize: '13px' }}>Load Nudo</Button>
-                    {!isSystem && (
-                        <Button
-                            onClick={onDelete}
-                            variant="secondary"
-                            style={{
-                                width: '40px',
-                                padding: 0,
-                                borderColor: 'var(--accent-error)',
-                                color: 'var(--accent-error)'
-                            }}
-                        >
-                            🗑️
-                        </Button>
-                    )}
+            <div style={{ padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {knot.name}
                 </div>
+                {isUserKnot && (
+                    <div 
+                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                        style={{ 
+                            fontSize: '11px', 
+                            color: 'var(--accent-error)',
+                            padding: '2px 4px',
+                            cursor: 'pointer',
+                            borderRadius: '4px'
+                        }}
+                        title="Delete User Knot"
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,0,0,0.1)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                        🗑️
+                    </div>
+                )}
             </div>
         </div>
     );

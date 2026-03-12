@@ -51,7 +51,7 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
   const ribbonState = useRibbonMode();
   // New View Modes
   const [catalogMode, setCatalogMode] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState<'editor' | 'gallery'>('editor');
+  const [galleryMode, setGalleryMode] = React.useState(false);
   const [analysisReport, setAnalysisReport] = React.useState<AnalysisReport | null>(null);
 
   const handleShowAnalysis = () => {
@@ -701,30 +701,24 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
     }
 
     // 3. Close Gallery
-    setViewMode('editor');
+    setGalleryMode(false);
     Logger.info('EditorPage', `Restored knot: ${saved.name}`);
   };
 
   // 3. Render
-  if (viewMode === 'gallery') {
-    return (
-      <div style={{ height: '100vh', width: '100vw' }}>
-        <KnotGallery
-          knots={editorState.savedKnots}
-          onLoadKnot={handleLoadKnot}
-          onDeleteKnot={editorActions.deleteSavedKnot}
-          onBack={() => setViewMode('editor')}
-        />
-      </div>
-    );
-  }
-
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <EditorHeader
         initialKnotName={initialKnot?.name}
         onBackToGallery={onBackToGallery}
-        onOpenGallery={() => setViewMode('gallery')}
+        galleryMode={galleryMode}
+        onToggleGalleryMode={() => {
+            const newState = !galleryMode;
+            setGalleryMode(newState);
+            if (newState) {
+                editorActions.setSidebarOpen(true);
+            }
+        }}
         rollingMode={rollingState.isActive}
         onToggleRollingMode={rollingState.toggleMode}
         knotMode={knotState.mode === 'knot'}
@@ -877,6 +871,9 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
           editorState={editorState}
           actions={editorActions}
           catalogMode={catalogMode}
+          galleryMode={galleryMode}
+          onLoadKnot={handleLoadKnot}
+          onDeleteKnot={editorActions.deleteSavedKnot}
           ribbonMode={ribbonState.state.isActive}
           ribbonState={ribbonState}
         />

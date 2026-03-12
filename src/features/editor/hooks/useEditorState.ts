@@ -22,6 +22,7 @@ export interface SavedKnot {
   frozenPath?: any[]; // [NEW] Frozen path segments at save time (immutable)
   blocks: CSBlock[]; // [NEW] Store ALL blocks for restoration
   thumbnail?: string; // [NEW] DataURL
+  spritePos?: string; // [NEW] Used for gallery thumbnails
   createdAt: number; // [NEW] Timestamp
   color: string;
 }
@@ -35,7 +36,13 @@ export function useEditorState(initialKnot?: InitialKnot) {
   const [savedKnots, setSavedKnots] = useState<SavedKnot[]>(() => {
     try {
       const stored = localStorage.getItem('knots_saved_envelopes');
-      return stored ? JSON.parse(stored) : PRELOADED_KNOTS;
+      if (stored) {
+          const parsed = JSON.parse(stored) as SavedKnot[];
+          // Keep only user-created knots (prevent caching old preloaded knots without sprites)
+          const userKnots = parsed.filter(k => !String(k.id).startsWith('pre-'));
+          return [...PRELOADED_KNOTS, ...userKnots];
+      }
+      return PRELOADED_KNOTS;
     } catch (e) {
       console.error('Failed to load saved knots:', e);
       return PRELOADED_KNOTS;

@@ -13,6 +13,8 @@ import { BlockList } from './BlockList';
 import { ContactMatrixViewer } from './ContactMatrixViewer';
 import { GraphsPanel } from './GraphsPanel';
 import { RibbonPanel } from '../../ribbon/components/RibbonPanel';
+import { KnotGallery } from '../../gallery/components/KnotGallery';
+import type { SavedKnot } from '../hooks/useEditorState';
 
 interface EditorState {
   blocks: CSBlock[];
@@ -28,14 +30,7 @@ interface EditorState {
   diskBlocks: CSDisk[];
   validation: { valid: boolean; errors: any[] };
   lengthInfo: { totalLength: number };
-  savedKnots: {
-    id: string;
-    name: string;
-    diskSequence: string[];
-    color?: string;
-    chiralities?: ('L' | 'R')[];
-    frozenPath?: any[];
-  }[];
+  savedKnots: SavedKnot[];
   envelopeColor?: string; // [NEW]
 }
 
@@ -90,6 +85,9 @@ interface EditorSidebarProps {
   knotMode?: boolean;
   knotState?: any;
   catalogMode?: boolean;
+  galleryMode?: boolean;
+  onLoadKnot?: (knot: any) => void;
+  onDeleteKnot?: (id: string) => void;
   ribbonMode?: boolean;
   ribbonState?: any;
 }
@@ -104,6 +102,9 @@ export const EditorSidebar = ({
   knotMode = false,
   knotState,
   catalogMode = false,
+  galleryMode = false,
+  onLoadKnot,
+  onDeleteKnot,
   ribbonMode = false,
   ribbonState,
 }: EditorSidebarProps) => {
@@ -122,6 +123,18 @@ export const EditorSidebar = ({
         flexDirection: 'column',
       }}
     >
+      {/* GALLERY MODE PANEL */}
+      {galleryMode && (
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+            <KnotGallery
+                knots={editorState.savedKnots || []}
+                onLoadKnot={Knot => { if (onLoadKnot) onLoadKnot(Knot) }}
+                onDeleteKnot={id => { if (onDeleteKnot) onDeleteKnot(id) }}
+                isSidebar={true}
+            />
+        </div>
+      )}
+
       {/* CATALOG MODE PANEL */}
       {catalogMode && (
         <CatalogPanel
@@ -308,7 +321,7 @@ export const EditorSidebar = ({
             Saved Envelopes
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {editorState.savedKnots.map((knot, i) => (
+            {editorState.savedKnots.filter(k => !k.id.startsWith('pre-')).map((knot, i) => (
               <div
                 key={knot.id}
                 style={{
@@ -381,7 +394,7 @@ export const EditorSidebar = ({
       )}
 
       {/* STANDARD EDITOR TOOLS */}
-      {!rollingMode && !knotMode && !showContactDisks && (
+      {!rollingMode && !knotMode && !showContactDisks && !catalogMode && !galleryMode && (
         <>
           {/* BLOCK LIST - Expands to fill space */}
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>

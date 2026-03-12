@@ -50,7 +50,8 @@ interface EditorHeaderProps {
   transparentDisks: boolean; // [NEW]
   onToggleTransparentDisks: () => void; // [NEW]
   // Gallery
-  onOpenGallery?: () => void; // [NEW]
+  galleryMode?: boolean; // [NEW]
+  onToggleGalleryMode?: () => void; // [NEW]
   // Analysis
   onOpenAnalysis?: () => void;
 }
@@ -93,7 +94,8 @@ export const EditorHeader = ({
   onToggleCatalogMode,
   transparentDisks,
   onToggleTransparentDisks,
-  onOpenGallery,
+  galleryMode,
+  onToggleGalleryMode,
   onOpenAnalysis,
 }: EditorHeaderProps) => {
   const [showLengthDetails, setShowLengthDetails] = useState(false);
@@ -260,19 +262,18 @@ export const EditorHeader = ({
 
         {/* GALLERY BUTTON - NEW */}
         <button
-          onClick={onOpenGallery}
+          onClick={onToggleGalleryMode}
           style={{
             ...commonBtnStyle,
-            background: 'var(--bg-tertiary)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
-            cursor: 'pointer',
+             background: galleryMode ? '#E2E8F0' : 'var(--bg-tertiary)',
+             color: galleryMode ? '#1A202C' : 'var(--text-primary)',
+             border: `1px solid ${galleryMode ? '#CBD5E0' : 'var(--border)'}`,
+             cursor: 'pointer',
           }}
-          title="Open Knot Gallery"
+          title="Toggle Knot Gallery"
         >
           📂 Gallery
         </button>
-
 
         {/* RIBBON MODE BUTTON */}
         <button
