@@ -141,9 +141,9 @@ export const KnotGallery: React.FC<KnotGalleryProps> = ({
                                     ) : (
                                         <div style={{ 
                                             display: 'grid', 
-                                            // Make grid more compact like Contact Graphs
-                                            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
-                                            gap: '12px' 
+                                            // More compact grid like Contact Graphs
+                                            gridTemplateColumns: 'repeat(4, 1fr)', 
+                                            gap: '8px' 
                                         }}>
                                             {section.knots.map((knot, idx) => (
                                                 <GalleryItem
@@ -185,7 +185,7 @@ const GalleryItem: React.FC<{ knot: SavedKnot; isUserKnot: boolean; onLoad: () =
             onClick={onLoad}
             title={knot.name}
         >
-            {/* Thumbnail Area - Square aspect ratio */}
+            {/* Thumbnail Area */}
             <div style={{
                 position: 'relative',
                 aspectRatio: '1',
@@ -194,7 +194,7 @@ const GalleryItem: React.FC<{ knot: SavedKnot; isUserKnot: boolean; onLoad: () =
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderBottom: '1px solid var(--border)' 
+                padding: '2px', // Adding slight padding for elegance
             }}>
                 {knot.spritePos ? (
                     <div style={{
@@ -206,39 +206,60 @@ const GalleryItem: React.FC<{ knot: SavedKnot; isUserKnot: boolean; onLoad: () =
                         backgroundRepeat: 'no-repeat',
                     }} />
                 ) : (
-                    <KnotThumbnail
-                        disks={(knot.blocks || []).filter(b => b.kind === 'disk') as any}
-                        size={120}
-                        showEnvelope={true}
-                        diskSequence={knot.diskSequence}
-                        chiralities={knot.chiralities}
-                    />
+                    <>
+                        <KnotThumbnail
+                            disks={(knot.blocks || []).filter(b => b.kind === 'disk') as any}
+                            size={60} // Smaller size
+                            showEnvelope={true}
+                            diskSequence={knot.diskSequence}
+                            chiralities={knot.chiralities}
+                        />
+                        {/* Overlay text for user knots since they have no sprite label */}
+                        <div style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            background: 'rgba(255, 255, 255, 0.8)',
+                            fontSize: '9px',
+                            padding: '2px 4px',
+                            textAlign: 'center',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            color: 'var(--text-secondary)'
+                        }}>
+                            {knot.name}
+                        </div>
+                    </>
                 )}
             </div>
 
-            {/* Info Area */}
-            <div style={{ padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {knot.name}
+            {/* Hidden Info Area for Deletion (only for user knots) */}
+            {isUserKnot && (
+                <div 
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    style={{ 
+                        position: 'absolute',
+                        top: '2px',
+                        right: '2px',
+                        fontSize: '10px', 
+                        background: 'white',
+                        border: '1px solid var(--border)',
+                        color: 'var(--accent-error)',
+                        padding: '2px',
+                        cursor: 'pointer',
+                        borderRadius: '4px',
+                        zIndex: 10,
+                        opacity: 0.8
+                    }}
+                    title="Delete User Knot"
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-error)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.opacity = '1'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--accent-error)'; e.currentTarget.style.opacity = '0.8'; }}
+                >
+                    ✕
                 </div>
-                {isUserKnot && (
-                    <div 
-                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                        style={{ 
-                            fontSize: '11px', 
-                            color: 'var(--accent-error)',
-                            padding: '2px 4px',
-                            cursor: 'pointer',
-                            borderRadius: '4px'
-                        }}
-                        title="Delete User Knot"
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,0,0,0.1)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                        🗑️
-                    </div>
-                )}
-            </div>
+            )}
         </div>
     );
 };
