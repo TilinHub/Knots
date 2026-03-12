@@ -1,6 +1,31 @@
 import type { CSDisk, Point2D } from '../../types/cs';
 import type { EnvelopeSegment } from '../envelope/contactGraph';
 
+function normalizeAngle(a: number): number {
+  const TWO_PI = 2 * Math.PI;
+  let r = a % TWO_PI;
+  if (r <= -Math.PI) r += TWO_PI;
+  if (r > Math.PI) r -= TWO_PI;
+  return r;
+}
+
+function sweepAngle(start: number, end: number, ccw: boolean): number {
+  const TWO_PI = 2 * Math.PI;
+  // Paso 1: obtener delta mínimo en (-π, π]
+  let delta = normalizeAngle(end - start);
+  // Paso 2: solo ajustar si cae en cuadrante equivocado
+  if (ccw && delta <= 0) delta += TWO_PI;   // asegura (0, 2π]
+  if (!ccw && delta > 0) delta -= TWO_PI;   // asegura [-2π, 0)
+
+  // Paso 3: Optimización C1. Un arco > π en la secuencia base siempre 
+  // es el lado equivocado del hull, tomar el reverso (menor a π)
+  if (Math.abs(delta) > Math.PI) {
+    delta = delta > 0 ? delta - TWO_PI : delta + TWO_PI;
+  }
+
+  return delta;
+}
+
 /**
  * Calcula una envolvente que sigue el orden estricto de una secuencia de discos.
  * Corrige errores topológicos (kinks, overlaps) forzando el paso por cada nodo en orden,
@@ -79,17 +104,9 @@ export function computeSequenceEnvelope(
       let endAngle = currentTangent.alpha;
 
       // Calcular la diferencia orientada para asegurar bucles sin enrollamiento erróneo
-      let deltaAngle = endAngle - startAngle;
-      while (deltaAngle <= -Math.PI) deltaAngle += TWO_PI;
-      while (deltaAngle > Math.PI) deltaAngle -= TWO_PI;
-
-      if (chirality === 'L') {
-        if (deltaAngle <= 0) deltaAngle += TWO_PI; // Anti-horario
-      } else {
-        if (deltaAngle >= 0) deltaAngle -= TWO_PI; // Horario
-      }
-
-      const arcLength = Math.abs(deltaAngle * d.visualRadius);
+      const ccw = chirality === 'L';
+      const delta = sweepAngle(startAngle, endAngle, ccw);
+      const arcLength = Math.abs(delta) * d.visualRadius;
 
       segments.push({
         type: 'ARC',

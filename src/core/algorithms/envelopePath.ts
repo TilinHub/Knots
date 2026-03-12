@@ -40,11 +40,11 @@ export function calcShortArc(
 
 // -------------------------------------------------------------------------------------------------
 // Helper: match points with small tolerance to avoid strict float equality issues
-function matchPoint(p1: Point2D | undefined, p2: Point2D | undefined): boolean {
+function matchPoint(p1: Point2D | undefined, p2: Point2D | undefined, tol = 0.1): boolean {
   if (!p1 || !p2) return false;
   const dx = p1.x - p2.x;
   const dy = p1.y - p2.y;
-  return dx * dx + dy * dy < 1e-6; // ~0.001 distance squared
+  return dx * dx + dy * dy < tol * tol;
 }
 
 /**
@@ -129,22 +129,24 @@ function findEnvelopePathWithMemory(
 
       for (const Q of validQs) {
         // Find edges STARTING at the designated departure point Q
-        let matchingEdges = graph.edges.filter(
-          (e) =>
-            e.startDiskId === fromDiskId &&
-            e.endDiskId === toDiskId &&
-            matchPoint(e.start, Q.position)
+        const candidateEdges = graph.edges.filter(
+          (e) => e.startDiskId === fromDiskId && e.endDiskId === toDiskId
         );
+
+        let matchingEdges: typeof candidateEdges = candidateEdges;
+        if (candidateEdges.length > 1) {
+          const best = candidateEdges.reduce((b, e) => {
+            const db = Math.hypot(b.start.x - Q.position.x, b.start.y - Q.position.y);
+            const de = Math.hypot(e.start.x - Q.position.x, e.start.y - Q.position.y);
+            return de < db ? e : b;
+          });
+          matchingEdges = [best];
+        }
 
         // Fallback for reversed edges (common in undirected graphs)
         if (matchingEdges.length === 0) {
-          matchingEdges = graph.edges
-            .filter(
-              (e) =>
-                e.startDiskId === toDiskId &&
-                e.endDiskId === fromDiskId &&
-                matchPoint(e.end, Q.position)
-            )
+          const reversed = graph.edges
+            .filter((e) => e.startDiskId === toDiskId && e.endDiskId === fromDiskId)
             .map((e) => ({
               ...e,
               start: e.end,
@@ -152,6 +154,7 @@ function findEnvelopePathWithMemory(
               startDiskId: e.endDiskId,
               endDiskId: e.startDiskId,
             }));
+          if (reversed.length > 0) matchingEdges = [reversed[0]];
         }
 
         for (const edge of matchingEdges) {
@@ -173,8 +176,13 @@ function findEnvelopePathWithMemory(
           const totalCost = prevEntry.cost + arcLen + edge.length + arrivalPenalty;
           
           // Find the new arrival state on the target disk
-          const R = toDisk.envelopePoints.find(ep => matchPoint(ep.position, edge.end));
-          if (!R) continue;
+          if (!toDisk.envelopePoints || toDisk.envelopePoints.length === 0) continue;
+
+          const R = toDisk.envelopePoints.reduce((closest, ep) => {
+            const dc = Math.hypot(closest.position.x - edge.end.x, closest.position.y - edge.end.y);
+            const de = Math.hypot(ep.position.x - edge.end.x, ep.position.y - edge.end.y);
+            return de < dc ? ep : closest;
+          });
 
           // Select best path to R
           const existingNext = next.get(R.id);
