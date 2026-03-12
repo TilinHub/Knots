@@ -3,26 +3,18 @@ import type { EnvelopeSegment } from '../envelope/contactGraph';
 
 function normalizeAngle(a: number): number {
   const TWO_PI = 2 * Math.PI;
-  let r = a % TWO_PI;
-  if (r <= -Math.PI) r += TWO_PI;
-  if (r > Math.PI) r -= TWO_PI;
+  // Arithmetic modulo — deterministic, no boundary ambiguity at ±π
+  let r = ((a % TWO_PI) + TWO_PI) % TWO_PI; // Range [0, 2π)
+  if (r > Math.PI) r -= TWO_PI;             // Range (-π, π]
   return r;
 }
 
 function sweepAngle(start: number, end: number, ccw: boolean): number {
   const TWO_PI = 2 * Math.PI;
-  // Paso 1: obtener delta mínimo en (-π, π]
-  let delta = normalizeAngle(end - start);
-  // Paso 2: solo ajustar si cae en cuadrante equivocado
-  if (ccw && delta <= 0) delta += TWO_PI;   // asegura (0, 2π]
-  if (!ccw && delta > 0) delta -= TWO_PI;   // asegura [-2π, 0)
-
-  // Paso 3: Optimización C1. Un arco > π en la secuencia base siempre 
-  // es el lado equivocado del hull, tomar el reverso (menor a π)
-  if (Math.abs(delta) > Math.PI) {
-    delta = delta > 0 ? delta - TWO_PI : delta + TWO_PI;
-  }
-
+  let delta = normalizeAngle(end - start); // Range (-π, π]
+  // Adjust to correct winding direction ONLY when needed
+  if (ccw && delta <= 0) delta += TWO_PI;  // Force (0, 2π] for CCW
+  if (!ccw && delta > 0) delta -= TWO_PI;  // Force (-2π, 0) for CW
   return delta;
 }
 

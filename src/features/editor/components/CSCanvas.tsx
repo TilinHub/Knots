@@ -673,27 +673,9 @@ export function CSCanvas({
     const pos = getMousePositionExact(e);
     if (!pos) return;
 
-    // 1. Knot Mode Dragging (Drawing) - UNLESS SHIFT IS PRESSED (Shift = Move Disk)
-    if (
-      knotMode &&
-      !e.shiftKey &&
-      dragState.pointType === 'disk' &&
-      dragState.offsetX === undefined
-    ) {
-      // Find hovered disk
-      const currentId = disks.find((d) => {
-        const dist = Math.sqrt(Math.pow(pos.x - d.center.x, 2) + Math.pow(pos.y - d.center.y, 2));
-        return dist < d.visualRadius;
-      })?.id;
-
-      if (currentId && currentId !== dragState.lastAdded) {
-        onDiskClick?.(currentId, pos || undefined);
-        setDragState((prev) =>
-          prev ? { ...prev, lastAdded: currentId, pendingUndo: false } : null,
-        );
-      }
-      return;
-    }
+    // 1. Knot Mode Dragging (Drawing) — REMOVED.
+    // Construction is done exclusively via anchor clicks (onKnotPointClick).
+    // Drag-to-connect caused disks to be added involuntarily on any canvas drag.
 
     // 2. Dubins Mode Logic (Restored)
     if (dubinsMode && dragState.pointType !== 'disk') {
@@ -852,8 +834,8 @@ export function CSCanvas({
       const block = blocks.find((b) => b.id === dragState.blockId);
       // Only trigger click if block exists and is disk
       // Handles Knot Mode (Legacy/Fallback), and potentially Dubins/Rolling if they use onDiskClick
-      if (block?.kind === 'disk' && !knotMode) {
-        // Prevent double trigger in Knot Mode
+      if (block?.kind === 'disk' && !knotMode && !dragState.hasMoved) {
+        // Prevent double trigger in Knot Mode; only fire on genuine clicks (no movement)
         onDiskClick?.(block.id);
       }
     }
@@ -970,24 +952,7 @@ export function CSCanvas({
         context={{ width, height }}
       />
 
-      {/* 2. Knot Layer (Background - Active Envelope only, NO saved knots) */}
-      <KnotLayer
-        visible={true}
-        blocks={blocks}
-        knotPath={knotPath}
-        knotSequence={knotSequence}
-        knotChiralities={knotChiralities}
-        anchorPoints={anchorPoints}
-        showEnvelope={showEnvelope}
-        envelopeColor={envelopeColor}
-        savedEnvelopeColor={savedEnvelopeColor}
-        knotMode={knotMode}
-        onKnotPointClick={onKnotPointClick}
-        savedKnotPaths={[]} // [FIX] No saved knots here — they render AFTER disks
-        context={{ width, height }}
-      />
-
-      {/* [NEW] Flexible Knot Envelope (Dubins) REMOVED - using rigorous topological KnotLayer renderer instead */}
+      {/* [NOTE] Flexible Knot Envelope (Dubins) REMOVED - using rigorous topological KnotLayer renderer instead */}
 
       {/* ROLLING MODE PATH (Flexible Envelope) [NEW] */}
       {rollingMode && currentPath && (
@@ -1250,11 +1215,11 @@ export function CSCanvas({
           });
         })}
 
-      {/* Saved Knots — ALWAYS visible, rendered AFTER disks so they appear ON TOP */}
+      {/* Saved Knots + Active Envelope — rendered AFTER disks so they appear ON TOP */}
       <KnotLayer
-        visible={true} // [FIX] Always visible for saved knots
+        visible={true}
         blocks={blocks}
-        knotPath={showEnvelope ? knotPath : []} // Active path only when envelope is on
+        knotPath={knotPath} // KnotLayer respects showEnvelope internally
         knotSequence={knotSequence}
         knotChiralities={knotState?.chiralities}
         anchorPoints={showEnvelope ? (anchorSequence as any) : []}

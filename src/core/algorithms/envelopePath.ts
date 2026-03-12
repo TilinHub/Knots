@@ -67,17 +67,46 @@ export function buildEnvelopeChain(points: EnvelopePoint[]): EnvelopePoint[] {
 export function findEnvelopePath(
   graph: BoundedCurvatureGraph,
   diskIds: string[],
-  fixedChiralities?: ('L' | 'R')[],
+  orderedAnchorsOrChiralities?: Point2D[] | ('L' | 'R')[],
+  fixedChiralitiesOrStrict?: ('L' | 'R')[] | boolean,
   strictChirality: boolean = true,
 ): EnvelopePathResult {
-  // Check if we have sequential memory (all disks must have envelopePoints)
-  const hasEnvelopePoints = diskIds.every(id => {
+  // Disambiguate overloaded 3rd/4th params for back-compat:
+  // Old call: findEnvelopePath(graph, ids, chiralities?, strict?)
+  // New call: findEnvelopePath(graph, ids, orderedAnchors?, chiralities?, strict?)
+  let orderedAnchors: Point2D[] | undefined;
+  let fixedChiralities: ('L' | 'R')[] | undefined;
+
+  if (
+    orderedAnchorsOrChiralities &&
+    orderedAnchorsOrChiralities.length > 0 &&
+    typeof (orderedAnchorsOrChiralities[0] as Point2D).x === 'number'
+  ) {
+    // New signature: 3rd param is Point2D[]
+    orderedAnchors = orderedAnchorsOrChiralities as Point2D[];
+    fixedChiralities = fixedChiralitiesOrStrict as ('L' | 'R')[] | undefined;
+  } else {
+    // Old signature: 3rd param is chiralities
+    fixedChiralities = orderedAnchorsOrChiralities as ('L' | 'R')[] | undefined;
+    if (typeof fixedChiralitiesOrStrict === 'boolean') {
+      strictChirality = fixedChiralitiesOrStrict;
+    }
+  }
+
+  // If orderedAnchors provided, always use memory-based (anchors are the ground truth)
+  if (orderedAnchors && orderedAnchors.length >= diskIds.length - 1) {
+    return findEnvelopePathWithMemory(graph, diskIds, orderedAnchors, fixedChiralities, strictChirality);
+  }
+
+  // Otherwise fall back to envelopePoints-based detection (deduplicate consecutive disk IDs first)
+  const uniqueIds = diskIds.filter((id, i, arr) => i === 0 || id !== arr[i - 1]);
+  const hasEnvelopePoints = uniqueIds.every(id => {
     const d = graph.nodes.get(id) as ContactDisk & { envelopePoints?: EnvelopePoint[] };
     return d && d.envelopePoints && d.envelopePoints.length > 0;
   });
 
   if (hasEnvelopePoints) {
-    return findEnvelopePathWithMemory(graph, diskIds, fixedChiralities, strictChirality);
+    return findEnvelopePathWithMemory(graph, diskIds, undefined, fixedChiralities, strictChirality);
   } else {
     return findEnvelopePathLegacy(graph, diskIds, fixedChiralities, strictChirality);
   }
@@ -88,6 +117,7 @@ export function findEnvelopePath(
 function findEnvelopePathWithMemory(
   graph: BoundedCurvatureGraph,
   diskIds: string[],
+  orderedAnchors?: Point2D[], // anchor[i] = desired departure point at diskIds[i]
   fixedChiralities?: ('L' | 'R')[],
   strictChirality: boolean = true,
 ): EnvelopePathResult {
@@ -108,21 +138,38 @@ function findEnvelopePathWithMemory(
     const fromDisk = graph.nodes.get(fromDiskId) as ContactDisk & { envelopePoints?: EnvelopePoint[] };
     const toDisk = graph.nodes.get(toDiskId) as ContactDisk & { envelopePoints?: EnvelopePoint[] };
     
-    if (!fromDisk || !toDisk || !fromDisk.envelopePoints || !toDisk.envelopePoints) continue;
+    if (!fromDisk || !toDisk) continue;
+    // Only require envelopePoints when orderedAnchors are NOT available
+    if (!orderedAnchors && (!fromDisk.envelopePoints || !toDisk.envelopePoints)) continue;
 
     const next = new Map<string, DPEntry>();
 
     for (const [arrId, prevEntry] of prev.entries()) {
       let validQs: EnvelopePoint[] = [];
 
-      if (arrId === 'START') {
-        // At the very first disk, we assume all envelope points are valid potential departure points
-        validQs = fromDisk.envelopePoints;
+      // --- OrderedAnchors path: use the pre-ordered anchor for this step directly ---
+      if (orderedAnchors && orderedAnchors[step - 1]) {
+        const anchorPos = orderedAnchors[step - 1];
+        validQs = [{
+          id: `ordered-${step - 1}`,
+          diskId: fromDiskId,
+          position: anchorPos,
+          angle: Math.atan2(
+            anchorPos.y - fromDisk.center.y,
+            anchorPos.x - fromDisk.center.x,
+          ),
+          prev: null,
+          next: null,
+          segmentId: 'main',
+        }];
+      } else if (arrId === 'START') {
+        // At the very first disk, all envelope points are valid potential departure points
+        validQs = fromDisk.envelopePoints ?? [];
       } else {
         // Arrived at P, the only valid departure is P.next
-        const P = fromDisk.envelopePoints.find(ep => ep.id === arrId);
+        const P = (fromDisk.envelopePoints ?? []).find(ep => ep.id === arrId);
         if (P && P.next) {
-          const Q = fromDisk.envelopePoints.find(ep => ep.id === P.next);
+          const Q = (fromDisk.envelopePoints ?? []).find(ep => ep.id === P.next);
           if (Q) validQs.push(Q);
         }
       }
@@ -176,13 +223,24 @@ function findEnvelopePathWithMemory(
           const totalCost = prevEntry.cost + arcLen + edge.length + arrivalPenalty;
           
           // Find the new arrival state on the target disk
-          if (!toDisk.envelopePoints || toDisk.envelopePoints.length === 0) continue;
+          // When using orderedAnchors the toDisk may have no envelopePoints — use a synthetic one
+          const toDiskEPs = toDisk.envelopePoints ?? [];
+          if (!orderedAnchors && toDiskEPs.length === 0) continue;
 
-          const R = toDisk.envelopePoints.reduce((closest, ep) => {
+          // Synthetic arrival point keyed by edge endpoint when no EPs exist
+          const R = toDiskEPs.length > 0 ? toDiskEPs.reduce((closest, ep) => {
             const dc = Math.hypot(closest.position.x - edge.end.x, closest.position.y - edge.end.y);
             const de = Math.hypot(ep.position.x - edge.end.x, ep.position.y - edge.end.y);
             return de < dc ? ep : closest;
-          });
+          }) : {
+            id: `synthetic-${toDiskId}-${step}`,
+            diskId: toDiskId,
+            position: edge.end,
+            angle: Math.atan2(edge.end.y - toDisk.center.y, edge.end.x - toDisk.center.x),
+            prev: null as string | null,
+            next: null as string | null,
+            segmentId: 'main',
+          };
 
           // Select best path to R
           const existingNext = next.get(R.id);

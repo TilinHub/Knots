@@ -168,7 +168,22 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
         graphEdges: graph.edges.length,
       });
 
-      const memoryResult = findEnvelopePath(graph, closedSeq, undefined, false);
+      // Build orderedAnchors: one Point2D per entry in compressedSeq (visit order).
+      // anchorSequence is already in visit order 1:1 with diskSequence, so we map
+      // compressedSeq[i] -> anchorSequence entry at position i (after dedup).
+      // This avoids the bug where envelopePoints mixes all visits to the same disk.
+      const orderedAnchors: Point2D[] = compressedSeq.map((_, stepIdx) => {
+        const anchor = anchorSequence[stepIdx];
+        if (!anchor) return { x: 0, y: 0 };
+        const disk = blocks.find((b) => b.id === anchor.diskId);
+        if (!disk) return { x: 0, y: 0 };
+        return {
+          x: disk.center.x + disk.visualRadius * Math.cos(anchor.angle),
+          y: disk.center.y + disk.visualRadius * Math.sin(anchor.angle),
+        };
+      });
+
+      const memoryResult = findEnvelopePath(graph, closedSeq, orderedAnchors, undefined, false);
 
       if (memoryResult.path.length > 0) {
         Logger.debug('KnotState', 'Memory-based path computed successfully', {
