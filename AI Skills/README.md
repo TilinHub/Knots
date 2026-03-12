@@ -13,12 +13,17 @@ Each skill is a structured prompt that guides an AI to behave as a domain expert
 | [`3d-web-experience`](./3d-web-experience/SKILL.md) | Three.js, React Three Fiber, WebGL, SVG scenes | Rendering layers, future 3D knot views |
 | [`architect-review`](./architect-review/SKILL.md) | Master architect for reviewing design decisions | `EnvelopeComputer` interface, cross-layer dependencies |
 | [`animejs-animation`](./animejs-animation/SKILL.md) | Advanced SVG/DOM animations with Anime.js | Disk node transitions, envelope path morphing |
+| [`advanced-evaluation`](./advanced-evaluation/SKILL.md) | LLM-as-judge, evaluation rubrics, bias mitigation | Objectively evaluate layout algorithm correctness |
+| [`architecture-decision-records`](./architecture-decision-records/SKILL.md) | ADRs: documenting technical decisions with context & trade-offs | Record graph layout choices, SVG vs Canvas, EnvelopeComputer design |
+| [`SPDD`](./SPDD/) | 3-phase agentic workflow: Research → Spec → Implementation | Structured approach to fix Contact Graph node positioning |
 
 ## How to Use
 
 When working with an AI assistant on a specific problem, prepend the relevant `SKILL.md` content as system context. For example:
 
-- **Fixing node positioning bugs** → use `algorithmic-art` + `architect-review`
-- **Refactoring envelope computation** → use `architecture-patterns` + `architect-review`
+- **Fixing node positioning bugs** → use `algorithmic-art` + `architect-review` + `SPDD/1-research.md`
+- **Refactoring envelope computation** → use `architecture-patterns` + `architect-review` + `architecture-decision-records`
 - **Adding animations to the canvas** → use `animejs-animation`
 - **Extending rendering layers** → use `3d-web-experience`
+- **Evaluating an algorithmic fix** → use `advanced-evaluation`
+- **Full structured task (research → plan → code)** → use `SPDD` sequence (1 → 2 → 3)
