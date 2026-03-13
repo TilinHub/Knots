@@ -10,7 +10,6 @@ import { CatalogPanel } from '../../catalog/components/CatalogPanel';
 import { KnotPanel } from '../../knot/components/KnotPanel';
 import { RollingPanel } from '../../rolling/components/RollingPanel';
 import { BlockList } from './BlockList';
-import { ContactMatrixViewer } from './ContactMatrixViewer';
 import { GraphsPanel } from './GraphsPanel';
 import { RibbonPanel } from '../../ribbon/components/RibbonPanel';
 import { KnotGallery } from '../../gallery/components/KnotGallery';
@@ -213,25 +212,8 @@ export const EditorSidebar = ({
         <RibbonPanel state={ribbonState.state} actions={ribbonState.actions} />
       )}
 
-      {/* CONTACT MATRIX FOR ROLLING MODE (Dynamic) */}
-      {rollingMode && rollingState.pivotDiskId && rollingState.rollingDiskId && (
-        <div style={{ padding: '0 var(--space-md) var(--space-md)' }}>
-          <ContactMatrixViewer
-            disks={(() => {
-              // Calculate dynamic positions for the matrix
-              // We need to clone the disks and update the rolling one
-              const currentPos = rollingState.getCurrentPosition();
-              if (!currentPos) return editorState.diskBlocks;
-              return editorState.diskBlocks.map((d) => {
-                if (d.id === rollingState.rollingDiskId) {
-                  return { ...d, center: currentPos };
-                }
-                return d;
-              });
-            })()}
-          />
-        </div>
-      )}
+      {/* CONTACT MATRIX FOR ROLLING MODE (Dynamic) - MOVED TO LEFT SIDEBAR */}
+
 
       {/* CONTACT DISKS INFO PANEL */}
       {showContactDisks && (
@@ -283,8 +265,7 @@ export const EditorSidebar = ({
             </Button>
           </div>
 
-          {/* CONTACT MATRIX VIEWER - NEW */}
-          <ContactMatrixViewer disks={editorState.diskBlocks} />
+          {/* CONTACT MATRIX VIEWER - MOVED TO LEFT SIDEBAR */}
         </div>
       )}
 
@@ -407,18 +388,7 @@ export const EditorSidebar = ({
             />
           </div>
 
-          {/* Matrix Viewer - Above Add Element */}
-          {editorState.diskBlocks.length > 0 && (
-            <div
-              style={{
-                padding: '0 var(--space-md) var(--space-md)',
-                borderTop: '1px solid var(--border)',
-                paddingTop: 'var(--space-md)',
-              }}
-            >
-              <ContactMatrixViewer disks={editorState.diskBlocks} />
-            </div>
-          )}
+          {/* Matrix Viewer - MOVED TO LEFT SIDEBAR */}
 
           {/* Add Element - Fixed at bottom */}
           <div style={{ padding: 'var(--space-md)', borderTop: '1px solid var(--border)' }}>

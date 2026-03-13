@@ -28,7 +28,7 @@ import { type AnalysisReport, analyzeDiagram } from '../../analysis/first_variat
 import { convertEditorToProtocol } from '../../analysis/first_variation/converter';
 import { useRibbonMode } from '../../ribbon/logic/useRibbonMode';
 import { KnotGallery } from '../../gallery/components/KnotGallery';
-
+import { ContactMatrixViewer } from './ContactMatrixViewer';
 
 interface EditorPageProps {
   onBackToGallery?: () => void;
@@ -798,6 +798,36 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       />
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        {editorState.diskBlocks.length > 0 && (
+          <aside
+            style={{
+              width: '320px',
+              borderRight: '1px solid var(--border)',
+              background: 'var(--bg-secondary)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ padding: 'var(--space-md)' }}>
+              <ContactMatrixViewer
+                disks={(() => {
+                  if (rollingState.isActive && rollingState.pivotDiskId && rollingState.rollingDiskId) {
+                    const currentPos = rollingState.getCurrentPosition();
+                    if (!currentPos) return editorState.diskBlocks;
+                    return editorState.diskBlocks.map((d) => {
+                      if (d.id === rollingState.rollingDiskId) {
+                        return { ...d, center: currentPos };
+                      }
+                      return d;
+                    });
+                  }
+                  return editorState.diskBlocks;
+                })()}
+              />
+            </div>
+          </aside>
+        )}
         <div style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
           <CSCanvas
             blocks={editorState.blocks}
