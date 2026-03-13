@@ -48,14 +48,21 @@ export const KnotGallery: React.FC<KnotGalleryProps> = ({
         };
 
         allKnots.forEach(knot => {
-            const count = knot.diskSequence.length;
-            if (count === 3) bins['3 crossings'].push(knot);
-            else if (count === 4) bins['4 crossings'].push(knot);
-            else if (count === 5) bins['5 crossings'].push(knot);
-            else if (count === 6) bins['6 crossings'].push(knot);
-            else if (count === 7) bins['7 crossings'].push(knot);
-            else {
-                // Not in 3-7 bins, place them in Special Knots
+            // Group by the first digit of the name (e.g., "3_1" -> 3)
+            const match = knot.name.match(/^(\d)_/);
+            
+            if (knot.name.toLowerCase() === 'unknot') {
+                bins['Special Knots'].push(knot); // Unknot goes to Special Knots instead of 3 crossings
+            } else if (match) {
+                const count = parseInt(match[1], 10);
+                if (count === 3) bins['3 crossings'].push(knot);
+                else if (count === 4) bins['4 crossings'].push(knot);
+                else if (count === 5) bins['5 crossings'].push(knot);
+                else if (count === 6) bins['6 crossings'].push(knot);
+                else if (count === 7) bins['7 crossings'].push(knot);
+                else bins['Special Knots'].push(knot);
+            } else {
+                // User custom knots or others
                 bins['Special Knots'].push(knot);
             }
         });

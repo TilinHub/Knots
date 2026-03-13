@@ -27,9 +27,9 @@ knots.forEach((k, i) => {
   const chir = Array.from({length: N}, () => 'L');
   const blocks = seq.map((id, j) => {
     const angle = (Math.PI * 2 * j) / N;
-    const x = Math.round(Math.cos(angle) * 133.3 * 10) / 10;
-    const y = Math.round(Math.sin(angle) * 133.3 * 10) / 10;
-    return `{ id: '${id}', kind: 'disk', center: { x: ${x}, y: ${y} }, radius: 1, visualRadius: 50, label: 'D${j}' }`;
+    const x = Math.round(Math.cos(angle) * 80 * 10) / 10;
+    const y = Math.round(Math.sin(angle) * 80 * 10) / 10;
+    return `{ id: '${id}', kind: 'disk', center: { x: ${x}, y: ${y} }, radius: 1, visualRadius: 30, label: 'D${j}' }`;
   });
 
   out += `    {
