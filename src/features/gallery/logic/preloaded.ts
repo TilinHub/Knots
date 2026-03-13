@@ -10,9 +10,9 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700000000,
         spritePos: '0% 0%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: -40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D2' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: -66.6, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D2' }
         ]
     },
     {
@@ -24,9 +24,9 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700001000,
         spritePos: '25% 0%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: -40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D2' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: -66.6, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D2' }
         ]
     },
     {
@@ -38,10 +38,10 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700002000,
         spritePos: '50% 0%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 80 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -80, y: 0 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: 0, y: -80 }, radius: 1, visualRadius: 30, label: 'D3' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 133.3 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: 0, y: -133.3 }, radius: 1, visualRadius: 50, label: 'D3' }
         ]
     },
     {
@@ -53,11 +53,11 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700003000,
         spritePos: '75% 0%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 24.7, y: 76.1 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -64.7, y: 47 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -64.7, y: -47 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: 24.7, y: -76.1 }, radius: 1, visualRadius: 30, label: 'D4' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 41.2, y: 126.8 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -107.8, y: 78.4 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -107.8, y: -78.4 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: 41.2, y: -126.8 }, radius: 1, visualRadius: 50, label: 'D4' }
         ]
     },
     {
@@ -69,11 +69,11 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700004000,
         spritePos: '100% 0%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 24.7, y: 76.1 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -64.7, y: 47 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -64.7, y: -47 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: 24.7, y: -76.1 }, radius: 1, visualRadius: 30, label: 'D4' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 41.2, y: 126.8 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -107.8, y: 78.4 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -107.8, y: -78.4 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: 41.2, y: -126.8 }, radius: 1, visualRadius: 50, label: 'D4' }
         ]
     },
     {
@@ -85,12 +85,12 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700005000,
         spritePos: '0% 50%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -80, y: 0 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D5' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 66.7, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -66.6, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D5' }
         ]
     },
     {
@@ -102,12 +102,12 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700006000,
         spritePos: '25% 50%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -80, y: 0 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D5' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 66.7, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -66.6, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D5' }
         ]
     },
     {
@@ -119,12 +119,12 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700007000,
         spritePos: '50% 50%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -40, y: 69.3 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -80, y: 0 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 40, y: -69.3 }, radius: 1, visualRadius: 30, label: 'D5' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 66.7, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -66.6, y: 115.4 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 66.7, y: -115.4 }, radius: 1, visualRadius: 50, label: 'D5' }
         ]
     },
     {
@@ -136,13 +136,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700008000,
         spritePos: '75% 50%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 49.9, y: 62.5 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -17.8, y: 78 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -72.1, y: 34.7 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -72.1, y: -34.7 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: -17.8, y: -78 }, radius: 1, visualRadius: 30, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 49.9, y: -62.5 }, radius: 1, visualRadius: 30, label: 'D6' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 83.1, y: 104.2 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -29.7, y: 130 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -120.1, y: 57.8 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -120.1, y: -57.8 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: -29.7, y: -130 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 83.1, y: -104.2 }, radius: 1, visualRadius: 50, label: 'D6' }
         ]
     },
     {
@@ -154,13 +154,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700009000,
         spritePos: '100% 50%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 49.9, y: 62.5 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -17.8, y: 78 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -72.1, y: 34.7 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -72.1, y: -34.7 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: -17.8, y: -78 }, radius: 1, visualRadius: 30, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 49.9, y: -62.5 }, radius: 1, visualRadius: 30, label: 'D6' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 83.1, y: 104.2 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -29.7, y: 130 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -120.1, y: 57.8 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -120.1, y: -57.8 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: -29.7, y: -130 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 83.1, y: -104.2 }, radius: 1, visualRadius: 50, label: 'D6' }
         ]
     },
     {
@@ -172,13 +172,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700010000,
         spritePos: '0% 100%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 49.9, y: 62.5 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -17.8, y: 78 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -72.1, y: 34.7 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -72.1, y: -34.7 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: -17.8, y: -78 }, radius: 1, visualRadius: 30, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 49.9, y: -62.5 }, radius: 1, visualRadius: 30, label: 'D6' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 83.1, y: 104.2 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -29.7, y: 130 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -120.1, y: 57.8 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -120.1, y: -57.8 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: -29.7, y: -130 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 83.1, y: -104.2 }, radius: 1, visualRadius: 50, label: 'D6' }
         ]
     },
     {
@@ -190,13 +190,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700011000,
         spritePos: '25% 100%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 49.9, y: 62.5 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -17.8, y: 78 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -72.1, y: 34.7 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -72.1, y: -34.7 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: -17.8, y: -78 }, radius: 1, visualRadius: 30, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 49.9, y: -62.5 }, radius: 1, visualRadius: 30, label: 'D6' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 83.1, y: 104.2 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -29.7, y: 130 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -120.1, y: 57.8 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -120.1, y: -57.8 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: -29.7, y: -130 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 83.1, y: -104.2 }, radius: 1, visualRadius: 50, label: 'D6' }
         ]
     },
     {
@@ -208,13 +208,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700012000,
         spritePos: '50% 100%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 49.9, y: 62.5 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -17.8, y: 78 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -72.1, y: 34.7 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -72.1, y: -34.7 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: -17.8, y: -78 }, radius: 1, visualRadius: 30, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 49.9, y: -62.5 }, radius: 1, visualRadius: 30, label: 'D6' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 83.1, y: 104.2 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -29.7, y: 130 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -120.1, y: 57.8 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -120.1, y: -57.8 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: -29.7, y: -130 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 83.1, y: -104.2 }, radius: 1, visualRadius: 50, label: 'D6' }
         ]
     },
     {
@@ -226,13 +226,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700013000,
         spritePos: '75% 100%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 49.9, y: 62.5 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -17.8, y: 78 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -72.1, y: 34.7 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -72.1, y: -34.7 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: -17.8, y: -78 }, radius: 1, visualRadius: 30, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 49.9, y: -62.5 }, radius: 1, visualRadius: 30, label: 'D6' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 83.1, y: 104.2 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -29.7, y: 130 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -120.1, y: 57.8 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -120.1, y: -57.8 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: -29.7, y: -130 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 83.1, y: -104.2 }, radius: 1, visualRadius: 50, label: 'D6' }
         ]
     },
     {
@@ -244,13 +244,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         createdAt: 1735700014000,
         spritePos: '100% 100%',
         blocks: [
-            { id: 'd0', kind: 'disk', center: { x: 80, y: 0 }, radius: 1, visualRadius: 30, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 49.9, y: 62.5 }, radius: 1, visualRadius: 30, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -17.8, y: 78 }, radius: 1, visualRadius: 30, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -72.1, y: 34.7 }, radius: 1, visualRadius: 30, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -72.1, y: -34.7 }, radius: 1, visualRadius: 30, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: -17.8, y: -78 }, radius: 1, visualRadius: 30, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 49.9, y: -62.5 }, radius: 1, visualRadius: 30, label: 'D6' }
+            { id: 'd0', kind: 'disk', center: { x: 133.3, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
+            { id: 'd1', kind: 'disk', center: { x: 83.1, y: 104.2 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -29.7, y: 130 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -120.1, y: 57.8 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -120.1, y: -57.8 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: -29.7, y: -130 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 83.1, y: -104.2 }, radius: 1, visualRadius: 50, label: 'D6' }
         ]
     },
 ];
