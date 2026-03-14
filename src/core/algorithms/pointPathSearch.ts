@@ -1,5 +1,5 @@
 import { Logger } from '../../app/Logger';
-import { intersectsAnyDiskStrict } from '../geometry/envelope/collision';
+import { intersectsAnyDiskStrict, intersectsDisk } from '../geometry/envelope/collision';
 import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, TangentType } from '../geometry/envelope/contactGraph';
 import { buildBoundedCurvatureGraph } from '../geometry/envelope/contactGraph';
 import type { ContactDisk } from '../types/contactGraph';
@@ -434,6 +434,19 @@ export function findEnvelopePathFromPoints(
           const ny = (end.y - endDisk.center.y) / endDisk.radius;
           // Must arrive from OUTSIDE
           if (nx * dirX + ny * dirY > 0.01) { lineBlocked = true; blockReason = `arrival-inward(dot=${(nx * dirX + ny * dirY).toFixed(3)})`; }
+        }
+
+        // 3. Check that the line doesn't re-enter the start disk or penetrate the end disk
+        //    intersectsAnyDiskStrict excludes start/end disks by ID, but a line starting
+        //    on one side of a disk can arc back through its interior on the way to another disk.
+        //    intersectsDisk handles the boundary-start case correctly via its eps tolerance.
+        if (!lineBlocked && startDisk && intersectsDisk(start, end, startDisk)) {
+          lineBlocked = true;
+          blockReason = 'reenter-start-disk';
+        }
+        if (!lineBlocked && endDisk && intersectsDisk(start, end, endDisk)) {
+          lineBlocked = true;
+          blockReason = 'penetrate-end-disk';
         }
       }
     }
