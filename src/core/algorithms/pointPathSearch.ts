@@ -327,6 +327,7 @@ export function findEnvelopePathFromPoints(
   anchors: Point2D[],
   obstacles: ContactDisk[],
   globalForbiddenDiskIds?: Set<string>,
+  anchorDiskIds?: string[], // explicit disk ID for each anchor — avoids spatial misdetection
 ): EnvelopePathResult {
   if (anchors.length < 2) return { path: [], chiralities: [] };
 
@@ -335,16 +336,27 @@ export function findEnvelopePathFromPoints(
   const diskMap = new Map<string, ContactDisk>();
   obstacles.forEach((d) => diskMap.set(d.id, d));
 
-  const findDisk = (p: Point2D): ContactDisk | null => {
+  // If anchorDiskIds are provided, use them directly.
+  // Spatial fallback (finding the closest disk boundary) is unreliable when disks overlap or
+  // are close together: the first matching disk may not be the correct one, causing
+  // startDisk === endDisk for anchors that belong to different disks, which triggers
+  // the Candidate A (full-circle arc) path incorrectly.
+  const findDisk = (p: Point2D, anchorIndex?: number): ContactDisk | null => {
+    if (anchorIndex !== undefined && anchorDiskIds && anchorDiskIds[anchorIndex]) {
+      return diskMap.get(anchorDiskIds[anchorIndex]) ?? null;
+    }
+    // Spatial fallback: pick the disk whose boundary is closest to p (not just first match)
+    let bestDisk: ContactDisk | null = null;
+    let bestErr = Infinity;
     for (const d of obstacles) {
-      if (
-        Math.abs(Math.sqrt((p.x - d.center.x) ** 2 + (p.y - d.center.y) ** 2) - d.radius) <
-        d.radius * 0.05
-      ) {
-        return d;
+      const dist = Math.sqrt((p.x - d.center.x) ** 2 + (p.y - d.center.y) ** 2);
+      const err = Math.abs(dist - d.radius);
+      if (err < d.radius * 0.05 && err < bestErr) {
+        bestErr = err;
+        bestDisk = d;
       }
     }
-    return null;
+    return bestDisk;
   };
 
   // [FIX] outerTangentsOnly = FALSE (Internal tangents allowed for crossings)
@@ -360,8 +372,8 @@ export function findEnvelopePathFromPoints(
     const start = anchors[i];
     const end = anchors[i + 1];
 
-    const startDisk = findDisk(start);
-    const endDisk = findDisk(end);
+    const startDisk = findDisk(start, i);
+    const endDisk = findDisk(end, i + 1);
 
     const candidates: PathCandidate[] = [];
 

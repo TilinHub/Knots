@@ -1,37 +1,37 @@
 import React from 'react';
-import { resolveOverlapsSingleMove } from '@/core/geometry/hull';
 
+import { Logger } from '@/app/Logger';
+import { computeOuterContour } from '@/core/geometry/curve';
+import { detectRegionsWithDisks } from '@/core/geometry/curve';
+import type { Config, DubinsPath } from '@/core/geometry/dubins';
 import type { EnvelopeSegment } from '@/core/geometry/envelope/contactGraph';
 import {
   buildBoundedCurvatureGraph,
   findEnvelopePath,
   findEnvelopePathFromPoints,
 } from '@/core/geometry/envelope/contactGraph';
+import { resolveOverlapsSingleMove } from '@/core/geometry/hull';
 import { type Disk } from '@/core/geometry/hull';
-import type { Config, DubinsPath } from '@/core/geometry/dubins';
+import { computeRobustConvexHull } from '@/core/geometry/hull';
 import {
   type DiskContact,
   findAllCrossings,
   findDiskContacts,
 } from '@/core/geometry/primitives';
-import { computeOuterContour } from '@/core/geometry/curve';
-import { detectRegionsWithDisks } from '@/core/geometry/curve';
-import { computeRobustConvexHull } from '@/core/geometry/hull';
 import type { CSArc, CSBlock, CSDisk, Point2D } from '@/core/types/cs';
 import type { KnotDiagram } from '@/core/types/knot';
-import { Logger } from '@/app/Logger';
 import { useDiskHull } from '@/features/editor/hooks/useDiskHull';
 import { DubinsLayer } from '@/ui/renderer/layers/DubinsLayer';
 import { KnotLayer } from '@/ui/renderer/layers/KnotLayer';
 import { RibbonLayer } from '@/ui/renderer/layers/RibbonLayer';
 import { StandardLayer } from '@/ui/renderer/layers/StandardLayer';
 
+import { useContactGraph } from '../hooks/useContactGraph';
+import { useContactPath } from '../hooks/useContactPath';
 import { ContactGraphRenderer } from './ContactGraphRenderer';
 import { ContactPathRenderer } from './ContactPathRenderer'; // Still used for activePath
 import { DubinsRenderer } from './DubinsRenderer';
 import { KnotRenderer } from './KnotRenderer';
-import { useContactGraph } from '../hooks/useContactGraph';
-import { useContactPath } from '../hooks/useContactPath';
 
 // ── FLAG: Outer Contour for Envelope Display ────────────────────
 // Set to `false` to revert to the old convex-hull-only envelope.
@@ -318,7 +318,8 @@ export function CSCanvas({
             };
           });
 
-          const result = findEnvelopePathFromPoints(dynamicPoints, contactDisks);
+          const anchorDiskIds = rawAnchorSequence.map((a: any) => a.diskId);
+          const result = findEnvelopePathFromPoints(dynamicPoints, contactDisks, undefined, anchorDiskIds);
           return result.path;
         } catch (e) {
           Logger.warn('CSCanvas', 'Failed to recompute dynamic knot path from raw anchors', e);

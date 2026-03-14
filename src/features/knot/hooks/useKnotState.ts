@@ -74,7 +74,7 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
   const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
     if (currentAnchors.length < 2) return { path: [], chiralities: [] };
 
-    const result = findEnvelopePathFromPoints(currentAnchors, contactDisks);
+    const result = findEnvelopePathFromPoints(currentAnchors, contactDisks, undefined, diskSequence);
 
     // Derive chiralities from result
     const derivedChiralities = new Map<string, 'L' | 'R'>();
@@ -188,7 +188,12 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
       diskSequence.slice(1, -1).filter(id => id !== firstDiskId && id !== lastDiskId),
     );
 
-    const closingResult = findEnvelopePathFromPoints([lastAnchor, firstAnchor], contactDisks, closingForbidden);
+    const closingResult = findEnvelopePathFromPoints(
+      [lastAnchor, firstAnchor],
+      contactDisks,
+      closingForbidden,
+      [lastDiskId, firstDiskId],
+    );
 
     if (closingResult.path.length > 0) {
       return [...knotPath, ...closingResult.path];
