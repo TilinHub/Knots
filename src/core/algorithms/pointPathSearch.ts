@@ -178,6 +178,11 @@ function findSubPathGraph(
   const visited = new Map<string, number>();
 
   obstacles.forEach((d) => {
+    // Skip forbidden intermediate disks during initialisation too.
+    // The startDisk is never in forbiddenDiskIds (it was deleted before calling this function),
+    // so this check correctly blocks only true intermediaries.
+    if (forbiddenDiskIds.has(d.id)) return;
+
     const tangents = getPointToDiskTangents(start, d);
     tangents.forEach((t) => {
       if (!intersectsAnyDiskStrict(start, t.pt, obstacles, d.id)) {
