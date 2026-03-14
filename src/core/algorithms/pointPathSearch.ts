@@ -326,6 +326,7 @@ function findSubPathGraph(
 export function findEnvelopePathFromPoints(
   anchors: Point2D[],
   obstacles: ContactDisk[],
+  globalForbiddenDiskIds?: Set<string>,
 ): EnvelopePathResult {
   if (anchors.length < 2) return { path: [], chiralities: [] };
 
@@ -503,7 +504,7 @@ export function findEnvelopePathFromPoints(
     // Candidate C: GRAPH SEARCH
     // Build forbidden set: all anchor disk IDs EXCEPT this segment's start/end disks.
     // This prevents graph search from routing through disks used as anchors elsewhere.
-    const forbiddenIds = new Set<string>();
+    const forbiddenIds = new Set<string>(globalForbiddenDiskIds ?? []);
     for (let j = 0; j < anchors.length; j++) {
       if (j === i || j === i + 1) continue; // Allow current segment's endpoints
       const anchorDisk = findDisk(anchors[j]);

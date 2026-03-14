@@ -1,22 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Logger } from '../../../app/Logger';
+import type { DubinsPath } from '../../../core/geometry/dubins';
 import {
+  type ArcSegment,
   type EnvelopePathResult,
   type EnvelopeSegment,
-  type ArcSegment,
-  type TangentSegment,
   findEnvelopePathFromPoints,
+  type TangentSegment,
 } from '../../../core/geometry/envelope/contactGraph';
-import type { DubinsPath } from '../../../core/geometry/dubins';
-import type { CSDisk } from '../../../core/types/cs';
-import { Logger } from '../../../app/Logger';
 import {
   validateNoObstacleIntersection,
   validateNoSelfIntersection,
 } from '../../../core/geometry/validation/envelopeValidator';
+import type { CSDisk } from '../../../core/types/cs';
 import type { Point2D } from '../../../core/types/cs';
-
-import type { UseKnotStateProps, DynamicAnchor } from '../types';
+import type { DynamicAnchor,UseKnotStateProps } from '../types';
 
 
 export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false, ribbonWidth = 20 }: UseKnotStateProps) {
@@ -181,13 +180,21 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     const lastAnchor = currentAnchors[currentAnchors.length - 1];
     const firstAnchor = currentAnchors[0];
 
-    const closingResult = findEnvelopePathFromPoints([lastAnchor, firstAnchor], contactDisks);
+    // The closing path must not route through disks already used in the main sequence.
+    // Only the first and last disk of the sequence are allowed as endpoints.
+    const firstDiskId = diskSequence[0];
+    const lastDiskId = diskSequence[diskSequence.length - 1];
+    const closingForbidden = new Set(
+      diskSequence.slice(1, -1).filter(id => id !== firstDiskId && id !== lastDiskId),
+    );
+
+    const closingResult = findEnvelopePathFromPoints([lastAnchor, firstAnchor], contactDisks, closingForbidden);
 
     if (closingResult.path.length > 0) {
       return [...knotPath, ...closingResult.path];
     }
     return knotPath;
-  }, [knotPath, currentAnchors, contactDisks]);
+  }, [knotPath, currentAnchors, contactDisks, diskSequence]);
 
   const toggleDisk = useCallback(
     (diskId: string) => {
