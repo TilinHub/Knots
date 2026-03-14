@@ -124,24 +124,45 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
   useEffect(() => {
     if (prevDraggingRef.current && !isDragging && lastElasticPathRef.current.length > 0) {
       const newAnchors: DynamicAnchor[] = [];
-      diskSequence.forEach((diskId) => {
+      diskSequence.forEach((diskId, seqIdx) => {
         const disk = blocks.find((b) => b.id === diskId && b.kind === 'disk');
         if (!disk) return;
 
-        const arc = lastElasticPathRef.current.find((s: any) => s.type === 'ARC' && s.diskId === diskId) as ArcSegment;
+        const nextDiskId = seqIdx < diskSequence.length - 1 ? diskSequence[seqIdx + 1] : null;
+
+        // 1. Prefer the specific outgoing tangent toward the next disk in the sequence.
+        //    Using the departure point as anchor ensures the next computation starts at
+        //    the departure → zero arc needed for segment (i → i+1), preventing double-arcs.
+        if (nextDiskId) {
+          const depSeg = lastElasticPathRef.current.find(
+            (s: any) => s.type !== 'ARC' && s.startDiskId === diskId && s.endDiskId === nextDiskId,
+          ) as TangentSegment | undefined;
+          if (depSeg) {
+            const angle = Math.atan2(depSeg.start.y - disk.center.y, depSeg.start.x - disk.center.x);
+            newAnchors.push({ diskId, angle });
+            return;
+          }
+        }
+
+        // 2. Fallback: arc.endAngle (departure from arc), not startAngle (arrival).
+        //    Using arrival as anchor caused double-arcs summing to ~360° when the
+        //    stale anchor ended up on the wrong side of the disk after another disk moved.
+        const arc = lastElasticPathRef.current.find((s: any) => s.type === 'ARC' && s.diskId === diskId) as ArcSegment | undefined;
         if (arc) {
-          newAnchors.push({ diskId, angle: arc.startAngle });
+          newAnchors.push({ diskId, angle: arc.endAngle });
           return;
         }
 
-        const outTangent = lastElasticPathRef.current.find((s: any) => s.startDiskId === diskId) as TangentSegment;
+        // 3. Any outgoing tangent from this disk.
+        const outTangent = lastElasticPathRef.current.find((s: any) => s.type !== 'ARC' && s.startDiskId === diskId) as TangentSegment | undefined;
         if (outTangent) {
           const angle = Math.atan2(outTangent.start.y - disk.center.y, outTangent.start.x - disk.center.x);
           newAnchors.push({ diskId, angle });
           return;
         }
 
-        const inTangent = lastElasticPathRef.current.find((s: any) => s.endDiskId === diskId) as TangentSegment;
+        // 4. Last resort: incoming tangent endpoint.
+        const inTangent = lastElasticPathRef.current.find((s: any) => s.type !== 'ARC' && s.endDiskId === diskId) as TangentSegment | undefined;
         if (inTangent) {
           const angle = Math.atan2(inTangent.end.y - disk.center.y, inTangent.end.x - disk.center.x);
           newAnchors.push({ diskId, angle });

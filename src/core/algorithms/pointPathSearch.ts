@@ -253,22 +253,24 @@ function findSubPathGraph(
         const exitTangents = getPointToDiskTangents(end, d);
         exitTangents.forEach((t) => {
           const exitAng = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
-          const shortArc = calcShortArc(d, curr.angle, exitAng);
-          if (!isArcBlocked(d, curr.angle, exitAng, shortArc.chirality, obstacles)) {
+          // Use the exit tangent's chirality for the arc direction (same as transit arc fix).
+          const exitChir = t.type as 'L' | 'R';
+          const exitArcLen = calcArc(d, curr.angle, exitAng, exitChir);
+          if (!isArcBlocked(d, curr.angle, exitAng, exitChir, obstacles)) {
             if (!intersectsAnyDiskStrict(t.pt, end, obstacles, d.id)) {
-              const total = curr.cost + shortArc.length + t.length;
+              const total = curr.cost + exitArcLen + t.length;
               if (total < minCost) {
                 minCost = total;
                 const p = [...curr.path];
-                if (shortArc.length > 1e-4)
+                if (exitArcLen > 1e-4)
                   p.push({
                     type: 'ARC',
                     center: d.center,
                     radius: d.radius,
                     startAngle: curr.angle,
                     endAngle: exitAng,
-                    chirality: shortArc.chirality,
-                    length: shortArc.length,
+                    chirality: exitChir,
+                    length: exitArcLen,
                     diskId: d.id,
                   });
                 p.push({
@@ -294,24 +296,28 @@ function findSubPathGraph(
         if (!nextDisk) continue;
 
         const depAng = Math.atan2(edge.start.y - d.center.y, edge.start.x - d.center.x);
-        const shortArc = calcShortArc(d, curr.angle, depAng);
+        // Use the edge's departure chirality to determine arc direction.
+        // This prevents crossing tangents at transit disks: the arc must go in the
+        // same rotational direction as the tangent's approach to the departure point.
+        const arcChir = edge.type.charAt(0) as 'L' | 'R';
+        const arcLen = calcArc(d, curr.angle, depAng, arcChir);
 
-        if (!isArcBlocked(d, curr.angle, depAng, shortArc.chirality, obstacles)) {
+        if (!isArcBlocked(d, curr.angle, depAng, arcChir, obstacles)) {
           const arrAng = Math.atan2(edge.end.y - nextDisk.center.y, edge.end.x - nextDisk.center.x);
-          const newCost = curr.cost + shortArc.length + edge.length;
+          const newCost = curr.cost + arcLen + edge.length;
           const nextChar = edge.type.endsWith('L') ? 'L' : 'R';
           const nextNodeId = `${nextId}:${nextChar}`;
           if (!visited.has(nextNodeId) || visited.get(nextNodeId)! > newCost) {
             const p = [...curr.path];
-            if (shortArc.length > 1e-4)
+            if (arcLen > 1e-4)
               p.push({
                 type: 'ARC',
                 center: d.center,
                 radius: d.radius,
                 startAngle: curr.angle,
                 endAngle: depAng,
-                chirality: shortArc.chirality,
-                length: shortArc.length,
+                chirality: arcChir,
+                length: arcLen,
                 diskId: d.id,
               });
             p.push(edge);
@@ -524,7 +530,7 @@ export function findEnvelopePathFromPoints(
     const forbiddenIds = new Set<string>(globalForbiddenDiskIds ?? []);
     for (let j = 0; j < anchors.length; j++) {
       if (j === i || j === i + 1) continue; // Allow current segment's endpoints
-      const anchorDisk = findDisk(anchors[j]);
+      const anchorDisk = findDisk(anchors[j], j); // Pass index to use explicit disk ID
       if (anchorDisk) forbiddenIds.add(anchorDisk.id);
     }
     // Also remove start/end disk IDs if they were added by other anchors on the same disk
