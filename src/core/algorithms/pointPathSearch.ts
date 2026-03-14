@@ -1,5 +1,5 @@
 import { Logger } from '../../app/Logger';
-import { intersectsAnyDiskStrict, intersectsDisk } from '../geometry/envelope/collision';
+import { intersectsAnyDiskStrict } from '../geometry/envelope/collision';
 import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, TangentType } from '../geometry/envelope/contactGraph';
 import { buildBoundedCurvatureGraph } from '../geometry/envelope/contactGraph';
 import type { ContactDisk } from '../types/contactGraph';
@@ -95,21 +95,27 @@ function lineCross(a: Point2D, b: Point2D, c: Point2D, d: Point2D): boolean {
   return t > EPSILON && t < 1 - EPSILON && u > EPSILON && u < 1 - EPSILON;
 }
 
-// Returns true if candidate introduces any tangent-tangent crossing with already-built path
-function candidateCrossesExisting(candidate: PathCandidate, existing: EnvelopeSegment[]): boolean {
+// Returns true if candidate introduces a crossing with an existing segment that connects
+// the SAME pair of disks in the opposite direction (A→B crossing B→A).
+// Crossings between DIFFERENT disk pairs are intentional knot crossings and are allowed.
+function candidateCrossesReversePair(candidate: PathCandidate, existing: EnvelopeSegment[]): boolean {
   for (const newSeg of candidate.path) {
     if (newSeg.type === 'ARC') continue;
     const nTan = newSeg as TangentSegment;
     for (const existSeg of existing) {
       if (existSeg.type === 'ARC') continue;
       const eTan = existSeg as TangentSegment;
+      // Only consider crossings between the same disk pair traversed in opposite directions
+      const isReversePair =
+        nTan.startDiskId === eTan.endDiskId && nTan.endDiskId === eTan.startDiskId;
+      if (!isReversePair) continue;
       if (lineCross(nTan.start, nTan.end, eTan.start, eTan.end)) return true;
     }
   }
   return false;
 }
 
-// Prefers candidates that don't cross already-built segments; falls back to shortest
+// Prefers candidates that don't create same-pair reverse crossings; falls back to shortest
 function chooseShortestNonCrossingPath(
   candidates: PathCandidate[],
   existing: EnvelopeSegment[],
@@ -118,7 +124,7 @@ function chooseShortestNonCrossingPath(
   candidates.sort((a, b) => a.length - b.length);
   if (existing.length === 0) return candidates[0];
   for (const c of candidates) {
-    if (!candidateCrossesExisting(c, existing)) return c;
+    if (!candidateCrossesReversePair(c, existing)) return c;
   }
   return candidates[0]; // all cross — fall back to shortest
 }
@@ -436,18 +442,6 @@ export function findEnvelopePathFromPoints(
           if (nx * dirX + ny * dirY > 0.01) { lineBlocked = true; blockReason = `arrival-inward(dot=${(nx * dirX + ny * dirY).toFixed(3)})`; }
         }
 
-        // 3. Check that the line doesn't re-enter the start disk or penetrate the end disk
-        //    intersectsAnyDiskStrict excludes start/end disks by ID, but a line starting
-        //    on one side of a disk can arc back through its interior on the way to another disk.
-        //    intersectsDisk handles the boundary-start case correctly via its eps tolerance.
-        if (!lineBlocked && startDisk && intersectsDisk(start, end, startDisk)) {
-          lineBlocked = true;
-          blockReason = 'reenter-start-disk';
-        }
-        if (!lineBlocked && endDisk && intersectsDisk(start, end, endDisk)) {
-          lineBlocked = true;
-          blockReason = 'penetrate-end-disk';
-        }
       }
     }
 
