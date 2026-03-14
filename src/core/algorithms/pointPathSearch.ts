@@ -1,13 +1,13 @@
 import { Logger } from '../../app/Logger';
-import { MinHeap } from './MinHeap';
-import type { ContactDisk } from '../types/contactGraph';
-import type { SearchNode, PathCandidate } from '../types/pathfinding';
-import type { Point2D } from '../types/cs';
-import type { BoundedCurvatureGraph, EnvelopeSegment, TangentType } from '../geometry/envelope/contactGraph';
-import { calcArc, calcShortArc } from './envelopePath';
-import type { EnvelopePathResult } from './envelopePath';
 import { intersectsAnyDiskStrict } from '../geometry/envelope/collision';
+import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, TangentType } from '../geometry/envelope/contactGraph';
 import { buildBoundedCurvatureGraph } from '../geometry/envelope/contactGraph';
+import type { ContactDisk } from '../types/contactGraph';
+import type { Point2D } from '../types/cs';
+import type { PathCandidate,SearchNode } from '../types/pathfinding';
+import type { EnvelopePathResult } from './envelopePath';
+import { calcArc, calcShortArc } from './envelopePath';
+import { MinHeap } from './MinHeap';
 
 // Helper: Check if an arc on 'disk' is blocked by any 'other' disk in 'obstacles'
 function isArcBlocked(
@@ -85,12 +85,42 @@ function isArcBlocked(
   return false;
 }
 
-function chooseShortestValidPath(
+// Returns true if two tangent line segments cross in their interiors (strict)
+function lineCross(a: Point2D, b: Point2D, c: Point2D, d: Point2D): boolean {
+  const EPSILON = 1e-4;
+  const denom = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
+  if (Math.abs(denom) < EPSILON) return false;
+  const t = ((c.x - a.x) * (d.y - c.y) - (c.y - a.y) * (d.x - c.x)) / denom;
+  const u = ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)) / denom;
+  return t > EPSILON && t < 1 - EPSILON && u > EPSILON && u < 1 - EPSILON;
+}
+
+// Returns true if candidate introduces any tangent-tangent crossing with already-built path
+function candidateCrossesExisting(candidate: PathCandidate, existing: EnvelopeSegment[]): boolean {
+  for (const newSeg of candidate.path) {
+    if (newSeg.type === 'ARC') continue;
+    const nTan = newSeg as TangentSegment;
+    for (const existSeg of existing) {
+      if (existSeg.type === 'ARC') continue;
+      const eTan = existSeg as TangentSegment;
+      if (lineCross(nTan.start, nTan.end, eTan.start, eTan.end)) return true;
+    }
+  }
+  return false;
+}
+
+// Prefers candidates that don't cross already-built segments; falls back to shortest
+function chooseShortestNonCrossingPath(
   candidates: PathCandidate[],
+  existing: EnvelopeSegment[],
 ): PathCandidate | null {
   if (candidates.length === 0) return null;
   candidates.sort((a, b) => a.length - b.length);
-  return candidates[0];
+  if (existing.length === 0) return candidates[0];
+  for (const c of candidates) {
+    if (!candidateCrossesExisting(c, existing)) return c;
+  }
+  return candidates[0]; // all cross — fall back to shortest
 }
 
 function findSubPathGraph(
@@ -413,7 +443,6 @@ export function findEnvelopePathFromPoints(
       disk: ContactDisk,
       point: Point2D,
       dir: Point2D,
-      isDeparture: boolean,
     ): 'L' | 'R' => {
       const nx = (point.x - disk.center.x) / disk.radius;
       const ny = (point.y - disk.center.y) / disk.radius;
@@ -440,11 +469,11 @@ export function findEnvelopePathFromPoints(
       let endType = 'L'; // Default if point
 
       if (startDisk) {
-        startType = getChirality(startDisk, start, { x: dirX, y: dirY }, true);
+        startType = getChirality(startDisk, start, { x: dirX, y: dirY });
       }
       if (endDisk) {
         // For arrival, the tangent flow matches the line direction.
-        endType = getChirality(endDisk, end, { x: dirX, y: dirY }, false);
+        endType = getChirality(endDisk, end, { x: dirX, y: dirY });
       }
 
       const typeStr = `${startType}S${endType}` as TangentType;
@@ -490,14 +519,14 @@ export function findEnvelopePathFromPoints(
       });
     }
 
-    const best = chooseShortestValidPath(candidates);
+    const best = chooseShortestNonCrossingPath(candidates, fullPath);
 
     Logger.debug('PointPathSearch', `Segment ${i}: ${startDisk?.id || 'pt'} → ${endDisk?.id || 'pt'}`, {
       directBlocked: lineBlocked,
       blockReason: blockReason || 'none',
       candidates: candidates.length,
       bestLen: best ? best.length.toFixed(2) : 'NONE',
-      bestTypes: best ? best.path.map((s: any) => s.type).join(',') : 'NONE',
+      bestTypes: best ? best.path.map((s: EnvelopeSegment) => s.type).join(',') : 'NONE',
     });
 
     if (best) {
