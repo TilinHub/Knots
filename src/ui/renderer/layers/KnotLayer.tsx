@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 
-import type { EnvelopeSegment } from '../../../core/geometry/envelope/contactGraph';
+import type { EnvelopeSegment, TangentSegment } from '../../../core/geometry/envelope/contactGraph';
+import { intersectsAnyDiskStrict } from '../../../core/geometry/envelope/collision';
 import type { CSDisk } from '../../../core/types/cs';
 import type { LayerProps } from '../types/Layer';
 import { BaseLayer } from './BaseLayer';
@@ -117,41 +118,61 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
 
   const disks = useMemo(() => blocks.filter((b): b is CSDisk => b.kind === 'disk'), [blocks]);
 
+  // Last line of defense: filter any tangent that crosses a visual disk
+  const safeKnotPath = useMemo(() => {
+    if (!knotPath || knotPath.length === 0 || disks.length === 0) return knotPath;
+    const obstacleDisksList = disks.map((d) => ({
+      id: d.id, center: d.center, radius: d.visualRadius, regionId: 'default',
+    }));
+    return knotPath.filter((seg: EnvelopeSegment) => {
+      if (seg.type === 'ARC') return true;
+      const tan = seg as TangentSegment;
+      return !intersectsAnyDiskStrict(tan.start, tan.end, obstacleDisksList, tan.startDiskId, tan.endDiskId);
+    });
+  }, [knotPath, disks]);
+
   return (
     <BaseLayer visible={visible} zIndex={10}>
       <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
         {/* Envelope (from knotPath which respects user anchors) - Only in Knot Mode */}
-        {showEnvelope && knotMode && knotPath && knotPath.length > 0 && (
+        {showEnvelope && knotMode && safeKnotPath && safeKnotPath.length > 0 && (
           <>
             {/* Fill */}
             <path
-              d={segmentsToPath(knotPath)}
+              d={segmentsToPath(safeKnotPath)}
               fill={envelopeColor || '#5CA0D3'}
               fillOpacity={0.1}
               stroke="none"
               style={{ pointerEvents: 'none' }}
             />
             {/* Stroke */}
-            <PathLayer path={knotPath} color={envelopeColor || '#5CA0D3'} width={2} />
+            <PathLayer path={safeKnotPath} color={envelopeColor || '#5CA0D3'} width={2} />
           </>
         )}
 
-        {savedKnotPaths.map((k) => (
-          <PathLayer
-            key={k.id}
-            path={k.path}
-            // If savedEnvelopeColor is explicitly provided (controlled), use it.
-            // Otherwise fall back to k.color (if saved with one) or default.
-            // Note: savedEnvelopeColor comes from state, so it might be the default #5CA0D3 if not touched.
-            // Use it if defined.
-            color={savedEnvelopeColor || k.color || '#FF4500'}
-            width={5}
-          />
-        ))}
+        {savedKnotPaths.map((k) => {
+          // Validate saved paths against current disk positions
+          const obsList = disks.map((d) => ({
+            id: d.id, center: d.center, radius: d.visualRadius, regionId: 'default',
+          }));
+          const safePath = k.path.filter((seg: EnvelopeSegment) => {
+            if (seg.type === 'ARC') return true;
+            const tan = seg as TangentSegment;
+            return !intersectsAnyDiskStrict(tan.start, tan.end, obsList, tan.startDiskId, tan.endDiskId);
+          });
+          return (
+            <PathLayer
+              key={k.id}
+              path={safePath}
+              color={savedEnvelopeColor || k.color || '#FF4500'}
+              width={5}
+            />
+          );
+        })}
 
         {/* Active Knot Construction Path - Always visible in Knot Mode */}
-        {knotMode && knotPath && knotPath.length > 0 && (
-          <PathLayer path={knotPath} color="#FF0000" width={3} />
+        {knotMode && safeKnotPath && safeKnotPath.length > 0 && (
+          <PathLayer path={safeKnotPath} color="#FF0000" width={3} />
         )}
 
         {/* Debug Anchors */}

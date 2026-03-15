@@ -131,25 +131,38 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     };
   }, [currentAnchors, contactDisks, diskSequence, chiralities, isDragging, lockedChiralities]);
 
-  // Post-validate path against visual disk boundaries
-  // In ribbon mode, the path is computed with small radii, but tangent lines
-  // must not cross the visual (full-size) disk boundaries
-  const validatedPath = useMemo(() => {
-    if (!ribbonMode || computationResult.path.length === 0) return computationResult.path;
-
-    const visualDisks: ContactDisk[] = blocks.map((d) => ({
+  // Universal visual-radius disks for validation
+  // ALWAYS uses visualRadius regardless of ribbonMode — the rendered green disks
+  // are at visualRadius, so tangent lines must never cross them visually.
+  const visualDisks: ContactDisk[] = useMemo(
+    () => blocks.map((d) => ({
       id: d.id,
       center: d.center,
       radius: d.visualRadius,
       regionId: 'default',
-    }));
+    })),
+    [blocks],
+  );
 
-    return computationResult.path.filter((seg: EnvelopeSegment) => {
+  // Post-validate path against visual disk boundaries — ALWAYS, not just ribbon mode.
+  // This is the final gate: no tangent segment may cross any visual disk.
+  const validatedPath = useMemo(() => {
+    if (computationResult.path.length === 0) return computationResult.path;
+
+    const filtered = computationResult.path.filter((seg: EnvelopeSegment) => {
       if (seg.type === 'ARC') return true;
       const tan = seg as TangentSegment;
       return !intersectsAnyDiskStrict(tan.start, tan.end, visualDisks, tan.startDiskId, tan.endDiskId);
     });
-  }, [computationResult.path, blocks, ribbonMode]);
+
+    if (filtered.length !== computationResult.path.length) {
+      Logger.warn('KnotState', 'Post-validation removed disk-crossing segments', {
+        removed: computationResult.path.length - filtered.length,
+      });
+    }
+
+    return filtered;
+  }, [computationResult.path, visualDisks]);
 
   // Sync locked chiralities when not dragging
   useEffect(() => {
@@ -262,10 +275,18 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     );
 
     if (closingResult.path.length > 0) {
-      return [...knotPath, ...closingResult.path];
+      // Validate closing path against visual disks too
+      const validClosing = closingResult.path.filter((seg: EnvelopeSegment) => {
+        if (seg.type === 'ARC') return true;
+        const tan = seg as TangentSegment;
+        return !intersectsAnyDiskStrict(tan.start, tan.end, visualDisks, tan.startDiskId, tan.endDiskId);
+      });
+      if (validClosing.length > 0) {
+        return [...knotPath, ...validClosing];
+      }
     }
     return knotPath;
-  }, [knotPath, currentAnchors, contactDisks, diskSequence]);
+  }, [knotPath, currentAnchors, contactDisks, diskSequence, visualDisks]);
 
   const toggleDisk = useCallback(
     (diskId: string) => {
