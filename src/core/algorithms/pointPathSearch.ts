@@ -228,60 +228,72 @@ function findSubPathGraph(
 
       if (onEndDisk) {
         const exitAng = Math.atan2(end.y - d.center.y, end.x - d.center.x);
-        const shortArc = calcShortArc(d, curr.angle, exitAng);
-        if (!isArcBlocked(d, curr.angle, exitAng, shortArc.chirality, obstacles)) {
-          const total = curr.cost + shortArc.length;
-          if (total < minCost) {
-            minCost = total;
-            const p = [...curr.path];
-            if (shortArc.length > 1e-4) {
-              p.push({
-                type: 'ARC',
-                center: d.center,
-                radius: d.radius,
-                startAngle: curr.angle,
-                endAngle: exitAng,
-                chirality: shortArc.chirality,
-                length: shortArc.length,
-                diskId: d.id,
-              });
+        // Try both arc directions: short first, then long if short is blocked.
+        for (const tryChir of ['short', 'long'] as const) {
+          const shortArc = calcShortArc(d, curr.angle, exitAng);
+          const chir: 'L' | 'R' = tryChir === 'short' ? shortArc.chirality : (shortArc.chirality === 'L' ? 'R' : 'L');
+          const arcLen = tryChir === 'short' ? shortArc.length : calcArc(d, curr.angle, exitAng, chir);
+          if (!isArcBlocked(d, curr.angle, exitAng, chir, obstacles)) {
+            const total = curr.cost + arcLen;
+            if (total < minCost) {
+              minCost = total;
+              const p = [...curr.path];
+              if (arcLen > 1e-4) {
+                p.push({
+                  type: 'ARC',
+                  center: d.center,
+                  radius: d.radius,
+                  startAngle: curr.angle,
+                  endAngle: exitAng,
+                  chirality: chir,
+                  length: arcLen,
+                  diskId: d.id,
+                });
+              }
+              bestEnd = { id: 'END', cost: total, path: p, angle: 0 };
             }
-            bestEnd = { id: 'END', cost: total, path: p, angle: 0 };
+            break; // Short arc worked
           }
         }
       } else {
         const exitTangents = getPointToDiskTangents(end, d);
         exitTangents.forEach((t) => {
           const exitAng = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
-          // Use the exit tangent's chirality for the arc direction (same as transit arc fix).
-          const exitChir = t.type as 'L' | 'R';
-          const exitArcLen = calcArc(d, curr.angle, exitAng, exitChir);
-          if (!isArcBlocked(d, curr.angle, exitAng, exitChir, obstacles)) {
-            if (!intersectsAnyDiskStrict(t.pt, end, obstacles, d.id)) {
-              const total = curr.cost + exitArcLen + t.length;
-              if (total < minCost) {
-                minCost = total;
-                const p = [...curr.path];
-                if (exitArcLen > 1e-4)
+          if (!intersectsAnyDiskStrict(t.pt, end, obstacles, d.id)) {
+            // Try both arc directions (short first, then long if short is blocked).
+            // This ensures the search doesn't miss valid paths where the short arc
+            // is blocked by an overlapping disk but the long arc is free.
+            for (const tryChir of ['short', 'long'] as const) {
+              const shortArc = calcShortArc(d, curr.angle, exitAng);
+              const chir: 'L' | 'R' = tryChir === 'short' ? shortArc.chirality : (shortArc.chirality === 'L' ? 'R' : 'L');
+              const arcLen = tryChir === 'short' ? shortArc.length : calcArc(d, curr.angle, exitAng, chir);
+              if (!isArcBlocked(d, curr.angle, exitAng, chir, obstacles)) {
+                const total = curr.cost + arcLen + t.length;
+                if (total < minCost) {
+                  minCost = total;
+                  const p = [...curr.path];
+                  if (arcLen > 1e-4)
+                    p.push({
+                      type: 'ARC',
+                      center: d.center,
+                      radius: d.radius,
+                      startAngle: curr.angle,
+                      endAngle: exitAng,
+                      chirality: chir,
+                      length: arcLen,
+                      diskId: d.id,
+                    });
                   p.push({
-                    type: 'ARC',
-                    center: d.center,
-                    radius: d.radius,
-                    startAngle: curr.angle,
-                    endAngle: exitAng,
-                    chirality: exitChir,
-                    length: exitArcLen,
-                    diskId: d.id,
+                    type: t.type === 'L' ? 'DTP-L' : 'DTP-R',
+                    start: t.pt,
+                    end: end,
+                    length: t.length,
+                    startDiskId: d.id,
+                    endDiskId: 'end',
                   });
-                p.push({
-                  type: t.type === 'L' ? 'DTP-L' : 'DTP-R',
-                  start: t.pt,
-                  end: end,
-                  length: t.length,
-                  startDiskId: d.id,
-                  endDiskId: 'end',
-                });
-                bestEnd = { id: 'END', cost: total, path: p, angle: 0 };
+                  bestEnd = { id: 'END', cost: total, path: p, angle: 0 };
+                }
+                break; // Short arc worked, no need to try long
               }
             }
           }
@@ -296,32 +308,36 @@ function findSubPathGraph(
         if (!nextDisk) continue;
 
         const depAng = Math.atan2(edge.start.y - d.center.y, edge.start.x - d.center.x);
-        // Use the edge's departure chirality to determine arc direction.
-        // This prevents crossing tangents at transit disks: the arc must go in the
-        // same rotational direction as the tangent's approach to the departure point.
-        const arcChir = edge.type.charAt(0) as 'L' | 'R';
-        const arcLen = calcArc(d, curr.angle, depAng, arcChir);
+        // Try short arc first; if blocked by an overlapping disk, try the long arc.
+        // This prevents missing valid paths where the short arc is blocked but the
+        // long arc (going the other way around) is geometrically clear.
+        for (const tryChir of ['short', 'long'] as const) {
+          const shortArc = calcShortArc(d, curr.angle, depAng);
+          const chir: 'L' | 'R' = tryChir === 'short' ? shortArc.chirality : (shortArc.chirality === 'L' ? 'R' : 'L');
+          const arcLen = tryChir === 'short' ? shortArc.length : calcArc(d, curr.angle, depAng, chir);
 
-        if (!isArcBlocked(d, curr.angle, depAng, arcChir, obstacles)) {
-          const arrAng = Math.atan2(edge.end.y - nextDisk.center.y, edge.end.x - nextDisk.center.x);
-          const newCost = curr.cost + arcLen + edge.length;
-          const nextChar = edge.type.endsWith('L') ? 'L' : 'R';
-          const nextNodeId = `${nextId}:${nextChar}`;
-          if (!visited.has(nextNodeId) || visited.get(nextNodeId)! > newCost) {
-            const p = [...curr.path];
-            if (arcLen > 1e-4)
-              p.push({
-                type: 'ARC',
-                center: d.center,
-                radius: d.radius,
-                startAngle: curr.angle,
-                endAngle: depAng,
-                chirality: arcChir,
-                length: arcLen,
-                diskId: d.id,
-              });
-            p.push(edge);
-            pq.push({ id: nextNodeId, cost: newCost, path: p, angle: arrAng, diskId: nextId }, newCost);
+          if (!isArcBlocked(d, curr.angle, depAng, chir, obstacles)) {
+            const arrAng = Math.atan2(edge.end.y - nextDisk.center.y, edge.end.x - nextDisk.center.x);
+            const newCost = curr.cost + arcLen + edge.length;
+            const nextChar = edge.type.endsWith('L') ? 'L' : 'R';
+            const nextNodeId = `${nextId}:${nextChar}`;
+            if (!visited.has(nextNodeId) || visited.get(nextNodeId)! > newCost) {
+              const p = [...curr.path];
+              if (arcLen > 1e-4)
+                p.push({
+                  type: 'ARC',
+                  center: d.center,
+                  radius: d.radius,
+                  startAngle: curr.angle,
+                  endAngle: depAng,
+                  chirality: chir,
+                  length: arcLen,
+                  diskId: d.id,
+                });
+              p.push(edge);
+              pq.push({ id: nextNodeId, cost: newCost, path: p, angle: arrAng, diskId: nextId }, newCost);
+            }
+            break; // Short arc worked, no need to try long
           }
         }
       }
