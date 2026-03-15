@@ -2,6 +2,7 @@ import { Logger } from '../../app/Logger';
 import { intersectsAnyDiskStrict } from '../geometry/envelope/collision';
 import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, TangentType } from '../geometry/envelope/contactGraph';
 import { buildBoundedCurvatureGraph } from '../geometry/envelope/contactGraph';
+import { calculateBitangent } from '../geometry/primitives/bitangents';
 import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 import type { PathCandidate,SearchNode } from '../types/pathfinding';
@@ -65,7 +66,7 @@ function isArcBlocked(
     const chordLen = 2 * disk.radius * Math.sin(gamma);
 
     // Only block if the chord is substantive (not just a grazing touch from numerical noise)
-    if (chordLen < disk.radius * 0.01) continue;
+    if (chordLen < disk.radius * 0.001) continue;
 
     const b1 = norm(phi - gamma);
     const b2 = norm(phi + gamma);
@@ -348,6 +349,83 @@ function findSubPathGraph(
   else Logger.debug('ContactGraph', 'findSubPathGraph: Path found', { cost: bestEnd.cost });
 
   return bestEnd ? bestEnd.path : null;
+}
+
+/**
+ * Elastic path recomputation: rebuilds the envelope path from locked chiralities
+ * WITHOUT running A* search. Used during drag to preserve topology.
+ *
+ * For each consecutive pair (i, i+1) in diskSequence:
+ *   1. Determine tangent type from chiralities: `${chir[i]}S${chir[i+1]}`
+ *   2. Compute that specific bitangent
+ *   3. Compute arc on disk[i] from previous arrival angle to this departure angle
+ *
+ * This guarantees the envelope only stretches/contracts — never creates new paths.
+ */
+export function recomputeElasticPath(
+  diskIds: string[],
+  obstacles: ContactDisk[],
+  lockedChiralities: ('L' | 'R')[],
+): EnvelopePathResult | null {
+  if (diskIds.length < 2 || lockedChiralities.length !== diskIds.length) return null;
+
+  const diskMap = new Map<string, ContactDisk>();
+  obstacles.forEach((d) => diskMap.set(d.id, d));
+
+  const path: EnvelopeSegment[] = [];
+  let prevArrivalAngle: number | null = null;
+  let prevDiskId: string | null = null;
+
+  for (let i = 0; i < diskIds.length - 1; i++) {
+    const d1 = diskMap.get(diskIds[i]);
+    const d2 = diskMap.get(diskIds[i + 1]);
+    if (!d1 || !d2) return null;
+
+    // Determine tangent type from locked chiralities
+    const tangentType: TangentType = `${lockedChiralities[i]}S${lockedChiralities[i + 1]}` as TangentType;
+
+    // Compute the specific bitangent
+    const bitangent = calculateBitangent(d1, d2, tangentType);
+    if (!bitangent) {
+      // Geometry is degenerate (e.g. disks too close for inner tangent) — fallback
+      return null;
+    }
+
+    // Compute transit arc on disk[i] from previous arrival to this departure
+    const depAngle = Math.atan2(bitangent.start.y - d1.center.y, bitangent.start.x - d1.center.x);
+
+    if (prevArrivalAngle !== null && prevDiskId === diskIds[i]) {
+      const arcLen = calcArc(d1, prevArrivalAngle, depAngle, lockedChiralities[i]);
+      if (arcLen > 1e-4) {
+        path.push({
+          type: 'ARC',
+          center: d1.center,
+          radius: d1.radius,
+          startAngle: prevArrivalAngle,
+          endAngle: depAngle,
+          chirality: lockedChiralities[i],
+          length: arcLen,
+          diskId: d1.id,
+        });
+      }
+    }
+
+    // Add the tangent segment
+    path.push({
+      type: tangentType,
+      start: bitangent.start,
+      end: bitangent.end,
+      length: bitangent.length,
+      startDiskId: d1.id,
+      endDiskId: d2.id,
+    });
+
+    // Track arrival angle on disk[i+1]
+    prevArrivalAngle = Math.atan2(bitangent.end.y - d2.center.y, bitangent.end.x - d2.center.x);
+    prevDiskId = diskIds[i + 1];
+  }
+
+  return { path, chiralities: lockedChiralities };
 }
 
 export function findEnvelopePathFromPoints(

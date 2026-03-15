@@ -343,10 +343,9 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
     const segmentLen = Math.sqrt(segmentLenSq);
     const chordLen = (t2 - t1) * segmentLen;
 
-    // If chord is less than 1% of radius (grazing/touching)
-    // 0.10 rejects visible overlaps but is too loose, allowing visual clipping.
-    // 0.01 provides strict visual boundaries while tolerating numerical noise.
-    if (chordLen < r * 0.01) {
+    // If chord is less than 0.1% of radius (grazing/touching)
+    // Tighter threshold prevents visible disk penetration from tangent lines.
+    if (chordLen < r * 0.001) {
       // Grazing/Touching -> Allowed
       return false;
     }
@@ -363,7 +362,7 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
   const mx = (p1.x + p2.x) / 2;
   const my = (p1.y + p2.y) / 2;
   const midDistSq = (mx - cx) ** 2 + (my - cy) ** 2;
-  if (midDistSq < (r * 0.96) ** 2) {
+  if (midDistSq < (r * 0.99) ** 2) {
     return true;
   }
 

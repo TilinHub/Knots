@@ -15,6 +15,7 @@ import {
 } from '../../../core/geometry/validation/envelopeValidator';
 import type { CSDisk } from '../../../core/types/cs';
 import type { Point2D } from '../../../core/types/cs';
+import { recomputeElasticPath } from '../../../core/algorithms/pointPathSearch';
 import type { DynamicAnchor,UseKnotStateProps } from '../types';
 
 
@@ -70,41 +71,63 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     });
   }, [anchorSequence, blocks]);
 
-  // 2. Compute Path — restored to 5.5.11 logic: findEnvelopePathFromPoints only
+  // 2. Compute Path
+  // During drag: use elastic recomputation (preserves topology, only stretches/contracts).
+  // At rest: run full A* search to find optimal path.
   const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
     if (currentAnchors.length < 2) return { path: [], chiralities: [] };
 
+    // Elastic mode: recompute from locked chiralities without A* search
+    if (isDragging && lockedChiralities.length === diskSequence.length && diskSequence.length >= 2) {
+      const elastic = recomputeElasticPath(diskSequence, contactDisks, lockedChiralities);
+      if (elastic) {
+        return elastic;
+      }
+      // Fallback to full search if elastic fails (degenerate geometry)
+    }
+
     const result = findEnvelopePathFromPoints(currentAnchors, contactDisks, undefined, diskSequence);
 
-    // Derive chiralities from result
-    const derivedChiralities = new Map<string, 'L' | 'R'>();
-    result.path.forEach((seg) => {
-      const s = seg as any;
-      if (s.type === 'ARC') {
-        if (s.diskId && !derivedChiralities.has(s.diskId)) {
-          derivedChiralities.set(s.diskId, s.chirality);
-        }
-      } else if (['LSL', 'LSR', 'RSL', 'RSR'].includes(s.type)) {
-        if (s.startDiskId && !['point', 'start', 'end'].includes(s.startDiskId) && !derivedChiralities.has(s.startDiskId)) {
-          derivedChiralities.set(s.startDiskId, s.type.charAt(0) as 'L' | 'R');
-        }
-        if (s.endDiskId && !['point', 'start', 'end'].includes(s.endDiskId) && !derivedChiralities.has(s.endDiskId)) {
-          derivedChiralities.set(s.endDiskId, s.type.charAt(2) as 'L' | 'R');
+    // Derive chiralities from result (per-position, not per-diskId, to support multi-visit)
+    const fullChiralities: ('L' | 'R')[] = [];
+    for (let seqIdx = 0; seqIdx < diskSequence.length; seqIdx++) {
+      const diskId = diskSequence[seqIdx];
+      // Find the tangent segment that departs from this disk at this sequence position.
+      // For position i, the outgoing tangent is the one connecting disk[i] → disk[i+1].
+      let found = false;
+      if (seqIdx < diskSequence.length - 1) {
+        const nextDiskId = diskSequence[seqIdx + 1];
+        for (const seg of result.path) {
+          const s = seg as any;
+          if (s.type !== 'ARC' && s.startDiskId === diskId && s.endDiskId === nextDiskId) {
+            fullChiralities.push(s.type.charAt(0) as 'L' | 'R');
+            found = true;
+            break;
+          }
         }
       }
-    });
-
-    const fullChiralities: ('L' | 'R')[] = diskSequence.map((id, i) => {
-      if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
-      if (chiralities.length === diskSequence.length) return chiralities[i];
-      return 'L';
-    });
+      if (!found) {
+        // Fallback: check arcs, then incoming tangents
+        for (const seg of result.path) {
+          const s = seg as any;
+          if (s.type === 'ARC' && s.diskId === diskId) {
+            fullChiralities.push(s.chirality);
+            found = true;
+            break;
+          }
+        }
+      }
+      if (!found) {
+        // Last resort: use existing chirality or default
+        fullChiralities.push(chiralities[seqIdx] ?? 'L');
+      }
+    }
 
     return {
       path: result.path,
       chiralities: fullChiralities,
     };
-  }, [currentAnchors, contactDisks, diskSequence, chiralities]);
+  }, [currentAnchors, contactDisks, diskSequence, chiralities, isDragging, lockedChiralities]);
 
   // Sync locked chiralities when not dragging
   useEffect(() => {
