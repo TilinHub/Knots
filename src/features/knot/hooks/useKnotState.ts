@@ -13,7 +13,9 @@ import {
   validateNoObstacleIntersection,
   validateNoSelfIntersection,
 } from '../../../core/geometry/validation/envelopeValidator';
+import { intersectsAnyDiskStrict } from '../../../core/geometry/envelope/collision';
 import type { CSDisk } from '../../../core/types/cs';
+import type { ContactDisk } from '../../../core/types/contactGraph';
 import type { Point2D } from '../../../core/types/cs';
 import { recomputeElasticPath } from '../../../core/algorithms/pointPathSearch';
 import type { DynamicAnchor,UseKnotStateProps } from '../types';
@@ -129,6 +131,26 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     };
   }, [currentAnchors, contactDisks, diskSequence, chiralities, isDragging, lockedChiralities]);
 
+  // Post-validate path against visual disk boundaries
+  // In ribbon mode, the path is computed with small radii, but tangent lines
+  // must not cross the visual (full-size) disk boundaries
+  const validatedPath = useMemo(() => {
+    if (!ribbonMode || computationResult.path.length === 0) return computationResult.path;
+
+    const visualDisks: ContactDisk[] = blocks.map((d) => ({
+      id: d.id,
+      center: d.center,
+      radius: d.visualRadius,
+      regionId: 'default',
+    }));
+
+    return computationResult.path.filter((seg: EnvelopeSegment) => {
+      if (seg.type === 'ARC') return true;
+      const tan = seg as TangentSegment;
+      return !intersectsAnyDiskStrict(tan.start, tan.end, visualDisks, tan.startDiskId, tan.endDiskId);
+    });
+  }, [computationResult.path, blocks, ribbonMode]);
+
   // Sync locked chiralities when not dragging
   useEffect(() => {
     if (!isDragging && computationResult.chiralities.length === diskSequence.length) {
@@ -216,7 +238,7 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     return { valid: true };
   }, [computationResult.path, obstacleSegments]);
 
-  const knotPath = computationResult.path;
+  const knotPath = validatedPath;
 
   const envelopePath = useMemo(() => {
     if (knotPath.length === 0 || currentAnchors.length < 3) return knotPath;

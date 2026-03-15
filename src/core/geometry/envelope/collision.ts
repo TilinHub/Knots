@@ -358,13 +358,16 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
     }
   }
 
-  // --- Method 2: Midpoint Inside Check ---
-  // Catches chords where both endpoints are on/near boundary
-  const mx = (p1.x + p2.x) / 2;
-  const my = (p1.y + p2.y) / 2;
-  const midDistSq = (mx - cx) ** 2 + (my - cy) ** 2;
-  if (midDistSq < (r * 0.99) ** 2) {
-    return true;
+  // --- Method 2: Sample points inside check ---
+  // Check midpoint, quarter, and three-quarter points to catch segments
+  // that pass through the disk interior but have entry/exit near endpoints
+  for (const frac of [0.5, 0.25, 0.75]) {
+    const sx = p1.x + frac * (p2.x - p1.x);
+    const sy = p1.y + frac * (p2.y - p1.y);
+    const sDistSq = (sx - cx) ** 2 + (sy - cy) ** 2;
+    if (sDistSq < (r * 0.98) ** 2) {
+      return true;
+    }
   }
 
   return false;

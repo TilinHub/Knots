@@ -3,6 +3,7 @@ import type { ContactDisk } from '../types/contactGraph';
 import type { Point2D } from '../types/cs';
 import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, ArcSegment } from '../geometry/envelope/contactGraph';
 import type { EnvelopePoint } from '../types/knot';
+import { intersectsAnyDiskStrict } from '../geometry/envelope/collision';
 
 export type EnvelopePathResult = {
   path: EnvelopeSegment[];
@@ -310,6 +311,15 @@ function findEnvelopePathWithMemory(
     }
   }
 
+  // Post-validation: remove tangent segments that pass through any disk they shouldn't
+  const allDisksMemory = Array.from(graph.nodes.values());
+  const validatedPathMemory = bestFinal.path.filter((seg) => {
+    if (seg.type === 'ARC') return true;
+    const tan = seg as TangentSegment;
+    return !intersectsAnyDiskStrict(tan.start, tan.end, allDisksMemory, tan.startDiskId, tan.endDiskId);
+  });
+  bestFinal.path = validatedPathMemory;
+
   Logger.debug('ContactGraph', 'Envelope Path Found (Memory)', {
     cost: bestFinal.cost,
     pathLength: bestFinal.path.length,
@@ -499,6 +509,15 @@ function findEnvelopePathLegacy(
       }
     }
   }
+
+  // Post-validation: remove tangent segments that pass through any disk they shouldn't
+  const allDisksLegacy = Array.from(graph.nodes.values());
+  const validatedPathLegacy = bestFinal.path.filter((seg) => {
+    if (seg.type === 'ARC') return true;
+    const tan = seg as TangentSegment;
+    return !intersectsAnyDiskStrict(tan.start, tan.end, allDisksLegacy, tan.startDiskId, tan.endDiskId);
+  });
+  bestFinal.path = validatedPathLegacy;
 
   Logger.debug('ContactGraph', 'Envelope Path Found', {
     cost: bestFinal.cost,
