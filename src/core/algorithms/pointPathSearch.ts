@@ -387,8 +387,12 @@ export function recomputeElasticPath(
     // Compute the specific bitangent
     const bitangent = calculateBitangent(d1, d2, tangentType);
     if (!bitangent) {
-      // Geometry is degenerate (e.g. disks too close for inner tangent) — fallback
-      return null;
+      return null; // Geometry degenerate — fallback to full search
+    }
+
+    // Collision check: reject if bitangent passes through ANY other disk
+    if (intersectsAnyDiskStrict(bitangent.start, bitangent.end, obstacles, d1.id, d2.id)) {
+      return null; // Tangent overlaps a disk — fallback to full search
     }
 
     // Compute transit arc on disk[i] from previous arrival to this departure
@@ -397,6 +401,10 @@ export function recomputeElasticPath(
     if (prevArrivalAngle !== null && prevDiskId === diskIds[i]) {
       const arcLen = calcArc(d1, prevArrivalAngle, depAngle, lockedChiralities[i]);
       if (arcLen > 1e-4) {
+        // Check if transit arc is blocked by another disk
+        if (isArcBlocked(d1, prevArrivalAngle, depAngle, lockedChiralities[i], obstacles)) {
+          return null; // Arc blocked — fallback to full search
+        }
         path.push({
           type: 'ARC',
           center: d1.center,
@@ -696,5 +704,19 @@ export function findEnvelopePathFromPoints(
     }
   }
 
-  return { path: fullPath, chiralities: [] };
+  // Post-validation: remove any tangent segment that passes through a disk it shouldn't.
+  // This is a safety net catching edge cases missed by candidate selection.
+  const validatedPath = fullPath.filter((seg) => {
+    if (seg.type === 'ARC') return true; // Arcs are always on disk boundaries
+    const tan = seg as TangentSegment;
+    return !intersectsAnyDiskStrict(tan.start, tan.end, obstacles, tan.startDiskId, tan.endDiskId);
+  });
+
+  if (validatedPath.length !== fullPath.length) {
+    Logger.warn('PointPathSearch', 'Post-validation removed disk-overlapping segments', {
+      removed: fullPath.length - validatedPath.length,
+    });
+  }
+
+  return { path: validatedPath, chiralities: [] };
 }

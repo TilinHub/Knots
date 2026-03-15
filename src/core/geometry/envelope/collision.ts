@@ -351,7 +351,8 @@ export function intersectsDisk(p1: Point2D, p2: Point2D, disk: ContactDisk): boo
     }
 
     // Strictly interior crossing: t in (epsilon, 1-epsilon)
-    const eps = 0.005;
+    // Use a tighter tolerance to catch more intersections near endpoints.
+    const eps = 0.001;
     if ((t1 > eps && t1 < 1 - eps) || (t2 > eps && t2 < 1 - eps)) {
       return true;
     }
