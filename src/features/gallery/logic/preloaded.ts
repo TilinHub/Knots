@@ -7,16 +7,21 @@ import type { SavedKnot } from '../../editor/hooks/useEditorState';
  *
  * Central-satellite model:
  *   - D_0 at origin (central disk)
- *   - n satellite disks tangent to D_0, centres at distance 2r = 100 (visualRadius = 50)
- *   - For torus knots T(p,2): p satellites equally spaced, step-by-2 visiting, all-L chiralities
- *   - For figure-8 (4_1): paper's conjectured configuration (Fig.15, §6.4)
+ *   - n satellite disks tangent to D_0
+ *   - Core curve visits satellites in a specific order, going DIRECTLY between them
+ *     (the crossing tangent lines form the knot shape)
+ *   - For torus knots T(p,2): step-by-2 visiting produces star polygon patterns
+ *   - For figure-8 (4_1): paper's exact configuration (Fig.15, §6.4)
+ *
+ * Satellite distances (R = center-to-center distance):
+ *   - n ≤ 5: R = 100 (= 2 × visualRadius, tangent to D_0)
+ *   - n = 6: R = 106 (prevents adjacent satellite overlap)
+ *   - n = 7: R = 121 (prevents adjacent satellite overlap)
  */
 
 export const PRELOADED_KNOTS: SavedKnot[] = [
     // ── Unknot ─────────────────────────────────────────────────────────
-    // 0 crossings, 1 bounded region → 1 disk.
-    // We use 2 tangent disks (twisted unknot) so the engine can render a path.
-    // Rib = 2π (§6.1)
+    // 0 crossings. Single loop around one disk. Rib = π (§6.1)
     {
         id: 'pre-unknot',
         name: 'Unknot',
@@ -32,9 +37,7 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
     },
 
     // ── 3_1 Trefoil = T(3,2) ───────────────────────────────────────────
-    // 3 crossings → 4 disks (D_0 + 3 satellites at 120° apart)
-    // Satellites at angles 90°, 210°, 330° from D_0
-    // Step-by-2 visiting: 1 → 3 → 2
+    // 3 crossings → 4 disks. Step-by-2 → 1,3,2 → three-lobed trefoil shape.
     // Rib = 6 + 2π (§6.2)
     {
         id: 'pre-3_1',
@@ -53,17 +56,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
     },
 
     // ── 4_1 Figure-eight knot ──────────────────────────────────────────
-    // 4 crossings → 5 disks. Paper's conjectured minimiser (Fig.15, §6.4)
-    // D_0 central, D_1 & D_3 tangent to D_0 at ±45° below,
-    // D_2 tangent to D_1 & D_3 at bottom, D_4 tangent to D_0 above.
-    // Centres from paper: D_0=(0,0), D_1=(-√2,-√2), D_2=(0,-2√2),
-    //   D_3=(√2,-√2), D_4=(0,2), scaled by visualRadius=50.
-    // Core length: open problem
+    // 4 crossings → 5 disks. Paper's conjectured minimiser (Fig.15, §6.4).
+    // D_1↔D_2, D_2↔D_3 tangent pairs form lower loop; D_4↔D_0 forms upper loop.
     {
         id: 'pre-4_1',
         name: '4_1',
         diskSequence: ['d0', 'd4', 'd0', 'd1', 'd2', 'd3', 'd0'],
-        chiralities: ['L', 'R', 'L', 'R', 'L', 'R', 'L'],
+        chiralities: ['L', 'L', 'L', 'L', 'L', 'L', 'L'],
         color: '#FF4500',
         createdAt: 1735700002000,
         spritePos: '50% 0%',
@@ -77,15 +76,15 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
     },
 
     // ── 5_1 Cinquefoil = T(5,2) ────────────────────────────────────────
-    // 5 crossings → 6 disks (D_0 + 5 satellites at 72° apart)
-    // Starting angle 90°, step 72°
-    // Step-by-2 visiting: 1 → 3 → 5 → 2 → 4
-    // Rib = 10 + 2π (§6.7, T(p,2) family: Rib = 2p + 2π)
+    // 5 crossings → 6 disks. Step-by-2 → 1,3,5,2,4 → pentagram shape.
+    // Rib = 10 + 2π (§6.7)
+    // ALL-R chiralities: for p≥5 torus knots, RSR tangents go through center (star pattern).
+    // LSL tangents would go around the outside (convex hull).
     {
         id: 'pre-5_1',
         name: '5_1',
         diskSequence: ['d0', 'd1', 'd3', 'd5', 'd2', 'd4', 'd0'],
-        chiralities: ['L', 'L', 'L', 'L', 'L', 'L', 'L'],
+        chiralities: ['R', 'R', 'R', 'R', 'R', 'R', 'R'],
         color: '#FF4500',
         createdAt: 1735700003000,
         spritePos: '75% 0%',
@@ -100,9 +99,7 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
     },
 
     // ── 5_2 (twist knot, 5 crossings) ──────────────────────────────────
-    // 5 crossings → 6 disks (D_0 + 5 satellites)
-    // Same satellite positions as 5_1; different visiting order + chiralities
-    // distinguish it from T(5,2).
+    // 5 crossings → 6 disks. Visiting: 1,4,2,5,3 creates twist-knot crossings.
     {
         id: 'pre-5_2',
         name: '5_2',
@@ -122,7 +119,7 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
     },
 
     // ── 6_1 Stevedore knot (6 crossings) ───────────────────────────────
-    // 6 crossings → 7 disks (D_0 + 6 satellites at 60° apart)
+    // 6 crossings → 7 disks. R=106 to avoid overlap.
     {
         id: 'pre-6_1',
         name: '6_1',
@@ -133,17 +130,16 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '0% 50%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -86.6, y: 50 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -86.6, y: -50 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: 0, y: -100 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 86.6, y: -50 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 86.6, y: 50 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 106 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -91.8, y: 53 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -91.8, y: -53 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: 0, y: -106 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 91.8, y: -53 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 91.8, y: 53 }, radius: 1, visualRadius: 50, label: 'D6' },
         ],
     },
 
     // ── 6_2 (6 crossings) ──────────────────────────────────────────────
-    // 6 crossings → 7 disks (D_0 + 6 satellites at 60° apart)
     {
         id: 'pre-6_2',
         name: '6_2',
@@ -154,17 +150,16 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '25% 50%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -86.6, y: 50 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -86.6, y: -50 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: 0, y: -100 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 86.6, y: -50 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 86.6, y: 50 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 106 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -91.8, y: 53 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -91.8, y: -53 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: 0, y: -106 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 91.8, y: -53 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 91.8, y: 53 }, radius: 1, visualRadius: 50, label: 'D6' },
         ],
     },
 
     // ── 6_3 (6 crossings, amphicheiral) ────────────────────────────────
-    // 6 crossings → 7 disks (D_0 + 6 satellites at 60° apart)
     {
         id: 'pre-6_3',
         name: '6_3',
@@ -175,42 +170,40 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '50% 50%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -86.6, y: 50 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -86.6, y: -50 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: 0, y: -100 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 86.6, y: -50 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 86.6, y: 50 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 106 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -91.8, y: 53 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -91.8, y: -53 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: 0, y: -106 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 91.8, y: -53 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 91.8, y: 53 }, radius: 1, visualRadius: 50, label: 'D6' },
         ],
     },
 
     // ── 7_1 = T(7,2) ──────────────────────────────────────────────────
-    // 7 crossings → 8 disks (D_0 + 7 satellites at 360°/7 ≈ 51.43° apart)
-    // Step-by-2 visiting: 1 → 3 → 5 → 7 → 2 → 4 → 6
-    // Rib = 14 + 2π (T(p,2) family: Rib = 2p + 2π)
+    // 7 crossings → 8 disks. Step-by-2 → 1,3,5,7,2,4,6 → heptagram.
+    // R=121. Rib = 14 + 2π (§6.7)
     {
         id: 'pre-7_1',
         name: '7_1',
         diskSequence: ['d0', 'd1', 'd3', 'd5', 'd7', 'd2', 'd4', 'd6', 'd0'],
-        chiralities: ['L', 'L', 'L', 'L', 'L', 'L', 'L', 'L', 'L'],
+        chiralities: ['R', 'R', 'R', 'R', 'R', 'R', 'R', 'R', 'R'],
         color: '#FF4500',
         createdAt: 1735700008000,
         spritePos: '75% 50%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D6' },
-            { id: 'd7', kind: 'disk', center: { x: 78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D7' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 121 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd7', kind: 'disk', center: { x: 94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D7' },
         ],
     },
 
     // ── 7_2 (7 crossings) ──────────────────────────────────────────────
-    // 7 crossings → 8 disks (D_0 + 7 satellites)
-    // Step-by-3 visiting: 1 → 4 → 7 → 3 → 6 → 2 → 5
+    // Step-by-3 visiting: 1,4,7,3,6,2,5. R=121.
     {
         id: 'pre-7_2',
         name: '7_2',
@@ -221,13 +214,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '100% 50%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D6' },
-            { id: 'd7', kind: 'disk', center: { x: 78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D7' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 121 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd7', kind: 'disk', center: { x: 94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D7' },
         ],
     },
 
@@ -242,13 +235,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '0% 100%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D6' },
-            { id: 'd7', kind: 'disk', center: { x: 78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D7' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 121 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd7', kind: 'disk', center: { x: 94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D7' },
         ],
     },
 
@@ -263,13 +256,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '25% 100%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D6' },
-            { id: 'd7', kind: 'disk', center: { x: 78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D7' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 121 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd7', kind: 'disk', center: { x: 94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D7' },
         ],
     },
 
@@ -278,19 +271,19 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         id: 'pre-7_5',
         name: '7_5',
         diskSequence: ['d0', 'd1', 'd5', 'd3', 'd7', 'd4', 'd2', 'd6', 'd0'],
-        chiralities: ['L', 'L', 'L', 'R', 'L', 'R', 'L', 'L', 'R'],
+        chiralities: ['L', 'L', 'R', 'L', 'R', 'L', 'R', 'L', 'R'],
         color: '#FF4500',
         createdAt: 1735700012000,
         spritePos: '50% 100%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D6' },
-            { id: 'd7', kind: 'disk', center: { x: 78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D7' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 121 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd7', kind: 'disk', center: { x: 94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D7' },
         ],
     },
 
@@ -305,13 +298,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '75% 100%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D6' },
-            { id: 'd7', kind: 'disk', center: { x: 78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D7' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 121 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd7', kind: 'disk', center: { x: 94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D7' },
         ],
     },
 
@@ -326,13 +319,13 @@ export const PRELOADED_KNOTS: SavedKnot[] = [
         spritePos: '100% 100%',
         blocks: [
             { id: 'd0', kind: 'disk', center: { x: 0, y: 0 }, radius: 1, visualRadius: 50, label: 'D0' },
-            { id: 'd1', kind: 'disk', center: { x: 0, y: 100 }, radius: 1, visualRadius: 50, label: 'D1' },
-            { id: 'd2', kind: 'disk', center: { x: -78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D2' },
-            { id: 'd3', kind: 'disk', center: { x: -97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D3' },
-            { id: 'd4', kind: 'disk', center: { x: -43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D4' },
-            { id: 'd5', kind: 'disk', center: { x: 43.39, y: -90.1 }, radius: 1, visualRadius: 50, label: 'D5' },
-            { id: 'd6', kind: 'disk', center: { x: 97.49, y: -22.25 }, radius: 1, visualRadius: 50, label: 'D6' },
-            { id: 'd7', kind: 'disk', center: { x: 78.18, y: 62.35 }, radius: 1, visualRadius: 50, label: 'D7' },
+            { id: 'd1', kind: 'disk', center: { x: 0, y: 121 }, radius: 1, visualRadius: 50, label: 'D1' },
+            { id: 'd2', kind: 'disk', center: { x: -94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D2' },
+            { id: 'd3', kind: 'disk', center: { x: -117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D3' },
+            { id: 'd4', kind: 'disk', center: { x: -52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D4' },
+            { id: 'd5', kind: 'disk', center: { x: 52.5, y: -109.02 }, radius: 1, visualRadius: 50, label: 'D5' },
+            { id: 'd6', kind: 'disk', center: { x: 117.97, y: -26.93 }, radius: 1, visualRadius: 50, label: 'D6' },
+            { id: 'd7', kind: 'disk', center: { x: 94.6, y: 75.44 }, radius: 1, visualRadius: 50, label: 'D7' },
         ],
     },
 ];

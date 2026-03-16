@@ -37,6 +37,7 @@ export function buildBoundedCurvatureGraph(
   checkCollisions: boolean = true,
   obstacleSegments: { p1: Point2D; p2: Point2D }[] = [],
   outerTangentsOnly: boolean = false,
+  collisionDisks?: ContactDisk[], // If provided, check collisions against these instead of `disks`
 ): BoundedCurvatureGraph {
   Logger.debug('ContactGraph', 'Building Bounded Curvature Graph', {
     disksCount: disks.length,
@@ -60,12 +61,14 @@ export function buildBoundedCurvatureGraph(
       }
 
       for (const seg of allCandidates) {
-        // Check against ALL other disks only if checkCollisions is true
+        // Check against collision disks (or all disks if no separate set provided)
         let blocked = false;
         if (checkCollisions) {
-          for (let k = 0; k < disks.length; k++) {
-            if (k === i || k === j) continue;
-            if (intersectsDisk(seg.start, seg.end, disks[k])) {
+          const checkDisks = collisionDisks ?? disks;
+          for (let k = 0; k < checkDisks.length; k++) {
+            // Skip the two endpoint disks of this tangent
+            if (checkDisks[k].id === disks[i].id || checkDisks[k].id === disks[j].id) continue;
+            if (intersectsDisk(seg.start, seg.end, checkDisks[k])) {
               blocked = true;
               break;
             }

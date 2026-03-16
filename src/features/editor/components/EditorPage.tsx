@@ -700,7 +700,36 @@ export function EditorPage({ onBackToGallery, initialKnot }: EditorPageProps) {
       knotState.actions.setChiralities(saved.chiralities);
     }
 
-    // 3. Close Gallery
+    // 3. Generate initial anchors from disk positions + sequence
+    //    Each anchor angle points toward the NEXT disk in the sequence,
+    //    giving the bitangent engine a valid starting configuration.
+    if (saved.diskSequence && saved.diskSequence.length >= 2 && knotState.actions.setAnchorSequence) {
+      const seq: string[] = saved.diskSequence;
+      const blockMap = new Map<string, { center: { x: number; y: number } }>();
+      for (const b of saved.blocks) {
+        blockMap.set(b.id, b);
+      }
+      const anchors: { diskId: string; angle: number }[] = [];
+      for (let i = 0; i < seq.length; i++) {
+        const disk = blockMap.get(seq[i]);
+        const nextDisk = blockMap.get(seq[(i + 1) % seq.length]);
+        if (disk && nextDisk) {
+          const angle = Math.atan2(
+            nextDisk.center.y - disk.center.y,
+            nextDisk.center.x - disk.center.x,
+          );
+          anchors.push({ diskId: seq[i], angle });
+        }
+      }
+      knotState.actions.setAnchorSequence(anchors);
+    }
+
+    // 4. Activate knot mode so the path renders
+    if (knotState.actions.setMode) {
+      knotState.actions.setMode('knot');
+    }
+
+    // 5. Close Gallery
     setGalleryMode(false);
     Logger.info('EditorPage', `Restored knot: ${saved.name}`);
   };

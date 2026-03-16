@@ -74,19 +74,32 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
   }, [anchorSequence, blocks]);
 
   // 2. Compute Path
-  // During drag: use elastic recomputation (preserves topology, only stretches/contracts).
-  // At rest: run full A* search to find optimal path.
+  // Primary: elastic recomputation from chiralities (produces proper bitangents + arcs).
+  // Fallback: A* anchor-based search (for initial construction without chiralities).
   const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
-    if (currentAnchors.length < 2) return { path: [], chiralities: [] };
+    if (diskSequence.length < 2) return { path: [], chiralities: [] };
 
-    // Elastic mode: recompute from locked chiralities without A* search
-    if (isDragging && lockedChiralities.length === diskSequence.length && diskSequence.length >= 2) {
-      const elastic = recomputeElasticPath(diskSequence, contactDisks, lockedChiralities);
+    // Choose the best available chiralities:
+    // - During drag: use lockedChiralities (preserves topology)
+    // - At rest with chiralities set (e.g., from gallery load): use chiralities state
+    const useChiralities: ('L' | 'R')[] | null =
+      isDragging && lockedChiralities.length === diskSequence.length
+        ? lockedChiralities
+        : chiralities.length === diskSequence.length
+          ? chiralities
+          : null;
+
+    // Elastic path: computes proper bitangents + connecting arcs on each disk
+    if (useChiralities && diskSequence.length >= 2) {
+      const elastic = recomputeElasticPath(diskSequence, contactDisks, useChiralities);
       if (elastic) {
         return elastic;
       }
-      // Fallback to full search if elastic fails (degenerate geometry)
+      // Fallback to anchor-based search if elastic fails (degenerate geometry)
     }
+
+    // Fallback: anchor-based A* search
+    if (currentAnchors.length < 2) return { path: [], chiralities: [] };
 
     const result = findEnvelopePathFromPoints(currentAnchors, contactDisks, undefined, diskSequence);
 
@@ -94,8 +107,6 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     const fullChiralities: ('L' | 'R')[] = [];
     for (let seqIdx = 0; seqIdx < diskSequence.length; seqIdx++) {
       const diskId = diskSequence[seqIdx];
-      // Find the tangent segment that departs from this disk at this sequence position.
-      // For position i, the outgoing tangent is the one connecting disk[i] → disk[i+1].
       let found = false;
       if (seqIdx < diskSequence.length - 1) {
         const nextDiskId = diskSequence[seqIdx + 1];
@@ -109,7 +120,6 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
         }
       }
       if (!found) {
-        // Fallback: check arcs, then incoming tangents
         for (const seg of result.path) {
           const s = seg as any;
           if (s.type === 'ARC' && s.diskId === diskId) {
@@ -120,7 +130,6 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
         }
       }
       if (!found) {
-        // Last resort: use existing chirality or default
         fullChiralities.push(chiralities[seqIdx] ?? 'L');
       }
     }
@@ -144,15 +153,24 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     [blocks],
   );
 
-  // Post-validate path against visual disk boundaries — ALWAYS, not just ribbon mode.
-  // This is the final gate: no tangent segment may cross any visual disk.
+  // Post-validate path against visual disk boundaries.
+  // In knot mode, allow tangent segments to cross disks that are part of the
+  // diskSequence — the core curve IS supposed to pass through these regions
+  // (this is how crossings form in the cs-diagram model).
+  // Only filter segments that cross disks NOT in the sequence.
+  const sequenceDiskIds = useMemo(() => new Set(diskSequence), [diskSequence]);
+
   const validatedPath = useMemo(() => {
     if (computationResult.path.length === 0) return computationResult.path;
+
+    // Build the list of disks that should block tangent segments:
+    // only disks NOT referenced by the knot sequence.
+    const blockingDisks = visualDisks.filter(d => !sequenceDiskIds.has(d.id));
 
     const filtered = computationResult.path.filter((seg: EnvelopeSegment) => {
       if (seg.type === 'ARC') return true;
       const tan = seg as TangentSegment;
-      return !intersectsAnyDiskStrict(tan.start, tan.end, visualDisks, tan.startDiskId, tan.endDiskId);
+      return !intersectsAnyDiskStrict(tan.start, tan.end, blockingDisks, tan.startDiskId, tan.endDiskId);
     });
 
     if (filtered.length !== computationResult.path.length) {
@@ -162,7 +180,7 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     }
 
     return filtered;
-  }, [computationResult.path, visualDisks]);
+  }, [computationResult.path, visualDisks, sequenceDiskIds]);
 
   // Sync locked chiralities when not dragging
   useEffect(() => {
