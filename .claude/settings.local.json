@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc:*)",
+      "Bash(find /c/Knots/src/core -type f -name \"*.ts\" -exec wc -l {} +)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest:*)",
+      "Bash(grep -i \"four_1\\\\|5_1\\\\|5_2\\\\|6_1\\\\|6_2\\\\|6_3\\\\|7_1\\\\|7_2\\\\|knot.*table\\\\|torus knot\" /c/Knots/research/papers/*.txt)",
+      "Bash(xargs grep:*)",
+      "Bash(ls -lh /c/Knots/public/data/*.txt)",
+      "Bash(find /c/Knots -name *.txt -type f)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}
