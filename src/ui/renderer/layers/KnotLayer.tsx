@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 
-import type { EnvelopeSegment, TangentSegment } from '../../../core/geometry/envelope/contactGraph';
-import { intersectsAnyDiskStrict } from '../../../core/geometry/envelope/collision';
+import type { EnvelopeSegment } from '../../../core/geometry/envelope/contactGraph';
 import type { CSDisk } from '../../../core/types/cs';
 import type { LayerProps } from '../types/Layer';
 import { BaseLayer } from './BaseLayer';
@@ -20,25 +19,23 @@ interface KnotLayerProps extends LayerProps {
   savedKnotPaths?: { id: string; color: string; path: EnvelopeSegment[] }[];
 }
 
-// Helper to convert envelope segments to a single closed SVG path for filling.
-// Inserts M (MoveTo) commands when consecutive segments are discontinuous
-// to prevent SVG from drawing implicit straight lines through disk interiors.
+// Helper to convert envelope segments to a single closed SVG path for filling
 function segmentsToPath(segments: EnvelopeSegment[]): string {
   if (!segments || segments.length === 0) return '';
-
-  const GAP_TOL = 0.5; // Tolerance for detecting gaps between segments
-  let prevEndX = 0, prevEndY = 0;
 
   return (
     segments
       .map((seg, i) => {
-        let startX: number, startY: number, endX: number, endY: number;
+        // Calculate start/end points
+        let startX, startY, endX, endY;
 
         if (seg.type === 'ARC') {
           startX = seg.center.x + seg.radius * Math.cos(seg.startAngle);
           startY = seg.center.y + seg.radius * Math.sin(seg.startAngle);
 
           let effEndAngle = seg.endAngle;
+          // [FIX] SVG completely drops Arc commands where start exactly equals end.
+          // If the arc is exactly a full circle, slightly offset the end point.
           const isFullCircle = Math.abs(seg.length - 2 * Math.PI * seg.radius) < 1e-4;
           if (isFullCircle) {
             effEndAngle += seg.chirality === 'L' ? -0.001 : 0.001;
@@ -53,20 +50,8 @@ function segmentsToPath(segments: EnvelopeSegment[]): string {
           endY = seg.end.y;
         }
 
-        // Insert M if first segment or if there's a gap from previous segment end
-        let move = '';
-        if (i === 0) {
-          move = `M ${startX} ${startY}`;
-        } else {
-          const dx = startX - prevEndX;
-          const dy = startY - prevEndY;
-          if (dx * dx + dy * dy > GAP_TOL * GAP_TOL) {
-            move = `M ${startX} ${startY}`;
-          }
-        }
-
-        prevEndX = endX;
-        prevEndY = endY;
+        // Move to start only for first segment
+        const move = i === 0 ? `M ${startX} ${startY}` : '';
 
         if (seg.type === 'ARC') {
           const largeArc = seg.length > Math.PI * seg.radius ? 1 : 0;
@@ -118,61 +103,41 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
 
   const disks = useMemo(() => blocks.filter((b): b is CSDisk => b.kind === 'disk'), [blocks]);
 
-  // Last line of defense: filter any tangent that crosses a visual disk
-  const safeKnotPath = useMemo(() => {
-    if (!knotPath || knotPath.length === 0 || disks.length === 0) return knotPath;
-    const obstacleDisksList = disks.map((d) => ({
-      id: d.id, center: d.center, radius: d.visualRadius, regionId: 'default',
-    }));
-    return knotPath.filter((seg: EnvelopeSegment) => {
-      if (seg.type === 'ARC') return true;
-      const tan = seg as TangentSegment;
-      return !intersectsAnyDiskStrict(tan.start, tan.end, obstacleDisksList, tan.startDiskId, tan.endDiskId);
-    });
-  }, [knotPath, disks]);
-
   return (
     <BaseLayer visible={visible} zIndex={10}>
       <g transform={`translate(${centerX}, ${centerY}) scale(1, -1)`}>
         {/* Envelope (from knotPath which respects user anchors) - Only in Knot Mode */}
-        {showEnvelope && knotMode && safeKnotPath && safeKnotPath.length > 0 && (
+        {showEnvelope && knotMode && knotPath && knotPath.length > 0 && (
           <>
             {/* Fill */}
             <path
-              d={segmentsToPath(safeKnotPath)}
+              d={segmentsToPath(knotPath)}
               fill={envelopeColor || '#5CA0D3'}
               fillOpacity={0.1}
               stroke="none"
               style={{ pointerEvents: 'none' }}
             />
             {/* Stroke */}
-            <PathLayer path={safeKnotPath} color={envelopeColor || '#5CA0D3'} width={2} />
+            <PathLayer path={knotPath} color={envelopeColor || '#5CA0D3'} width={2} />
           </>
         )}
 
-        {savedKnotPaths.map((k) => {
-          // Validate saved paths against current disk positions
-          const obsList = disks.map((d) => ({
-            id: d.id, center: d.center, radius: d.visualRadius, regionId: 'default',
-          }));
-          const safePath = k.path.filter((seg: EnvelopeSegment) => {
-            if (seg.type === 'ARC') return true;
-            const tan = seg as TangentSegment;
-            return !intersectsAnyDiskStrict(tan.start, tan.end, obsList, tan.startDiskId, tan.endDiskId);
-          });
-          return (
-            <PathLayer
-              key={k.id}
-              path={safePath}
-              color={savedEnvelopeColor || k.color || '#FF4500'}
-              width={5}
-            />
-          );
-        })}
+        {savedKnotPaths.map((k) => (
+          <PathLayer
+            key={k.id}
+            path={k.path}
+            // If savedEnvelopeColor is explicitly provided (controlled), use it.
+            // Otherwise fall back to k.color (if saved with one) or default.
+            // Note: savedEnvelopeColor comes from state, so it might be the default #5CA0D3 if not touched.
+            // Use it if defined.
+            color={savedEnvelopeColor || k.color || '#FF4500'}
+            width={5}
+          />
+        ))}
 
         {/* Active Knot Construction Path - Always visible in Knot Mode */}
-        {knotMode && safeKnotPath && safeKnotPath.length > 0 && (
-          <PathLayer path={safeKnotPath} color="#FF0000" width={3} />
+        {knotMode && knotPath && knotPath.length > 0 && (
+          <PathLayer path={knotPath} color="#FF0000" width={3} />
         )}
 
         {/* Debug Anchors */}

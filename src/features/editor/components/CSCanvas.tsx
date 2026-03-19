@@ -9,9 +9,7 @@ import {
   buildBoundedCurvatureGraph,
   findEnvelopePath,
   findEnvelopePathFromPoints,
-  type TangentSegment,
 } from '@/core/geometry/envelope/contactGraph';
-import { intersectsAnyDiskStrict } from '@/core/geometry/envelope/collision';
 import { resolveOverlapsSingleMove } from '@/core/geometry/hull';
 import { type Disk } from '@/core/geometry/hull';
 import { computeRobustConvexHull } from '@/core/geometry/hull';
@@ -40,20 +38,6 @@ import { KnotRenderer } from './KnotRenderer';
 // This flag ONLY affects envelope display (!knotMode && showEnvelope).
 // It does NOT affect: knot-mode paths, saved knot paths, Dubins, load/save.
 const USE_OUTER_CONTOUR_ENVELOPE = true;
-
-// Universal post-validation: remove tangent segments that cross visual disk interiors.
-// This is the LAST line of defense before rendering.
-function validatePathAgainstDisks(
-  path: EnvelopeSegment[],
-  disks: { id: string; center: Point2D; radius: number; regionId: string }[],
-): EnvelopeSegment[] {
-  if (!path || path.length === 0 || disks.length === 0) return path;
-  return path.filter((seg) => {
-    if (seg.type === 'ARC') return true;
-    const tan = seg as TangentSegment;
-    return !intersectsAnyDiskStrict(tan.start, tan.end, disks, tan.startDiskId, tan.endDiskId);
-  });
-}
 
 // Helper to darken/lighten hex color
 function adjustColor(color: string, amount: number): string {
@@ -198,7 +182,7 @@ export function CSCanvas({
   const {
     mode: knotModeStringArg,
     diskSequence: knotSequenceArg,
-    envelopePath: knotPathArg,   // Use envelopePath (closed loop) instead of knotPath (open)
+    knotPath: knotPathArg,
     anchorPoints: anchorPointsArg,
     anchorSequence: rawAnchorSequence, // [NEW] Get raw anchors (diskId, angle)
     chiralities: knotChiralities, // [NEW] Get chiralities for topology
@@ -283,12 +267,10 @@ export function CSCanvas({
   // We must recompute it using the *displayed* disks (which have the rolling position).
   const knotPath = React.useMemo(() => {
     // Guard: no recalcular durante drag — evita spam de warnings en cada MouseMove
-    if (dragState) return validatePathAgainstDisks(staticKnotPath, contactDisks);
+    if (dragState) return staticKnotPath;
 
     if (rollingMode && knotMode) {
       // 1. Priority: True Elastic Envelope (Sequence + Chirality)
-      // This respects the topology (L/R sequence) but re-solves the geometry continuously.
-      // This is the "Rubber Band" behavior described in contact compass theory.
       if (
         knotSequence &&
         knotSequence.length >= 2 &&
@@ -296,22 +278,13 @@ export function CSCanvas({
         knotChiralities.length > 0
       ) {
         try {
-          // Build a fresh graph from the CURRENT (rolling) disk positions
           const graph = buildBoundedCurvatureGraph(contactDisks, true, [], false);
-
-          // Solve for the path using the saved sequence and chiralities
-          // Solve for the path using the saved sequence and chiralities
-          // [FIX] Strict Chirality = TRUE.
-          // The envelope must behave like an elastic band that PRESERVES TOPOLOGY.
-          // It should not "snap" to a different winding just because it's shorter.
           const result = findEnvelopePath(graph, knotSequence, knotChiralities, true);
-
           if (result.path && result.path.length > 0) {
-            return validatePathAgainstDisks(result.path, contactDisks);
+            return result.path;
           }
         } catch (e) {
           Logger.warn('CSCanvas', 'Elastic Envelope calculation failed', e);
-          // Fallback to point-based if topological solver fails
         }
       }
 
@@ -323,7 +296,6 @@ export function CSCanvas({
             if (!disk) return { x: 0, y: 0 };
 
             let effectiveAngle = anchor.angle;
-            // If this is the rolling disk, add spin
             if (anchor.diskId === rollingDiskId && rollingDiskPosition) {
               effectiveAngle += rollingDiskPosition.spinAngle;
             }
@@ -334,26 +306,25 @@ export function CSCanvas({
             };
           });
 
-          const anchorDiskIds = rawAnchorSequence.map((a: any) => a.diskId);
-          const result = findEnvelopePathFromPoints(dynamicPoints, contactDisks, undefined, anchorDiskIds);
-          return validatePathAgainstDisks(result.path, contactDisks);
+          const result = findEnvelopePathFromPoints(dynamicPoints, contactDisks);
+          return result.path;
         } catch (e) {
           Logger.warn('CSCanvas', 'Failed to recompute dynamic knot path from raw anchors', e);
         }
       }
 
-      // 3. Fallback: Use static anchor points (only handles translation if anchors were updated, which they aren't)
+      // 3. Fallback: Use static anchor points
       if (anchorPoints && anchorPoints.length > 0) {
         try {
           const result = findEnvelopePathFromPoints(anchorPoints, contactDisks);
-          return validatePathAgainstDisks(result.path, contactDisks);
+          return result.path;
         } catch (e) {
           Logger.warn('CSCanvas', 'Failed to recompute dynamic knot path from static points', e);
-          return validatePathAgainstDisks(staticKnotPath, contactDisks);
+          return staticKnotPath;
         }
       }
     }
-    return validatePathAgainstDisks(staticKnotPath, contactDisks);
+    return staticKnotPath;
   }, [
     rollingMode,
     knotMode,

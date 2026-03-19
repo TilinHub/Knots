@@ -1,24 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Logger } from '../../../app/Logger';
-import type { DubinsPath } from '../../../core/geometry/dubins';
 import {
-  type ArcSegment,
   type EnvelopePathResult,
   type EnvelopeSegment,
-  findEnvelopePathFromPoints,
+  type ArcSegment,
   type TangentSegment,
+  findEnvelopePathFromPoints,
 } from '../../../core/geometry/envelope/contactGraph';
+import type { DubinsPath } from '../../../core/geometry/dubins';
+import type { CSDisk } from '../../../core/types/cs';
+import { Logger } from '../../../app/Logger';
 import {
   validateNoObstacleIntersection,
   validateNoSelfIntersection,
 } from '../../../core/geometry/validation/envelopeValidator';
-import { intersectsAnyDiskStrict, intersectsDisk } from '../../../core/geometry/envelope/collision';
-import type { CSDisk } from '../../../core/types/cs';
-import type { ContactDisk } from '../../../core/types/contactGraph';
 import type { Point2D } from '../../../core/types/cs';
-import { recomputeElasticPath } from '../../../core/algorithms/pointPathSearch';
-import type { DynamicAnchor,UseKnotStateProps } from '../types';
+
+import type { UseKnotStateProps, DynamicAnchor } from '../types';
 
 
 export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false, ribbonWidth = 20 }: UseKnotStateProps) {
@@ -73,107 +71,41 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     });
   }, [anchorSequence, blocks]);
 
-  // 2. Compute Path
-  // During drag: use elastic recomputation (preserves topology, only stretches/contracts).
-  // At rest: run full A* search to find optimal path.
+  // 2. Compute Path — restored to 5.5.11 logic: findEnvelopePathFromPoints only
   const computationResult: EnvelopePathResult & { dubinsPaths?: DubinsPath[] } = useMemo(() => {
     if (currentAnchors.length < 2) return { path: [], chiralities: [] };
 
-    // Elastic mode: recompute from locked chiralities without A* search
-    if (isDragging && lockedChiralities.length === diskSequence.length && diskSequence.length >= 2) {
-      const elastic = recomputeElasticPath(diskSequence, contactDisks, lockedChiralities);
-      if (elastic) {
-        return elastic;
-      }
-      // Fallback to full search if elastic fails (degenerate geometry)
-    }
+    const result = findEnvelopePathFromPoints(currentAnchors, contactDisks);
 
-    const result = findEnvelopePathFromPoints(currentAnchors, contactDisks, undefined, diskSequence);
-
-    // Derive chiralities from result (per-position, not per-diskId, to support multi-visit).
-    // When a disk appears multiple times in the sequence, we must match each visit to the
-    // correct outgoing tangent in path order — not just the first tangent from that disk.
-    const fullChiralities: ('L' | 'R')[] = [];
-
-    // Track which path segments have already been claimed by an earlier sequence position.
-    const claimedSegmentIndices = new Set<number>();
-
-    for (let seqIdx = 0; seqIdx < diskSequence.length; seqIdx++) {
-      const diskId = diskSequence[seqIdx];
-      let found = false;
-
-      if (seqIdx < diskSequence.length - 1) {
-        const nextDiskId = diskSequence[seqIdx + 1];
-        // Find the FIRST unclaimed tangent that departs diskId toward nextDiskId.
-        for (let pi = 0; pi < result.path.length; pi++) {
-          if (claimedSegmentIndices.has(pi)) continue;
-          const s = result.path[pi] as any;
-          if (s.type !== 'ARC' && s.startDiskId === diskId && s.endDiskId === nextDiskId) {
-            fullChiralities.push(s.type.charAt(0) as 'L' | 'R');
-            claimedSegmentIndices.add(pi);
-            found = true;
-            break;
-          }
+    // Derive chiralities from result
+    const derivedChiralities = new Map<string, 'L' | 'R'>();
+    result.path.forEach((seg) => {
+      const s = seg as any;
+      if (s.type === 'ARC') {
+        if (s.diskId && !derivedChiralities.has(s.diskId)) {
+          derivedChiralities.set(s.diskId, s.chirality);
+        }
+      } else if (['LSL', 'LSR', 'RSL', 'RSR'].includes(s.type)) {
+        if (s.startDiskId && !['point', 'start', 'end'].includes(s.startDiskId) && !derivedChiralities.has(s.startDiskId)) {
+          derivedChiralities.set(s.startDiskId, s.type.charAt(0) as 'L' | 'R');
+        }
+        if (s.endDiskId && !['point', 'start', 'end'].includes(s.endDiskId) && !derivedChiralities.has(s.endDiskId)) {
+          derivedChiralities.set(s.endDiskId, s.type.charAt(2) as 'L' | 'R');
         }
       }
+    });
 
-      if (!found) {
-        // Fallback: first unclaimed arc on this disk
-        for (let pi = 0; pi < result.path.length; pi++) {
-          if (claimedSegmentIndices.has(pi)) continue;
-          const s = result.path[pi] as any;
-          if (s.type === 'ARC' && s.diskId === diskId) {
-            fullChiralities.push(s.chirality);
-            claimedSegmentIndices.add(pi);
-            found = true;
-            break;
-          }
-        }
-      }
-
-      if (!found) {
-        fullChiralities.push(chiralities[seqIdx] ?? 'L');
-      }
-    }
+    const fullChiralities: ('L' | 'R')[] = diskSequence.map((id, i) => {
+      if (derivedChiralities.has(id)) return derivedChiralities.get(id)!;
+      if (chiralities.length === diskSequence.length) return chiralities[i];
+      return 'L';
+    });
 
     return {
       path: result.path,
       chiralities: fullChiralities,
     };
-  }, [currentAnchors, contactDisks, diskSequence, chiralities, isDragging, lockedChiralities]);
-
-  // Universal visual-radius disks for validation
-  // ALWAYS uses visualRadius regardless of ribbonMode — the rendered green disks
-  // are at visualRadius, so tangent lines must never cross them visually.
-  const visualDisks: ContactDisk[] = useMemo(
-    () => blocks.map((d) => ({
-      id: d.id,
-      center: d.center,
-      radius: d.visualRadius,
-      regionId: 'default',
-    })),
-    [blocks],
-  );
-
-  // Post-validate path against visual disk boundaries — ALWAYS, not just ribbon mode.
-  // This is the final gate: no tangent segment may cross any visual disk.
-  const validatedPath = useMemo(() => {
-    if (computationResult.path.length === 0) return computationResult.path;
-
-    const filtered = computationResult.path.filter((seg: EnvelopeSegment) => {
-      if (seg.type === 'ARC') return true;
-      const tan = seg as TangentSegment;
-      return !intersectsAnyDiskStrict(tan.start, tan.end, visualDisks, tan.startDiskId, tan.endDiskId);
-    });
-
-    if (filtered.length !== computationResult.path.length) {
-      Logger.warn('KnotState', 'Post-validation removed disk-crossing segments', {
-        removed: computationResult.path.length - filtered.length,
-      });
-    }
-
-    return filtered;
-  }, [computationResult.path, visualDisks]);
+  }, [currentAnchors, contactDisks, diskSequence, chiralities]);
 
   // Sync locked chiralities when not dragging
   useEffect(() => {
@@ -193,45 +125,24 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
   useEffect(() => {
     if (prevDraggingRef.current && !isDragging && lastElasticPathRef.current.length > 0) {
       const newAnchors: DynamicAnchor[] = [];
-      diskSequence.forEach((diskId, seqIdx) => {
+      diskSequence.forEach((diskId) => {
         const disk = blocks.find((b) => b.id === diskId && b.kind === 'disk');
         if (!disk) return;
 
-        const nextDiskId = seqIdx < diskSequence.length - 1 ? diskSequence[seqIdx + 1] : null;
-
-        // 1. Prefer the specific outgoing tangent toward the next disk in the sequence.
-        //    Using the departure point as anchor ensures the next computation starts at
-        //    the departure → zero arc needed for segment (i → i+1), preventing double-arcs.
-        if (nextDiskId) {
-          const depSeg = lastElasticPathRef.current.find(
-            (s: any) => s.type !== 'ARC' && s.startDiskId === diskId && s.endDiskId === nextDiskId,
-          ) as TangentSegment | undefined;
-          if (depSeg) {
-            const angle = Math.atan2(depSeg.start.y - disk.center.y, depSeg.start.x - disk.center.x);
-            newAnchors.push({ diskId, angle });
-            return;
-          }
-        }
-
-        // 2. Fallback: arc.endAngle (departure from arc), not startAngle (arrival).
-        //    Using arrival as anchor caused double-arcs summing to ~360° when the
-        //    stale anchor ended up on the wrong side of the disk after another disk moved.
-        const arc = lastElasticPathRef.current.find((s: any) => s.type === 'ARC' && s.diskId === diskId) as ArcSegment | undefined;
+        const arc = lastElasticPathRef.current.find((s: any) => s.type === 'ARC' && s.diskId === diskId) as ArcSegment;
         if (arc) {
-          newAnchors.push({ diskId, angle: arc.endAngle });
+          newAnchors.push({ diskId, angle: arc.startAngle });
           return;
         }
 
-        // 3. Any outgoing tangent from this disk.
-        const outTangent = lastElasticPathRef.current.find((s: any) => s.type !== 'ARC' && s.startDiskId === diskId) as TangentSegment | undefined;
+        const outTangent = lastElasticPathRef.current.find((s: any) => s.startDiskId === diskId) as TangentSegment;
         if (outTangent) {
           const angle = Math.atan2(outTangent.start.y - disk.center.y, outTangent.start.x - disk.center.x);
           newAnchors.push({ diskId, angle });
           return;
         }
 
-        // 4. Last resort: incoming tangent endpoint.
-        const inTangent = lastElasticPathRef.current.find((s: any) => s.type !== 'ARC' && s.endDiskId === diskId) as TangentSegment | undefined;
+        const inTangent = lastElasticPathRef.current.find((s: any) => s.endDiskId === diskId) as TangentSegment;
         if (inTangent) {
           const angle = Math.atan2(inTangent.end.y - disk.center.y, inTangent.end.x - disk.center.x);
           newAnchors.push({ diskId, angle });
@@ -262,7 +173,7 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     return { valid: true };
   }, [computationResult.path, obstacleSegments]);
 
-  const knotPath = validatedPath;
+  const knotPath = computationResult.path;
 
   const envelopePath = useMemo(() => {
     if (knotPath.length === 0 || currentAnchors.length < 3) return knotPath;
@@ -270,45 +181,13 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     const lastAnchor = currentAnchors[currentAnchors.length - 1];
     const firstAnchor = currentAnchors[0];
 
-    // The closing path must not route through disks already used in the main sequence.
-    // Only the first and last disk of the sequence are allowed as endpoints.
-    const firstDiskId = diskSequence[0];
-    const lastDiskId = diskSequence[diskSequence.length - 1];
-    const closingForbiddenBase = new Set(
-      diskSequence.slice(1, -1).filter(id => id !== firstDiskId && id !== lastDiskId),
-    );
-
-    // Exception: if a forbidden disk physically blocks the direct closing line,
-    // it might be a necessary waypoint — remove it from the forbidden set so the
-    // graph search can route around it.
-    const closingForbidden = new Set(closingForbiddenBase);
-    for (const id of closingForbiddenBase) {
-      const d = contactDisks.find(cd => cd.id === id);
-      if (d && intersectsDisk(lastAnchor, firstAnchor, d)) {
-        closingForbidden.delete(id);
-      }
-    }
-
-    const closingResult = findEnvelopePathFromPoints(
-      [lastAnchor, firstAnchor],
-      contactDisks,
-      closingForbidden,
-      [lastDiskId, firstDiskId],
-    );
+    const closingResult = findEnvelopePathFromPoints([lastAnchor, firstAnchor], contactDisks);
 
     if (closingResult.path.length > 0) {
-      // Validate closing path against visual disks too
-      const validClosing = closingResult.path.filter((seg: EnvelopeSegment) => {
-        if (seg.type === 'ARC') return true;
-        const tan = seg as TangentSegment;
-        return !intersectsAnyDiskStrict(tan.start, tan.end, visualDisks, tan.startDiskId, tan.endDiskId);
-      });
-      if (validClosing.length > 0) {
-        return [...knotPath, ...validClosing];
-      }
+      return [...knotPath, ...closingResult.path];
     }
     return knotPath;
-  }, [knotPath, currentAnchors, contactDisks, diskSequence, visualDisks]);
+  }, [knotPath, currentAnchors, contactDisks]);
 
   const toggleDisk = useCallback(
     (diskId: string) => {
