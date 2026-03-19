@@ -1,5 +1,5 @@
 import { Logger } from '../../app/Logger';
-import { intersectsAnyDiskStrict } from '../geometry/envelope/collision';
+import { intersectsAnyDiskStrict, intersectsDisk } from '../geometry/envelope/collision';
 import type { BoundedCurvatureGraph, EnvelopeSegment, TangentSegment, TangentType } from '../geometry/envelope/contactGraph';
 import { buildBoundedCurvatureGraph } from '../geometry/envelope/contactGraph';
 import { calculateBitangent } from '../geometry/primitives/bitangents';
@@ -629,11 +629,25 @@ export function findEnvelopePathFromPoints(
     // Candidate C: GRAPH SEARCH
     // Build forbidden set: all anchor disk IDs EXCEPT this segment's start/end disks.
     // This prevents graph search from routing through disks used as anchors elsewhere.
+    // Exception: disks that APPEAR MORE THAN ONCE in the sequence are junction disks
+    // (e.g. the center disk in a trefoil) and must not be forbidden — they may be
+    // necessary routing waypoints for other segments.
+    const diskAppearances = new Map<string, number>();
+    if (anchorDiskIds) {
+      for (const id of anchorDiskIds) {
+        diskAppearances.set(id, (diskAppearances.get(id) ?? 0) + 1);
+      }
+    }
     const forbiddenIds = new Set<string>(globalForbiddenDiskIds ?? []);
     for (let j = 0; j < anchors.length; j++) {
       if (j === i || j === i + 1) continue; // Allow current segment's endpoints
       const anchorDisk = findDisk(anchors[j], j); // Pass index to use explicit disk ID
-      if (anchorDisk) forbiddenIds.add(anchorDisk.id);
+      if (anchorDisk) {
+        // Only forbid single-visit disks; multi-visit (junction) disks stay accessible
+        if ((diskAppearances.get(anchorDisk.id) ?? 1) <= 1) {
+          forbiddenIds.add(anchorDisk.id);
+        }
+      }
     }
     // Also remove start/end disk IDs if they were added by other anchors on the same disk
     if (startDisk) forbiddenIds.delete(startDisk.id);
@@ -643,7 +657,26 @@ export function findEnvelopePathFromPoints(
       forbidden: Array.from(forbiddenIds),
     });
 
-    const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, forbiddenIds);
+    let graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, forbiddenIds);
+
+    // Fallback: if no path found and a forbidden disk is physically blocking the direct line,
+    // that disk is a necessary waypoint — retry without it in the forbidden set.
+    if (!graphPath && forbiddenIds.size > 0) {
+      const blockingForbidden = new Set<string>();
+      for (const d of obstacles) {
+        if (!forbiddenIds.has(d.id)) continue;
+        if (intersectsDisk(start, end, d)) blockingForbidden.add(d.id);
+      }
+      if (blockingForbidden.size > 0) {
+        const relaxedForbidden = new Set(forbiddenIds);
+        blockingForbidden.forEach(id => relaxedForbidden.delete(id));
+        graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, relaxedForbidden);
+        if (graphPath) {
+          Logger.debug('PointPathSearch', `Segment ${i}: found path via relaxed forbidden (removed blocking: ${Array.from(blockingForbidden).join(',')})`);
+        }
+      }
+    }
+
     if (graphPath) {
       const len = graphPath.reduce((sum, s) => sum + s.length, 0);
       candidates.push({

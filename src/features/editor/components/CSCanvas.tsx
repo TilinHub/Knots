@@ -198,7 +198,7 @@ export function CSCanvas({
   const {
     mode: knotModeStringArg,
     diskSequence: knotSequenceArg,
-    knotPath: knotPathArg,
+    envelopePath: knotPathArg,   // Use envelopePath (closed loop) instead of knotPath (open)
     anchorPoints: anchorPointsArg,
     anchorSequence: rawAnchorSequence, // [NEW] Get raw anchors (diskId, angle)
     chiralities: knotChiralities, // [NEW] Get chiralities for topology

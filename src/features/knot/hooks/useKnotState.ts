@@ -13,7 +13,7 @@ import {
   validateNoObstacleIntersection,
   validateNoSelfIntersection,
 } from '../../../core/geometry/validation/envelopeValidator';
-import { intersectsAnyDiskStrict } from '../../../core/geometry/envelope/collision';
+import { intersectsAnyDiskStrict, intersectsDisk } from '../../../core/geometry/envelope/collision';
 import type { CSDisk } from '../../../core/types/cs';
 import type { ContactDisk } from '../../../core/types/contactGraph';
 import type { Point2D } from '../../../core/types/cs';
@@ -90,37 +90,48 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
 
     const result = findEnvelopePathFromPoints(currentAnchors, contactDisks, undefined, diskSequence);
 
-    // Derive chiralities from result (per-position, not per-diskId, to support multi-visit)
+    // Derive chiralities from result (per-position, not per-diskId, to support multi-visit).
+    // When a disk appears multiple times in the sequence, we must match each visit to the
+    // correct outgoing tangent in path order — not just the first tangent from that disk.
     const fullChiralities: ('L' | 'R')[] = [];
+
+    // Track which path segments have already been claimed by an earlier sequence position.
+    const claimedSegmentIndices = new Set<number>();
+
     for (let seqIdx = 0; seqIdx < diskSequence.length; seqIdx++) {
       const diskId = diskSequence[seqIdx];
-      // Find the tangent segment that departs from this disk at this sequence position.
-      // For position i, the outgoing tangent is the one connecting disk[i] → disk[i+1].
       let found = false;
+
       if (seqIdx < diskSequence.length - 1) {
         const nextDiskId = diskSequence[seqIdx + 1];
-        for (const seg of result.path) {
-          const s = seg as any;
+        // Find the FIRST unclaimed tangent that departs diskId toward nextDiskId.
+        for (let pi = 0; pi < result.path.length; pi++) {
+          if (claimedSegmentIndices.has(pi)) continue;
+          const s = result.path[pi] as any;
           if (s.type !== 'ARC' && s.startDiskId === diskId && s.endDiskId === nextDiskId) {
             fullChiralities.push(s.type.charAt(0) as 'L' | 'R');
+            claimedSegmentIndices.add(pi);
             found = true;
             break;
           }
         }
       }
+
       if (!found) {
-        // Fallback: check arcs, then incoming tangents
-        for (const seg of result.path) {
-          const s = seg as any;
+        // Fallback: first unclaimed arc on this disk
+        for (let pi = 0; pi < result.path.length; pi++) {
+          if (claimedSegmentIndices.has(pi)) continue;
+          const s = result.path[pi] as any;
           if (s.type === 'ARC' && s.diskId === diskId) {
             fullChiralities.push(s.chirality);
+            claimedSegmentIndices.add(pi);
             found = true;
             break;
           }
         }
       }
+
       if (!found) {
-        // Last resort: use existing chirality or default
         fullChiralities.push(chiralities[seqIdx] ?? 'L');
       }
     }
@@ -263,9 +274,20 @@ export function useKnotState({ blocks, obstacleSegments = [], ribbonMode = false
     // Only the first and last disk of the sequence are allowed as endpoints.
     const firstDiskId = diskSequence[0];
     const lastDiskId = diskSequence[diskSequence.length - 1];
-    const closingForbidden = new Set(
+    const closingForbiddenBase = new Set(
       diskSequence.slice(1, -1).filter(id => id !== firstDiskId && id !== lastDiskId),
     );
+
+    // Exception: if a forbidden disk physically blocks the direct closing line,
+    // it might be a necessary waypoint — remove it from the forbidden set so the
+    // graph search can route around it.
+    const closingForbidden = new Set(closingForbiddenBase);
+    for (const id of closingForbiddenBase) {
+      const d = contactDisks.find(cd => cd.id === id);
+      if (d && intersectsDisk(lastAnchor, firstAnchor, d)) {
+        closingForbidden.delete(id);
+      }
+    }
 
     const closingResult = findEnvelopePathFromPoints(
       [lastAnchor, firstAnchor],
