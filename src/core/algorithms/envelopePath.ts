@@ -71,6 +71,7 @@ export function findEnvelopePath(
   orderedAnchorsOrChiralities?: Point2D[] | ('L' | 'R')[],
   fixedChiralitiesOrStrict?: ('L' | 'R')[] | boolean,
   strictChirality: boolean = true,
+  checkCollisions: boolean = true,
 ): EnvelopePathResult {
   // Disambiguate overloaded 3rd/4th params for back-compat:
   // Old call: findEnvelopePath(graph, ids, chiralities?, strict?)
@@ -96,7 +97,7 @@ export function findEnvelopePath(
 
   // If orderedAnchors provided, always use memory-based (anchors are the ground truth)
   if (orderedAnchors && orderedAnchors.length >= diskIds.length - 1) {
-    return findEnvelopePathWithMemory(graph, diskIds, orderedAnchors, fixedChiralities, strictChirality);
+    return findEnvelopePathWithMemory(graph, diskIds, orderedAnchors, fixedChiralities, strictChirality, checkCollisions);
   }
 
   // Otherwise fall back to envelopePoints-based detection (deduplicate consecutive disk IDs first)
@@ -107,9 +108,9 @@ export function findEnvelopePath(
   });
 
   if (hasEnvelopePoints) {
-    return findEnvelopePathWithMemory(graph, diskIds, undefined, fixedChiralities, strictChirality);
+    return findEnvelopePathWithMemory(graph, diskIds, undefined, fixedChiralities, strictChirality, checkCollisions);
   } else {
-    return findEnvelopePathLegacy(graph, diskIds, fixedChiralities, strictChirality);
+    return findEnvelopePathLegacy(graph, diskIds, fixedChiralities, strictChirality, checkCollisions);
   }
 }
 
@@ -121,6 +122,7 @@ function findEnvelopePathWithMemory(
   orderedAnchors?: Point2D[], // anchor[i] = desired departure point at diskIds[i]
   fixedChiralities?: ('L' | 'R')[],
   strictChirality: boolean = true,
+  checkCollisions: boolean = true,
 ): EnvelopePathResult {
   Logger.debug('ContactGraph', 'Finding Envelope Path (With Memory)', { diskIds, fixedChiralities, strictChirality });
   if (diskIds.length < 2) return { path: [], chiralities: [] };
@@ -312,13 +314,15 @@ function findEnvelopePathWithMemory(
   }
 
   // Post-validation: remove tangent segments that pass through any disk they shouldn't
-  const allDisksMemory = Array.from(graph.nodes.values());
-  const validatedPathMemory = bestFinal.path.filter((seg) => {
-    if (seg.type === 'ARC') return true;
-    const tan = seg as TangentSegment;
-    return !intersectsAnyDiskStrict(tan.start, tan.end, allDisksMemory, tan.startDiskId, tan.endDiskId);
-  });
-  bestFinal.path = validatedPathMemory;
+  if (checkCollisions) {
+    const allDisksMemory = Array.from(graph.nodes.values());
+    const validatedPathMemory = bestFinal.path.filter((seg) => {
+      if (seg.type === 'ARC') return true;
+      const tan = seg as TangentSegment;
+      return !intersectsAnyDiskStrict(tan.start, tan.end, allDisksMemory, tan.startDiskId, tan.endDiskId);
+    });
+    bestFinal.path = validatedPathMemory;
+  }
 
   Logger.debug('ContactGraph', 'Envelope Path Found (Memory)', {
     cost: bestFinal.cost,
@@ -334,6 +338,7 @@ function findEnvelopePathLegacy(
   diskIds: string[],
   fixedChiralities?: ('L' | 'R')[],
   strictChirality: boolean = true,
+  checkCollisions: boolean = true,
 ): EnvelopePathResult {
   Logger.debug('ContactGraph', 'Finding Envelope Path (Legacy)', {
     diskIds,
@@ -511,13 +516,15 @@ function findEnvelopePathLegacy(
   }
 
   // Post-validation: remove tangent segments that pass through any disk they shouldn't
-  const allDisksLegacy = Array.from(graph.nodes.values());
-  const validatedPathLegacy = bestFinal.path.filter((seg) => {
-    if (seg.type === 'ARC') return true;
-    const tan = seg as TangentSegment;
-    return !intersectsAnyDiskStrict(tan.start, tan.end, allDisksLegacy, tan.startDiskId, tan.endDiskId);
-  });
-  bestFinal.path = validatedPathLegacy;
+  if (checkCollisions) {
+    const allDisksLegacy = Array.from(graph.nodes.values());
+    const validatedPathLegacy = bestFinal.path.filter((seg) => {
+      if (seg.type === 'ARC') return true;
+      const tan = seg as TangentSegment;
+      return !intersectsAnyDiskStrict(tan.start, tan.end, allDisksLegacy, tan.startDiskId, tan.endDiskId);
+    });
+    bestFinal.path = validatedPathLegacy;
+  }
 
   Logger.debug('ContactGraph', 'Envelope Path Found', {
     cost: bestFinal.cost,

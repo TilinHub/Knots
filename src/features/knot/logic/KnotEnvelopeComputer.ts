@@ -29,12 +29,12 @@ export class KnotEnvelopeComputer implements EnvelopeComputer {
         }));
 
         // Build the graph of all possible outer tangents
-        // strict=true (no intersections), limited to sequence? No, build full graph.
-        const graph = buildBoundedCurvatureGraph(contactDisks, true);
+        // strict=true (no intersections), limited to sequence? No, build full graph. -> Changed to strict=false for knot mode.
+        const graph = buildBoundedCurvatureGraph(contactDisks, false);
 
         // Use the sequence and chiralities to find the best path through the graph
         // This corresponds to the user's "Green Check" logic (sliding band).
-        const result = findEnvelopePath(graph, sequence, chiralities as any, false);
+        const result = findEnvelopePath(graph, sequence, chiralities as any, false, false, false);
 
         if (result.path && result.path.length > 0) {
           this.lastGoodEnvelope = result.path;
@@ -44,7 +44,7 @@ export class KnotEnvelopeComputer implements EnvelopeComputer {
         // Fallback: If strict chirality failed (e.g. impossible winding),
         // try "Relaxed Elastic Band" - respect sequence but optimize winding (shortest path).
         // This stabilizes the behavior when dragging creates temporary impossibilities.
-        const relaxedResult = findEnvelopePath(graph, sequence);
+        const relaxedResult = findEnvelopePath(graph, sequence, undefined, undefined, false, false);
         if (relaxedResult.path && relaxedResult.path.length > 0) {
           // console.warn("KnotEnvelope: Strict chirality failed, using relaxed elastic band");
           this.lastGoodEnvelope = relaxedResult.path;

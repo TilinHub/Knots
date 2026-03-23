@@ -138,6 +138,8 @@ function findSubPathGraph(
   diskMap: Map<string, ContactDisk>,
   forbiddenDiskIds: Set<string> = new Set(),
   collisionObstacles?: ContactDisk[], // If provided, use for collision checks (excludes sequence disks)
+  startDisk?: ContactDisk | null,
+  endDisk?: ContactDisk | null,
 ): EnvelopeSegment[] | null {
   const collisionDisks = collisionObstacles ?? obstacles;
   const getPointToDiskTangents = (
@@ -188,7 +190,17 @@ function findSubPathGraph(
 
     const tangents = getPointToDiskTangents(start, d);
     tangents.forEach((t) => {
-      if (!intersectsAnyDiskStrict(start, t.pt, collisionDisks, d.id)) {
+      // Validate Outward Departure
+      let validDeparture = true;
+      if (startDisk && t.length > 1e-4) {
+         const dx = (t.pt.x - start.x) / t.length;
+         const dy = (t.pt.y - start.y) / t.length;
+         const nx = (start.x - startDisk.center.x) / startDisk.radius;
+         const ny = (start.y - startDisk.center.y) / startDisk.radius;
+         if (nx * dx + ny * dy < -0.01) validDeparture = false;
+      }
+      
+      if (validDeparture && !intersectsAnyDiskStrict(start, t.pt, collisionDisks, d.id)) {
         const ang = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
         if (t.length < 1e-4) {
           pq.push({ id: `${d.id}:L`, cost: 0, path: [], angle: ang, diskId: d.id }, 0);
@@ -261,8 +273,18 @@ function findSubPathGraph(
       } else {
         const exitTangents = getPointToDiskTangents(end, d);
         exitTangents.forEach((t) => {
+          // Validate Outward Arrival
+          let validArrival = true;
+          if (endDisk && t.length > 1e-4) {
+             const dx = (end.x - t.pt.x) / t.length;
+             const dy = (end.y - t.pt.y) / t.length;
+             const nx = (end.x - endDisk.center.x) / endDisk.radius;
+             const ny = (end.y - endDisk.center.y) / endDisk.radius;
+             if (nx * dx + ny * dy > 0.01) validArrival = false;
+          }
+
           const exitAng = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
-          if (!intersectsAnyDiskStrict(t.pt, end, collisionDisks, d.id)) {
+          if (validArrival && !intersectsAnyDiskStrict(t.pt, end, collisionDisks, d.id)) {
             // Try both arc directions (short first, then long if short is blocked).
             // This ensures the search doesn't miss valid paths where the short arc
             // is blocked by an overlapping disk but the long arc is free.
@@ -688,7 +710,7 @@ export function findEnvelopePathFromPoints(
       forbidden: Array.from(forbiddenIds),
     });
 
-    const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, forbiddenIds, nonSeqObstacles);
+    const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, forbiddenIds, nonSeqObstacles, startDisk, endDisk);
     if (graphPath) {
       const len = graphPath.reduce((sum, s) => sum + s.length, 0);
       candidates.push({
@@ -712,7 +734,22 @@ export function findEnvelopePathFromPoints(
     } else {
       // SAFETY CHECK: Never draw a line that passes through any disk.
       // Check if the raw fallback line would intersect ANY disk (excluding start/end).
-      const rawLineBlocked = intersectsAnyDiskStrict(start, end, nonSeqObstacles, startDisk?.id, endDisk?.id);
+      let rawLineBlocked = intersectsAnyDiskStrict(start, end, nonSeqObstacles, startDisk?.id, endDisk?.id);
+
+      if (!rawLineBlocked && dist > 1e-6) {
+        const dirX = (end.x - start.x) / dist;
+        const dirY = (end.y - start.y) / dist;
+        if (startDisk) {
+          const nx = (start.x - startDisk.center.x) / startDisk.radius;
+          const ny = (start.y - startDisk.center.y) / startDisk.radius;
+          if (nx * dirX + ny * dirY < -0.01) rawLineBlocked = true;
+        }
+        if (endDisk && !rawLineBlocked) {
+          const nx = (end.x - endDisk.center.x) / endDisk.radius;
+          const ny = (end.y - endDisk.center.y) / endDisk.radius;
+          if (nx * dirX + ny * dirY > 0.01) rawLineBlocked = true;
+        }
+      }
 
       if (rawLineBlocked) {
         // The fallback line would go through a disk — SKIP this segment entirely.
