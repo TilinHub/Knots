@@ -118,18 +118,23 @@ export const KnotLayer: React.FC<KnotLayerProps> = ({
 
   const disks = useMemo(() => blocks.filter((b): b is CSDisk => b.kind === 'disk'), [blocks]);
 
-  // Last line of defense: filter any tangent that crosses a visual disk
+  // Last line of defense: filter any tangent that crosses a non-sequence visual disk.
+  // Sequence disks are allowed — crossings form where the curve crosses them.
+  const sequenceDiskIds = useMemo(() => new Set(knotSequence ?? []), [knotSequence]);
   const safeKnotPath = useMemo(() => {
     if (!knotPath || knotPath.length === 0 || disks.length === 0) return knotPath;
-    const obstacleDisksList = disks.map((d) => ({
-      id: d.id, center: d.center, radius: d.visualRadius, regionId: 'default',
-    }));
+    const blockingDisks = disks
+      .filter((d) => !sequenceDiskIds.has(d.id))
+      .map((d) => ({
+        id: d.id, center: d.center, radius: d.visualRadius, regionId: 'default',
+      }));
+    if (blockingDisks.length === 0) return knotPath; // All disks are in sequence — nothing to block
     return knotPath.filter((seg: EnvelopeSegment) => {
       if (seg.type === 'ARC') return true;
       const tan = seg as TangentSegment;
-      return !intersectsAnyDiskStrict(tan.start, tan.end, obstacleDisksList, tan.startDiskId, tan.endDiskId);
+      return !intersectsAnyDiskStrict(tan.start, tan.end, blockingDisks, tan.startDiskId, tan.endDiskId);
     });
-  }, [knotPath, disks]);
+  }, [knotPath, disks, sequenceDiskIds]);
 
   return (
     <BaseLayer visible={visible} zIndex={10}>

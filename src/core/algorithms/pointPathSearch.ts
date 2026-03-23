@@ -137,7 +137,9 @@ function findSubPathGraph(
   graph: BoundedCurvatureGraph,
   diskMap: Map<string, ContactDisk>,
   forbiddenDiskIds: Set<string> = new Set(),
+  collisionObstacles?: ContactDisk[], // If provided, use for collision checks (excludes sequence disks)
 ): EnvelopeSegment[] | null {
+  const collisionDisks = collisionObstacles ?? obstacles;
   const getPointToDiskTangents = (
     p: Point2D,
     d: ContactDisk,
@@ -186,7 +188,7 @@ function findSubPathGraph(
 
     const tangents = getPointToDiskTangents(start, d);
     tangents.forEach((t) => {
-      if (!intersectsAnyDiskStrict(start, t.pt, obstacles, d.id)) {
+      if (!intersectsAnyDiskStrict(start, t.pt, collisionDisks, d.id)) {
         const ang = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
         if (t.length < 1e-4) {
           pq.push({ id: `${d.id}:L`, cost: 0, path: [], angle: ang, diskId: d.id }, 0);
@@ -234,7 +236,7 @@ function findSubPathGraph(
           const shortArc = calcShortArc(d, curr.angle, exitAng);
           const chir: 'L' | 'R' = tryChir === 'short' ? shortArc.chirality : (shortArc.chirality === 'L' ? 'R' : 'L');
           const arcLen = tryChir === 'short' ? shortArc.length : calcArc(d, curr.angle, exitAng, chir);
-          if (!isArcBlocked(d, curr.angle, exitAng, chir, obstacles)) {
+          if (!isArcBlocked(d, curr.angle, exitAng, chir, collisionDisks)) {
             const total = curr.cost + arcLen;
             if (total < minCost) {
               minCost = total;
@@ -260,7 +262,7 @@ function findSubPathGraph(
         const exitTangents = getPointToDiskTangents(end, d);
         exitTangents.forEach((t) => {
           const exitAng = Math.atan2(t.pt.y - d.center.y, t.pt.x - d.center.x);
-          if (!intersectsAnyDiskStrict(t.pt, end, obstacles, d.id)) {
+          if (!intersectsAnyDiskStrict(t.pt, end, collisionDisks, d.id)) {
             // Try both arc directions (short first, then long if short is blocked).
             // This ensures the search doesn't miss valid paths where the short arc
             // is blocked by an overlapping disk but the long arc is free.
@@ -268,7 +270,7 @@ function findSubPathGraph(
               const shortArc = calcShortArc(d, curr.angle, exitAng);
               const chir: 'L' | 'R' = tryChir === 'short' ? shortArc.chirality : (shortArc.chirality === 'L' ? 'R' : 'L');
               const arcLen = tryChir === 'short' ? shortArc.length : calcArc(d, curr.angle, exitAng, chir);
-              if (!isArcBlocked(d, curr.angle, exitAng, chir, obstacles)) {
+              if (!isArcBlocked(d, curr.angle, exitAng, chir, collisionDisks)) {
                 const total = curr.cost + arcLen + t.length;
                 if (total < minCost) {
                   minCost = total;
@@ -317,7 +319,7 @@ function findSubPathGraph(
           const chir: 'L' | 'R' = tryChir === 'short' ? shortArc.chirality : (shortArc.chirality === 'L' ? 'R' : 'L');
           const arcLen = tryChir === 'short' ? shortArc.length : calcArc(d, curr.angle, depAng, chir);
 
-          if (!isArcBlocked(d, curr.angle, depAng, chir, obstacles)) {
+          if (!isArcBlocked(d, curr.angle, depAng, chir, collisionDisks)) {
             const arrAng = Math.atan2(edge.end.y - nextDisk.center.y, edge.end.x - nextDisk.center.x);
             const newCost = curr.cost + arcLen + edge.length;
             const nextChar = edge.type.endsWith('L') ? 'L' : 'R';
@@ -372,6 +374,11 @@ export function recomputeElasticPath(
   const diskMap = new Map<string, ContactDisk>();
   obstacles.forEach((d) => diskMap.set(d.id, d));
 
+  // In knot mode, the core curve is allowed to pass through disks that are
+  // part of the sequence (this creates the crossings). Only block non-sequence disks.
+  const sequenceIds = new Set(diskIds);
+  const nonSequenceObstacles = obstacles.filter(d => !sequenceIds.has(d.id));
+
   const path: EnvelopeSegment[] = [];
   let prevArrivalAngle: number | null = null;
   let prevDiskId: string | null = null;
@@ -390,9 +397,10 @@ export function recomputeElasticPath(
       return null; // Geometry degenerate — fallback to full search
     }
 
-    // Collision check: reject if bitangent passes through ANY other disk
-    if (intersectsAnyDiskStrict(bitangent.start, bitangent.end, obstacles, d1.id, d2.id)) {
-      return null; // Tangent overlaps a disk — fallback to full search
+    // Collision check: reject if bitangent passes through a non-sequence disk.
+    // Sequence disks are allowed (crossings happen where the curve crosses them).
+    if (intersectsAnyDiskStrict(bitangent.start, bitangent.end, nonSequenceObstacles, d1.id, d2.id)) {
+      return null; // Tangent overlaps a non-sequence disk — fallback to full search
     }
 
     // Compute transit arc on disk[i] from previous arrival to this departure
@@ -401,8 +409,8 @@ export function recomputeElasticPath(
     if (prevArrivalAngle !== null && prevDiskId === diskIds[i]) {
       const arcLen = calcArc(d1, prevArrivalAngle, depAngle, lockedChiralities[i]);
       if (arcLen > 1e-4) {
-        // Check if transit arc is blocked by another disk
-        if (isArcBlocked(d1, prevArrivalAngle, depAngle, lockedChiralities[i], obstacles)) {
+        // Check if transit arc is blocked by a non-sequence disk
+        if (isArcBlocked(d1, prevArrivalAngle, depAngle, lockedChiralities[i], nonSequenceObstacles)) {
           return null; // Arc blocked — fallback to full search
         }
         path.push({
@@ -431,6 +439,37 @@ export function recomputeElasticPath(
     // Track arrival angle on disk[i+1]
     prevArrivalAngle = Math.atan2(bitangent.end.y - d2.center.y, bitangent.end.x - d2.center.x);
     prevDiskId = diskIds[i + 1];
+  }
+
+  // Closing arc: if the sequence is a closed loop (first == last disk),
+  // add an arc on that disk from the final arrival back to the first departure.
+  if (diskIds.length >= 3 && diskIds[0] === diskIds[diskIds.length - 1] && prevArrivalAngle !== null) {
+    const closingDisk = diskMap.get(diskIds[0]);
+    if (closingDisk && path.length > 0) {
+      // Find the departure angle of the very first tangent
+      const firstTangent = path.find(s => s.type !== 'ARC') as TangentSegment | undefined;
+      if (firstTangent) {
+        const firstDepAngle = Math.atan2(
+          firstTangent.start.y - closingDisk.center.y,
+          firstTangent.start.x - closingDisk.center.x,
+        );
+        const closingArcLen = calcArc(closingDisk, prevArrivalAngle, firstDepAngle, lockedChiralities[0]);
+        if (closingArcLen > 1e-4) {
+          if (!isArcBlocked(closingDisk, prevArrivalAngle, firstDepAngle, lockedChiralities[0], nonSequenceObstacles)) {
+            path.push({
+              type: 'ARC',
+              center: closingDisk.center,
+              radius: closingDisk.radius,
+              startAngle: prevArrivalAngle,
+              endAngle: firstDepAngle,
+              chirality: lockedChiralities[0],
+              length: closingArcLen,
+              diskId: closingDisk.id,
+            });
+          }
+        }
+      }
+    }
   }
 
   return { path, chiralities: lockedChiralities };
@@ -472,8 +511,14 @@ export function findEnvelopePathFromPoints(
     return bestDisk;
   };
 
+  // Sequence disks (anchorDiskIds) are allowed to be crossed — crossings form there.
+  // Only non-sequence disks should block tangent lines.
+  const sequenceIds = anchorDiskIds ? new Set(anchorDiskIds) : new Set<string>();
+  const nonSeqObstacles = obstacles.filter(d => !sequenceIds.has(d.id));
+
   // [FIX] outerTangentsOnly = FALSE (Internal tangents allowed for crossings)
-  const graph = buildBoundedCurvatureGraph(obstacles, true, [], false);
+  // Use nonSeqObstacles for collision checks so edges crossing sequence disks aren't filtered.
+  const graph = buildBoundedCurvatureGraph(obstacles, true, [], false, nonSeqObstacles);
 
   Logger.debug('PointPathSearch', 'findEnvelopePathFromPoints starting', {
     anchors: anchors.length,
@@ -496,7 +541,7 @@ export function findEnvelopePathFromPoints(
       const ang1 = Math.atan2(start.y - disk.center.y, start.x - disk.center.x);
       const ang2 = Math.atan2(end.y - disk.center.y, end.x - disk.center.x);
 
-      if (!isArcBlocked(disk, ang1, ang2, 'R', obstacles)) {
+      if (!isArcBlocked(disk, ang1, ang2, 'R', nonSeqObstacles)) {
         const cw = calcArc(disk, ang1, ang2, 'R');
         candidates.push({
           path: [
@@ -515,7 +560,7 @@ export function findEnvelopePathFromPoints(
         });
       }
 
-      if (!isArcBlocked(disk, ang1, ang2, 'L', obstacles)) {
+      if (!isArcBlocked(disk, ang1, ang2, 'L', nonSeqObstacles)) {
         const ccw = calcArc(disk, ang1, ang2, 'L');
         candidates.push({
           path: [
@@ -540,8 +585,8 @@ export function findEnvelopePathFromPoints(
     let lineBlocked = false;
     let blockReason = '';
 
-    // 1. Check Collisions with OTHER disks
-    lineBlocked = intersectsAnyDiskStrict(start, end, obstacles, startDisk?.id, endDisk?.id);
+    // 1. Check Collisions with OTHER disks (skip sequence disks — crossings are allowed there)
+    lineBlocked = intersectsAnyDiskStrict(start, end, nonSeqObstacles, startDisk?.id, endDisk?.id);
     if (lineBlocked) blockReason = 'intersects-other-disk';
 
     // 2. Check Valid Departure (Normal check)
@@ -643,7 +688,7 @@ export function findEnvelopePathFromPoints(
       forbidden: Array.from(forbiddenIds),
     });
 
-    const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, forbiddenIds);
+    const graphPath = findSubPathGraph(start, end, obstacles, graph, diskMap, forbiddenIds, nonSeqObstacles);
     if (graphPath) {
       const len = graphPath.reduce((sum, s) => sum + s.length, 0);
       candidates.push({
@@ -667,7 +712,7 @@ export function findEnvelopePathFromPoints(
     } else {
       // SAFETY CHECK: Never draw a line that passes through any disk.
       // Check if the raw fallback line would intersect ANY disk (excluding start/end).
-      const rawLineBlocked = intersectsAnyDiskStrict(start, end, obstacles, startDisk?.id, endDisk?.id);
+      const rawLineBlocked = intersectsAnyDiskStrict(start, end, nonSeqObstacles, startDisk?.id, endDisk?.id);
 
       if (rawLineBlocked) {
         // The fallback line would go through a disk — SKIP this segment entirely.
@@ -704,12 +749,11 @@ export function findEnvelopePathFromPoints(
     }
   }
 
-  // Post-validation: remove any tangent segment that passes through a disk it shouldn't.
-  // This is a safety net catching edge cases missed by candidate selection.
+  // Post-validation: remove any tangent segment that passes through a non-sequence disk.
   const validatedPath = fullPath.filter((seg) => {
     if (seg.type === 'ARC') return true; // Arcs are always on disk boundaries
     const tan = seg as TangentSegment;
-    return !intersectsAnyDiskStrict(tan.start, tan.end, obstacles, tan.startDiskId, tan.endDiskId);
+    return !intersectsAnyDiskStrict(tan.start, tan.end, nonSeqObstacles, tan.startDiskId, tan.endDiskId);
   });
 
   if (validatedPath.length !== fullPath.length) {

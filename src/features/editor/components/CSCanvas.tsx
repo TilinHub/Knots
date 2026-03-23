@@ -46,12 +46,17 @@ const USE_OUTER_CONTOUR_ENVELOPE = true;
 function validatePathAgainstDisks(
   path: EnvelopeSegment[],
   disks: { id: string; center: Point2D; radius: number; regionId: string }[],
+  sequenceDiskIds?: Set<string>, // Disks in the knot sequence — allowed to be crossed
 ): EnvelopeSegment[] {
   if (!path || path.length === 0 || disks.length === 0) return path;
+  const blockingDisks = sequenceDiskIds
+    ? disks.filter((d) => !sequenceDiskIds.has(d.id))
+    : disks;
+  if (blockingDisks.length === 0) return path;
   return path.filter((seg) => {
     if (seg.type === 'ARC') return true;
     const tan = seg as TangentSegment;
-    return !intersectsAnyDiskStrict(tan.start, tan.end, disks, tan.startDiskId, tan.endDiskId);
+    return !intersectsAnyDiskStrict(tan.start, tan.end, blockingDisks, tan.startDiskId, tan.endDiskId);
   });
 }
 
@@ -282,8 +287,11 @@ export function CSCanvas({
   // If we are rolling, the parent's knotPath is stale (based on static blocks).
   // We must recompute it using the *displayed* disks (which have the rolling position).
   const knotPath = React.useMemo(() => {
+    // Sequence disks are allowed to be crossed (crossings form there)
+    const seqIds = knotSequence ? new Set<string>(knotSequence as string[]) : undefined;
+
     // Guard: no recalcular durante drag — evita spam de warnings en cada MouseMove
-    if (dragState) return validatePathAgainstDisks(staticKnotPath, contactDisks);
+    if (dragState) return validatePathAgainstDisks(staticKnotPath, contactDisks, seqIds);
 
     if (rollingMode && knotMode) {
       // 1. Priority: True Elastic Envelope (Sequence + Chirality)
@@ -307,7 +315,7 @@ export function CSCanvas({
           const result = findEnvelopePath(graph, knotSequence, knotChiralities, true);
 
           if (result.path && result.path.length > 0) {
-            return validatePathAgainstDisks(result.path, contactDisks);
+            return validatePathAgainstDisks(result.path, contactDisks, seqIds);
           }
         } catch (e) {
           Logger.warn('CSCanvas', 'Elastic Envelope calculation failed', e);
@@ -336,7 +344,7 @@ export function CSCanvas({
 
           const anchorDiskIds = rawAnchorSequence.map((a: any) => a.diskId);
           const result = findEnvelopePathFromPoints(dynamicPoints, contactDisks, undefined, anchorDiskIds);
-          return validatePathAgainstDisks(result.path, contactDisks);
+          return validatePathAgainstDisks(result.path, contactDisks, seqIds);
         } catch (e) {
           Logger.warn('CSCanvas', 'Failed to recompute dynamic knot path from raw anchors', e);
         }
@@ -346,14 +354,14 @@ export function CSCanvas({
       if (anchorPoints && anchorPoints.length > 0) {
         try {
           const result = findEnvelopePathFromPoints(anchorPoints, contactDisks);
-          return validatePathAgainstDisks(result.path, contactDisks);
+          return validatePathAgainstDisks(result.path, contactDisks, seqIds);
         } catch (e) {
           Logger.warn('CSCanvas', 'Failed to recompute dynamic knot path from static points', e);
-          return validatePathAgainstDisks(staticKnotPath, contactDisks);
+          return validatePathAgainstDisks(staticKnotPath, contactDisks, seqIds);
         }
       }
     }
-    return validatePathAgainstDisks(staticKnotPath, contactDisks);
+    return validatePathAgainstDisks(staticKnotPath, contactDisks, seqIds);
   }, [
     rollingMode,
     knotMode,

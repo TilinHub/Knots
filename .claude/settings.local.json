@@ -9,7 +9,8 @@
       "Bash(xargs grep:*)",
       "Bash(ls -lh /c/Knots/public/data/*.txt)",
       "Bash(find /c/Knots -name *.txt -type f)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(npm run:*)"
     ]
   }
 }
